@@ -1,0 +1,57 @@
+[
+    {
+        "legal": "https://remoteok.com/legal",
+        "note": "This first entry is RemoteOK's real feed quirk: a non-job metadata/attribution object with no 'id' field. Client code must filter this out."
+    },
+    {
+        "id": "1000001",
+        "slug": "senior-backend-engineer-acme",
+        "company": "Acme Corp",
+        "company_logo": "https://remoteok.com/assets/acme-logo.png",
+        "position": "Senior Backend Engineer",
+        "tags": ["python", "django", "senior"],
+        "location": "Worldwide",
+        "salary_min": 120000,
+        "salary_max": 160000,
+        "description": "<p>We are hiring a senior backend engineer to join our platform team.</p>",
+        "apply_url": "https://acme.example.com/careers/1000001/apply",
+        "url": "https://remoteok.com/remote-jobs/1000001",
+        "date": "2026-01-15T09:00:00+00:00"
+    },
+    {
+        "id": "1000002",
+        "slug": "product-designer-globex",
+        "company": "Globex Inc",
+        "position": "Product Designer",
+        "location": "USA Only",
+        "description": "<p>Design beautiful, usable things.</p>",
+        "url": "https://remoteok.com/remote-jobs/1000002",
+        "date": "2026-01-16T10:30:00+00:00"
+    },
+    {
+        "id": "1000003",
+        "company": "Initech",
+        "position": "Data Analyst",
+        "tags": ["sql", "excel"],
+        "location": "Remote",
+        "url": "https://remoteok.com/remote-jobs/1000003",
+        "date": "not-a-real-date"
+    },
+    {
+        "id": "1000004",
+        "company": "BadCo",
+        "tags": ["missing-title"],
+        "location": "Worldwide",
+        "url": "https://remoteok.com/remote-jobs/1000004",
+        "date": "2026-01-17T08:00:00+00:00"
+    },
+    {
+        "id": "1000005",
+        "company": "",
+        "position": "QA Engineer",
+        "tags": [],
+        "location": "Worldwide",
+        "url": "",
+        "date": "2026-01-18T12:00:00+00:00"
+    }
+]
