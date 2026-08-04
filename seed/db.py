@@ -12,7 +12,7 @@ from typing import Iterator
 from sqlalchemy import Connection
 
 # Import the get_engine function from your db package
-from db.engine import get_engine
+from job_market_intel.db.engine import get_engine
 
 
 @contextmanager

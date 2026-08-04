@@ -89,6 +89,44 @@ class TestOptionalFields:
         assert job.apply_url is None
 
 
+class TestZeroSalaryNormalization:
+    """RemoteOK sends a literal 0 (not null/omitted) when no salary was entered.
+
+    Regression tests for a real bug caught in a live run: 0 passing an
+    `is not None` check made every downstream consumer (batch validator,
+    cleaner's completeness score) wrongly believe a salary was disclosed.
+    """
+
+    def _minimal(self, **overrides: object) -> dict:
+        base = {"id": "1", "position": "Engineer", "company": "Acme", "url": "https://x.test/1"}
+        base.update(overrides)
+        return base
+
+    def test_zero_salary_min_becomes_none(self) -> None:
+        job = RawRemoteOKJob.model_validate(self._minimal(salary_min=0))
+        assert job.salary_min is None
+
+    def test_zero_salary_max_becomes_none(self) -> None:
+        job = RawRemoteOKJob.model_validate(self._minimal(salary_max=0))
+        assert job.salary_max is None
+
+    def test_both_zero_both_become_none(self) -> None:
+        job = RawRemoteOKJob.model_validate(self._minimal(salary_min=0, salary_max=0))
+        assert job.salary_min is None
+        assert job.salary_max is None
+
+    def test_genuine_nonzero_salary_is_unaffected(self) -> None:
+        job = RawRemoteOKJob.model_validate(self._minimal(salary_min=100000, salary_max=150000))
+        assert job.salary_min == 100000
+        assert job.salary_max == 150000
+
+    def test_one_zero_one_real_value_only_the_zero_is_normalized(self) -> None:
+        # salary_min unspecified (0), salary_max genuinely given.
+        job = RawRemoteOKJob.model_validate(self._minimal(salary_min=0, salary_max=120000))
+        assert job.salary_min is None
+        assert job.salary_max == 120000
+
+
 class TestPostingDateParsing:
     """The posting_date validator must handle RemoteOK's real format and degrade gracefully."""
 

@@ -27,6 +27,8 @@ from .exceptions import RemoteOKError, RemoteOKFetchError, RemoteOKResponseError
 from .models import RawRemoteOKJob
 from .parser import RemoteOKParser
 
+from .pipeline import RemoteOKPipeline, RemoteOKPipelineRunResult
+
 __all__ = [
     "RemoteOKClient",
     "RemoteOKSettings",
@@ -35,4 +37,7 @@ __all__ = [
     "RemoteOKResponseError",
     "RawRemoteOKJob",
     "RemoteOKParser",
+    "RemoteOKPipeline",
+    "RemoteOKPipelineRunResult",
 ]
+

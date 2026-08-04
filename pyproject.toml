@@ -14,6 +14,8 @@ authors = [
 # packages (SQLAlchemy, requests/httpx, pandas, etc.) are added until the
 # step that actually needs them, per the project's step-scoped build plan.
 dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "ftfy>=6.3.1",
     "loguru>=0.7.3",
     # Environment/config loading with real validation, type coercion, and
     # clear error messages — exactly what the Step 3 base config loader

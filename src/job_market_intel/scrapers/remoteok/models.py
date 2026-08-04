@@ -45,9 +45,17 @@ class RawRemoteOKJob(BaseModel):
             (e.g. "Worldwide", "USA Only"). Geographic normalization
             (Step 26) resolves this into ``ref.locations`` later.
         salary_min: Minimum of RemoteOK's advertised salary range, in USD,
-            if disclosed.
+            if disclosed. RemoteOK represents "no salary provided" as a
+            literal ``0`` in its feed, not by omitting the field or
+            sending ``null`` — that ``0`` is normalized to ``None`` here
+            (see ``_coerce_zero_salary_to_none`` below) so every
+            downstream consumer (batch validation, cleaning) can treat
+            "salary is unknown" consistently as ``None``, without each
+            one having to separately know about this RemoteOK-specific
+            encoding quirk.
         salary_max: Maximum of RemoteOK's advertised salary range, in USD,
-            if disclosed.
+            if disclosed. Same ``0`` -> ``None`` normalization as
+            ``salary_min``.
         description_raw: The full, unmodified job description as HTML or
             plain text (RemoteOK returns HTML). Cleaning/HTML-stripping
             happens in Step 8, not here.
@@ -117,3 +125,26 @@ class RawRemoteOKJob(BaseModel):
                 return None
             return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
         return None
+
+    @field_validator("salary_min", "salary_max", mode="after")
+    @classmethod
+    def _coerce_zero_salary_to_none(cls, value: int | None) -> int | None:
+        """Treat RemoteOK's literal ``0`` salary as "not disclosed", not "pays $0".
+
+        Observed live: RemoteOK's feed sends ``"salary_min": 0`` (and/or
+        ``salary_max: 0``) for postings where no real salary figure was
+        entered, rather than omitting the field. Left as literal ``0``,
+        this silently corrupts every downstream consumer that checks
+        "is salary present?" via `is not None` (the batch validator's
+        missing-field rate, and the cleaner's completeness score both do
+        exactly this) — ``0`` is not ``None``, so both would wrongly
+        conclude a salary was disclosed.
+
+        A genuine $0 salary is not a realistic value for the professional/
+        technical remote jobs this feed lists, so normalizing literal
+        ``0`` to ``None`` here carries effectively no risk of discarding
+        real data, while fixing the corruption at its single source rather
+        than requiring every downstream consumer to independently know
+        about this RemoteOK-specific quirk.
+        """
+        return None if value == 0 else value

@@ -26,6 +26,7 @@ from job_market_intel.db.exceptions import (
     RepositoryError,
     TransactionError,
 )
+from job_market_intel.db.job_repository import JobRepository, compute_job_content_hash
 from job_market_intel.db.repository import AbstractRepository
 from job_market_intel.db.session import get_session, get_session_factory
 from job_market_intel.db.transaction import transaction
@@ -44,9 +45,12 @@ __all__ = [
     "health_check",
     "dispose_all",
     "AbstractRepository",
+    "JobRepository",
+    "compute_job_content_hash",
     "DatabaseError",
     "DatabaseConnectionError",
     "TransactionError",
     "ConfigurationError",
     "RepositoryError",
 ]
+

@@ -1,73 +1,73 @@
-"""Manual entry point to run the RemoteOK scraper and see the results.
+"""Manual entry point to run the RemoteOK automated pipeline end-to-end.
 
-This script exists so you can confirm the scraper works by running one
-command and reading the output — you do not need to write any code or use
-pytest to try this out. It does NOT touch the database and does NOT clean
-or normalize the data; it only fetches and validates, per Step 5's scope.
+Fetches, parses, validates, cleans, and persists RemoteOK job listings into
+PostgreSQL, logging scraping sessions and performing change detection via content hashing.
 
-Run it from the project root with:
-
-    python scripts/run_remoteok_scraper.py
-
-What you should see:
-    - Log lines in the terminal describing the fetch and parse steps.
-    - A final summary printed to the terminal: how many jobs were fetched,
-      how many parsed successfully, and a preview of the first few jobs.
-    - A log file created at logs/job_market_intel.log with the same
-      information plus more detail.
+Usage:
+    python scripts/run_remoteok_scraper.py [--no-db]
 """
 
 from __future__ import annotations
 
+import argparse
+
 from loguru import logger
 
 from job_market_intel.common.logger import configure_logging
-from job_market_intel.scrapers.remoteok import RemoteOKClient, RemoteOKError, RemoteOKParser, RemoteOKSettings
+from job_market_intel.scrapers.remoteok import RemoteOKError, RemoteOKPipeline
 
 
 def main() -> int:
-    """Run the RemoteOK scraper end-to-end and print a human-readable summary.
+    """Run the RemoteOK pipeline end-to-end and print a human-readable summary.
 
     Returns:
         Process exit code: ``0`` on success, ``1`` if the scrape failed.
     """
+    parser = argparse.ArgumentParser(description="RemoteOK Job Intelligence Pipeline")
+    parser.add_argument(
+        "--no-db",
+        action="store_true",
+        help="Run fetch, parse, validate, and clean steps without persisting to PostgreSQL.",
+    )
+    args = parser.parse_args()
+
     configure_logging(log_dir="logs", console_level="INFO", file_level="DEBUG")
 
-    settings = RemoteOKSettings()
-    client = RemoteOKClient(settings=settings)
-    parser = RemoteOKParser()
+    pipeline = RemoteOKPipeline()
+    store_db = not args.no_db
 
-    logger.info("Starting manual RemoteOK scraper run.")
+    logger.info("Starting RemoteOK pipeline (store_db={}).", store_db)
 
     try:
-        raw_jobs = client.fetch_raw_jobs()
+        run_result = pipeline.run(store_db=store_db)
     except RemoteOKError as exc:
-        logger.error("RemoteOK scraper run failed: {}", exc)
+        logger.error("RemoteOK pipeline run failed: {}", exc)
         return 1
 
-    parsed_jobs = parser.parse_jobs(raw_jobs)
-
     print()
     print("=" * 70)
-    print("REMOTEOK SCRAPER — MANUAL RUN SUMMARY")
+    print("REMOTEOK PIPELINE — RUN SUMMARY")
     print("=" * 70)
-    print(f"Raw job records fetched: {len(raw_jobs)}")
-    print(f"Successfully parsed:     {len(parsed_jobs)}")
-    print(f"Skipped (malformed):     {len(raw_jobs) - len(parsed_jobs)}")
+    print(f"Raw job records fetched: {run_result.raw_count}")
+    print(f"Successfully parsed:     {run_result.parsed_count}")
+    print(f"Cleaned & normalized:    {run_result.cleaned_count}")
+    print(f"Batch validation:        {'PASSED' if run_result.validation_passed else 'FAILED'}")
+    if run_result.issues:
+        for issue in run_result.issues:
+            print(f"  - {issue}")
     print()
-    print("Preview of the first 5 parsed jobs:")
-    print("-" * 70)
-    for job in parsed_jobs[:5]:
-        print(f"  [{job.source_job_id}] {job.job_title} @ {job.company_name}")
-        print(f"      location: {job.location_raw or '(not specified)'}")
-        print(f"      salary:   {job.salary_min or '?'} - {job.salary_max or '?'} USD")
-        print(f"      url:      {job.original_url}")
-        print()
-    print("=" * 70)
-    print("Full details are in logs/job_market_intel.log")
+    if store_db:
+        print("DATABASE PERSISTENCE & DEDUPLICATION (Step 9/10):")
+        print(f"  Scraping Session ID:   {run_result.session_id}")
+        print(f"  New jobs inserted:     {run_result.inserted_count}")
+        print(f"  Jobs updated:          {run_result.updated_count}")
+        print(f"  Jobs unchanged:        {run_result.unchanged_count}")
+        print(f"  Persistence failures:  {run_result.failed_count}")
+    else:
+        print("DRY-RUN MODE (--no-db active): Database storage skipped.")
     print("=" * 70)
 
-    logger.info("Manual RemoteOK scraper run finished successfully.")
+    logger.info("RemoteOK pipeline run finished successfully.")
     return 0
 
 
