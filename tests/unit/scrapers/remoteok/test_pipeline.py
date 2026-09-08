@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from job_market_intel.cleaning.remoteok_cleaner import CleanedRemoteOKJob
+from job_market_intel.cleaning.common import CleanedJob
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
 from job_market_intel.scrapers.remoteok.pipeline import RemoteOKPipeline
 
@@ -29,12 +29,12 @@ class TestRemoteOKPipelineUnit:
         mock_report.issues = []
         mock_validator.validate.return_value = mock_report
 
-        cleaned_job = CleanedRemoteOKJob(
+        cleaned_job = CleanedJob(
             source_job_id="1",
             job_title="Dev",
             company_name="Acme",
             company_logo_url=None,
-            tags=["python"],
+            skills=["python"],
             location_cleaned="Remote",
             salary_min=100000,
             salary_max=150000,

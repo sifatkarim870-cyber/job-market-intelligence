@@ -1,0 +1,159 @@
+"""Salary/currency normalization (Step 27).
+
+Where this fits: the design doc's own words on ``salary.job_salaries`` --
+"``normalized_annual_min_usd``/``normalized_annual_max_usd``: computed --
+converted + annualized, for cross-job comparison." Confirmed against the
+real codebase before writing a line of this (same discipline Step 25/26
+started with): unlike company resolution and skill extraction,
+``db.job_repository.save_cleaned_job`` was *already* writing
+``salary_min``/``salary_max``/``salary_disclosed``/``currency_id`` (hard-
+coded to USD)/``pay_period`` (hard-coded to the literal ``'yearly'``) into
+``salary.job_salaries`` on both insert and update. What was actually
+missing, confirmed by reading that function directly rather than assuming
+either way:
+
+    - ``normalized_annual_min_usd``/``max_usd`` were never computed --
+      always left NULL.
+    - ``salary.salary_history`` was never written to at all, on insert or
+      update -- a re-scrape that changed a job's salary silently
+      overwrote the only record of the previous value, with no audit
+      trail. This cuts against the design doc's own stated principle
+      ("immutable history everywhere it matters ... is what makes any
+      time-series or causal claim ... reproducible") for exactly this
+      table.
+
+What this module deliberately is NOT:
+
+    - NOT a batch job. Unlike ``dedup.py``/``company_resolution.py``/
+      ``skill_extraction.py``, every input this module needs
+      (``salary_min``, ``salary_max``, currency, pay period) is already
+      fully available on a ``CleanedJob`` at ingestion time -- there is
+      nothing to look up in already-persisted rows the way fuzzy company
+      matching or skill-vocabulary scanning needs a second pass. This
+      module is a pure function, called inline from
+      ``db.job_repository.save_cleaned_job``, the same way
+      ``get_or_create_company`` is.
+    - NOT currency conversion in the general sense. All three live
+      sources (RemoteOK, We Work Remotely, Remotive) are USD-only by
+      construction of their own raw models -- RemoteOK's feed has no
+      currency field at all (implicitly USD), Remotive's free-text salary
+      parser (``RawRemotiveJob._parse_salary_range``) only matches a
+      ``"$..."``-prefixed pattern, and WWR has no salary field of any
+      kind. ``salary.currency_exchange_rates`` is not seeded (confirmed:
+      no seed script for it exists) and seeding it now would be
+      speculative infrastructure with nothing real to validate it
+      against. So this function accepts a currency code as a real
+      parameter (not hard-coded), has a real conversion table with one
+      entry (USD -> USD, rate 1.0), and returns ``(None, None)`` with a
+      logged warning for anything else -- correct and honest today,
+      and it will not silently mis-convert the day a non-USD source is
+      added; it will visibly do nothing until
+      ``salary.currency_exchange_rates`` actually has a rate to use.
+
+Pay-period annualization
+-------------------------
+None of the three live sources captures pay period explicitly (confirmed:
+no ``pay_period`` field exists on ``CleanedJob`` or on any raw model);
+``job_repository`` hard-codes the literal string ``'yearly'`` when writing
+``salary.job_salaries.pay_period``, on the assumption that all three
+sources report full-time-equivalent annual figures. That assumption is
+reasonable for these three sources specifically (RemoteOK's own docs
+describe its salary fields as annual; Remotive's free-text parser only
+matches whole-dollar range strings typical of annual tech-salary
+postings; WWR has no salary at all) but it is an assumption, not a fact
+this module can verify -- see ``job_repository.py``'s
+``_ASSUMED_PAY_PERIOD`` constant, which names it explicitly rather than
+burying it in a bare string literal.
+
+This module's annualization table covers every ``pay_period`` value the
+schema's own CHECK constraint allows (``hourly``, ``daily``, ``weekly``,
+``monthly``, ``yearly``) using standard full-time-equivalent multipliers,
+so the day a source that reports a different pay period arrives, only
+that source's cleaner needs to start populating a real pay-period value --
+this function already handles it correctly.
+"""
+
+from __future__ import annotations
+
+from loguru import logger
+
+#: Full-time-equivalent multipliers to annualize a salary figure, keyed by
+#: every ``pay_period`` value the schema's CHECK constraint
+#: (``ck_job_salaries_pay_period`` / ``ck_salary_history_pay_period``)
+#: allows. Standard FTE assumptions: 2,080 hours/year (40hr week x 52),
+#: 260 working days/year (5-day week x 52), 52 weeks/year, 12 months/year.
+_ANNUALIZATION_MULTIPLIERS: dict[str, float] = {
+    "hourly": 2080.0,
+    "daily": 260.0,
+    "weekly": 52.0,
+    "monthly": 12.0,
+    "yearly": 1.0,
+}
+
+#: Currency conversion rates to USD. Deliberately contains only USD today
+#: -- see the module docstring for why introducing real FX rates is out
+#: of scope until a non-USD source actually exists to validate against.
+_USD_CONVERSION_RATES: dict[str, float] = {
+    "USD": 1.0,
+}
+
+
+def normalize_annual_salary(
+    salary_min: int | float | None,
+    salary_max: int | float | None,
+    *,
+    currency_iso_code: str,
+    pay_period: str,
+) -> tuple[float | None, float | None]:
+    """Convert a raw (min, max) salary pair into annualized USD figures.
+
+    Maps onto ``salary.job_salaries.normalized_annual_min_usd``/
+    ``normalized_annual_max_usd`` in the schema.
+
+    Args:
+        salary_min: Raw minimum salary bound, in ``currency_iso_code``, at
+            ``pay_period`` cadence. ``None`` if undisclosed.
+        salary_max: Raw maximum salary bound. Same units/cadence as
+            ``salary_min``. ``None`` if undisclosed.
+        currency_iso_code: ISO 4217 code (e.g. ``"USD"``) the raw figures
+            are denominated in.
+        pay_period: One of ``"hourly"``, ``"daily"``, ``"weekly"``,
+            ``"monthly"``, ``"yearly"`` -- must match the schema's
+            ``pay_period`` CHECK constraint values.
+
+    Returns:
+        ``(normalized_annual_min_usd, normalized_annual_max_usd)``. Either
+        or both may be ``None`` if the corresponding input was ``None``,
+        if ``currency_iso_code`` has no known conversion rate (logged as a
+        warning, not an error -- an unconvertible salary is an honest gap,
+        not a failure), or if ``pay_period`` is not a recognized value
+        (logged as an error -- this indicates a caller bug, since every
+        caller in this codebase controls its own ``pay_period`` value).
+    """
+    multiplier = _ANNUALIZATION_MULTIPLIERS.get(pay_period)
+    if multiplier is None:
+        logger.error(
+            "normalize_annual_salary: unrecognized pay_period {!r}; "
+            "expected one of {}. Returning (None, None).",
+            pay_period,
+            sorted(_ANNUALIZATION_MULTIPLIERS),
+        )
+        return None, None
+
+    rate_to_usd = _USD_CONVERSION_RATES.get(currency_iso_code.upper())
+    if rate_to_usd is None:
+        logger.warning(
+            "normalize_annual_salary: no USD conversion rate available for "
+            "currency {!r} (salary.currency_exchange_rates is not seeded -- "
+            "see module docstring). Returning (None, None) rather than "
+            "guessing.",
+            currency_iso_code,
+        )
+        return None, None
+
+    def _normalize(value: int | float | None) -> float | None:
+        if value is None:
+            return None
+        return round(float(value) * multiplier * rate_to_usd, 2)
+
+    return _normalize(salary_min), _normalize(salary_max)

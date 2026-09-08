@@ -18,6 +18,7 @@ import argparse
 
 from loguru import logger
 
+from job_market_intel.common.config import get_settings
 from job_market_intel.common.logger import configure_logging
 from job_market_intel.scheduler import (
     SchedulerSettings,
@@ -58,18 +59,23 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    configure_logging(log_dir="logs/scheduler", console_level="INFO", file_level="DEBUG")
+    app_settings = get_settings()
+    configure_logging(
+        log_dir="logs/scheduler", console_level=app_settings.log_level, file_level="DEBUG"
+    )
 
     if args.run_once:
         logger.info("Running the RemoteOK pipeline once (--run-once) and exiting.")
         run_remoteok_pipeline_job()
         return 0
 
-    settings = SchedulerSettings()
+    scheduler_settings = SchedulerSettings()
     if args.interval_hours is not None:
-        settings = settings.model_copy(update={"scrape_interval_hours": args.interval_hours})
+        scheduler_settings = scheduler_settings.model_copy(
+            update={"scrape_interval_hours": args.interval_hours}
+        )
 
-    scheduler = build_scheduler(settings)
+    scheduler = build_scheduler(scheduler_settings)
     logger.info("Scheduler starting. Press Ctrl+C to stop.")
     try:
         scheduler.start()

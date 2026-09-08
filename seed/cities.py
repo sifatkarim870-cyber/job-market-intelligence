@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from sqlalchemy import Connection, text
 
-from .base import SeedResult, get_id_map, upsert_many
+from .base import SeedResult, get_id_map
 
 # (city_name, country_iso2, region_name_or_None, lat, lon, timezone)
 _CITIES: list[tuple[str, str, str | None, float, float, str]] = [

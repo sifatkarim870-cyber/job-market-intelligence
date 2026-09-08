@@ -54,7 +54,9 @@ class TestFetchRawJobsSuccess:
         assert METADATA_ENTRY not in result
         assert all("id" in record for record in result)
 
-    def test_default_settings_are_used_when_none_provided(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_default_settings_are_used_when_none_provided(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(
             "job_market_intel.scrapers.remoteok.client.fetch_json",
             lambda *args, **kwargs: [VALID_JOB_1],
@@ -65,7 +67,9 @@ class TestFetchRawJobsSuccess:
 
 
 class TestFetchRawJobsRetryBehavior:
-    def test_retries_on_transient_error_then_succeeds(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_retries_on_transient_error_then_succeeds(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         call_count = {"n": 0}
 
         def flaky_fetch_json(*args: object, **kwargs: object) -> list[dict]:
@@ -74,14 +78,18 @@ class TestFetchRawJobsRetryBehavior:
                 raise TransientHTTPError("simulated temporary network failure")
             return [VALID_JOB_1]
 
-        monkeypatch.setattr("job_market_intel.scrapers.remoteok.client.fetch_json", flaky_fetch_json)
+        monkeypatch.setattr(
+            "job_market_intel.scrapers.remoteok.client.fetch_json", flaky_fetch_json
+        )
         client = RemoteOKClient(settings=FAST_TEST_SETTINGS)
         result = client.fetch_raw_jobs()
 
         assert result == [VALID_JOB_1]
         assert call_count["n"] == 3, "Expected exactly 2 failures + 1 successful final attempt"
 
-    def test_raises_fetch_error_after_exhausting_all_retries(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_raises_fetch_error_after_exhausting_all_retries(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         call_count = {"n": 0}
 
         def always_fails(*args: object, **kwargs: object) -> list[dict]:
@@ -105,7 +113,9 @@ class TestFetchRawJobsRetryBehavior:
             call_count["n"] += 1
             raise PermanentHTTPError("simulated 404")
 
-        monkeypatch.setattr("job_market_intel.scrapers.remoteok.client.fetch_json", permanent_failure)
+        monkeypatch.setattr(
+            "job_market_intel.scrapers.remoteok.client.fetch_json", permanent_failure
+        )
         client = RemoteOKClient(settings=FAST_TEST_SETTINGS)
 
         with pytest.raises(RemoteOKFetchError):
@@ -115,7 +125,9 @@ class TestFetchRawJobsRetryBehavior:
 
 
 class TestFetchRawJobsResponseShapeValidation:
-    def test_raises_response_error_when_response_is_not_a_list(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_raises_response_error_when_response_is_not_a_list(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(
             "job_market_intel.scrapers.remoteok.client.fetch_json",
             lambda *args, **kwargs: {"unexpected": "shape"},
@@ -124,7 +136,9 @@ class TestFetchRawJobsResponseShapeValidation:
         with pytest.raises(RemoteOKResponseError):
             client.fetch_raw_jobs()
 
-    def test_raises_response_error_when_zero_job_records_present(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_raises_response_error_when_zero_job_records_present(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(
             "job_market_intel.scrapers.remoteok.client.fetch_json",
             lambda *args, **kwargs: [METADATA_ENTRY],  # only the non-job entry, no real jobs
@@ -133,7 +147,9 @@ class TestFetchRawJobsResponseShapeValidation:
         with pytest.raises(RemoteOKResponseError):
             client.fetch_raw_jobs()
 
-    def test_raises_response_error_on_completely_empty_list(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_raises_response_error_on_completely_empty_list(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(
             "job_market_intel.scrapers.remoteok.client.fetch_json",
             lambda *args, **kwargs: [],

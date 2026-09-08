@@ -26,7 +26,6 @@ from .config import RemoteOKSettings
 from .exceptions import RemoteOKError, RemoteOKFetchError, RemoteOKResponseError
 from .models import RawRemoteOKJob
 from .parser import RemoteOKParser
-
 from .pipeline import RemoteOKPipeline, RemoteOKPipelineRunResult
 
 __all__ = [

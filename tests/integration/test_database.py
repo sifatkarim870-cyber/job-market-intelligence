@@ -25,11 +25,8 @@ application's own `.env`.
 
 from __future__ import annotations
 
-import os
-
 import pytest
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
 
 from job_market_intel.db.config import DatabaseConfig, get_database_config
 from job_market_intel.db.exceptions import ConfigurationError, TransactionError
@@ -37,12 +34,9 @@ from job_market_intel.db.session import get_session
 from job_market_intel.db.transaction import transaction
 from job_market_intel.db.utils import health_check
 
-TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
-
-requires_live_db = pytest.mark.skipif(
-    not TEST_DATABASE_URL,
-    reason="TEST_DATABASE_URL not set; skipping tests that need a live PostgreSQL instance.",
-)
+# TEST_DATABASE_URL, the requires_live_db marker's skip behavior, and the
+# live_engine fixture used below are all centralized in
+# tests/integration/conftest.py — see that file's module docstring for why.
 
 
 # ---------------------------------------------------------------------------
@@ -75,19 +69,6 @@ def sqlite_engine(monkeypatch):
 
     yield sqlite_eng
 
-    engine_module.dispose_engine()
-
-
-@pytest.fixture()
-def live_engine():
-    """Provides the real configured engine, only for tests marked
-    `requires_live_db`.
-    """
-    os.environ["DATABASE_URL"] = TEST_DATABASE_URL or ""
-    from job_market_intel.db import engine as engine_module
-
-    engine_module.dispose_engine()
-    yield engine_module.get_engine()
     engine_module.dispose_engine()
 
 
@@ -257,8 +238,9 @@ class TestHealthCheck:
         assert isinstance(result["latency_ms"], float)
 
     def test_health_check_reports_unhealthy_for_broken_engine(self, monkeypatch):
-        from job_market_intel.db import engine as engine_module
         from sqlalchemy import create_engine
+
+        from job_market_intel.db import engine as engine_module
 
         engine_module.dispose_engine()
         # Point sqlite at a directory that cannot exist, forcing a
@@ -283,12 +265,12 @@ class TestHealthCheck:
 
 
 class TestLivePostgres:
-    @requires_live_db
+    @pytest.mark.requires_live_db
     def test_connection_to_real_postgres_succeeds(self, live_engine):
         with live_engine.connect() as conn:
             assert conn.execute(text("SELECT 1")).scalar() == 1
 
-    @requires_live_db
+    @pytest.mark.requires_live_db
     def test_health_check_against_real_postgres(self, live_engine):
         result = health_check()
         assert result["healthy"] is True

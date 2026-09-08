@@ -16,7 +16,7 @@ What these tests verify, and why each matters:
 
 from __future__ import annotations
 
-from datetime import timezone
+from datetime import UTC
 
 import pytest
 from pydantic import ValidationError
@@ -150,7 +150,7 @@ class TestPostingDateParsing:
     def test_naive_date_gets_utc_timezone_attached(self) -> None:
         job = RawRemoteOKJob.model_validate(self._minimal(date="2026-01-15T09:00:00"))
         assert job.posting_date is not None
-        assert job.posting_date.tzinfo == timezone.utc
+        assert job.posting_date.tzinfo == UTC
 
     def test_malformed_date_does_not_raise_and_becomes_none(self) -> None:
         job = RawRemoteOKJob.model_validate(self._minimal(date="not-a-real-date"))

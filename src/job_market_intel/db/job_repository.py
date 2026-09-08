@@ -4,15 +4,35 @@
 Repository implementation for storing, updating, and deduplicating job records
 and managing scraping sessions in PostgreSQL.
 
-Supports Step 9 (PostgreSQL Persistence) and Step 10 (Same-Source Duplicate &
-Update Detection via SHA-256 content hashing).
+Supports Step 9 (PostgreSQL Persistence), Step 10 (Same-Source Duplicate &
+Update Detection via SHA-256 content hashing), and Step 27 (Salary
+Standardization).
+
+Step 27 note: unlike company resolution (Step 25) and skill extraction
+(Step 26), salary normalization runs inline here rather than as a
+separate batch job in ``normalization/`` -- see
+``normalization/salary_standardization.py``'s module docstring for why
+(every input it needs is already available at ingestion time). This
+module calls ``normalize_annual_salary`` the same way it already calls
+``get_or_create_company``.
+
+Step 28 note: geographic resolution ALSO runs inline here, for a
+stronger reason than salary's -- it's not optional convenience, it's the
+only place it CAN run. ``job.location_cleaned`` is never persisted
+anywhere in the schema (it feeds ``compute_job_content_hash`` below and
+nothing else), so a deferred batch job would have no raw text left to
+resolve once a job is already in ``core.jobs``. See
+``normalization/geographic_resolution.py``'s module docstring for the
+full rationale. This module calls ``resolve_and_cache_location`` the
+same way it already calls ``get_or_create_company`` and
+``normalize_annual_salary``.
 """
 
 from __future__ import annotations
 
-from datetime import date, datetime
 import hashlib
-from typing import TYPE_CHECKING, Any  
+from datetime import date, datetime
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from sqlalchemy import text
@@ -20,9 +40,34 @@ from sqlalchemy.orm import Session
 
 from job_market_intel.db.exceptions import RepositoryError
 from job_market_intel.db.repository import AbstractRepository
+from job_market_intel.db.transaction import transaction
+from job_market_intel.normalization.geographic_resolution import resolve_and_cache_location
+from job_market_intel.normalization.salary_standardization import normalize_annual_salary
 
-if TYPE_CHECKING:                             # add this block
-    from job_market_intel.cleaning.remoteok_cleaner import CleanedRemoteOKJob
+if TYPE_CHECKING:
+    from job_market_intel.cleaning.common import CleanedJob
+
+#: Pay period assumed for every job persisted by this repository. None of
+#: the three live sources (RemoteOK, We Work Remotely, Remotive) captures
+#: pay period explicitly -- confirmed: no ``pay_period`` field exists on
+#: ``CleanedJob`` or any raw source model. This assumption is reasonable
+#: for these three sources specifically (RemoteOK's own docs describe its
+#: salary fields as annual; Remotive's free-text parser only matches
+#: whole-dollar range strings typical of annual tech-salary postings; WWR
+#: has no salary field at all) but it IS an assumption, not something this
+#: code verifies per-record -- named as a constant, rather than a bare
+#: string literal, specifically so it stays a visible, revisitable
+#: decision rather than a buried one. Revisit if/when a source that
+#: reports salary at a different cadence (e.g. an hourly-rate contractor
+#: board) is added.
+_ASSUMED_PAY_PERIOD = "yearly"
+
+#: ISO 4217 code assumed for every job persisted by this repository, for
+#: the same reason ``_ASSUMED_PAY_PERIOD`` is: all three live sources are
+#: USD-only by construction of their own raw models (see
+#: ``normalization/salary_standardization.py``'s module docstring), not by
+#: an assumption layered on afterward.
+_ASSUMED_CURRENCY_ISO_CODE = "USD"
 
 
 def compute_job_content_hash(
@@ -55,7 +100,14 @@ class JobRepository(AbstractRepository[Any]):
     salary.job_salaries, and ops.scraping_sessions.
     """
 
-    model = None  # Uses direct SQL / session queries against defined schema
+    # This repository issues raw SQL against several tables (core.jobs,
+    # core.companies, core.job_descriptions, salary.job_salaries,
+    # ops.scraping_sessions) rather than mapping to a single ORM model, so it
+    # has no meaningful value for AbstractRepository's `model: type[T]`
+    # contract. `__init__` below overrides the base class's `hasattr(model)`
+    # check accordingly. The assignment below is a deliberate, understood
+    # deviation from that contract, not an oversight.
+    model = None  # type: ignore[assignment]
 
     def __init__(self) -> None:
         # Override parent check requiring self.model
@@ -215,11 +267,11 @@ class JobRepository(AbstractRepository[Any]):
     def save_cleaned_job(
         self,
         session: Session,
-        job: CleanedRemoteOKJob,
+        job: CleanedJob,
         source_id: int,
         session_id: int | None = None,
     ) -> str:
-        """Persist or update a single CleanedRemoteOKJob.
+        """Persist or update a single CleanedJob.
 
         Returns:
             'inserted' if new record added,
@@ -227,6 +279,11 @@ class JobRepository(AbstractRepository[Any]):
             'unchanged' if content hash matched existing record.
         """
         company_id = self.get_or_create_company(session, job.company_name, job.company_logo_url)
+        # Step 28: resolved inline, not as a deferred batch job -- see
+        # this module's docstring and geographic_resolution.py's for why.
+        # None if job.location_cleaned is None/blank (no signal to
+        # resolve); never fabricated.
+        location_id = resolve_and_cache_location(session, job.location_cleaned, source_id)
         content_hash = compute_job_content_hash(
             job_title=job.job_title,
             company_name=job.company_name,
@@ -241,6 +298,18 @@ class JobRepository(AbstractRepository[Any]):
             if isinstance(job.posting_date, datetime)
             else (job.posting_date or date.today())
         )
+        # closing_date is optional metadata (not every source provides an
+        # expiration date -- see CleanedJob.closing_date's docstring), so
+        # unlike p_date above it has no "today" fallback: None stays None.
+        # It's also deliberately excluded from compute_job_content_hash --
+        # a closing-date-only change (e.g. a source extending a posting's
+        # expiration) isn't a substantive content change, so it's written
+        # on every re-scrape unconditionally below, the same way
+        # last_scraped_at always refreshes regardless of whether the hash
+        # matched.
+        c_date: date | None = (
+            job.closing_date.date() if isinstance(job.closing_date, datetime) else job.closing_date
+        )
 
         # Check existing job by (source_id, source_job_id)
         existing = session.execute(
@@ -253,6 +322,12 @@ class JobRepository(AbstractRepository[Any]):
         ).first()
 
         usd_currency_id = self.get_usd_currency_id(session)
+        normalized_annual_min_usd, normalized_annual_max_usd = normalize_annual_salary(
+            job.salary_min,
+            job.salary_max,
+            currency_iso_code=_ASSUMED_CURRENCY_ISO_CODE,
+            pay_period=_ASSUMED_PAY_PERIOD,
+        )
 
         if existing:
             job_id, existing_posting_date, existing_hash = existing
@@ -262,13 +337,16 @@ class JobRepository(AbstractRepository[Any]):
                     text(
                         "UPDATE core.jobs SET "
                         "last_scraped_at = now(), "
-                        "last_scraping_session_id = COALESCE(:session_id, last_scraping_session_id) "
+                        "last_scraping_session_id = "
+                        "COALESCE(:session_id, last_scraping_session_id), "
+                        "closing_date = :closing_date "
                         "WHERE job_id = :job_id AND posting_date = :posting_date"
                     ),
                     {
                         "job_id": job_id,
                         "posting_date": existing_posting_date,
                         "session_id": session_id,
+                        "closing_date": c_date,
                     },
                 )
                 return "unchanged"
@@ -282,8 +360,11 @@ class JobRepository(AbstractRepository[Any]):
                         "original_url = :original_url, "
                         "content_hash = :content_hash, "
                         "data_quality_score = :data_quality_score, "
+                        "closing_date = :closing_date, "
+                        "location_id = :location_id, "
                         "last_scraped_at = now(), "
-                        "last_scraping_session_id = COALESCE(:session_id, last_scraping_session_id), "
+                        "last_scraping_session_id = "
+                        "COALESCE(:session_id, last_scraping_session_id), "
                         "updated_at = now() "
                         "WHERE job_id = :job_id AND posting_date = :posting_date"
                     ),
@@ -293,6 +374,8 @@ class JobRepository(AbstractRepository[Any]):
                         "original_url": job.original_url,
                         "content_hash": content_hash,
                         "data_quality_score": job.data_quality_score,
+                        "closing_date": c_date,
+                        "location_id": location_id,
                         "session_id": session_id,
                         "job_id": job_id,
                         "posting_date": existing_posting_date,
@@ -313,12 +396,65 @@ class JobRepository(AbstractRepository[Any]):
                         "posting_date": existing_posting_date,
                     },
                 )
+                # Fetch the current salary snapshot BEFORE overwriting it,
+                # so we know whether this change is worth an append to
+                # salary.salary_history (see the append condition below).
+                existing_salary = session.execute(
+                    text(
+                        "SELECT salary_min, salary_max FROM salary.job_salaries "
+                        "WHERE job_id = :job_id AND posting_date = :posting_date"
+                    ),
+                    {"job_id": job_id, "posting_date": existing_posting_date},
+                ).first()
+                existing_salary_min = existing_salary[0] if existing_salary else None
+                existing_salary_max = existing_salary[1] if existing_salary else None
+
+                # Append a salary_history row only for a *substantive*
+                # change: both the old and new values must be disclosed
+                # (non-null) and actually differ. This deliberately skips
+                # pure disclosure toggles (e.g. a re-scrape where the
+                # salary field simply appeared or disappeared, with no
+                # prior/new figure to compare) -- confirmed design
+                # decision, not an oversight: a toggle isn't a "the salary
+                # changed" event in the sense this table exists to
+                # capture, and logging one would clutter the history with
+                # noise that doesn't answer "what did the salary trend
+                # look like."
+                salary_changed = (
+                    existing_salary_min is not None
+                    and existing_salary_max is not None
+                    and job.salary_min is not None
+                    and job.salary_max is not None
+                    and (existing_salary_min, existing_salary_max)
+                    != (job.salary_min, job.salary_max)
+                )
+                if salary_changed:
+                    session.execute(
+                        text(
+                            "INSERT INTO salary.salary_history "
+                            "(job_id, posting_date, observed_at, salary_min, salary_max, "
+                            "currency_id, pay_period) "
+                            "VALUES (:job_id, :posting_date, now(), :salary_min, :salary_max, "
+                            ":currency_id, :pay_period)"
+                        ),
+                        {
+                            "job_id": job_id,
+                            "posting_date": existing_posting_date,
+                            "salary_min": job.salary_min,
+                            "salary_max": job.salary_max,
+                            "currency_id": usd_currency_id,
+                            "pay_period": _ASSUMED_PAY_PERIOD,
+                        },
+                    )
+
                 session.execute(
                     text(
                         "UPDATE salary.job_salaries SET "
                         "salary_min = :salary_min, "
                         "salary_max = :salary_max, "
                         "salary_disclosed = :salary_disclosed, "
+                        "normalized_annual_min_usd = :normalized_annual_min_usd, "
+                        "normalized_annual_max_usd = :normalized_annual_max_usd, "
                         "updated_at = now() "
                         "WHERE job_id = :job_id AND posting_date = :posting_date"
                     ),
@@ -326,6 +462,8 @@ class JobRepository(AbstractRepository[Any]):
                         "salary_min": job.salary_min,
                         "salary_max": job.salary_max,
                         "salary_disclosed": job.salary_disclosed,
+                        "normalized_annual_min_usd": normalized_annual_min_usd,
+                        "normalized_annual_max_usd": normalized_annual_max_usd,
                         "job_id": job_id,
                         "posting_date": existing_posting_date,
                     },
@@ -337,11 +475,12 @@ class JobRepository(AbstractRepository[Any]):
                 text(
                     "INSERT INTO core.jobs "
                     "(source_id, source_job_id, original_url, company_id, job_title, "
-                    "posting_date, first_scraped_at, last_scraped_at, last_scraping_session_id, "
+                    "location_id, posting_date, closing_date, first_scraped_at, last_scraped_at, "
+                    "last_scraping_session_id, "
                     "job_status, content_hash, data_quality_score) "
                     "VALUES "
                     "(:source_id, :source_job_id, :original_url, :company_id, :job_title, "
-                    ":posting_date, now(), now(), :session_id, "
+                    ":location_id, :posting_date, :closing_date, now(), now(), :session_id, "
                     "'active', :content_hash, :data_quality_score) "
                     "RETURNING job_id"
                 ),
@@ -351,7 +490,9 @@ class JobRepository(AbstractRepository[Any]):
                     "original_url": job.original_url,
                     "company_id": company_id,
                     "job_title": job.job_title,
+                    "location_id": location_id,
                     "posting_date": p_date,
+                    "closing_date": c_date,
                     "session_id": session_id,
                     "content_hash": content_hash,
                     "data_quality_score": job.data_quality_score,
@@ -380,8 +521,12 @@ class JobRepository(AbstractRepository[Any]):
             session.execute(
                 text(
                     "INSERT INTO salary.job_salaries "
-                    "(job_id, posting_date, salary_min, salary_max, currency_id, pay_period, salary_disclosed) "
-                    "VALUES (:job_id, :posting_date, :salary_min, :salary_max, :currency_id, 'yearly', :salary_disclosed)"
+                    "(job_id, posting_date, salary_min, salary_max, currency_id, "
+                    "pay_period, salary_disclosed, normalized_annual_min_usd, "
+                    "normalized_annual_max_usd) "
+                    "VALUES (:job_id, :posting_date, :salary_min, :salary_max, "
+                    ":currency_id, :pay_period, :salary_disclosed, "
+                    ":normalized_annual_min_usd, :normalized_annual_max_usd)"
                 ),
                 {
                     "job_id": job_id,
@@ -389,7 +534,33 @@ class JobRepository(AbstractRepository[Any]):
                     "salary_min": job.salary_min,
                     "salary_max": job.salary_max,
                     "currency_id": usd_currency_id,
+                    "pay_period": _ASSUMED_PAY_PERIOD,
                     "salary_disclosed": job.salary_disclosed,
+                    "normalized_annual_min_usd": normalized_annual_min_usd,
+                    "normalized_annual_max_usd": normalized_annual_max_usd,
+                },
+            )
+
+            # Insert the Day 1 salary_history row -- every job gets one on
+            # insert, not just later changes, so the history table's
+            # first entry always reflects what the job actually shipped
+            # with (see normalization/salary_standardization.py's module
+            # docstring for why this table was previously never written).
+            session.execute(
+                text(
+                    "INSERT INTO salary.salary_history "
+                    "(job_id, posting_date, observed_at, salary_min, salary_max, "
+                    "currency_id, pay_period) "
+                    "VALUES (:job_id, :posting_date, now(), :salary_min, :salary_max, "
+                    ":currency_id, :pay_period)"
+                ),
+                {
+                    "job_id": job_id,
+                    "posting_date": p_date,
+                    "salary_min": job.salary_min,
+                    "salary_max": job.salary_max,
+                    "currency_id": usd_currency_id,
+                    "pay_period": _ASSUMED_PAY_PERIOD,
                 },
             )
 
@@ -398,11 +569,27 @@ class JobRepository(AbstractRepository[Any]):
     def save_cleaned_jobs(
         self,
         session: Session,
-        jobs: list[CleanedRemoteOKJob],
+        jobs: list[CleanedJob],
         source_id: int,
         session_id: int | None = None,
     ) -> dict[str, int]:
-        """Batch save CleanedRemoteOKJob records.
+        """Batch save CleanedJob records.
+
+        Each job's persistence runs inside its own ``SAVEPOINT`` (see
+        ``db.transaction.transaction``), NOT directly on the shared
+        session. This matters: without it, a single constraint violation
+        (e.g. a bad salary range) leaves the underlying PostgreSQL
+        transaction aborted, so every subsequent statement in the same
+        batch -- other jobs' inserts, and the final
+        ``finish_scraping_session`` bookkeeping update -- fails with
+        ``InFailedSqlTransaction``, and the whole session then rolls back
+        on exit, silently discarding every job in the batch, including
+        ones that individually succeeded. This was a real, confirmed
+        production incident (a single reversed Remotive salary range
+        caused an entire 18-job run to persist zero rows). Wrapping each
+        job in its own savepoint confines a failure to that one job:
+        the rest of the batch, and the session-level bookkeeping, still
+        commit normally.
 
         Returns:
             Dictionary with keys 'inserted', 'updated', 'unchanged', 'failed'.
@@ -411,13 +598,14 @@ class JobRepository(AbstractRepository[Any]):
 
         for job in jobs:
             try:
-                status = self.save_cleaned_job(
-                    session=session, job=job, source_id=source_id, session_id=session_id
-                )
+                with transaction(session):
+                    status = self.save_cleaned_job(
+                        session=session, job=job, source_id=source_id, session_id=session_id
+                    )
                 counts[status] += 1
             except Exception as exc:  # noqa: BLE001
                 logger.error(
-                    "Failed to persist RemoteOK job {}: {}", job.source_job_id, exc
+                    "Failed to persist job {} (source_id={}): {}", job.source_job_id, source_id, exc
                 )
                 counts["failed"] += 1
 

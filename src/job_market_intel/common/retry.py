@@ -15,15 +15,16 @@ types depending on the HTTP library or wrapper a given scraper uses.
 
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 from loguru import logger
 from tenacity import (
     RetryCallState,
     Retrying,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
 )
 
 T = TypeVar("T")

@@ -15,10 +15,11 @@ means:
 """
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
-from sqlalchemy import Connection, Table, MetaData, text
+from sqlalchemy import Connection, MetaData, Table, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 

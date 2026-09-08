@@ -20,7 +20,13 @@ from pathlib import Path
 
 from loguru import logger
 
-_VALID_LEVELS = frozenset({"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
+VALID_LOG_LEVELS = frozenset({"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
+"""Recognized Loguru severity levels.
+
+Public (Step 15) so ``common.config.Settings`` can validate its
+``log_level`` field against this exact set instead of maintaining a
+second, independently-drifting copy of "what counts as a valid level."
+"""
 
 
 def configure_logging(
@@ -56,10 +62,10 @@ def configure_logging(
             startup, not silently ignored.
     """
     for level_name, level_value in (("console_level", console_level), ("file_level", file_level)):
-        if level_value.upper() not in _VALID_LEVELS:
+        if level_value.upper() not in VALID_LOG_LEVELS:
             raise ValueError(
                 f"{level_name}={level_value!r} is not a valid log level. "
-                f"Choose one of: {sorted(_VALID_LEVELS)}."
+                f"Choose one of: {sorted(VALID_LOG_LEVELS)}."
             )
 
     log_directory = Path(log_dir)
@@ -78,7 +84,10 @@ def configure_logging(
     )
     logger.add(sys.stderr, level=console_level.upper(), format=console_format, colorize=True)
 
-    file_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}"
+    file_format = (
+        "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
+        "{name}:{function}:{line} - {message}"
+    )
     logger.add(
         str(log_file_path),
         level=file_level.upper(),
@@ -90,4 +99,9 @@ def configure_logging(
         diagnose=False,  # never log local variable values in production logs (may contain secrets)
     )
 
-    logger.info("Logging configured. Console level={}, file level={}, file={}", console_level.upper(), file_level.upper(), log_file_path)
+    logger.info(
+        "Logging configured. Console level={}, file level={}, file={}",
+        console_level.upper(),
+        file_level.upper(),
+        log_file_path,
+    )

@@ -105,4 +105,68 @@ def fetch_json(
     try:
         return response.json()
     except ValueError as exc:
-        raise PermanentHTTPError(f"{url} returned a 2xx response that was not valid JSON: {exc}") from exc
+        raise PermanentHTTPError(
+            f"{url} returned a 2xx response that was not valid JSON: {exc}"
+        ) from exc
+
+
+def fetch_html(
+    url: str,
+    *,
+    timeout_seconds: float = 15.0,
+    user_agent: str = DEFAULT_USER_AGENT,
+    extra_headers: dict[str, str] | None = None,
+) -> str:
+    """Perform an HTTP GET request and return the response body as text.
+
+    The HTML-scraping counterpart to ``fetch_json`` above, for sources
+    whose data isn't available as a JSON API and has to be pulled out of
+    rendered HTML instead. Deliberately kept as generic, source-agnostic
+    plumbing here rather than inside any one scraper's own package -
+    "fetch a URL and classify the failure as transient or permanent" is
+    exactly the same problem whether the body ends up parsed as JSON or
+    as HTML, so it belongs in the one shared
+    place any scraper can use, same as ``fetch_json``.
+
+    Unlike ``fetch_json``, this does not attempt to parse the body at all
+    (HTML parsing is BeautifulSoup's job, done by the caller) - it only
+    handles the network request and the transient/permanent error split.
+
+    Args:
+        url: The full URL to request.
+        timeout_seconds: Maximum time to wait for a response before treating
+            the request as failed.
+        user_agent: The ``User-Agent`` header value to send.
+        extra_headers: Any additional headers to merge in. ``Accept:
+            text/html`` is sent by default and does not need to be repeated.
+
+    Returns:
+        The raw response body as a string (``response.text``), ready to
+        hand to ``BeautifulSoup``.
+
+    Raises:
+        TransientHTTPError: On connection errors, timeouts, or HTTP 5xx
+            responses. Callers should retry these.
+        PermanentHTTPError: On HTTP 4xx responses.
+    """
+    headers = {"User-Agent": user_agent, "Accept": "text/html"}
+    if extra_headers:
+        headers.update(extra_headers)
+
+    try:
+        response = requests.get(url, headers=headers, timeout=timeout_seconds)
+    except (requests.ConnectionError, requests.Timeout) as exc:
+        raise TransientHTTPError(f"Network error while requesting {url}: {exc}") from exc
+    except requests.RequestException as exc:
+        raise PermanentHTTPError(f"Unexpected request failure for {url}: {exc}") from exc
+
+    if response.status_code >= 500:
+        raise TransientHTTPError(
+            f"{url} returned server error status {response.status_code}: {response.text[:500]!r}"
+        )
+    if response.status_code >= 400:
+        raise PermanentHTTPError(
+            f"{url} returned client error status {response.status_code}: {response.text[:500]!r}"
+        )
+
+    return response.text

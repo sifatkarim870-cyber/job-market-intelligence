@@ -13,6 +13,7 @@ import argparse
 
 from loguru import logger
 
+from job_market_intel.common.config import get_settings
 from job_market_intel.common.logger import configure_logging
 from job_market_intel.scrapers.remoteok import RemoteOKError, RemoteOKPipeline
 
@@ -31,7 +32,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    configure_logging(log_dir="logs", console_level="INFO", file_level="DEBUG")
+    settings = get_settings()
+    configure_logging(log_dir="logs", console_level=settings.log_level, file_level="DEBUG")
 
     pipeline = RemoteOKPipeline()
     store_db = not args.no_db

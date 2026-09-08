@@ -2,7 +2,8 @@
 ===========================
 
 Automated ETL pipeline for RemoteOK (Phase 2 Steps 11 & 12).
-Orchestrates Fetching -> Parsing -> Batch Validation -> Text Cleaning -> Database Storage & Deduplication.
+Orchestrates Fetching -> Parsing -> Batch Validation -> Text Cleaning ->
+Database Storage & Deduplication.
 """
 
 from __future__ import annotations
@@ -67,7 +68,9 @@ class RemoteOKPipeline:
             repository = JobRepository()
         self.repository = repository
 
-    def run(self, *, store_db: bool = True, session_override: Any | None = None) -> RemoteOKPipelineRunResult:
+    def run(
+        self, *, store_db: bool = True, session_override: Any | None = None
+    ) -> RemoteOKPipelineRunResult:
         """Run the RemoteOK pipeline end-to-end.
 
         Args:

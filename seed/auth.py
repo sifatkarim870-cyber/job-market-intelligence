@@ -32,16 +32,25 @@ logger = get_logger("auth")
 
 ROLES = [
     {"role_name": "admin", "permissions": {"scope": "*"}},
-    {"role_name": "researcher", "permissions": {"scope": ["read:core", "read:ref", "read:analytics"]}},
+    {
+        "role_name": "researcher",
+        "permissions": {"scope": ["read:core", "read:ref", "read:analytics"]},
+    },
     {"role_name": "api_read_only", "permissions": {"scope": ["read:analytics"]}},
-    {"role_name": "scraper_service", "permissions": {"scope": ["write:core", "write:ops", "read:ref"]}},
+    {
+        "role_name": "scraper_service",
+        "permissions": {"scope": ["write:core", "write:ops", "read:ref"]},
+    },
 ]
 
 
 def seed_roles(conn: Connection) -> SeedResult:
     import json
 
-    rows = [{"role_name": r["role_name"], "permissions": json.dumps(r["permissions"])} for r in ROLES]
+    rows = [
+        {"role_name": r["role_name"], "permissions": json.dumps(r["permissions"])}
+        for r in ROLES
+    ]
     return upsert_many(
         conn, schema="auth", table_name="roles", rows=rows, conflict_cols=("role_name",),
     )
@@ -105,5 +114,8 @@ def seed_admin_user(conn: Connection) -> SeedResult:
     print(f"\n[seed.auth] Bootstrap admin created: {admin_email}")
     print(f"[seed.auth] API key (shown ONCE, store securely now): {raw_api_key}")
     if generated:
-        print("[seed.auth] (Set ADMIN_BOOTSTRAP_PASSWORD to control this in future environments.)\n")
+        print(
+            "[seed.auth] (Set ADMIN_BOOTSTRAP_PASSWORD to control this "
+            "in future environments.)\n"
+        )
     return result

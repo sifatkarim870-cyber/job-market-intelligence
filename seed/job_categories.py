@@ -4,6 +4,7 @@ inserted first (pass 1), then children resolve parent_category_id by code
 (pass 2), so the self-referencing FK never fails mid-seed regardless of
 row order in the source list.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Connection, text
@@ -67,12 +68,21 @@ _CHILDREN = [
 
 def seed_job_categories(conn: Connection) -> SeedResult:
     parent_rows = [
-        {"code": code, "label": label, "description": None, "sort_order": i, "parent_category_id": None}
+        {
+            "code": code,
+            "label": label,
+            "description": None,
+            "sort_order": i,
+            "parent_category_id": None,
+        }
         for i, (code, label) in enumerate(_PARENTS, start=1)
     ]
     result = upsert_many(
-        conn, schema="ref", table_name="job_categories",
-        rows=parent_rows, conflict_cols=("code",),
+        conn,
+        schema="ref",
+        table_name="job_categories",
+        rows=parent_rows,
+        conflict_cols=("code",),
     )
 
     parent_ids = {
@@ -90,8 +100,11 @@ def seed_job_categories(conn: Connection) -> SeedResult:
         for i, (code, label, parent_code) in enumerate(_CHILDREN, start=100)
     ]
     child_result = upsert_many(
-        conn, schema="ref", table_name="job_categories",
-        rows=child_rows, conflict_cols=("code",),
+        conn,
+        schema="ref",
+        table_name="job_categories",
+        rows=child_rows,
+        conflict_cols=("code",),
     )
 
     result.inserted += child_result.inserted

@@ -6,13 +6,14 @@ Reads database connection settings from the environment.
 
 This module intentionally owns *only* the database-relevant slice of
 configuration. Step 3 (Configure the Development Environment) established
-the `.env` file and the project's base config-loading convention; Step 14
-later centralizes every other setting (scraper delays, scheduler
-intervals, etc.) that accumulates as hardcoded values while Steps 5-13 are
-built. This module is written to be a drop-in source of truth for the
-database portion of that eventual centralized config, or to be imported
-as-is — either way, nothing outside `db/` should read `DATABASE_URL` (or
-its component parts) directly from `os.environ`.
+the `.env` file and the project's base config-loading convention. Step 15
+(Build Configuration System) confirmed this module — not
+`common.config.Settings` — is the real, load-bearing source of truth for
+database connection settings (it's what `db.engine.get_engine()` actually
+calls), and removed the unused, drifting duplicate fields that had been
+sitting in `common.config.Settings` since Step 3. Nothing outside `db/`
+should read `DATABASE_URL` (or its component parts) directly from
+`os.environ` — go through `get_database_config()` instead.
 
 Supported configuration
 ------------------------
@@ -23,6 +24,15 @@ precedence if both are present.
 
 Pool-tuning environment variables are optional and fall back to
 production-sane defaults explained inline below.
+
+Every environment variable this module reads is listed in
+``KNOWN_ENV_VARS`` below — kept in sync by
+``tests/unit/test_config_env_consistency.py``, a guard test added in Step
+15 after a real bug was found here: this function previously read
+``DB_MAX_OVERFLOW`` while ``.env.example`` (correctly) documented
+``DB_POOL_MAX_OVERFLOW``, so setting the documented variable silently did
+nothing. Fixed below; the guard test exists so a mismatch like that fails
+the test suite instead of failing silently in production.
 """
 
 from __future__ import annotations
@@ -42,6 +52,31 @@ except ImportError:
     # containerized/production environments, real environment variables
     # are injected directly and this import is unnecessary.
     pass
+
+
+KNOWN_ENV_VARS: tuple[str, ...] = (
+    "DATABASE_URL",
+    "DB_HOST",
+    "DB_PORT",
+    "DB_NAME",
+    "DB_USER",
+    "DB_PASSWORD",
+    "DB_POOL_SIZE",
+    "DB_POOL_MAX_OVERFLOW",
+    "DB_POOL_TIMEOUT",
+    "DB_POOL_RECYCLE",
+    "DB_POOL_PRE_PING",
+    "DB_ECHO",
+    "DB_APPLICATION_NAME",
+)
+"""Every environment variable name this module reads, in one place.
+
+This is the single source of truth the Step 15 guard test
+(``tests/unit/test_config_env_consistency.py``) checks against
+``.env.example`` — add a name here whenever you add a new
+``_env_int``/``_env_bool``/``os.getenv`` call below, or the guard test
+will not know to check it.
+"""
 
 
 def _env_int(name: str, default: int) -> int:
@@ -202,10 +237,27 @@ def get_database_config() -> DatabaseConfig:
     return DatabaseConfig(
         url=url,
         pool_size=_env_int("DB_POOL_SIZE", 10),
-        max_overflow=_env_int("DB_MAX_OVERFLOW", 10),
+        # Step 15 fix: this previously read "DB_MAX_OVERFLOW", which did
+        # not match .env.example's documented "DB_POOL_MAX_OVERFLOW" (and
+        # didn't match the DB_POOL_* naming used by every sibling
+        # pool-tuning variable below) — so setting the documented variable
+        # silently had no effect. See KNOWN_ENV_VARS and the module
+        # docstring above.
+        max_overflow=_env_int("DB_POOL_MAX_OVERFLOW", 10),
         pool_timeout=_env_int("DB_POOL_TIMEOUT", 30),
         pool_recycle=_env_int("DB_POOL_RECYCLE", 1800),
         pool_pre_ping=_env_bool("DB_POOL_PRE_PING", True),
         echo=_env_bool("DB_ECHO", False),
         application_name=os.getenv("DB_APPLICATION_NAME", "job_market_intelligence"),
     )
+
+
+if __name__ == "__main__":
+    # Manual sanity check: `uv run python -m job_market_intel.db.config`
+    # Safe to run/print — DatabaseConfig.__repr__ redacts the password.
+    try:
+        cfg = get_database_config()
+    except ConfigurationError as exc:
+        raise SystemExit(f"Database configuration error: {exc}") from exc
+    print("Database configuration loaded successfully:")
+    print(f"  {cfg!r}")

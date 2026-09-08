@@ -45,12 +45,16 @@ class TestRemoteOKSettingsOverrides:
         assert settings.request_timeout_seconds == 99.0
         assert settings.max_retry_attempts == 10
 
-    def test_environment_variable_with_prefix_overrides_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_environment_variable_with_prefix_overrides_default(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setenv("REMOTEOK_REQUEST_TIMEOUT_SECONDS", "42.5")
         settings = RemoteOKSettings()
         assert settings.request_timeout_seconds == 42.5
 
-    def test_unprefixed_environment_variable_is_ignored(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_unprefixed_environment_variable_is_ignored(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # Without the REMOTEOK_ prefix, this must NOT be picked up — this
         # is what keeps every scraper's settings from colliding with each
         # other in the environment.

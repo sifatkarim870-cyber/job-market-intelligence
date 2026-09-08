@@ -16,30 +16,16 @@ What these tests verify, and why each matters:
 
 from __future__ import annotations
 
-from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
 from job_market_intel.validation.remoteok_validator import (
     RemoteOKBatchValidator,
     RemoteOKValidationSettings,
 )
 
-
-def _make_job(job_id: str, **overrides: object) -> RawRemoteOKJob:
-    """Build a minimally valid RawRemoteOKJob, with any field overridable."""
-    defaults: dict[str, object] = {
-        "id": job_id,
-        "position": "Engineer",
-        "company": "Acme",
-        "url": f"https://x.test/{job_id}",
-        "location": "Worldwide",
-        "salary_min": 100000,
-        "salary_max": 150000,
-        "description": "<p>Do engineering things.</p>",
-        "tags": ["python"],
-        "date": "2026-01-15T09:00:00+00:00",
-    }
-    defaults.update(overrides)
-    return RawRemoteOKJob.model_validate(defaults)
-
+# The RawRemoteOKJob factory used below (`make_raw_remoteok_job`) is the
+# shared, root-level fixture in tests/conftest.py; its defaults match what
+# this file used to hand-roll locally (location/salary/description/tags/
+# date all present), so a job built with just `id=...` overridden is still
+# "realistic" for these volume/rate checks.
 
 # A permissive settings instance so tests about OTHER checks don't
 # accidentally also trip the min_expected_jobs threshold at small batch sizes.
@@ -47,9 +33,9 @@ _LENIENT_SETTINGS = RemoteOKValidationSettings(min_expected_jobs=1, max_skip_rat
 
 
 class TestHealthyBatch:
-    def test_healthy_batch_passes_with_no_issues(self) -> None:
+    def test_healthy_batch_passes_with_no_issues(self, make_raw_remoteok_job) -> None:
         raw_jobs = [{"id": str(i)} for i in range(25)]
-        parsed_jobs = [_make_job(str(i)) for i in range(25)]
+        parsed_jobs = [make_raw_remoteok_job(id=str(i)) for i in range(25)]
 
         report = RemoteOKBatchValidator(settings=RemoteOKValidationSettings()).validate(
             raw_jobs, parsed_jobs
@@ -65,10 +51,10 @@ class TestHealthyBatch:
 
 
 class TestVolumeSanity:
-    def test_too_few_parsed_jobs_is_flagged(self) -> None:
+    def test_too_few_parsed_jobs_is_flagged(self, make_raw_remoteok_job) -> None:
         settings = RemoteOKValidationSettings(min_expected_jobs=20, max_skip_rate=0.50)
         raw_jobs = [{"id": str(i)} for i in range(5)]
-        parsed_jobs = [_make_job(str(i)) for i in range(5)]
+        parsed_jobs = [make_raw_remoteok_job(id=str(i)) for i in range(5)]
 
         report = RemoteOKBatchValidator(settings=settings).validate(raw_jobs, parsed_jobs)
 
@@ -82,10 +68,10 @@ class TestVolumeSanity:
         assert any("Zero raw records" in issue for issue in report.issues)
         assert report.skip_rate == 0.0  # must not raise ZeroDivisionError
 
-    def test_exactly_at_minimum_passes_the_volume_check(self) -> None:
+    def test_exactly_at_minimum_passes_the_volume_check(self, make_raw_remoteok_job) -> None:
         settings = RemoteOKValidationSettings(min_expected_jobs=10, max_skip_rate=0.50)
         raw_jobs = [{"id": str(i)} for i in range(10)]
-        parsed_jobs = [_make_job(str(i)) for i in range(10)]
+        parsed_jobs = [make_raw_remoteok_job(id=str(i)) for i in range(10)]
 
         report = RemoteOKBatchValidator(settings=settings).validate(raw_jobs, parsed_jobs)
 
@@ -93,11 +79,11 @@ class TestVolumeSanity:
 
 
 class TestSkipRateSanity:
-    def test_high_skip_rate_is_flagged(self) -> None:
+    def test_high_skip_rate_is_flagged(self, make_raw_remoteok_job) -> None:
         settings = RemoteOKValidationSettings(min_expected_jobs=1, max_skip_rate=0.10)
         # 10 raw, only 5 parsed -> 50% skip rate, well above the 10% max.
         raw_jobs = [{"id": str(i)} for i in range(10)]
-        parsed_jobs = [_make_job(str(i)) for i in range(5)]
+        parsed_jobs = [make_raw_remoteok_job(id=str(i)) for i in range(5)]
 
         report = RemoteOKBatchValidator(settings=settings).validate(raw_jobs, parsed_jobs)
 
@@ -105,10 +91,10 @@ class TestSkipRateSanity:
         assert report.skip_rate == 0.5
         assert any("Skip rate" in issue for issue in report.issues)
 
-    def test_skip_rate_within_threshold_does_not_flag(self) -> None:
+    def test_skip_rate_within_threshold_does_not_flag(self, make_raw_remoteok_job) -> None:
         settings = RemoteOKValidationSettings(min_expected_jobs=1, max_skip_rate=0.20)
         raw_jobs = [{"id": str(i)} for i in range(10)]
-        parsed_jobs = [_make_job(str(i)) for i in range(9)]  # 10% skip rate
+        parsed_jobs = [make_raw_remoteok_job(id=str(i)) for i in range(9)]  # 10% skip rate
 
         report = RemoteOKBatchValidator(settings=settings).validate(raw_jobs, parsed_jobs)
 
@@ -116,8 +102,12 @@ class TestSkipRateSanity:
 
 
 class TestDuplicateDetection:
-    def test_duplicate_source_job_ids_are_detected_and_named(self) -> None:
-        parsed_jobs = [_make_job("1"), _make_job("2"), _make_job("1")]  # "1" appears twice
+    def test_duplicate_source_job_ids_are_detected_and_named(self, make_raw_remoteok_job) -> None:
+        parsed_jobs = [
+            make_raw_remoteok_job(id="1"),
+            make_raw_remoteok_job(id="2"),
+            make_raw_remoteok_job(id="1"),  # "1" appears twice
+        ]
         raw_jobs = [{"id": "1"}, {"id": "2"}, {"id": "1"}]
 
         report = RemoteOKBatchValidator(settings=_LENIENT_SETTINGS).validate(
@@ -128,8 +118,8 @@ class TestDuplicateDetection:
         assert report.duplicate_source_job_ids == ["1"]
         assert any("duplicate source_job_id" in issue for issue in report.issues)
 
-    def test_no_duplicates_in_normal_batch(self) -> None:
-        parsed_jobs = [_make_job(str(i)) for i in range(5)]
+    def test_no_duplicates_in_normal_batch(self, make_raw_remoteok_job) -> None:
+        parsed_jobs = [make_raw_remoteok_job(id=str(i)) for i in range(5)]
         raw_jobs = [{"id": str(i)} for i in range(5)]
 
         report = RemoteOKBatchValidator(settings=_LENIENT_SETTINGS).validate(
@@ -140,10 +130,10 @@ class TestDuplicateDetection:
 
 
 class TestMissingFieldRates:
-    def test_missing_field_rates_computed_correctly(self) -> None:
+    def test_missing_field_rates_computed_correctly(self, make_raw_remoteok_job) -> None:
         parsed_jobs = [
-            _make_job("1", location=None, salary_min=None, salary_max=None),
-            _make_job("2"),  # has everything
+            make_raw_remoteok_job(id="1", location=None, salary_min=None, salary_max=None),
+            make_raw_remoteok_job(id="2"),  # has everything
         ]
         raw_jobs = [{"id": "1"}, {"id": "2"}]
 
@@ -162,8 +152,8 @@ class TestMissingFieldRates:
 
         assert all(rate == 0.0 for rate in report.missing_field_rates.values())
 
-    def test_empty_tags_list_counts_as_missing(self) -> None:
-        parsed_jobs = [_make_job("1", tags=[])]
+    def test_empty_tags_list_counts_as_missing(self, make_raw_remoteok_job) -> None:
+        parsed_jobs = [make_raw_remoteok_job(id="1", tags=[])]
         report = RemoteOKBatchValidator(settings=_LENIENT_SETTINGS).validate(
             [{"id": "1"}], parsed_jobs
         )

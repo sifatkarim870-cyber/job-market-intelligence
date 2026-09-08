@@ -75,7 +75,10 @@ def main() -> None:
         total_jobs = table_counts["core.jobs"]
         disclosed_jobs = len(salary_df)
         disclosure_rate = (disclosed_jobs / total_jobs * 100) if total_jobs else 0.0
-        print(f"  Salary Disclosure Rate: {disclosure_rate:.1f}% ({disclosed_jobs}/{total_jobs} jobs)")
+        print(
+            f"  Salary Disclosure Rate: {disclosure_rate:.1f}% "
+            f"({disclosed_jobs}/{total_jobs} jobs)"
+        )
 
         if not salary_df.empty:
             stats_min = salary_df["salary_min"].describe()
@@ -102,12 +105,14 @@ def main() -> None:
         print("\n⭐ DATA QUALITY SCORE DISTRIBUTION:")
         print("-" * 50)
         if not quality_df.empty:
-            print(quality_df["data_quality_score"].describe().to_frame(name="Quality Score").to_string())
+            quality_stats = quality_df["data_quality_score"].describe()
+            print(quality_stats.to_frame(name="Quality Score").to_string())
 
         # 6. Scraping Session Audit
         sessions_df = pd.read_sql(
             text(
-                "SELECT session_id, started_at, finished_at, status, jobs_found, jobs_new, jobs_updated "
+                "SELECT session_id, started_at, finished_at, status, "
+                "jobs_found, jobs_new, jobs_updated "
                 "FROM ops.scraping_sessions ORDER BY session_id DESC LIMIT 5"
             ),
             con=session.connection(),

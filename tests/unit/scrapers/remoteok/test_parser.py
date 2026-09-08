@@ -19,7 +19,9 @@ from pathlib import Path
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
 from job_market_intel.scrapers.remoteok.parser import RemoteOKParser
 
-FIXTURE_PATH = Path(__file__).resolve().parents[3] / "fixtures" / "remoteok" / "sample_response.json"
+FIXTURE_PATH = (
+    Path(__file__).resolve().parents[3] / "fixtures" / "remoteok" / "sample_response.json"
+)
 
 
 class TestParseJobsBasics:
@@ -38,7 +40,11 @@ class TestParseJobsBasics:
     def test_malformed_record_is_skipped_not_raised(self) -> None:
         raw_jobs = [
             {"id": "1", "position": "Engineer", "company": "Acme", "url": "https://x.test/1"},
-            {"id": "2", "company": "Globex", "url": "https://x.test/2"},  # missing required "position"
+            {
+                "id": "2",
+                "company": "Globex",
+                "url": "https://x.test/2",
+            },  # missing required "position"
             {"id": "3", "position": "Analyst", "company": "Initech", "url": "https://x.test/3"},
         ]
         # Must not raise, even though record 2 is malformed.
@@ -85,7 +91,9 @@ class TestParseJobsAgainstFixture:
 
     def test_fixture_produces_expected_valid_and_skipped_counts(self) -> None:
         job_records = self._load_fixture_job_records()
-        assert len(job_records) == 5, "Fixture should contain 5 job-shaped entries (after metadata removed)"
+        assert len(job_records) == 5, (
+            "Fixture should contain 5 job-shaped entries (after metadata removed)"
+        )
 
         result = RemoteOKParser().parse_jobs(job_records)
 

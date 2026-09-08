@@ -1,4 +1,5 @@
 """Seeds ref.education_levels with ordinal_rank for sortability."""
+
 from __future__ import annotations
 
 from sqlalchemy import Connection
@@ -12,12 +13,20 @@ EDUCATION_LEVELS = [
     {"code": "bachelor", "label": "Bachelor's Degree", "description": None, "ordinal_rank": 3},
     {"code": "master", "label": "Master's Degree", "description": None, "ordinal_rank": 4},
     {"code": "phd", "label": "PhD / Doctorate", "description": None, "ordinal_rank": 5},
-    {"code": "professional_certification", "label": "Professional Certification", "description": "Vocational/industry certification in lieu of a degree.", "ordinal_rank": 3},
+    {
+        "code": "professional_certification",
+        "label": "Professional Certification",
+        "description": "Vocational/industry certification in lieu of a degree.",
+        "ordinal_rank": 3,
+    },
 ]
 
 
 def seed_education_levels(conn: Connection) -> SeedResult:
     return upsert_many(
-        conn, schema="ref", table_name="education_levels",
-        rows=EDUCATION_LEVELS, conflict_cols=("code",),
+        conn,
+        schema="ref",
+        table_name="education_levels",
+        rows=EDUCATION_LEVELS,
+        conflict_cols=("code",),
     )

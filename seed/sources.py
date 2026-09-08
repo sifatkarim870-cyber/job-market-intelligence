@@ -1,7 +1,8 @@
 """
-Seeds ref.sources. Only RemoteOK is marked is_active per the workflow
-(other sources register themselves as Phase 4 adds them), but every
-source the roadmap names is pre-declared with is_active=False so:
+Seeds ref.sources. A source is marked is_active=True once its scraper is
+built and verified (RemoteOK: Phase 2; We Work Remotely: Step 17;
+Remotive: Step 18) — every source the roadmap names is pre-declared here
+regardless of is_active so:
   (a) FK targets exist the moment a scraper module needs them,
   (b) `source_type` vocabulary is fixed up front,
   (c) enabling a new source in production is a one-row UPDATE, not a
@@ -16,8 +17,8 @@ from .base import SeedResult, upsert_many
 # (code, name, type, base_url, trust_score, is_active)
 _SOURCES = [
     ("remoteok", "RemoteOK", "job_board", "https://remoteok.com", 0.75, True),
-    ("weworkremotely", "We Work Remotely", "job_board", "https://weworkremotely.com", 0.75, False),
-    ("remotive", "Remotive", "job_board", "https://remotive.com", 0.70, False),
+    ("weworkremotely", "We Work Remotely", "job_board", "https://weworkremotely.com", 0.75, True),
+    ("remotive", "Remotive", "job_board", "https://remotive.com", 0.70, True),
     ("indeed", "Indeed", "aggregator", "https://indeed.com", 0.80, False),
     ("linkedin", "LinkedIn", "job_board", "https://linkedin.com", 0.85, False),
     ("glassdoor", "Glassdoor", "job_board", "https://glassdoor.com", 0.75, False),

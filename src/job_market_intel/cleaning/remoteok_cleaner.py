@@ -3,22 +3,29 @@
 Where this fits: ``scrapers/remoteok/parser.py`` (Step 6) validates that a
 record has the right *shape* (required fields present, right types). This
 module takes that validated-but-still-messy ``RawRemoteOKJob`` and produces
-a ``CleanedRemoteOKJob`` — text fixed (encoding, HTML entities, HTML tags,
-whitespace), obvious data-entry mistakes repaired (swapped salary bounds),
-and a couple of fields pre-derived that the database schema itself expects
-(``salary_disclosed``, ``word_count``).
+a ``CleanedJob`` (``cleaning/common.py``) — text fixed (encoding, HTML
+entities, HTML tags, whitespace), obvious data-entry mistakes repaired
+(swapped salary bounds), and a couple of fields pre-derived that the
+database schema itself expects (``salary_disclosed``, ``word_count``).
 
-What this deliberately does NOT do — these are later, separate steps, and
-mixing them in here would blur boundaries the rest of this codebase has
-been careful to keep sharp:
+``CleanedJob`` is the source-agnostic output contract every scraper's
+cleaner is expected to produce (see ``cleaning/common.py`` for why); this
+module is the RemoteOK-specific logic that gets a ``RawRemoteOKJob`` there.
+RemoteOK calls its skill/tag list ``tags`` — this module is the boundary
+where that gets mapped onto ``CleanedJob.skills``, matching the schema's
+own vocabulary (``ref.skills``).
+
+What this module deliberately does NOT do — these are later, separate
+steps, and mixing them in here would blur boundaries the rest of this
+codebase has been careful to keep sharp:
     - Resolve ``company_name`` to a canonical ``core.companies`` row
-      (Step 23 — company resolution needs fuzzy matching across MULTIPLE
+      (Step 25 — company resolution needs fuzzy matching across MULTIPLE
       sources, which doesn't exist yet with only RemoteOK live).
-    - Resolve ``location_cleaned`` to a ``ref.locations`` row (Step 26 —
+    - Resolve ``location_cleaned`` to a ``ref.locations`` row (Step 28 —
       geographic normalization).
     - Extract structured skills from ``tags``/``description_clean``
-      (Step 24 — skill extraction).
-    - Convert/normalize currency (Step 25 — RemoteOK salaries are already
+      (Step 26 — skill extraction).
+    - Convert/normalize currency (Step 27 — RemoteOK salaries are already
       USD, but the general currency-conversion machinery is a separate
       step for when non-USD sources are added).
     - Compute ``content_hash`` for change detection (Step 9/10a — that's
@@ -32,102 +39,22 @@ what the data *means*.
 
 from __future__ import annotations
 
-from datetime import datetime
-
 from loguru import logger
-from pydantic import BaseModel
 
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
 
+from .common import CleanedJob
 from .text_utils import clean_html_text, clean_plain_text
 
 
-class CleanedRemoteOKJob(BaseModel):
-    """A RemoteOK job record after text cleaning and light standardization.
-
-    Attributes:
-        source_job_id: Unchanged from ``RawRemoteOKJob`` — this is an
-            identifier, not display text, so there is nothing to clean.
-        job_title: Cleaned (entities decoded, mojibake fixed, whitespace
-            normalized).
-        company_name: Cleaned the same way. Still the raw employer name as
-            RemoteOK spells it — canonical company resolution is Step 23.
-        company_logo_url: Unchanged (a URL is either usable as-is or not;
-            "cleaning" doesn't apply).
-        tags: Each tag cleaned, lowercased (skills/tag matching downstream
-            is expected to be case-insensitive), stripped of empties, and
-            de-duplicated while preserving first-seen order.
-        location_cleaned: The raw location string with text cleaned and a
-            RemoteOK-specific quirk fixed: a stray trailing comma left
-            over when RemoteOK omits the country half of a "City, Country"
-            pair (observed live as e.g. ``"Success,"``, ``"Mangalagiri,"``).
-            Still a free-text string — resolving this to ``ref.locations``
-            is Step 26.
-        salary_min: Cleaned salary lower bound. Swapped with
-            ``salary_max`` if the source had them reversed (see
-            ``_repair_swapped_salary_bounds``); otherwise unchanged.
-        salary_max: See ``salary_min``.
-        salary_disclosed: ``True`` if either salary bound is present.
-            Pre-derived here because it maps directly onto
-            ``salary.job_salaries.salary_disclosed`` in the schema, and
-            computing it once, consistently, beats every downstream
-            consumer re-deriving "is salary present" from two nullable
-            fields.
-        description_clean: The HTML description with tags stripped,
-            entities decoded, mojibake fixed, and whitespace normalized.
-            Maps onto ``core.job_descriptions.description_clean``.
-        word_count: Word count of ``description_clean``. Maps onto
-            ``core.job_descriptions.word_count``.
-        apply_url: Unchanged.
-        original_url: Unchanged.
-        posting_date: Unchanged — a missing/unparseable date is not
-            something text-cleaning can recover; it stays ``None`` if the
-            parser already couldn't determine it.
-        data_quality_score: A 0.0-1.0 completeness score — maps directly
-            onto ``core.jobs.data_quality_score`` in the schema, described
-            there as a "completeness/confidence score, useful ML/QA
-            feature." Deliberately measures COMPLETENESS only (is a
-            salary present? a location? tags? a substantial description?)
-            — not an attempt to detect spam/junk listings by their
-            content. RemoteOK is known to mix low-value promotional
-            listings in among real postings, and those listings do tend
-            to score low here as a natural side effect of being sparse —
-            but that's an observed correlation, not the design goal.
-            Building an actual junk-content classifier would mean writing
-            rules fitted to one source's quirks with no second source yet
-            to check them against; that's explicitly deferred to Phase 5,
-            once there's enough cross-source data to calibrate against
-            without just guessing.
-        raw_payload: Carried forward unchanged from the raw record, per
-            the platform's "never discard original source data" principle
-            (mirrors ``jobs.raw_html_ref`` in the schema design).
-    """
-
-    source_job_id: str
-    job_title: str
-    company_name: str
-    company_logo_url: str | None
-    tags: list[str]
-    location_cleaned: str | None
-    salary_min: int | None
-    salary_max: int | None
-    salary_disclosed: bool
-    description_clean: str | None
-    word_count: int
-    apply_url: str | None
-    original_url: str
-    posting_date: datetime | None
-    data_quality_score: float
-    raw_payload: dict
-
-
 def _clean_tags(raw_tags: list[str]) -> list[str]:
-    """Clean, lowercase, and de-duplicate a list of tags, preserving first-seen order.
+    """Clean, lowercase, and de-duplicate RemoteOK's raw tags, preserving first-seen order.
 
-    Lowercasing is applied because tag/skill matching downstream (Step 24)
+    Lowercasing is applied because skill/tag matching downstream (Step 26)
     is expected to be case-insensitive, matching ``ref.skills.normalized_skill_name``'s
     own lowercased convention in the schema. The original casing is not
-    lost — it still lives in ``raw_payload``.
+    lost — it still lives in ``raw_payload``. The result of this function
+    becomes ``CleanedJob.skills``.
     """
     seen: set[str] = set()
     cleaned: list[str] = []
@@ -199,19 +126,18 @@ def _compute_data_quality_score(
     *,
     salary_disclosed: bool,
     location_cleaned: str | None,
-    tags: list[str],
+    skills: list[str],
     word_count: int,
 ) -> float:
     """Compute a 0.0-1.0 completeness score from already-cleaned fields.
 
     Deliberately measures completeness only — see the
-    ``data_quality_score`` field docstring on ``CleanedRemoteOKJob`` for
-    why this is not, and should not become, a spam/junk-content
-    classifier. Four equally-weighted signals, each either present or
-    not:
+    ``data_quality_score`` field docstring on ``CleanedJob`` for why this
+    is not, and should not become, a spam/junk-content classifier. Four
+    equally-weighted signals, each either present or not:
         - Is a salary disclosed?
         - Is a location specified?
-        - Are there any tags?
+        - Are there any skills/tags?
         - Is the description substantial (see
           ``_SUBSTANTIAL_DESCRIPTION_WORD_COUNT``) rather than empty or
           a single sentence?
@@ -223,39 +149,39 @@ def _compute_data_quality_score(
     signals = [
         salary_disclosed,
         location_cleaned is not None,
-        len(tags) > 0,
+        len(skills) > 0,
         word_count >= _SUBSTANTIAL_DESCRIPTION_WORD_COUNT,
     ]
     return round(sum(signals) / len(signals), 2)
 
 
 class RemoteOKCleaner:
-    """Cleans a batch of validated RemoteOK records into standardized records."""
+    """Cleans a batch of validated RemoteOK records into CleanedJob records."""
 
-    def clean_job(self, raw_job: RawRemoteOKJob) -> CleanedRemoteOKJob:
+    def clean_job(self, raw_job: RawRemoteOKJob) -> CleanedJob:
         """Clean a single validated RemoteOK job record.
 
         Args:
             raw_job: A ``RawRemoteOKJob`` produced by ``RemoteOKParser``.
 
         Returns:
-            The corresponding ``CleanedRemoteOKJob``.
+            The corresponding ``CleanedJob``.
         """
         salary_min, salary_max = _repair_swapped_salary_bounds(
             raw_job.salary_min, raw_job.salary_max, source_job_id=raw_job.source_job_id
         )
         description_clean = clean_html_text(raw_job.description_raw)
         location_cleaned = _clean_location(raw_job.location_raw)
-        tags = _clean_tags(raw_job.tags)
+        skills = _clean_tags(raw_job.tags)
         salary_disclosed = salary_min is not None or salary_max is not None
         word_count = len(description_clean.split()) if description_clean else 0
 
-        return CleanedRemoteOKJob(
+        return CleanedJob(
             source_job_id=raw_job.source_job_id,
             job_title=clean_plain_text(raw_job.job_title) or raw_job.job_title,
             company_name=clean_plain_text(raw_job.company_name) or raw_job.company_name,
             company_logo_url=raw_job.company_logo_url,
-            tags=tags,
+            skills=skills,
             location_cleaned=location_cleaned,
             salary_min=salary_min,
             salary_max=salary_max,
@@ -268,13 +194,13 @@ class RemoteOKCleaner:
             data_quality_score=_compute_data_quality_score(
                 salary_disclosed=salary_disclosed,
                 location_cleaned=location_cleaned,
-                tags=tags,
+                skills=skills,
                 word_count=word_count,
             ),
             raw_payload=raw_job.raw_payload,
         )
 
-    def clean_jobs(self, raw_jobs: list[RawRemoteOKJob]) -> list[CleanedRemoteOKJob]:
+    def clean_jobs(self, raw_jobs: list[RawRemoteOKJob]) -> list[CleanedJob]:
         """Clean a batch of validated RemoteOK job records.
 
         Mirrors ``RemoteOKParser.parse_jobs``'s skip-don't-crash philosophy:
@@ -290,7 +216,7 @@ class RemoteOKCleaner:
             Cleaned records. May be shorter than ``raw_jobs`` if any
             individual record failed to clean (logged when this happens).
         """
-        cleaned_jobs: list[CleanedRemoteOKJob] = []
+        cleaned_jobs: list[CleanedJob] = []
         for raw_job in raw_jobs:
             try:
                 cleaned_jobs.append(self.clean_job(raw_job))

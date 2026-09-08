@@ -74,7 +74,9 @@ class TestConfigureLoggingActuallyLogs:
         assert "this is a distinctive test log message: xyz123" in content
 
     def test_debug_message_below_console_level_still_reaches_file(self, tmp_path: Path) -> None:
-        """file_level defaults to DEBUG even when console_level is INFO, so nothing is lost from the file."""
+        """file_level defaults to DEBUG even when console_level is INFO,
+        so nothing is lost from the file.
+        """
         configure_logging(log_dir=tmp_path, console_level="INFO", file_level="DEBUG")
         logger.debug("a debug-level message that should still land in the file")
         logger.complete()

@@ -83,6 +83,7 @@ ignore = []
 quote-style = "double"
 
 [tool.mypy]
+plugins = ["pydantic.mypy"]
 python_version = "3.11"
 mypy_path = "src"
 explicit_package_bases = true
@@ -105,3 +106,6 @@ minversion = "8.0"
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-ra -q --cov=src/job_market_intel --cov-report=term-missing"
+markers = [
+    "requires_live_db: needs TEST_DATABASE_URL pointing at a live, schema-applied PostgreSQL instance (auto-skipped otherwise; see tests/integration/conftest.py).",
+]

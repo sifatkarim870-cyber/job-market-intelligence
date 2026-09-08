@@ -5,6 +5,7 @@ to have real match targets. `normalized_skill_name` is computed via
 utils.normalize_name; `aliases` captures common abbreviations so early
 rule-based extraction (Step 24) has something to match against immediately.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Connection, text
@@ -180,7 +181,9 @@ _SKILLS: list[tuple[str, str, list[str], bool]] = [
 def seed_skills(conn: Connection) -> SeedResult:
     category_ids = {
         r.category_name: r.skill_category_id
-        for r in conn.execute(text("SELECT category_name, skill_category_id FROM ref.skill_categories"))
+        for r in conn.execute(
+            text("SELECT category_name, skill_category_id FROM ref.skill_categories")
+        )
     }
     rows = []
     for name, category, aliases, is_tech in _SKILLS:
@@ -195,6 +198,9 @@ def seed_skills(conn: Connection) -> SeedResult:
             }
         )
     return upsert_many(
-        conn, schema="ref", table_name="skills",
-        rows=rows, conflict_cols=("normalized_skill_name",),
+        conn,
+        schema="ref",
+        table_name="skills",
+        rows=rows,
+        conflict_cols=("normalized_skill_name",),
     )

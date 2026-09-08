@@ -7,12 +7,17 @@ Checks performed:
     1. Python version meets the project's minimum (>=3.11).
     2. Required top-level directories exist.
     3. `.env` exists (warns, does not fail, if missing).
-    4. Base configuration loads and validates successfully
+    4. App-level configuration loads and validates
        (job_market_intel.common.config.get_settings()).
+    5. Database configuration loads and validates
+       (job_market_intel.db.config.get_database_config()) — checked
+       separately from (4) since Step 15, because database settings are
+       not part of `common.config.Settings`; see that module's docstring.
 
-This script intentionally does NOT attempt a real database connection —
-that belongs to Step 4 (Build the Database Interface), once the DB layer
-exists. It only confirms the *environment* is sound.
+This script intentionally does NOT attempt a real database *connection* —
+it only confirms the DSN/pool settings are present and well-formed
+(the same validation `db.engine.get_engine()` relies on), not that
+PostgreSQL is actually reachable.
 
 Usage:
     uv run python scripts/verify_env.py
@@ -78,19 +83,41 @@ def main() -> int:
     else:
         print("  [WARN]  .env not found — copy .env.example to .env and fill in values.")
 
-    # 4. Configuration loads
+    # 4. App-level configuration loads
     print("\n  Configuration:")
     try:
         from job_market_intel.common.config import get_settings
 
         settings = get_settings()
-        check("Base configuration loads and validates", True, f"app_env={settings.app_env}")
+        check(
+            "App configuration loads and validates",
+            True,
+            f"app_env={settings.app_env}, log_level={settings.log_level}",
+        )
     except SystemExit as exc:
-        check("Base configuration loads and validates", False, str(exc).splitlines()[0])
+        check("App configuration loads and validates", False, str(exc).splitlines()[0])
         all_ok = False
     except Exception as exc:  # noqa: BLE001 — top-level diagnostic script
-        check("Base configuration loads and validates", False, f"unexpected error: {exc}")
+        check("App configuration loads and validates", False, f"unexpected error: {exc}")
         all_ok = False
+
+    # 5. Database configuration loads (DSN/pool settings only — no connection attempt)
+    try:
+        from job_market_intel.db.config import get_database_config
+        from job_market_intel.db.exceptions import ConfigurationError
+
+        db_cfg = get_database_config()
+        all_ok &= check(
+            "Database configuration loads and validates",
+            True,
+            f"pool_size={db_cfg.pool_size}, max_overflow={db_cfg.max_overflow}",
+        )
+    except ConfigurationError as exc:
+        all_ok &= check("Database configuration loads and validates", False, str(exc))
+    except Exception as exc:  # noqa: BLE001 — top-level diagnostic script
+        all_ok &= check(
+            "Database configuration loads and validates", False, f"unexpected error: {exc}"
+        )
 
     print()
     if all_ok:

@@ -13,7 +13,10 @@ from __future__ import annotations
 
 
 class RemoteOKError(Exception):
-    """Base class for all RemoteOK scraper errors. Catch this to handle any RemoteOK failure generically."""
+    """Base class for all RemoteOK scraper errors.
+
+    Catch this to handle any RemoteOK failure generically.
+    """
 
 
 class RemoteOKFetchError(RemoteOKError):

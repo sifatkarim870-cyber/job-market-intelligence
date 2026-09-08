@@ -20,18 +20,15 @@ skipped (not failed) when it's unset, so the suite still runs in
 environments without a database available. TEST_DATABASE_URL must point
 at a schema-applied, disposable database — never DATABASE_URL from the
 application's own .env. Nothing here targets production data.
+
+The requires_live_db marker/skip behavior and the `conn` fixture (a
+transactional, unseeded Connection) are both centralized in
+tests/integration/conftest.py — see that file's module docstring for why.
 """
 
 from __future__ import annotations
 
-import os
-
 import pytest
-from sqlalchemy import text
-
-from job_market_intel.db import engine as engine_module
-from job_market_intel.db.session import get_session
-
 from seed.auth import seed_admin_user, seed_roles
 from seed.benefits import seed_benefits
 from seed.cities import seed_cities
@@ -47,47 +44,30 @@ from seed.remote_work_types import seed_remote_work_types
 from seed.skill_categories import seed_skill_categories
 from seed.skills import seed_skills
 from seed.sources import seed_sources
+from sqlalchemy import text
 
-TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
-
-requires_live_db = pytest.mark.skipif(
-    not TEST_DATABASE_URL,
-    reason="TEST_DATABASE_URL not set; skipping tests that need a live, schema-applied PostgreSQL instance.",
-)
-
-pytestmark = requires_live_db  # every test in this file needs real Postgres — seed logic is DB-specific SQL (ON CONFLICT, xmax), unlike test_database.py's engine/session behavior which could use sqlite.
-
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture()
-def conn():
-    """
-    One connection, one transaction, per test. Rolled back on teardown so
-    every test is isolated and leaves zero trace in TEST_DATABASE_URL —
-    reuses Step 4's own engine wiring rather than building a second,
-    parallel connection path.
-    """
-    os.environ["DATABASE_URL"] = TEST_DATABASE_URL or ""
-    engine_module.dispose_engine()
-    engine = engine_module.get_engine()
-
-    connection = engine.connect()
-    trans = connection.begin()
-    yield connection
-    trans.rollback()
-    connection.close()
-    engine_module.dispose_engine()
+# every test in this file needs real Postgres — seed logic is DB-specific
+# SQL (ON CONFLICT, xmax), unlike test_database.py's engine/session
+# behavior which could use sqlite.
+pytestmark = pytest.mark.requires_live_db
 
 
 ORDERED_STEPS = [
-    seed_currencies, seed_countries, seed_regions, seed_cities,
-    seed_remote_work_types, seed_employment_types, seed_experience_levels,
-    seed_education_levels, seed_job_categories, seed_skill_categories,
-    seed_skills, seed_benefits, seed_languages, seed_sources, seed_roles,
+    seed_currencies,
+    seed_countries,
+    seed_regions,
+    seed_cities,
+    seed_remote_work_types,
+    seed_employment_types,
+    seed_experience_levels,
+    seed_education_levels,
+    seed_job_categories,
+    seed_skill_categories,
+    seed_skills,
+    seed_benefits,
+    seed_languages,
+    seed_sources,
+    seed_roles,
 ]
 
 
@@ -209,7 +189,8 @@ class TestReferentialIntegrity:
             text(
                 "SELECT count(*) FROM ref.job_categories c "
                 "WHERE c.parent_category_id IS NOT NULL "
-                "AND NOT EXISTS (SELECT 1 FROM ref.job_categories p WHERE p.job_category_id = c.parent_category_id)"
+                "AND NOT EXISTS (SELECT 1 FROM ref.job_categories p "
+                "WHERE p.job_category_id = c.parent_category_id)"
             )
         ).scalar_one()
         assert orphans == 0
@@ -224,7 +205,10 @@ class TestDuplicatePrevention:
     def test_no_duplicate_currency_codes(self, conn):
         seed_currencies(conn)
         dupes = conn.execute(
-            text("SELECT iso_code, count(*) FROM ref.currencies GROUP BY iso_code HAVING count(*) > 1")
+            text(
+                "SELECT iso_code, count(*) FROM ref.currencies "
+                "GROUP BY iso_code HAVING count(*) > 1"
+            )
         ).all()
         assert dupes == []
 

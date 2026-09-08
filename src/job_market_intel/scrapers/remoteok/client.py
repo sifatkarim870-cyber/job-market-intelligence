@@ -69,15 +69,16 @@ class RemoteOKClient:
             )
         except TransientHTTPError as exc:
             raise RemoteOKFetchError(
-                f"Could not reach RemoteOK after {self._settings.max_retry_attempts} attempts: {exc}"
+                f"Could not reach RemoteOK after "
+                f"{self._settings.max_retry_attempts} attempts: {exc}"
             ) from exc
         except PermanentHTTPError as exc:
             raise RemoteOKFetchError(f"RemoteOK request failed permanently: {exc}") from exc
 
         if not isinstance(raw_response, list):
             raise RemoteOKResponseError(
-                f"Expected RemoteOK's response to be a JSON list, got {type(raw_response).__name__} instead. "
-                "The feed's shape may have changed."
+                f"Expected RemoteOK's response to be a JSON list, got "
+                f"{type(raw_response).__name__} instead. The feed's shape may have changed."
             )
 
         job_records = [entry for entry in raw_response if isinstance(entry, dict) and "id" in entry]
