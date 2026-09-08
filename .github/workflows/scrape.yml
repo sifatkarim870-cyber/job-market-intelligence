@@ -1,0 +1,96 @@
+name: Scheduled scraping
+
+# Runs each scraper independently on a schedule. This replaces the
+# in-process APScheduler (src/job_market_intel/scheduler/) for production
+# use: instead of one long-lived process on a machine that has to stay
+# on, GitHub spins up a fresh runner per job, runs one scraper script,
+# then tears the runner down. scheduler/ can stay in the repo for local
+# dev convenience, but nothing here depends on it.
+#
+# All three sources share one interval (every 12 hours) rather than
+# separate per-source schedules — this project's stated principle is to
+# avoid unnecessary abstraction until something concrete needs it, and
+# nothing currently does. Remotive's own scraper config already assumed
+# a 12-hour interval (see scrapers/remotive/config.py) and documents a
+# ceiling of 4 requests/day; twice a day stays well under that. WWR's
+# RSS feed and RemoteOK's public API have no documented rate ceiling at
+# this frequency either. Change the cron lines below if you later want
+# different cadences per source — each job is independent.
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"   # every 12 hours, on the hour (00:00 and 12:00 UTC)
+  workflow_dispatch: {}       # lets you trigger any/all jobs manually from the Actions tab
+
+jobs:
+  remoteok:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run RemoteOK scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python scripts/run_remoteok_scraper.py
+
+  weworkremotely:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run We Work Remotely scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python scripts/run_weworkremotely_scraper.py
+
+  remotive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run Remotive scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python scripts/run_remotive_scraper.py
