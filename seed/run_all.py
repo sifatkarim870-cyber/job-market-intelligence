@@ -21,6 +21,7 @@ from .employment_types import seed_employment_types
 from .experience_levels import seed_experience_levels
 from .job_categories import seed_job_categories
 from .languages import seed_languages
+from .normalized_job_titles import seed_normalized_job_titles
 from .regions import seed_regions
 from .remote_work_types import seed_remote_work_types
 from .skill_categories import seed_skill_categories
@@ -39,6 +40,8 @@ SEED_STEPS = [
     ("remote_work_types", seed_remote_work_types),
     ("employment_types", seed_employment_types),
     ("experience_levels", seed_experience_levels),
+    # needs experience_levels seeded first (seniority_hint FK)
+    ("normalized_job_titles", seed_normalized_job_titles),
     ("education_levels", seed_education_levels),
     ("job_categories", seed_job_categories),
     ("skill_categories", seed_skill_categories),

@@ -72,7 +72,11 @@ DEFAULT_PRIORITY = 100
 # so both the quoted and unquoted forms are matched here.
 _IDENT = r'(?:"[^"]+"|\S+)'
 TABLE_DATA_RE = re.compile(
-    r'^(?P<id>\d+);\s+\d+\s+\d+\s+TABLE DATA\s+' + _IDENT + r'\s+(?P<table_raw>' + _IDENT + r')\s+\S+\s*$'
+    r"^(?P<id>\d+);\s+\d+\s+\d+\s+TABLE DATA\s+"
+    + _IDENT
+    + r"\s+(?P<table_raw>"
+    + _IDENT
+    + r")\s+\S+\s*$"
 )
 
 
@@ -92,7 +96,6 @@ def priority_for(table_name: str) -> int:
 def reorder(lines: list[str]) -> list[str]:
     header: list[str] = []
     table_data_entries: list[tuple[int, int, str]] = []  # (priority, original_index, line)
-    trailer_start = None
 
     # Header block: everything up to and including the "Selected TOC
     # Entries:" marker line (or the first real entry, whichever comes
@@ -134,7 +137,7 @@ def detect_encoding(path: str) -> str:
     """
     with open(path, "rb") as f:
         head = f.read(4)
-    if head.startswith(b"\xff\xfe") or head.startswith(b"\xfe\xff"):
+    if head.startswith((b"\xff\xfe", b"\xfe\xff")):
         # Generic "utf-16" (no explicit endianness) auto-detects from the
         # BOM AND strips it from the decoded text -- utf-16-le/-be would
         # decode the BOM bytes into a literal U+FEFF character left
@@ -148,13 +151,16 @@ def detect_encoding(path: str) -> str:
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("Usage: python reorder_restore_list.py <input_toc.txt> <output_toc.txt>", file=sys.stderr)
+        print(
+            "Usage: python reorder_restore_list.py <input_toc.txt> <output_toc.txt>",
+            file=sys.stderr,
+        )
         return 2
 
     input_path, output_path = sys.argv[1], sys.argv[2]
 
     encoding = detect_encoding(input_path)
-    with open(input_path, "r", encoding=encoding) as f:
+    with open(input_path, encoding=encoding) as f:
         lines = [line.rstrip("\n") for line in f]
 
     reordered = reorder(lines)
@@ -163,7 +169,10 @@ def main() -> int:
         f.write("\n".join(reordered) + "\n")
 
     table_data_count = sum(1 for line in lines if TABLE_DATA_RE.match(line))
-    print(f"Read {len(lines)} lines as {encoding} ({table_data_count} TABLE DATA entries). Wrote {output_path}.")
+    print(
+        f"Read {len(lines)} lines as {encoding} "
+        f"({table_data_count} TABLE DATA entries). Wrote {output_path}."
+    )
     return 0
 
 

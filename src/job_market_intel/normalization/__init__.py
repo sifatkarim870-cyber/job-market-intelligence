@@ -26,8 +26,15 @@ reason than salary's: ``CleanedJob.location_cleaned`` is never persisted
 anywhere in the schema, so a deferred batch job (the Step 25/26 pattern)
 would have nothing left to resolve once a job is already stored -- see
 that module's docstring for the full, confirmed-against-real-code
-rationale. Job-title canonicalization remains scaffolding-only until its
-later step.
+rationale. Job-title / occupation classification (Step 29) is the sixth
+-- see ``title_classification.py`` for the local multilingual
+sentence-embedding batch job (matches against the curated
+``ref.normalized_job_titles`` taxonomy; never invents new canonical
+titles). Deliberately uses two separate signals rather than one:
+embedding similarity decides matched/no_match, a narrow deny-list
+heuristic decides excluded_non_job -- see that module's docstring for
+why those are different questions embedding similarity alone can't
+answer together.
 """
 
 from job_market_intel.normalization.company_resolution import (
@@ -62,7 +69,9 @@ from job_market_intel.normalization.geographic_resolution import (
     resolve_location_text,
     split_location_segments,
 )
-from job_market_intel.normalization.salary_standardization import normalize_annual_salary
+from job_market_intel.normalization.salary_standardization import (
+    normalize_annual_salary,
+)
 from job_market_intel.normalization.skill_extraction import (
     DEFAULT_EXTRACTED_BY,
     JobDescriptionRecord,
@@ -75,9 +84,25 @@ from job_market_intel.normalization.skill_extraction import (
     normalize_skill_term,
     run_skill_extraction_batch,
 )
+from job_market_intel.normalization.title_classification import (
+    DEFAULT_CLASSIFIED_BY,
+    ClassificationResult,
+    TaxonomyEntry,
+    UnclassifiedJob,
+    apply_classification,
+    build_embedding_text,
+    classify_job,
+    fetch_taxonomy,
+    fetch_unclassified_jobs,
+    looks_like_non_job_content,
+    run_title_classification_batch,
+    strip_boilerplate,
+)
 
 __all__ = [
+    "DEFAULT_CLASSIFIED_BY",
     "DEFAULT_EXTRACTED_BY",
+    "ClassificationResult",
     "CompanyAliasCandidate",
     "CompanyRecord",
     "CompanyResolutionSettings",
@@ -87,20 +112,28 @@ __all__ = [
     "JobDescriptionRecord",
     "ResolvedLocation",
     "SkillVocabularyEntry",
+    "TaxonomyEntry",
+    "UnclassifiedJob",
     "apply_alias_candidates",
+    "apply_classification",
     "apply_duplicate_matches",
     "apply_skill_extractions",
     "build_alias_candidates",
+    "build_embedding_text",
     "build_term_index",
+    "classify_job",
     "extract_skill_ids",
     "fetch_alias_candidate_pairs",
     "fetch_dedup_candidates",
     "fetch_skill_vocabulary",
+    "fetch_taxonomy",
+    "fetch_unclassified_jobs",
     "fetch_unscanned_jobs",
     "find_duplicate_matches",
     "get_company_resolution_settings",
     "get_dedup_settings",
     "get_or_create_location",
+    "looks_like_non_job_content",
     "normalize_annual_salary",
     "normalize_for_matching",
     "normalize_skill_term",
@@ -110,6 +143,8 @@ __all__ = [
     "run_company_resolution_batch",
     "run_dedup_batch",
     "run_skill_extraction_batch",
+    "run_title_classification_batch",
     "split_location_segments",
+    "strip_boilerplate",
     "strip_corporate_suffixes",
 ]

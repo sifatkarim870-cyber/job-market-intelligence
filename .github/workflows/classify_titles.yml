@@ -1,0 +1,57 @@
+name: Title classification
+
+# Runs after the scraping workflow completes, so it always has newly
+# ingested jobs to process rather than guessing at a schedule offset.
+# workflow_run only fires for workflows on the default branch and only
+# when the triggering run's conclusion is available -- checked below via
+# the `if` condition, so a failed scrape run doesn't trigger a
+# classification run against a possibly-incomplete batch.
+#
+# Zero ongoing cost, per the confirmed hard requirement: no API key, no
+# per-request billing. The only "cost" is GitHub Actions' own free
+# compute minutes (private repos get a real monthly allowance) --
+# downloading the ~470MB model once per run plus embedding a few hundred
+# rows on CPU takes a few minutes, comfortably within that allowance.
+# See normalization/title_classification.py's module docstring for the
+# full confirmed design decisions this workflow relies on.
+
+on:
+  workflow_run:
+    workflows: ["Scheduled scraping"]
+    types: [completed]
+  workflow_dispatch: {}   # lets you trigger a classification run manually, independent of a scrape
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      # Caches the downloaded model across runs -- without this, every
+      # run would re-download ~470MB from Hugging Face before doing any
+      # actual classification work.
+      - name: Cache sentence-transformers model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/torch/sentence_transformers
+          key: sentence-transformers-paraphrase-multilingual-MiniLM-L12-v2
+
+      - name: Run title classification batch
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python scripts/run_title_classification_batch.py

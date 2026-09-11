@@ -27,6 +27,13 @@ dependencies = [
     "pydantic-settings>=2.3",
     "python-dotenv>=1.0,<2.0",
     "requests>=2.34.2",
+    # Step 29 (title/occupation classification): local multilingual
+    # sentence-embedding model, run entirely offline once downloaded --
+    # no API key, no per-request cost, no rate limits. Confirmed hard
+    # requirement over a hosted LLM API: zero ongoing cost. See
+    # normalization/title_classification.py's module docstring for the
+    # full confirmed design decisions.
+    "sentence-transformers>=3.0,<4.0",
     "sqlalchemy>=2.0,<3.0",
     "tenacity>=9.1.4",
 ]
@@ -84,7 +91,14 @@ quote-style = "double"
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
-python_version = "3.11"
+# Bumped from 3.11 to 3.13 -- Step 29 added sentence-transformers, which
+# pulls in numpy; numpy's bundled type stubs use `type X = ...` statement
+# syntax requiring Python 3.12+, which a 3.11 target can't parse. The
+# actual runtime here is already 3.13 (confirmed via `uv run pytest`'s
+# own platform line: "platform win32 -- Python 3.13.14") and
+# requires-python is ">=3.11", so this only makes mypy's type-checking
+# target match what's actually running -- no runtime behavior change.
+python_version = "3.13"
 mypy_path = "src"
 explicit_package_bases = true
 strict_optional = true
