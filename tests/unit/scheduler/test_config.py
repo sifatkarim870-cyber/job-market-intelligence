@@ -21,6 +21,9 @@ class TestSchedulerSettingsDefaults:
     def test_default_scrape_interval_is_twelve_hours(self) -> None:
         assert SchedulerSettings().scrape_interval_hours == 12.0
 
+    def test_default_indeed_scrape_interval_is_twelve_hours(self) -> None:
+        assert SchedulerSettings().indeed_scrape_interval_hours == 12.0
+
     def test_default_runs_immediately_on_start(self) -> None:
         assert SchedulerSettings().run_immediately_on_start is True
 
@@ -36,6 +39,12 @@ class TestSchedulerSettingsDefaults:
         with pytest.raises(ValueError):
             SchedulerSettings(scrape_interval_hours=-1)
 
+    def test_zero_or_negative_indeed_interval_is_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            SchedulerSettings(indeed_scrape_interval_hours=0)
+        with pytest.raises(ValueError):
+            SchedulerSettings(indeed_scrape_interval_hours=-1)
+
 
 class TestSchedulerSettingsOverrides:
     def test_constructor_kwargs_override_defaults(self) -> None:
@@ -49,6 +58,13 @@ class TestSchedulerSettingsOverrides:
         monkeypatch.setenv("SCHEDULER_SCRAPE_INTERVAL_HOURS", "6")
         settings = SchedulerSettings()
         assert settings.scrape_interval_hours == 6.0
+
+    def test_indeed_environment_variable_with_prefix_overrides_default(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("SCHEDULER_INDEED_SCRAPE_INTERVAL_HOURS", "8")
+        settings = SchedulerSettings()
+        assert settings.indeed_scrape_interval_hours == 8.0
 
     def test_unprefixed_environment_variable_is_ignored(
         self, monkeypatch: pytest.MonkeyPatch

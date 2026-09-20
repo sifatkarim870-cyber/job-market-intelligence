@@ -171,6 +171,127 @@ class TestResolveLocationText:
         assert resolved.match_method == "fallback_unmatched"
 
 
+def _precise_geo_session(
+    *,
+    city_matches: dict[str, list] | None = None,
+    region_matches: dict[str, list] | None = None,
+    country_matches: dict[str, int] | None = None,
+    remote_work_type_id: int | None = 6,
+) -> MagicMock:
+    """A fake Session for the comma-fallback tests specifically -- unlike
+    _mock_geo_session (which returns the same result regardless of the
+    bound :name/:code param), this branches on the EXACT normalized
+    string queried. Needed here because these tests must distinguish
+    "the whole segment found nothing" from "the city-part-only retry
+    found something" -- something the coarser table-only mock can't do.
+    """
+    city_matches = city_matches or {}
+    region_matches = region_matches or {}
+    country_matches = country_matches or {}
+    session = MagicMock()
+
+    def _execute(stmt, params=None):
+        sql = " ".join(str(stmt).split())
+        params = params or {}
+        if "FROM ref.cities" in sql:
+            return _rows_result(city_matches.get(params.get("name"), []))
+        if "FROM ref.regions" in sql:
+            return _rows_result(region_matches.get(params.get("name"), []))
+        if "FROM ref.countries" in sql:
+            key = params.get("name") or params.get("code")
+            return _scalar_result(country_matches.get(key))
+        if "FROM ref.remote_work_types" in sql:
+            return _scalar_result(remote_work_type_id)
+        return _scalar_result(None)
+
+    session.execute.side_effect = _execute
+    return session
+
+
+class TestCommaFallback:
+    """Regression coverage for the real bug this fallback fixes: Indeed's
+    "City, ST"/"City, ST ZIP (neighborhood)" location strings never
+    exactly matched a bare seeded city name, so nearly every Indeed job
+    was silently collapsing onto one shared 'fallback_unmatched' row --
+    see geographic_resolution.py's module docstring and
+    db/scrape_queue_repository.py-adjacent chat history for the full
+    real-run diagnosis this came from.
+    """
+
+    def test_city_comma_state_abbreviation_resolves_to_city(self) -> None:
+        session = _precise_geo_session(
+            city_matches={"san francisco": [_CityRow(city_id=10, region_id=20, country_id=1)]}
+        )
+        resolved = resolve_location_text(session, "San Francisco, CA")
+        assert resolved.city_id == 10
+        assert resolved.match_method == "city_exact"
+
+    def test_hybrid_prefix_and_comma_state_both_handled_together(self) -> None:
+        session = _precise_geo_session(
+            city_matches={"austin": [_CityRow(city_id=11, region_id=21, country_id=1)]}
+        )
+        resolved = resolve_location_text(session, "Hybrid work in Austin, TX")
+        assert resolved.city_id == 11
+        assert resolved.match_method == "city_exact"
+
+    def test_remote_work_in_prefix_alone_is_stripped(self) -> None:
+        # Isolates the "work in" fix from the comma fallback above --
+        # confirms the prefix stripper itself handles this phrasing, not
+        # just that the combination happens to work.
+        session = _precise_geo_session(country_matches={"germany": 40})
+        resolved = resolve_location_text(session, "Remote work in Germany")
+        assert resolved.country_id == 40
+        assert resolved.match_method == "country_exact"
+
+    def test_zip_and_parenthetical_neighborhood_both_stripped(self) -> None:
+        session = _precise_geo_session(
+            city_matches={"san francisco": [_CityRow(city_id=10, region_id=20, country_id=1)]}
+        )
+        resolved = resolve_location_text(
+            session, "San Francisco, CA 94105 ( Financial District/South Beach area )"
+        )
+        assert resolved.city_id == 10
+        assert resolved.match_method == "city_exact"
+
+    def test_unseeded_city_falls_back_to_state_abbreviation_as_region(self) -> None:
+        # City part ("faketown") isn't seeded, but the state abbreviation
+        # ("TX" -> "Texas") should still resolve at region level rather
+        # than giving up entirely.
+        session = _precise_geo_session(
+            region_matches={"texas": [_RegionRow(region_id=30, country_id=1)]}
+        )
+        resolved = resolve_location_text(session, "Faketown, TX")
+        assert resolved.region_id == 30
+        assert resolved.match_method == "region_exact"
+
+    def test_city_comma_country_resolves_via_country_fallback(self) -> None:
+        # Non-US shape: "City, Country" where the city itself isn't
+        # seeded but the country part is -- proves the comma fallback
+        # isn't US-state-specific.
+        session = _precise_geo_session(country_matches={"germany": 40})
+        resolved = resolve_location_text(session, "Faketown, Germany")
+        assert resolved.country_id == 40
+        assert resolved.match_method == "country_exact"
+
+    def test_comma_string_with_no_match_anywhere_still_falls_back_unmatched(self) -> None:
+        session = _precise_geo_session()  # nothing seeded matches anything
+        resolved = resolve_location_text(session, "Nowhereville, ZZ")
+        assert resolved.match_method == "fallback_unmatched"
+
+    def test_comma_fallback_never_overrides_a_whole_segment_match(self) -> None:
+        # If the UNMODIFIED segment already matches something (e.g. a
+        # future source seeds a city literally named "Some City, Inc"),
+        # the comma fallback must never run and override it.
+        session = _precise_geo_session(
+            city_matches={
+                "some city, inc": [_CityRow(city_id=99, region_id=None, country_id=1)],
+                "some city": [_CityRow(city_id=1, region_id=None, country_id=2)],
+            }
+        )
+        resolved = resolve_location_text(session, "Some City, Inc")
+        assert resolved.city_id == 99  # the whole-segment match, not the comma-split one
+
+
 class TestGetOrCreateLocation:
     def test_reuses_existing_row_when_found(self) -> None:
         session = MagicMock()

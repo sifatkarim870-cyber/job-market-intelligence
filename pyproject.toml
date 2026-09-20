@@ -59,6 +59,37 @@ docs = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
 ]
+eda = [
+    "jupyter>=1.1.1",
+    "matplotlib>=3.11.2",
+    "notebook>=7.6.2",
+    "pandas>=3.0.5",
+    "pandas-stubs>=3.0.5.260730",
+    "seaborn>=0.13.2",
+    "types-seaborn>=0.13.2.20260728",
+]
+dashboard = [
+    "plotly>=7.0.0",
+    "streamlit>=1.63.0",
+]
+# Installed with: uv sync --extra selenium
+# Only the Indeed scraper (Phase 4) needs this — kept as its own extra
+# rather than a base dependency for the same reason `dashboard`/`eda`
+# are separate: most of this project's tooling (the other three
+# scrapers, the schema, the scheduler) never touches a browser, and
+# seleniumbase pulls in a real Chromium download on first use.
+#
+# seleniumbase, not bare selenium: confirmed decision from scoping the
+# Indeed scraper. Plain Selenium's default WebDriver protocol is
+# fingerprinted and commonly blocked on Indeed; seleniumbase's UC
+# ("undetected chrome") mode patches those markers while still exposing
+# a Selenium-compatible driver underneath, and is actively maintained
+# against an anti-bot landscape expected to keep changing over this
+# project's years-long crawl. See scrapers/indeed/client.py's module
+# docstring for the full rationale.
+selenium = [
+    "seleniumbase>=4.31,<5.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -113,6 +144,13 @@ disallow_untyped_defs = false  # tighten incrementally as modules land
 # dependency that just doesn't publish types - our own code that imports it
 # is still fully checked.
 module = "apscheduler.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# seleniumbase (and the plain `selenium` package it wraps) ships no
+# py.typed marker either -- same standard mypy pattern as apscheduler
+# above, applied here for scrapers/indeed/client.py's own import.
+module = "seleniumbase.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

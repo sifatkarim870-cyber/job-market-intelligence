@@ -62,6 +62,31 @@ silently discarding a real match that happens to be listed first but is
 least specific (e.g. ``"Anywhere in the World; France; Berlin"`` resolves
 to Berlin, a real city match, not "anywhere").
 
+"City, ST"/"City, Country" comma fallback (added once Indeed was the first
+source to actually exercise this gap): confirmed against a real capture
+that Indeed's location strings are shaped like ``"San Francisco, CA"``,
+``"Hybrid work in San Francisco, CA"``, and
+``"San Francisco, CA 94105 ( Financial District/South Beach area )"`` --
+none of which ever exactly matched a bare seeded city name, so nearly every
+Indeed job was silently landing in the ``fallback_unmatched`` bucket
+described below. A trailing parenthetical (neighborhood/area detail) and a
+trailing US ZIP code are now stripped before matching, and if the whole
+segment still doesn't match anything, it's additionally split on the
+FIRST comma into a city part and a state/country part -- the city part is
+tried against ``ref.cities`` alone (curated seed set is small enough that
+dropping the state suffix rarely introduces new ambiguity in practice),
+falling back to the state part (converted from a US two-letter
+abbreviation via ``_US_STATE_ABBREVIATIONS`` where applicable) against
+``ref.regions``, then ``ref.countries``. This fallback only ever runs
+after the unmodified segment has already failed every match above, so it
+cannot change resolution for any string that already worked (RemoteOK/
+Remotive/WWR's existing fixtures are unaffected). Known, accepted gap:
+if the city part alone is ambiguous (matches 2+ seeded cities), the
+region/country fallback still resolves at that coarser level rather than
+using the state to disambiguate the specific city -- not implemented here
+since none of the three live sources' real data has hit this case yet;
+revisit if real ``core.location_aliases`` volume shows it matters.
+
 Known, accepted limitation of "most specific wins" as a tie-break: it
 assumes later/more-specific segments REFINE earlier ones, which holds for
 the common case (a country plus one of its own cities/states) but not for
@@ -196,19 +221,97 @@ _GLOBAL_ASSERTION_PHRASES: frozenset[str] = frozenset(
 
 #: Strips a leading remote/hybrid/on-site qualifier and its trailing
 #: separator (space, hyphen, colon, comma) from a segment before matching,
-#: e.g. "Remote - US" -> "US", "Remote, Worldwide" -> "Worldwide". Matches
-#: phrasing observed in the RemoteOK/Remotive/WWR cleaner test fixtures
-#: during this step's investigation -- not exhaustive of every possible
-#: phrasing a future source might use.
-_REMOTE_PREFIX_RE = re.compile(r"^(?:remote|hybrid|on[\s-]?site)\b[\s\-,:]*", re.IGNORECASE)
+#: e.g. "Remote - US" -> "US", "Remote, Worldwide" -> "Worldwide". Also
+#: strips an optional " work" and/or " in" immediately after the keyword
+#: (e.g. "Hybrid work in Austin, TX" -> "Austin, TX") -- confirmed against
+#: a real Indeed capture as an actual phrasing Indeed uses, which the
+#: original regex (matching only RemoteOK/Remotive/WWR fixtures) didn't
+#: anticipate. Not exhaustive of every possible phrasing a future source
+#: might use.
+_REMOTE_PREFIX_RE = re.compile(
+    r"^(?:remote|hybrid|on[\s-]?site)\b(?:\s+work)?(?:\s+in)?[\s\-,:]*", re.IGNORECASE
+)
+
+#: Strips a parenthetical neighborhood/area detail, e.g. "San Francisco,
+#: CA ( Financial District/South Beach area )" -> "San Francisco, CA ".
+#: Confirmed against a real Indeed capture -- this shape never appeared in
+#: any of the three original sources' fixtures.
+_PARENTHETICAL_RE = re.compile(r"\([^)]*\)")
+
+#: Strips a trailing US ZIP or ZIP+4 code, e.g. "San Francisco, CA 94105"
+#: -> "San Francisco, CA". Applied after parenthetical stripping since a
+#: real Indeed string puts the neighborhood detail after the ZIP.
+_US_ZIP_SUFFIX_RE = re.compile(r"\b\d{5}(?:-\d{4})?\s*$")
+
+#: Two-letter USPS state/territory abbreviations -> the full name as
+#: seeded in ref.regions.region_name (seed/regions.py). Used only in the
+#: comma-fallback path below, when a bare abbreviation like "CA" needs
+#: converting to "California" before a region-name match can succeed --
+#: never used to override an already-successful match.
+_US_STATE_ABBREVIATIONS: dict[str, str] = {
+    "al": "Alabama",
+    "ak": "Alaska",
+    "az": "Arizona",
+    "ar": "Arkansas",
+    "ca": "California",
+    "co": "Colorado",
+    "ct": "Connecticut",
+    "de": "Delaware",
+    "fl": "Florida",
+    "ga": "Georgia",
+    "hi": "Hawaii",
+    "id": "Idaho",
+    "il": "Illinois",
+    "in": "Indiana",
+    "ia": "Iowa",
+    "ks": "Kansas",
+    "ky": "Kentucky",
+    "la": "Louisiana",
+    "me": "Maine",
+    "md": "Maryland",
+    "ma": "Massachusetts",
+    "mi": "Michigan",
+    "mn": "Minnesota",
+    "ms": "Mississippi",
+    "mo": "Missouri",
+    "mt": "Montana",
+    "ne": "Nebraska",
+    "nv": "Nevada",
+    "nh": "New Hampshire",
+    "nj": "New Jersey",
+    "nm": "New Mexico",
+    "ny": "New York",
+    "nc": "North Carolina",
+    "nd": "North Dakota",
+    "oh": "Ohio",
+    "ok": "Oklahoma",
+    "or": "Oregon",
+    "pa": "Pennsylvania",
+    "ri": "Rhode Island",
+    "sc": "South Carolina",
+    "sd": "South Dakota",
+    "tn": "Tennessee",
+    "tx": "Texas",
+    "ut": "Utah",
+    "vt": "Vermont",
+    "va": "Virginia",
+    "wa": "Washington",
+    "wv": "West Virginia",
+    "wi": "Wisconsin",
+    "wy": "Wyoming",
+    "dc": "District of Columbia",
+}
 
 
 def _normalize_segment(segment: str) -> str:
-    """Lowercases, strips a leading remote/hybrid/on-site qualifier, and
-    collapses whitespace. Pure text transform, no DB access -- directly
+    """Lowercases, strips a leading remote/hybrid/on-site qualifier, a
+    trailing parenthetical, and a trailing US ZIP code, and collapses
+    whitespace. Pure text transform, no DB access -- directly
     unit-testable without a session.
     """
     cleaned = _REMOTE_PREFIX_RE.sub("", segment.strip())
+    cleaned = _PARENTHETICAL_RE.sub("", cleaned)
+    cleaned = _US_ZIP_SUFFIX_RE.sub("", cleaned)
     return " ".join(cleaned.split()).lower()
 
 
@@ -273,10 +376,54 @@ def _match_country(session: Session, normalized_segment: str) -> int | None:
     return int(row) if row is not None else None
 
 
+def _match_comma_fallback(session: Session, normalized: str) -> _SegmentMatch | None:
+    """Retries a "City, ST"/"City, Country" shaped segment that failed to
+    match as a whole: city part alone, then the state/country part alone.
+    Returns None (never UNMATCHED) if this fallback also finds nothing,
+    so the caller can fall through to its own UNMATCHED return -- kept
+    the single source of truth for that rather than duplicating it here.
+    Pulled out of _match_segment to keep that function's own branching
+    within this project's mccabe complexity limit.
+    """
+    if "," not in normalized:
+        return None
+
+    city_part, _, rest_part = normalized.partition(",")
+    city_part = city_part.strip()
+    rest_part = rest_part.strip()
+
+    if city_part:
+        city_match = _match_city(session, city_part)
+        if city_match is not None:
+            city_id, region_id, country_id = city_match
+            return _SegmentMatch(
+                level=_MatchLevel.CITY, city_id=city_id, region_id=region_id, country_id=country_id
+            )
+
+    if rest_part:
+        state_name = _US_STATE_ABBREVIATIONS.get(rest_part, rest_part)
+        region_match = _match_region(session, state_name.lower())
+        if region_match is not None:
+            region_id, country_id = region_match
+            return _SegmentMatch(
+                level=_MatchLevel.REGION, region_id=region_id, country_id=country_id
+            )
+
+        country_id = _match_country(session, rest_part)
+        if country_id is not None:
+            return _SegmentMatch(level=_MatchLevel.COUNTRY, country_id=country_id)
+
+    return None
+
+
 def _match_segment(session: Session, segment: str) -> _SegmentMatch:
     """Resolves a single segment (one piece of a ``;``-split raw string)
     to its most specific match: city, then region, then country, then an
-    explicit global assertion, then unmatched.
+    explicit global assertion, then unmatched -- then, if nothing
+    matched and the segment contains a comma, retries against just the
+    city part and just the state/country part (see module docstring's
+    "City, ST"/"City, Country" comma fallback section, and
+    _match_comma_fallback above).
     """
     normalized = _normalize_segment(segment)
     if not normalized or normalized in _GLOBAL_ASSERTION_PHRASES:
@@ -297,6 +444,10 @@ def _match_segment(session: Session, segment: str) -> _SegmentMatch:
     country_id = _match_country(session, normalized)
     if country_id is not None:
         return _SegmentMatch(level=_MatchLevel.COUNTRY, country_id=country_id)
+
+    fallback_match = _match_comma_fallback(session, normalized)
+    if fallback_match is not None:
+        return fallback_match
 
     return _SegmentMatch(level=_MatchLevel.UNMATCHED)
 
