@@ -7,15 +7,27 @@ name: Scheduled scraping
 # then tears the runner down. scheduler/ can stay in the repo for local
 # dev convenience, but nothing here depends on it.
 #
-# All three sources share one interval (every 12 hours) rather than
-# separate per-source schedules — this project's stated principle is to
-# avoid unnecessary abstraction until something concrete needs it, and
+# All three feed-based sources share one interval (every 12 hours) rather
+# than separate per-source schedules — this project's stated principle is
+# to avoid unnecessary abstraction until something concrete needs it, and
 # nothing currently does. Remotive's own scraper config already assumed
 # a 12-hour interval (see scrapers/remotive/config.py) and documents a
 # ceiling of 4 requests/day; twice a day stays well under that. WWR's
 # RSS feed and RemoteOK's public API have no documented rate ceiling at
 # this frequency either. Change the cron lines below if you later want
 # different cadences per source — each job is independent.
+#
+# indeed shares that same 12-hour cron, confirmed as the same cadence
+# already used by the local scheduler (src/job_market_intel/scheduler/) —
+# but it is NOT the same kind of job as the other three. Each invocation
+# claims and works exactly one (query, location) row from
+# ops.scrape_query_queue, not an entire feed — see
+# scripts/run_indeed_scraper.py and scrapers/indeed/pipeline.py for why.
+# That queue table must already exist and be seeded on whatever database
+# DATABASE_URL points to before this job can do anything (see
+# migrations/add_scrape_query_queue_table.sql and
+# scripts/seed_indeed_queries.py) — a schema/seeding prerequisite this
+# workflow does not check or perform itself.
 
 on:
   schedule:
@@ -94,3 +106,55 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: uv run python scripts/run_remotive_scraper.py
+
+  indeed:
+    runs-on: ubuntu-latest
+    # Longer than the other three deliberately: this is a paced, capped
+    # Selenium session (4-9s between actions, a 45-90s pause every 5
+    # search pages, up to 5 search pages and 60 detail pages per run —
+    # see scrapers/indeed/config.py), not a single HTTP fetch. Real local
+    # runs during development took 3-10 minutes for a single query with
+    # only 1-2 search pages; a queue item that uses the full session caps
+    # could run well past 15 minutes. This is an estimate, not a
+    # guarantee — revisit if real runs start timing out.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        # --extra selenium is the one genuine difference from the other
+        # three jobs' install step: seleniumbase is only ever needed for
+        # Indeed, kept as its own extra so the other three sources' jobs
+        # don't pay for a Chromium-adjacent dependency they never touch.
+        run: uv sync --extra dev --extra test --extra selenium
+
+      - name: Install Xvfb
+        # Confirmed decision: run genuinely non-headless in CI, the same
+        # way this scraper runs locally, rather than setting
+        # INDEED_HEADLESS=true for this job. headless=False is a
+        # deliberate anti-fingerprinting default (see
+        # scrapers/indeed/config.py's own docstring) — flipping it just
+        # for CI would quietly undo that trade-off exactly where the
+        # traffic matters most (real, unattended, scheduled runs). Xvfb
+        # gives Chrome a real virtual display so no headless flag is
+        # needed at all; this is a standard, well-trodden pattern for
+        # browser automation on GitHub-hosted runners generally.
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Run Indeed scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        # xvfb-run -a starts a virtual display, runs the command against
+        # it, and tears it down after — -a auto-selects a free display
+        # number rather than assuming one is free.
+        run: xvfb-run -a uv run python scripts/run_indeed_scraper.py
