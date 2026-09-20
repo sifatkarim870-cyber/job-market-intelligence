@@ -81,9 +81,24 @@ CREATE TRIGGER trg_scrape_query_queue_set_updated_at
 -- migrations/add_location_aliases_table.sql) of re-granting app_user on
 -- newly-created objects inside the migration that creates them, since that
 -- privilege does not extend automatically from the rest of ops.*.
+--
+-- Guarded with a role-existence check rather than a bare GRANT: local
+-- Postgres has an app_user role (per that same precedent), but Neon does
+-- not -- Neon provisions its own owner role instead (neondb_owner in this
+-- project's case), and a bare GRANT ... TO app_user fails outright with
+-- "role does not exist" there, rolling back this entire transaction
+-- (confirmed the hard way against production Neon before this guard was
+-- added). Skipping the grant when app_user isn't present is safe: on
+-- Neon, the connecting role IS the database owner already and needs no
+-- separate grant to use a table it just created.
 -- ----------------------------------------------------------------------------
-GRANT SELECT, INSERT, UPDATE ON ops.scrape_query_queue TO app_user;
-GRANT USAGE, SELECT ON SEQUENCE ops.scrape_query_queue_query_id_seq TO app_user;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user') THEN
+        GRANT SELECT, INSERT, UPDATE ON ops.scrape_query_queue TO app_user;
+        GRANT USAGE, SELECT ON SEQUENCE ops.scrape_query_queue_query_id_seq TO app_user;
+    END IF;
+END $$;
 
 COMMIT;
 
