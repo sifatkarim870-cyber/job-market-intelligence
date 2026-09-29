@@ -47,6 +47,9 @@ on:
     - cron: "0 */12 * * *"   # every 12 hours, on the hour (00:00 and 12:00 UTC)
   workflow_dispatch: {}       # lets you trigger any/all jobs manually from the Actions tab
 
+permissions:
+  contents: read
+
 jobs:
   remoteok:
     runs-on: ubuntu-latest
