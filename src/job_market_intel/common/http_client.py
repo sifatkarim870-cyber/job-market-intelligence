@@ -53,6 +53,7 @@ def fetch_json(
     timeout_seconds: float = 15.0,
     user_agent: str = DEFAULT_USER_AGENT,
     extra_headers: dict[str, str] | None = None,
+    auth: tuple[str, str] | None = None,
 ) -> Any:
     """Perform an HTTP GET request and return the parsed JSON body.
 
@@ -67,25 +68,32 @@ def fetch_json(
         extra_headers: Any additional headers to merge in (e.g.
             ``Accept``). ``Accept: application/json`` is always sent by
             default and does not need to be repeated here.
+        auth: Optional ``(username, password)`` tuple for HTTP Basic
+            authentication, passed straight through to ``requests.get``.
+            ``None`` (the default) sends no auth header at all, so every
+            existing caller of this function is unaffected. Added for the
+            Reed scraper, whose API requires the API key as the Basic
+            Auth username with an empty password on every request — no
+            existing source needed this before.
 
     Returns:
         The response body, parsed from JSON (typically a ``list`` or
         ``dict`` depending on the API).
 
     Raises:
-        TransientHTTPError: On connection errors, timeouts, or HTTP 5xx
-            responses. Callers should retry these (see
-            ``src/common/retry.py``).
-        PermanentHTTPError: On HTTP 4xx responses, or on a 2xx response
-            whose body is not valid JSON. Callers should not retry these
-            without changing something first.
+        TransientHTTPError: On connection errors, timeouts, HTTP 429
+            (rate limited), or HTTP 5xx responses. Callers should retry
+            these (see ``src/common/retry.py``).
+        PermanentHTTPError: On other HTTP 4xx responses, or on a 2xx
+            response whose body is not valid JSON. Callers should not
+            retry these without changing something first.
     """
     headers = {"User-Agent": user_agent, "Accept": "application/json"}
     if extra_headers:
         headers.update(extra_headers)
 
     try:
-        response = requests.get(url, headers=headers, timeout=timeout_seconds)
+        response = requests.get(url, headers=headers, timeout=timeout_seconds, auth=auth)
     except (requests.ConnectionError, requests.Timeout) as exc:
         raise TransientHTTPError(f"Network error while requesting {url}: {exc}") from exc
     except requests.RequestException as exc:
@@ -96,6 +104,15 @@ def fetch_json(
     if response.status_code >= 500:
         raise TransientHTTPError(
             f"{url} returned server error status {response.status_code}: {response.text[:500]!r}"
+        )
+    # 429 (Too Many Requests) is a 4xx status but, unlike the others, IS
+    # worth retrying after a cooldown -- added for Reed, whose API can be
+    # rate limited with no documented ceiling to plan around in advance
+    # (see scrapers/reed/client.py's module docstring). No existing
+    # source has ever been observed to return 429, so this is additive.
+    if response.status_code == 429:
+        raise TransientHTTPError(
+            f"{url} returned 429 (rate limited): {response.text[:500]!r}"
         )
     if response.status_code >= 400:
         raise PermanentHTTPError(

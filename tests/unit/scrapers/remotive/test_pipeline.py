@@ -50,6 +50,8 @@ class TestRemotivePipelineUnit:
             posting_date=None,
             data_quality_score=1.0,
             raw_payload=raw_job,
+            currency_iso_code="USD",
+            pay_period="yearly",
         )
         mock_cleaner.clean_jobs.return_value = [cleaned_job]
 

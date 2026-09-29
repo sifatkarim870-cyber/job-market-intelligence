@@ -60,6 +60,8 @@ class TestWWRPipelineUnit:
             closing_date=None,
             data_quality_score=0.5,
             raw_payload=raw_job,
+            currency_iso_code="USD",
+            pay_period="yearly",
         )
         mock_cleaner.clean_jobs.return_value = [cleaned_job]
 

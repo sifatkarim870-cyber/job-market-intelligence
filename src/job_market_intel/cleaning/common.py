@@ -111,6 +111,33 @@ class CleanedJob(BaseModel):
         raw_payload: Carried forward unchanged from the raw record, per
             the platform's "never discard original source data" principle
             (mirrors ``jobs.raw_html_ref`` in the schema design).
+        currency_iso_code: ISO 4217 code (e.g. ``"USD"``, ``"GBP"``) for
+            ``salary_min``/``salary_max``, as reported (or, for a source
+            that doesn't report one at all, assumed) by THIS record's own
+            source -- not by ``db.job_repository``. Required, not
+            optional: every cleaner must state its assumption explicitly
+            rather than leaving a gap for the repository to fill in. Maps
+            onto ``salary.job_salaries.currency_id`` via a
+            ``ref.currencies`` lookup. Added when the Reed scraper needed
+            a real per-record currency instead of the previously
+            hardcoded ``"USD"`` -- see ``db.job_repository``'s module
+            docstring for the fuller "Reed scraper note".
+        pay_period: One of ``hourly``/``daily``/``weekly``/``monthly``/``yearly``,
+            matching ``salary.job_salaries.pay_period``'s CHECK constraint.
+            Same rationale and history as ``currency_iso_code`` above --
+            this is the field whose previous hardcoding (always
+            ``"yearly"``) is Step 27's documented bug pattern; Reed is
+            the first source that reports pay period per-record instead
+            of needing it assumed.
+        employment_type_code: One of ``ref.employment_types.code``'s
+            values (``full_time``/``part_time``/``contract``/``temporary``/
+            ``internship``/``freelance``/``apprenticeship``), or ``None``
+            if the source doesn't report an employment type at all
+            (RemoteOK, Remotive, and We Work Remotely all leave this
+            ``None`` today -- an honest absence, not a guess). Maps onto
+            ``core.jobs.employment_type_id`` via a ``ref.employment_types``
+            lookup -- the first field any source has populated there;
+            previously always written as ``NULL`` regardless of source.
     """
 
     source_job_id: str
@@ -130,3 +157,6 @@ class CleanedJob(BaseModel):
     closing_date: datetime | None = None
     data_quality_score: float
     raw_payload: dict
+    currency_iso_code: str
+    pay_period: str
+    employment_type_code: str | None = None

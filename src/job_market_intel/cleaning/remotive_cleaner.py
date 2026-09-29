@@ -158,6 +158,14 @@ class RemotiveCleaner:
                 word_count=word_count,
             ),
             raw_payload=raw_job.raw_payload,
+            # Remotive's free-text salary parser only matches whole-dollar
+            # range strings typical of annual tech-salary postings --
+            # stated explicitly here now that db.job_repository no longer
+            # assumes this on every source's behalf (see that module's
+            # "Reed scraper note"). Preserves this source's exact previous
+            # stored behavior.
+            currency_iso_code="USD",
+            pay_period="yearly",
         )
 
     def clean_jobs(self, raw_jobs: list[RawRemotiveJob]) -> list[CleanedJob]:

@@ -172,6 +172,17 @@ class IndeedCleaner:
             apply_url=raw_job.detail_url,
             original_url=original_url,
             posting_date=None,  # Indeed's "posted X days ago" text isn't a parseable date
+            # currency_iso_code/pay_period became required CleanedJob
+            # fields when the Reed scraper's shared extension landed (see
+            # db.job_repository's module docstring, "Reed scraper note").
+            # This is the minimum touch needed to keep this module
+            # constructing a valid CleanedJob at all -- USD/yearly matches
+            # _parse_annual_salary's existing "a year" assumption above
+            # (see that function's own docstring), so this changes
+            # nothing about what gets stored. No other line in this file
+            # was touched for the Reed work.
+            currency_iso_code="USD",
+            pay_period="yearly",
             data_quality_score=_compute_data_quality_score(
                 salary_disclosed=salary_disclosed,
                 location_cleaned=location_cleaned,

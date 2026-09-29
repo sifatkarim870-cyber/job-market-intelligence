@@ -198,6 +198,13 @@ class RemoteOKCleaner:
                 word_count=word_count,
             ),
             raw_payload=raw_job.raw_payload,
+            # RemoteOK's own docs describe its salary fields as USD,
+            # annual figures -- stated explicitly here now that
+            # db.job_repository no longer assumes this on every source's
+            # behalf (see that module's "Reed scraper note"). Preserves
+            # this source's exact previous stored behavior.
+            currency_iso_code="USD",
+            pay_period="yearly",
         )
 
     def clean_jobs(self, raw_jobs: list[RawRemoteOKJob]) -> list[CleanedJob]:

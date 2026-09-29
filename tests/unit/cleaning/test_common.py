@@ -78,6 +78,45 @@ class TestCleanedJobShape:
         job = make_cleaned_job(closing_date=closing_date)
         assert job.closing_date == closing_date
 
+    def test_currency_iso_code_and_pay_period_are_required(self) -> None:
+        """Added for Reed: db.job_repository no longer supplies these as a
+        hardcoded assumption, so every cleaner must state them explicitly
+        -- a CleanedJob missing either must fail to construct, not
+        silently fall back to something.
+        """
+        with pytest.raises(ValidationError):
+            CleanedJob(
+                source_job_id="1",
+                job_title="Engineer",
+                company_name="Acme",
+                company_logo_url=None,
+                skills=[],
+                location_cleaned=None,
+                salary_min=None,
+                salary_max=None,
+                salary_disclosed=False,
+                description_clean=None,
+                word_count=0,
+                apply_url=None,
+                original_url="https://x.test/1",
+                posting_date=None,
+                data_quality_score=0.0,
+                raw_payload={},
+                # currency_iso_code and pay_period deliberately omitted
+            )
+
+    def test_employment_type_code_defaults_to_none(self, make_cleaned_job) -> None:
+        """Optional, unlike currency_iso_code/pay_period, since most
+        sources (RemoteOK, Remotive, We Work Remotely) genuinely don't
+        report an employment type at all -- None is an honest absence,
+        not a guess. Reed is the first source to populate this."""
+        job = make_cleaned_job()
+        assert job.employment_type_code is None
+
+    def test_employment_type_code_can_be_set_explicitly(self, make_cleaned_job) -> None:
+        job = make_cleaned_job(employment_type_code="contract")
+        assert job.employment_type_code == "contract"
+
 
 class TestCleanedJobIsSourceAgnostic:
     def test_can_be_constructed_without_importing_any_scraper_package(self) -> None:
@@ -108,6 +147,8 @@ class TestCleanedJobIsSourceAgnostic:
             posting_date=None,
             data_quality_score=0.25,
             raw_payload={},
+            currency_iso_code="USD",
+            pay_period="yearly",
         )
         assert job.company_name == "Some Co"
         # Constructing a CleanedJob must not, as a side effect, have caused

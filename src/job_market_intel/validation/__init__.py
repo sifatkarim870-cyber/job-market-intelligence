@@ -21,6 +21,7 @@ example (Step 18).
 """
 
 from .common import BatchValidationReport, validate_batch
+from .reed_validator import ReedBatchValidator, ReedValidationSettings
 from .remoteok_validator import RemoteOKBatchValidator, RemoteOKValidationSettings
 from .remotive_validator import RemotiveBatchValidator, RemotiveValidationSettings
 from .weworkremotely_validator import WWRBatchValidator, WWRValidationSettings
@@ -28,6 +29,8 @@ from .weworkremotely_validator import WWRBatchValidator, WWRValidationSettings
 __all__ = [
     "BatchValidationReport",
     "validate_batch",
+    "ReedBatchValidator",
+    "ReedValidationSettings",
     "RemoteOKBatchValidator",
     "RemoteOKValidationSettings",
     "RemotiveBatchValidator",

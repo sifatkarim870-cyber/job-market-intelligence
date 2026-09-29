@@ -221,6 +221,15 @@ class WWRCleaner:
                 word_count=word_count,
             ),
             raw_payload=raw_job.raw_payload,
+            # WWR has no salary field at all -- salary_min/salary_max are
+            # always None above, so these two values are never actually
+            # used for normalization, but CleanedJob requires them stated
+            # regardless (see db.job_repository's "Reed scraper note").
+            # Kept as the same USD/yearly convention the other two live
+            # sources use, purely for consistency; harmless either way
+            # since there's never a real figure to normalize.
+            currency_iso_code="USD",
+            pay_period="yearly",
         )
 
     def clean_jobs(self, raw_jobs: list[RawWWRJob]) -> list[CleanedJob]:

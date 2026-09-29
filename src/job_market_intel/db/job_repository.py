@@ -26,11 +26,39 @@ resolve once a job is already in ``core.jobs``. See
 full rationale. This module calls ``resolve_and_cache_location`` the
 same way it already calls ``get_or_create_company`` and
 ``normalize_annual_salary``.
+
+Reed scraper note (currency/pay-period/employment-type de-hardcoding)
+----------------------------------------------------------------------
+Until the Reed source was added, this module hardcoded ``"USD"`` and
+``"yearly"`` for every job of every source via two module constants
+(``_ASSUMED_CURRENCY_ISO_CODE`` / ``_ASSUMED_PAY_PERIOD``, now removed)
+and never wrote ``core.jobs.employment_type_id`` at all -- reasonable
+when RemoteOK/Remotive/WWR were the only sources (all USD, all
+effectively annual, none reporting an employment type), but it's exactly
+the ambiguous-pay-period bug pattern documented in Step 27's history:
+an assumption baked into the repository layer instead of stated on the
+record. Reed's API reports real per-record currency, pay period, and
+contract/hours type, so this module now reads those off ``CleanedJob``
+(``job.currency_iso_code``, ``job.pay_period``, ``job.employment_type_code``
+-- all added to ``CleanedJob`` at the same time, see ``cleaning/common.py``)
+instead of assuming them. RemoteOK's, Remotive's, and We Work Remotely's
+cleaners were each given one mechanical line setting
+``currency_iso_code="USD"``, ``pay_period="yearly"`` to preserve their
+exact previous behavior -- nothing about their stored data changes.
+
+This is a general extension, not a Reed-specific one -- ``cleaning/indeed_cleaner.py``'s
+own module docstring already flagged needing this same change (see its
+"promoting them into the schema later is a matter of extending
+CleanedJob and job_repository.py" note) for the paused Indeed effort.
+Whoever resumes that work should rebase onto this rather than
+reintroducing parallel, narrower fields -- ``indeed_cleaner.py`` itself
+was not touched here.
 """
 
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -46,29 +74,6 @@ from job_market_intel.normalization.salary_standardization import normalize_annu
 
 if TYPE_CHECKING:
     from job_market_intel.cleaning.common import CleanedJob
-
-#: Pay period assumed for every job persisted by this repository. None of
-#: the three live sources (RemoteOK, We Work Remotely, Remotive) captures
-#: pay period explicitly -- confirmed: no ``pay_period`` field exists on
-#: ``CleanedJob`` or any raw source model. This assumption is reasonable
-#: for these three sources specifically (RemoteOK's own docs describe its
-#: salary fields as annual; Remotive's free-text parser only matches
-#: whole-dollar range strings typical of annual tech-salary postings; WWR
-#: has no salary field at all) but it IS an assumption, not something this
-#: code verifies per-record -- named as a constant, rather than a bare
-#: string literal, specifically so it stays a visible, revisitable
-#: decision rather than a buried one. Revisit if/when a source that
-#: reports salary at a different cadence (e.g. an hourly-rate contractor
-#: board) is added.
-_ASSUMED_PAY_PERIOD = "yearly"
-
-#: ISO 4217 code assumed for every job persisted by this repository, for
-#: the same reason ``_ASSUMED_PAY_PERIOD`` is: all three live sources are
-#: USD-only by construction of their own raw models (see
-#: ``normalization/salary_standardization.py``'s module docstring), not by
-#: an assumption layered on afterward.
-_ASSUMED_CURRENCY_ISO_CODE = "USD"
-
 
 def compute_job_content_hash(
     job_title: str,
@@ -227,12 +232,90 @@ class JobRepository(AbstractRepository[Any]):
             )
         return int(result)
 
-    def get_usd_currency_id(self, session: Session) -> int | None:
-        """Look up currency_id for 'USD' in ref.currencies."""
+    def get_existing_source_job_ids(
+        self, session: Session, source_id: int, candidate_source_job_ids: Sequence[str]
+    ) -> set[str]:
+        """Return the subset of ``candidate_source_job_ids`` already present for this source.
+
+        Added for the Reed scraper (``scrapers/reed/pipeline.py``), which
+        needs to know this BEFORE cleaning/storing a batch, not just at
+        persist time like every other source: Reed's Details endpoint
+        (the only place per-record ``salaryType``/``contractType``/
+        ``currency`` are available -- see ``scrapers/reed/client.py``'s
+        module docstring) costs one API call per job, against an
+        undocumented daily ceiling, and one pipeline run's Search results
+        can exceed ``ReedSettings.max_jobs_processed_per_run``. This is
+        used to PRIORITIZE which jobs get processed within that cap --
+        genuinely new jobs (not in the returned set) first, so a capped
+        run still makes progress discovering new postings rather than
+        only ever re-confirming jobs already captured -- not to skip
+        Details for an already-known job that IS selected for processing.
+        Every job Reed's pipeline actually processes still gets a real
+        Details call; see that module's docstring for why a partial
+        (Details-skipped) record is deliberately avoided rather than
+        built.
+
+        An empty ``candidate_source_job_ids`` returns an empty set without
+        issuing a query.
+        """
+        if not candidate_source_job_ids:
+            return set()
         result = session.execute(
-            text("SELECT currency_id FROM ref.currencies WHERE iso_code = 'USD'")
+            text(
+                "SELECT source_job_id FROM core.jobs "
+                "WHERE source_id = :source_id AND source_job_id = ANY(:candidate_ids)"
+            ),
+            {"source_id": source_id, "candidate_ids": list(candidate_source_job_ids)},
+        )
+        return {row[0] for row in result}
+
+    def get_currency_id_by_code(self, session: Session, iso_code: str) -> int | None:
+        """Look up currency_id for an ISO 4217 code (e.g. 'USD', 'GBP') in ref.currencies.
+
+        Replaces the old ``get_usd_currency_id`` (USD-only) now that a
+        source (Reed) reports its own currency per record instead of
+        this repository assuming one -- see the module docstring's "Reed
+        scraper note". Returns ``None``, rather than raising, for a code
+        with no matching row: an unseeded currency is a seed-data gap to
+        fix, not a reason to fail an otherwise-good job record.
+        """
+        result = session.execute(
+            text("SELECT currency_id FROM ref.currencies WHERE iso_code = :iso_code"),
+            {"iso_code": iso_code},
         ).scalar()
-        return int(result) if result is not None else None
+        if result is None:
+            logger.warning(
+                "No ref.currencies row for iso_code={!r}; currency_id will be NULL.", iso_code
+            )
+            return None
+        return int(result)
+
+    def get_employment_type_id_by_code(self, session: Session, code: str | None) -> int | None:
+        """Look up employment_type_id for a ref.employment_types.code value.
+
+        ``code=None`` means the source genuinely doesn't report an
+        employment type (RemoteOK, Remotive, We Work Remotely today) --
+        an honest absence, not an error, so it's returned as ``None``
+        without a query or a warning. A non-``None`` code that doesn't
+        match any row IS a real data problem (a source-side mapping bug,
+        or a code this repository doesn't know about yet) and is
+        logged accordingly.
+        """
+        if code is None:
+            return None
+        result = session.execute(
+            text(
+                "SELECT employment_type_id FROM ref.employment_types WHERE code = :code"
+            ),
+            {"code": code},
+        ).scalar()
+        if result is None:
+            logger.warning(
+                "No ref.employment_types row for code={!r}; employment_type_id will be NULL.",
+                code,
+            )
+            return None
+        return int(result)
 
     def get_or_create_company(
         self, session: Session, company_name: str, logo_url: str | None = None
@@ -321,12 +404,17 @@ class JobRepository(AbstractRepository[Any]):
             {"source_id": source_id, "source_job_id": job.source_job_id},
         ).first()
 
-        usd_currency_id = self.get_usd_currency_id(session)
+        currency_id = self.get_currency_id_by_code(session, job.currency_iso_code)
+        # None for sources that don't report an employment type (RemoteOK,
+        # Remotive, WWR) -- see get_employment_type_id_by_code's docstring.
+        employment_type_id = self.get_employment_type_id_by_code(
+            session, job.employment_type_code
+        )
         normalized_annual_min_usd, normalized_annual_max_usd = normalize_annual_salary(
             job.salary_min,
             job.salary_max,
-            currency_iso_code=_ASSUMED_CURRENCY_ISO_CODE,
-            pay_period=_ASSUMED_PAY_PERIOD,
+            currency_iso_code=job.currency_iso_code,
+            pay_period=job.pay_period,
         )
 
         if existing:
@@ -362,6 +450,7 @@ class JobRepository(AbstractRepository[Any]):
                         "data_quality_score = :data_quality_score, "
                         "closing_date = :closing_date, "
                         "location_id = :location_id, "
+                        "employment_type_id = :employment_type_id, "
                         "last_scraped_at = now(), "
                         "last_scraping_session_id = "
                         "COALESCE(:session_id, last_scraping_session_id), "
@@ -376,6 +465,7 @@ class JobRepository(AbstractRepository[Any]):
                         "data_quality_score": job.data_quality_score,
                         "closing_date": c_date,
                         "location_id": location_id,
+                        "employment_type_id": employment_type_id,
                         "session_id": session_id,
                         "job_id": job_id,
                         "posting_date": existing_posting_date,
@@ -442,8 +532,8 @@ class JobRepository(AbstractRepository[Any]):
                             "posting_date": existing_posting_date,
                             "salary_min": job.salary_min,
                             "salary_max": job.salary_max,
-                            "currency_id": usd_currency_id,
-                            "pay_period": _ASSUMED_PAY_PERIOD,
+                            "currency_id": currency_id,
+                            "pay_period": job.pay_period,
                         },
                     )
 
@@ -475,12 +565,14 @@ class JobRepository(AbstractRepository[Any]):
                 text(
                     "INSERT INTO core.jobs "
                     "(source_id, source_job_id, original_url, company_id, job_title, "
-                    "location_id, posting_date, closing_date, first_scraped_at, last_scraped_at, "
+                    "location_id, employment_type_id, posting_date, closing_date, "
+                    "first_scraped_at, last_scraped_at, "
                     "last_scraping_session_id, "
                     "job_status, content_hash, data_quality_score) "
                     "VALUES "
                     "(:source_id, :source_job_id, :original_url, :company_id, :job_title, "
-                    ":location_id, :posting_date, :closing_date, now(), now(), :session_id, "
+                    ":location_id, :employment_type_id, :posting_date, :closing_date, "
+                    "now(), now(), :session_id, "
                     "'active', :content_hash, :data_quality_score) "
                     "RETURNING job_id"
                 ),
@@ -491,6 +583,7 @@ class JobRepository(AbstractRepository[Any]):
                     "company_id": company_id,
                     "job_title": job.job_title,
                     "location_id": location_id,
+                    "employment_type_id": employment_type_id,
                     "posting_date": p_date,
                     "closing_date": c_date,
                     "session_id": session_id,
@@ -533,8 +626,8 @@ class JobRepository(AbstractRepository[Any]):
                     "posting_date": p_date,
                     "salary_min": job.salary_min,
                     "salary_max": job.salary_max,
-                    "currency_id": usd_currency_id,
-                    "pay_period": _ASSUMED_PAY_PERIOD,
+                    "currency_id": currency_id,
+                    "pay_period": job.pay_period,
                     "salary_disclosed": job.salary_disclosed,
                     "normalized_annual_min_usd": normalized_annual_min_usd,
                     "normalized_annual_max_usd": normalized_annual_max_usd,
@@ -559,8 +652,8 @@ class JobRepository(AbstractRepository[Any]):
                     "posting_date": p_date,
                     "salary_min": job.salary_min,
                     "salary_max": job.salary_max,
-                    "currency_id": usd_currency_id,
-                    "pay_period": _ASSUMED_PAY_PERIOD,
+                    "currency_id": currency_id,
+                    "pay_period": job.pay_period,
                 },
             )
 

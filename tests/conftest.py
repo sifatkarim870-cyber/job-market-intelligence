@@ -65,6 +65,13 @@ def make_cleaned_job() -> Callable[..., CleanedJob]:
             "posting_date": None,
             "data_quality_score": 0.0,
             "raw_payload": {},
+            # USD/yearly matches every live source's actual stored
+            # behavior today (RemoteOK, Remotive, We Work Remotely) --
+            # see db.job_repository's "Reed scraper note" for why these
+            # became required, per-record fields instead of a hardcoded
+            # repository-level assumption.
+            "currency_iso_code": "USD",
+            "pay_period": "yearly",
         }
         defaults.update(overrides)
         return CleanedJob(**defaults)

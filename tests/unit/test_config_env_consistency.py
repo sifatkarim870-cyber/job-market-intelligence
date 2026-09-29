@@ -34,8 +34,10 @@ from job_market_intel.common.config import Settings
 from job_market_intel.db.config import KNOWN_ENV_VARS as DB_KNOWN_ENV_VARS
 from job_market_intel.scheduler.config import SchedulerSettings
 from job_market_intel.scrapers.indeed.config import IndeedSettings
+from job_market_intel.scrapers.reed.config import ReedSettings
 from job_market_intel.scrapers.remoteok.config import RemoteOKSettings
 from job_market_intel.validation.indeed_validator import IndeedValidationSettings
+from job_market_intel.validation.reed_validator import ReedValidationSettings
 from job_market_intel.validation.remoteok_validator import RemoteOKValidationSettings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -146,6 +148,18 @@ def test_every_indeed_validation_settings_var_is_documented() -> None:
     missing = _pydantic_settings_env_vars(IndeedValidationSettings) - _documented_vars()
     assert not missing, (
         f"IndeedValidationSettings reads {sorted(missing)}, undocumented in .env.example."
+    )
+
+
+def test_every_reed_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(ReedSettings) - _documented_vars()
+    assert not missing, f"ReedSettings reads {sorted(missing)}, undocumented in .env.example."
+
+
+def test_every_reed_validation_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(ReedValidationSettings) - _documented_vars()
+    assert not missing, (
+        f"ReedValidationSettings reads {sorted(missing)}, undocumented in .env.example."
     )
 
 
