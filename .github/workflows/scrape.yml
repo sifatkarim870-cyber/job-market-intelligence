@@ -173,6 +173,10 @@ jobs:
         run: xvfb-run -a uv run python scripts/run_indeed_scraper.py
 
   reed:
+    # The Reed entrypoint is not in this branch yet; guard the job so
+    # scheduled/manual workflow runs do not fail with "No such file or
+    # directory" until scripts/run_reed_scraper.py lands.
+    if: ${{ hashFiles('scripts/run_reed_scraper.py') != '' }}
     runs-on: ubuntu-latest
     # Slightly more headroom than the other three plain-HTTP jobs'
     # 15 minutes (Reed makes up to REED_QUERIES_CLAIMED_PER_RUN Search
