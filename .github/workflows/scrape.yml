@@ -28,19 +28,6 @@ name: Scheduled scraping
 # migrations/add_scrape_query_queue_table.sql and
 # scripts/seed_indeed_queries.py) — a schema/seeding prerequisite this
 # workflow does not check or perform itself.
-#
-# reed also shares the same 12-hour cron. Closer to indeed's shape than
-# the first three's: each run claims REED_QUERIES_CLAIMED_PER_RUN rows
-# (default 5) from its own separate queue, ops.reed_search_queue — NOT
-# ops.scrape_query_queue, which is indeed's own table; see
-# migrations/add_reed_search_queue_table.sql's header comment for why
-# they're deliberately separate. That table must already exist and be
-# seeded before this job can do anything (see that same migration and
-# scripts/seed_reed_queries.py) — same unchecked prerequisite as indeed's
-# queue. Also needs its own secret, REED_API_KEY (Reed's API requires an
-# API key; none of the other four sources need any authentication at
-# all) — set it under this repo's Settings -> Secrets and variables ->
-# Actions before this job can succeed.
 
 on:
   schedule:
@@ -121,16 +108,26 @@ jobs:
         run: uv run python scripts/run_remotive_scraper.py
 
   indeed:
-    runs-on: ubuntu-latest
-    # Longer than the other three deliberately: this is a paced, capped
-    # Selenium session (4-9s between actions, a 45-90s pause every 5
-    # search pages, up to 5 search pages and 60 detail pages per run —
-    # see scrapers/indeed/config.py), not a single HTTP fetch. Real local
-    # runs during development took 3-10 minutes for a single query with
-    # only 1-2 search pages; a queue item that uses the full session caps
-    # could run well past 15 minutes. This is an estimate, not a
-    # guarantee — revisit if real runs start timing out.
-    timeout-minutes: 45
+    # Runs on a self-hosted runner (a small Azure VM), not GitHub's own
+    # shared ubuntu-latest pool — confirmed decision after a real run on
+    # ubuntu-latest got blocked ("challenge detected on search page 1")
+    # on its very first request. GitHub-hosted runner IPs are a well-known,
+    # heavily-reused shared range; a dedicated VM's IP is a genuinely
+    # different (though not risk-free) bet. See this project's own chat
+    # history for the full diagnosis. The "indeed-runner" label is set
+    # during that VM's runner registration (see scripts/setup_runner.sh,
+    # not part of this repo — a one-off provisioning script).
+    runs-on: [self-hosted, indeed-runner]
+    # Bumped from 45 to 240 once items_per_run (IndeedSettings) went from
+    # 1 to 10: ten sequential browser sessions, each individually paced
+    # (4-9s between actions, 45-90s every 5 pages, up to 5 search + 60
+    # detail pages), plus a 30-90s pause BETWEEN items, could plausibly
+    # run past 45 minutes on a queue item that uses the full session caps
+    # on every one of the ten items. This is a generous estimate, not a
+    # guarantee — self-hosted runners have no GitHub-imposed maximum the
+    # way ubuntu-latest jobs do, so there's room to raise this further if
+    # real runs still time out.
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
 
@@ -171,35 +168,3 @@ jobs:
         # it, and tears it down after — -a auto-selects a free display
         # number rather than assuming one is free.
         run: xvfb-run -a uv run python scripts/run_indeed_scraper.py
-
-  reed:
-    runs-on: ubuntu-latest
-    # Slightly more headroom than the other three plain-HTTP jobs'
-    # 15 minutes (Reed makes up to REED_QUERIES_CLAIMED_PER_RUN Search
-    # calls plus up to REED_MAX_JOBS_PROCESSED_PER_RUN Details calls, not
-    # one fetch). Real observed runs during scoping (2026-09-28) took
-    # ~7-8 minutes end to end for the defaults (5 queries, 200 jobs) —
-    # 20 minutes leaves real margin without indeed's much larger
-    # Selenium-session budget.
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: uv sync --extra dev --extra test
-
-      - name: Run Reed scraper
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REED_API_KEY: ${{ secrets.REED_API_KEY }}
-        run: uv run python scripts/run_reed_scraper.py
