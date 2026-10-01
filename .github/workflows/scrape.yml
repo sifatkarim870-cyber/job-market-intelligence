@@ -29,10 +29,35 @@ name: Scheduled scraping
 # scripts/seed_indeed_queries.py) — a schema/seeding prerequisite this
 # workflow does not check or perform itself.
 
+#
+# reed also shares the same 12-hour cron. Closer to indeed's shape than
+# the first three's: each run claims REED_QUERIES_CLAIMED_PER_RUN rows
+# (default 5) from its own separate queue, ops.reed_search_queue — NOT
+# ops.scrape_query_queue, which is indeed's own table; see
+# migrations/add_reed_search_queue_table.sql's header comment for why
+# they're deliberately separate. That table must already exist and be
+# seeded before this job can do anything (see that same migration and
+# scripts/seed_reed_queries.py) — same unchecked prerequisite as indeed's
+# queue. Also needs its own secret, REED_API_KEY (Reed's API requires an
+# API key; none of the other four sources need any authentication at
+# all) — set it under this repo's Settings -> Secrets and variables ->
+# Actions before this job can succeed.
+
 on:
   schedule:
     - cron: "0 */12 * * *"   # every 12 hours, on the hour (00:00 and 12:00 UTC)
   workflow_dispatch: {}       # lets you trigger any/all jobs manually from the Actions tab
+
+# Added 2026-10-01, from a GitHub Copilot fix proposed on a branch
+# (copilot/fix-reed-job-failure) after the reed job's first-ever run
+# failed outright (scripts/run_reed_scraper.py genuinely wasn't pushed
+# yet at that point). Good, low-risk, unrelated-but-sensible hardening:
+# restricts this workflow's GITHUB_TOKEN to read-only by default, the
+# standard least-privilege recommendation for a workflow that doesn't
+# need to write back to the repo. Kept even though none of the jobs
+# below ever needed more than read access anyway.
+permissions:
+  contents: read
 
 jobs:
   remoteok:
@@ -168,3 +193,42 @@ jobs:
         # it, and tears it down after — -a auto-selects a free display
         # number rather than assuming one is free.
         run: xvfb-run -a uv run python scripts/run_indeed_scraper.py
+
+  reed:
+    # Guard against scripts/run_reed_scraper.py being absent (exactly
+    # what caused both prior reed job failures -- see git history on
+    # this file, and PR branch copilot/fix-reed-job-failure, 2026-10-01).
+    # Skips this job cleanly instead of hard-failing when the entrypoint
+    # isn't present, rather than relying on this file and that script
+    # never going out of sync again.
+    if: ${{ hashFiles('scripts/run_reed_scraper.py') != '' }}
+    runs-on: ubuntu-latest
+    # Slightly more headroom than the other three plain-HTTP jobs'
+    # 15 minutes (Reed makes up to REED_QUERIES_CLAIMED_PER_RUN Search
+    # calls plus up to REED_MAX_JOBS_PROCESSED_PER_RUN Details calls, not
+    # one fetch). Real observed runs during scoping (2026-09-28) took
+    # ~7-8 minutes end to end for the defaults (5 queries, 200 jobs) --
+    # 20 minutes leaves real margin without indeed's much larger
+    # Selenium-session budget.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run Reed scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REED_API_KEY: ${{ secrets.REED_API_KEY }}
+        run: uv run python scripts/run_reed_scraper.py
