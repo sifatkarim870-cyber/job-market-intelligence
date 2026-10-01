@@ -195,13 +195,20 @@ jobs:
         run: xvfb-run -a uv run python scripts/run_indeed_scraper.py
 
   reed:
-    # Guard against scripts/run_reed_scraper.py being absent (exactly
-    # what caused both prior reed job failures -- see git history on
-    # this file, and PR branch copilot/fix-reed-job-failure, 2026-10-01).
-    # Skips this job cleanly instead of hard-failing when the entrypoint
-    # isn't present, rather than relying on this file and that script
-    # never going out of sync again.
-    if: ${{ hashFiles('scripts/run_reed_scraper.py') != '' }}
+    # NOTE (2026-10-01): a hashFiles()-based guard was here briefly,
+    # adapted from an unmerged, never-actually-run Copilot branch
+    # (copilot/fix-reed-job-failure), meant to skip this job cleanly if
+    # scripts/run_reed_scraper.py was ever missing again. It was invalid
+    # GitHub Actions syntax: hashFiles() is only usable in
+    # jobs.<job_id>.steps.if, never in a job-level if: -- and GitHub
+    # rejects the ENTIRE workflow file when it's misused there, which is
+    # exactly what happened (run #61: "Invalid workflow file ...
+    # Unrecognized function: 'hashFiles'" -- every job failed, not just
+    # this one). Removed rather than relocated: the problem it guarded
+    # against (the entrypoint being missing) is already fixed and
+    # committed, so the guard wasn't load-bearing, and doing it correctly
+    # at step level would mean repeating the same if: on every step below
+    # for no real benefit.
     runs-on: ubuntu-latest
     # Slightly more headroom than the other three plain-HTTP jobs'
     # 15 minutes (Reed makes up to REED_QUERIES_CLAIMED_PER_RUN Search
