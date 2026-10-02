@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 from sqlalchemy.orm import Session
 
 from job_market_intel.db.exceptions import RepositoryError
@@ -104,6 +104,46 @@ class ScrapeQueueRepository(AbstractRepository[Any]):
             {"source_id": source_id, "query_text": query_text_, "location_text": location_text},
         )
 
+    def claim_next_queries(
+        self, session: Session, source_id: int, limit: int
+    ) -> list[ClaimedQuery]:
+        """Same eligibility and locking semantics as claim_next_query above
+        (pending/done only, FOR UPDATE SKIP LOCKED, oldest-due first) but
+        claims up to `limit` rows in one atomic round trip instead of one
+        — added once the seeded queue grew to ~21,000 combinations
+        (every country x a broad job-title set) and one-item-per-run
+        stopped being enough to make real progress against it. See
+        IndeedSettings.items_per_run's docstring for the full reasoning.
+
+        Returns fewer than `limit` (including an empty list) if that many
+        eligible rows don't exist — never an error, same as
+        claim_next_query returning None for the single-row case.
+        """
+        rows = session.execute(
+            text(
+                "WITH claimed AS ("
+                "  SELECT query_id FROM ops.scrape_query_queue "
+                "  WHERE source_id = :source_id AND status IN ('pending', 'done') "
+                "  ORDER BY last_scraped_at NULLS FIRST, query_id "
+                "  LIMIT :limit "
+                "  FOR UPDATE SKIP LOCKED"
+                ") "
+                "UPDATE ops.scrape_query_queue q SET status = 'in_progress' "
+                "FROM claimed c WHERE q.query_id = c.query_id "
+                "RETURNING q.query_id, q.query_text, q.location_text, q.last_page_reached"
+            ),
+            {"source_id": source_id, "limit": limit},
+        ).all()
+        return [
+            ClaimedQuery(
+                query_id=row.query_id,
+                query_text=row.query_text,
+                location_text=row.location_text,
+                last_page_reached=row.last_page_reached,
+            )
+            for row in rows
+        ]
+
     def claim_next_query(self, session: Session, source_id: int) -> ClaimedQuery | None:
         """Atomically claim the queue's next-most-due row for this source
         (oldest `last_scraped_at`, NULLs — i.e. never attempted — first)
@@ -186,4 +226,22 @@ class ScrapeQueueRepository(AbstractRepository[Any]):
                 "error": error,
                 "query_id": query_id,
             },
+        )
+
+    def release_claimed_queries(self, session: Session, query_ids: list[int]) -> None:
+        """Return rows claimed via claim_next_queries but never worked
+        back to 'pending' — used when a run claims a batch but stops
+        early on a controlled block (see IndeedPipeline.run), so the
+        unworked rows don't stay stuck 'in_progress'. Deliberately does
+        NOT touch last_scraped_at or last_page_reached: an item that
+        was never attempted has no new scrape outcome to record.
+        """
+        if not query_ids:
+            return
+        session.execute(
+            text(
+                "UPDATE ops.scrape_query_queue SET status = 'pending' "
+                "WHERE status = 'in_progress' AND query_id IN :query_ids"
+            ).bindparams(bindparam("query_ids", expanding=True)),
+            {"query_ids": query_ids},
         )

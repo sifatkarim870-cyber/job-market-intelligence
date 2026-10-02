@@ -45,7 +45,10 @@ from job_market_intel.validation.indeed_validator import (
 if TYPE_CHECKING:
     from job_market_intel.cleaning.indeed_cleaner import IndeedCleaner
     from job_market_intel.db.job_repository import JobRepository
-    from job_market_intel.db.scrape_queue_repository import ScrapeQueueRepository
+    from job_market_intel.db.scrape_queue_repository import (
+        ClaimedQuery,
+        ScrapeQueueRepository,
+    )
 
 
 class IndeedPipelineRunResult(BaseModel):
@@ -106,40 +109,80 @@ class IndeedPipeline:
             queue_repository = ScrapeQueueRepository()
         self.queue_repository = queue_repository
 
-    def run(self, *, store_db: bool = True) -> IndeedPipelineRunResult:
-        """Run one Indeed pipeline cycle end-to-end.
+    def run(self, *, store_db: bool = True) -> list[IndeedPipelineRunResult]:
+        """Run one Indeed pipeline cycle end-to-end over a batch of queue rows.
+
+        Claims up to ``IndeedSettings.items_per_run`` rows in one atomic
+        round trip (see ScrapeQueueRepository.claim_next_queries for why
+        more than one per run is now necessary) and works each as its own
+        paced, capped browser session, in the same oldest-due-first order
+        the single-item version used.
 
         Args:
-            store_db: If True, persist cleaned jobs and record the queue
+            store_db: If True, persist cleaned jobs and record each queue
                 outcome. If False (dry-run), the browser phase and
                 cleaning still run in full — only persistence is skipped —
                 so ``--no-db`` is still a genuine end-to-end test of the
                 scraping/parsing/cleaning logic, matching this project's
-                dry-run-first convention. Note the queue item is still
+                dry-run-first convention. Note the queue rows are still
                 *claimed* (marked in_progress) even in a dry-run, since
                 claiming requires a DB write to be meaningful at all;
                 dry-run only skips the final persist+record step, leaving
-                that row 'in_progress' for a manual reset. This is a
+                those rows 'in_progress' for a manual reset. This is a
                 known, accepted asymmetry for --no-db runs specifically.
 
         Returns:
-            IndeedPipelineRunResult with execution metrics.
-        """
-        result = IndeedPipelineRunResult()
+            One IndeedPipelineRunResult per claimed row. If the queue had
+            nothing eligible, a single result with ``queue_empty=True`` —
+            always a non-empty list, never an empty one.
 
+        A blocked session (IndeedBlockedError -> queue_status='failed')
+        stops the batch there rather than hammering Indeed into a worse
+        block within the same run: the blocked item's partial progress is
+        kept, and any claimed-but-unworked rows are released back to
+        'pending' for a future run (see release_claimed_queries).
+        """
         with get_session() as session:
             source_id = self.repository.get_source_id_by_code(session, "indeed")
-            claimed = self.queue_repository.claim_next_query(session, source_id)
+            claimed_list = self.queue_repository.claim_next_queries(
+                session, source_id, self.settings.items_per_run
+            )
 
-        if claimed is None:
+        if not claimed_list:
             logger.warning(
                 "indeed.pipeline.queue_empty - nothing eligible in ops.scrape_query_queue "
                 "for source_id={}. Seed it first (scripts/seed_indeed_queries.py).",
                 source_id,
             )
+            result = IndeedPipelineRunResult()
             result.queue_empty = True
-            return result
+            return [result]
 
+        results: list[IndeedPipelineRunResult] = []
+        for index, claimed in enumerate(claimed_list):
+            result = self._run_one(claimed, store_db=store_db)
+            results.append(result)
+            if result.queue_status == "failed":
+                remaining = claimed_list[index + 1 :]
+                if remaining:
+                    logger.warning(
+                        "indeed.pipeline.blocked_stop: releasing {} untaken queue row(s) "
+                        "back to pending",
+                        len(remaining),
+                    )
+                    with get_session() as session:
+                        self.queue_repository.release_claimed_queries(
+                            session, [c.query_id for c in remaining]
+                        )
+                break
+
+        return results
+
+    def _run_one(self, claimed: ClaimedQuery, *, store_db: bool) -> IndeedPipelineRunResult:
+        """Work one claimed queue row through the full cycle: browser
+        phase -> validate -> clean -> persist -> record the outcome.
+        """
+        result = IndeedPipelineRunResult()
         result.query_text = claimed.query_text
         result.location_text = claimed.location_text
         logger.info(

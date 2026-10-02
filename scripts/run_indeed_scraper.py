@@ -54,7 +54,7 @@ def main() -> int:
     logger.info("Starting Indeed pipeline (store_db={}).", store_db)
 
     try:
-        run_result = pipeline.run(store_db=store_db)
+        run_results = pipeline.run(store_db=store_db)
     except IndeedError as exc:
         logger.error("Indeed pipeline run failed: {}", exc)
         return 1
@@ -64,39 +64,47 @@ def main() -> int:
     print("INDEED PIPELINE — RUN SUMMARY")
     print("=" * 70)
 
-    if run_result.queue_empty:
+    if run_results[0].queue_empty:
         print("Queue was empty — nothing eligible in ops.scrape_query_queue for 'indeed'.")
         print("Run scripts/seed_indeed_queries.py to add (query, location) combinations.")
         print("=" * 70)
         return 0
 
-    print(f"Query worked:            {run_result.query_text!r} @ {run_result.location_text!r}")
-    print(f"Search pages visited:    {run_result.search_pages_visited}")
-    print(f"Detail pages visited:    {run_result.detail_pages_visited}")
-    print(f"Raw cards extracted:     {run_result.raw_count}")
-    print(f"Successfully parsed:     {run_result.parsed_count}")
-    print(f"Cleaned & normalized:    {run_result.cleaned_count}")
-    print(f"Batch validation:        {'PASSED' if run_result.validation_passed else 'FAILED'}")
-    if run_result.issues:
+    total_inserted = sum(r.inserted_count for r in run_results)
+    total_updated = sum(r.updated_count for r in run_results)
+    total_unchanged = sum(r.unchanged_count for r in run_results)
+    total_failed = sum(r.failed_count for r in run_results)
+    any_blocked = any(r.blocked_reason for r in run_results)
+
+    print(f"Queue items worked:          {len(run_results)}")
+    for run_result in run_results:
+        print(
+            f"  - {run_result.query_text!r} @ {run_result.location_text!r}"
+            f" — {run_result.search_pages_visited} search pages,"
+            f" {run_result.detail_pages_visited} detail pages,"
+            f" {run_result.raw_count} cards, queue_status={run_result.queue_status}"
+        )
+        if run_result.blocked_reason:
+            print(f"      Blocked reason:        {run_result.blocked_reason}")
+    all_passed = all(r.validation_passed for r in run_results)
+    print(f"Batch validation:            {'PASSED' if all_passed else 'FAILED'}")
+    for run_result in run_results:
         for issue in run_result.issues:
             print(f"  - {issue}")
     print()
-    print(f"Queue outcome:           {run_result.queue_status}")
-    if run_result.blocked_reason:
-        print(f"  Blocked reason:        {run_result.blocked_reason}")
-    print()
     if store_db:
         print("DATABASE PERSISTENCE & DEDUPLICATION:")
-        print(f"  Scraping Session ID:   {run_result.session_id}")
-        print(f"  New jobs inserted:     {run_result.inserted_count}")
-        print(f"  Jobs updated:          {run_result.updated_count}")
-        print(f"  Jobs unchanged:        {run_result.unchanged_count}")
-        print(f"  Persistence failures:  {run_result.failed_count}")
+        print(f"  New jobs inserted:     {total_inserted}")
+        print(f"  Jobs updated:          {total_updated}")
+        print(f"  Jobs unchanged:        {total_unchanged}")
+        print(f"  Persistence failures:  {total_failed}")
     else:
         print("DRY-RUN MODE (--no-db active): Database storage skipped.")
     print("=" * 70)
 
-    logger.info("Indeed pipeline run finished (queue_status={}).", run_result.queue_status)
+    if any_blocked:
+        logger.warning("Indeed run stopped early on a controlled block — see summary above.")
+    logger.info("Indeed pipeline run finished.")
     return 0
 
 

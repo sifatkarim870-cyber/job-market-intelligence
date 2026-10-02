@@ -88,7 +88,7 @@ def run_indeed_pipeline_job() -> None:
     logger.info("Scheduled Indeed pipeline run starting.")
     try:
         pipeline = IndeedPipeline()
-        result = pipeline.run(store_db=True)
+        results = pipeline.run(store_db=True)
     except IndeedError as exc:
         logger.error("Scheduled Indeed pipeline run failed: {}", exc)
         return
@@ -96,33 +96,44 @@ def run_indeed_pipeline_job() -> None:
         logger.error("Scheduled Indeed pipeline run failed unexpectedly: {}", exc)
         return
 
-    if result.queue_empty:
+    if results[0].queue_empty:
         logger.info(
             "Scheduled Indeed pipeline run found nothing eligible in "
             "ops.scrape_query_queue - idle this cycle, not an error."
         )
         return
 
+    total_inserted = sum(r.inserted_count for r in results)
+    total_updated = sum(r.updated_count for r in results)
+    total_unchanged = sum(r.unchanged_count for r in results)
+    total_failed = sum(r.failed_count for r in results)
+    blocked = next((r for r in results if r.queue_status == "failed"), None)
+
     logger.info(
-        "Scheduled Indeed pipeline run complete: query={!r} location={!r} "
-        "{} inserted, {} updated, {} unchanged, {} failed (session_id={}, "
-        "queue_status={}).",
-        result.query_text,
-        result.location_text,
-        result.inserted_count,
-        result.updated_count,
-        result.unchanged_count,
-        result.failed_count,
-        result.session_id,
-        result.queue_status,
+        "Scheduled Indeed pipeline run complete: {} item(s) worked, "
+        "{} inserted, {} updated, {} unchanged, {} failed.",
+        len(results),
+        total_inserted,
+        total_updated,
+        total_unchanged,
+        total_failed,
     )
-    if result.queue_status == "failed":
-        logger.warning(
-            "Scheduled Indeed run ended in a controlled stop, not a crash: {}",
-            result.blocked_reason,
+    for result in results:
+        logger.debug(
+            "  item: query={!r} location={!r} queue_status={} session_id={}",
+            result.query_text,
+            result.location_text,
+            result.queue_status,
+            result.session_id,
         )
-    if not result.validation_passed:
+    if blocked is not None:
         logger.warning(
-            "Scheduled Indeed run completed but batch validation flagged issues: {}",
-            result.issues,
+            "Scheduled Indeed run stopped early on a controlled block, not a crash: {} "
+            "(any remaining claimed items this run were released back to pending).",
+            blocked.blocked_reason,
+        )
+    if any(not r.validation_passed for r in results):
+        logger.warning(
+            "Scheduled Indeed run completed but at least one item's batch validation "
+            "flagged issues — see per-item debug logs above."
         )

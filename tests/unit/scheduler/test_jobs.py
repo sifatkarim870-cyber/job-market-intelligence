@@ -103,7 +103,7 @@ class TestRunIndeedPipelineJob:
         self, mock_pipeline_cls: MagicMock
     ) -> None:
         mock_pipeline = mock_pipeline_cls.return_value
-        mock_pipeline.run.return_value = _indeed_result()
+        mock_pipeline.run.return_value = [_indeed_result()]
 
         run_indeed_pipeline_job()
 
@@ -126,7 +126,7 @@ class TestRunIndeedPipelineJob:
     def test_queue_empty_does_not_raise_and_is_treated_as_idle(
         self, mock_pipeline_cls: MagicMock
     ) -> None:
-        mock_pipeline_cls.return_value.run.return_value = _indeed_result(queue_empty=True)
+        mock_pipeline_cls.return_value.run.return_value = [_indeed_result(queue_empty=True)]
 
         # An empty queue is a legitimate idle state, not an error - must
         # not raise, and (per the function's own docstring) must not be
@@ -135,9 +135,11 @@ class TestRunIndeedPipelineJob:
 
     @patch("job_market_intel.scheduler.jobs.IndeedPipeline")
     def test_blocked_session_does_not_raise(self, mock_pipeline_cls: MagicMock) -> None:
-        mock_pipeline_cls.return_value.run.return_value = _indeed_result(
-            queue_status="failed", blocked_reason="challenge detected on search page 1"
-        )
+        mock_pipeline_cls.return_value.run.return_value = [
+            _indeed_result(
+                queue_status="failed", blocked_reason="challenge detected on search page 1"
+            )
+        ]
 
         # A controlled stop (IndeedBlockedError caught inside the
         # pipeline itself, surfaced here only as queue_status) must not
@@ -147,9 +149,11 @@ class TestRunIndeedPipelineJob:
 
     @patch("job_market_intel.scheduler.jobs.IndeedPipeline")
     def test_validation_issues_do_not_raise(self, mock_pipeline_cls: MagicMock) -> None:
-        mock_pipeline_cls.return_value.run.return_value = _indeed_result(
-            validation_passed=False,
-            issues=["Zero raw records received from Indeed."],
-        )
+        mock_pipeline_cls.return_value.run.return_value = [
+            _indeed_result(
+                validation_passed=False,
+                issues=["Zero raw records received from Indeed."],
+            )
+        ]
 
         run_indeed_pipeline_job()

@@ -17,6 +17,7 @@ prefixed with ``INDEED_`` to override a default, e.g.:
 
 from __future__ import annotations
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -87,6 +88,21 @@ class IndeedSettings(BaseSettings):
     max_search_pages_per_session: int = 5
     max_detail_pages_per_session: int = 60
     max_consecutive_failures: int = 3
+
+    items_per_run: int = Field(
+        default=10,
+        description=(
+            "How many queue rows one pipeline run claims and works, each "
+            "as its own bounded, paced browser session. It was 1 when the "
+            "queue had a handful of rows; the queue is now seeded with "
+            "~21,000 combinations (every country x a broad job-title set), "
+            "and one combination per every-12-hours run made no meaningful "
+            "progress against it. 10 per run keeps one invocation inside the "
+            "scheduled job's timeout (ten individually-paced sessions of up "
+            "to 5 search + 60 detail pages each) while giving real coverage. "
+            "INDEED_ITEMS_PER_RUN overrides it."
+        ),
+    )
 
     page_load_timeout_seconds: float = 30.0
     request_user_agent: str = (

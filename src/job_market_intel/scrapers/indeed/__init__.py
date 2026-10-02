@@ -25,7 +25,8 @@ Typical usage:
     from job_market_intel.scrapers.indeed import IndeedPipeline
 
     pipeline = IndeedPipeline()
-    result = pipeline.run(store_db=False)  # dry-run first, per project convention
+    results = pipeline.run(store_db=False)  # dry-run first, per project convention
+    print(results[0].queue_status)
 """
 
 from .client import IndeedClient
