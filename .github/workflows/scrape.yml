@@ -173,7 +173,7 @@ jobs:
         # don't pay for a Chromium-adjacent dependency they never touch.
         run: uv sync --extra dev --extra test --extra selenium
 
-      - name: Install Xvfb
+      - name: Install Chrome and Xvfb
         # Confirmed decision: run genuinely non-headless in CI, the same
         # way this scraper runs locally, rather than setting
         # INDEED_HEADLESS=true for this job. headless=False is a
@@ -183,8 +183,15 @@ jobs:
         # traffic matters most (real, unattended, scheduled runs). Xvfb
         # gives Chrome a real virtual display so no headless flag is
         # needed at all; this is a standard, well-trodden pattern for
-        # browser automation on GitHub-hosted runners generally.
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+        # browser automation on GitHub-hosted runners generally. This
+        # self-hosted runner also needs Chrome installed explicitly.
+        run: |
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub \
+            | sudo gpg --dearmor -o /usr/share/keyrings/google-linux.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+            | sudo tee /etc/apt/sources.list.d/google-chrome.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable xvfb
 
       - name: Run Indeed scraper
         env:
