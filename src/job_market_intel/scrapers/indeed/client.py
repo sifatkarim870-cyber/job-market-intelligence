@@ -104,7 +104,6 @@ class IndeedClient:
         logger.info("indeed.session.open headless=%s", self._settings.headless)
         self._driver = Driver(
             uc=True,
-            uc_subprocess=True,
             headless2=self._settings.headless,
             agent=self._settings.request_user_agent,
             page_load_strategy="eager",

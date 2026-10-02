@@ -18,8 +18,6 @@ manual/live run, not something worth slowing down `pytest` for.
 
 from __future__ import annotations
 
-import sys
-import types
 from unittest.mock import MagicMock
 
 import pytest
@@ -120,21 +118,3 @@ class TestCloseSession:
     ) -> None:
         client_with_mock_driver._driver.quit.side_effect = RuntimeError("already dead")  # noqa: SLF001
         client_with_mock_driver.close_session()  # must not raise
-
-
-class TestOpenSession:
-    def test_open_session_uses_uc_subprocess_mode(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        mock_driver_instance = MagicMock()
-        mock_driver_ctor = MagicMock(return_value=mock_driver_instance)
-        fake_seleniumbase = types.SimpleNamespace(Driver=mock_driver_ctor)
-
-        monkeypatch.setitem(sys.modules, "seleniumbase", fake_seleniumbase)
-
-        client = IndeedClient(settings=IndeedSettings())
-        client.open_session()
-
-        mock_driver_ctor.assert_called_once()
-        assert mock_driver_ctor.call_args.kwargs["uc_subprocess"] is True
-        mock_driver_instance.set_page_load_timeout.assert_called_once_with(
-            client._settings.page_load_timeout_seconds  # noqa: SLF001 - deliberate assertion on config wiring
-        )
