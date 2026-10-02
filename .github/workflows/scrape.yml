@@ -187,7 +187,7 @@ jobs:
         # self-hosted runner also needs Chrome installed explicitly.
         run: |
           wget -q -O - https://dl.google.com/linux/linux_signing_key.pub \
-            | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/google-linux.gpg
+            | sudo gpg --batch --yes --no-tty --dearmor -o /usr/share/keyrings/google-linux.gpg
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
             | sudo tee /etc/apt/sources.list.d/google-chrome.list > /dev/null
           sudo apt-get update
