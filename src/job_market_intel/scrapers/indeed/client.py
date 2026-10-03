@@ -40,7 +40,9 @@ from __future__ import annotations
 
 import logging
 import random
+import tempfile
 import time
+from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
 
@@ -111,7 +113,15 @@ _PLAIN_CHROME_ARGS = ("--no-sandbox",)
 # Where the UC-off path points chromedriver's own stderr. On CI this is the
 # single most useful thing to have when a session fails to start, so it goes
 # to a file the workflow can cat rather than into the scraper's own log.
-_CHROMEDRIVER_LOG_PATH = "/tmp/chromedriver.log"
+#
+# Resolved through tempfile rather than hardcoded as /tmp/... : a log file
+# whose directory doesn't exist makes chromedriver exit 1 immediately with
+# "Service ... unexpectedly exited. Status code was: 1", which reads exactly
+# like a broken browser configuration and sent this debugging in the wrong
+# direction for a while. /tmp exists on the Linux runner, so CI never saw it
+# — but INDEED_UC_ENABLED=false is a supported local setting too, and on
+# Windows or macOS the hardcoded path made every session fail to start.
+_CHROMEDRIVER_LOG_PATH = str(Path(tempfile.gettempdir()) / "chromedriver.log")
 
 # selenium 4.49's own hardcoded driver read timeout (ChromiumRemoteConnection
 # builds its ClientConfig with timeout=120). Restored for every call *after*

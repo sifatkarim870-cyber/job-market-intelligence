@@ -234,12 +234,14 @@ jobs:
         # `always()`, not `failure()`: a session that won't start is reported
         # as a controlled no-op, so the scraper step exits 0 and `failure()`
         # never fires -- which is exactly the case whose log matters most.
-        # The single most useful artifact here is chromedriver's own stderr,
-        # which client.py points at /tmp/chromedriver.log for this purpose.
+        # The single most useful artifact here is chromedriver's own stderr.
         if: always()
         run: |
-          echo "=== /tmp/chromedriver.log ==="
-          cat /tmp/chromedriver.log 2>/dev/null || echo "(no chromedriver log)"
+          # Ask client.py where it put the log rather than assuming a path,
+          # so this keeps working if the location ever moves.
+          DRIVER_LOG="$(.venv/bin/python -c 'from job_market_intel.scrapers.indeed.client import _CHROMEDRIVER_LOG_PATH as p; print(p)')"
+          echo "=== chromedriver log ($DRIVER_LOG) ==="
+          cat "$DRIVER_LOG" 2>/dev/null || echo "(no chromedriver log)"
           echo "=== memory ==="
           free -m || true
           echo "=== disk ==="
