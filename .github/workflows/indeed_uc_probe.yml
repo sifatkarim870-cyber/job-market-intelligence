@@ -32,8 +32,8 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           set +e
-          for m in plain plain_ns plain_ns_gpu plain_ns_gpu_shm plain_all plain_all_eager uc_normal; do
+          for m in plain plain_ns plain_all_eager plain_all; do
             echo "=== MODE $m ==="
-            timeout 60 xvfb-run -a uv run python scripts/_probe_sb_mode.py "$m" || echo "MODE $m exit=$?"
+            timeout 60 xvfb-run -a .venv/bin/python scripts/_probe_sb_mode.py "$m" || echo "MODE $m exit=$?"
           done
-          echo "ALL PROBES DONE"
+          echo "ALL PROBES DONE ============"
