@@ -65,6 +65,9 @@ class IndeedSettings(BaseSettings):
             (see the field description) — the one timeout that has to be
             generous on slow machines, since nothing has happened yet that
             ``page_load_timeout_seconds`` could bound.
+        session_start_attempts: Launches to try before the row is written
+            off as failed.
+        session_start_retry_wait_seconds: Base pause between those attempts.
         request_user_agent: Not sent as a raw HTTP header the way
             ``common/http_client.py``'s scrapers do — Selenium controls
             the real browser's own UA. Kept here anyway as the value
@@ -136,6 +139,30 @@ class IndeedSettings(BaseSettings):
             "calls. Only applies to the UC-off path; seleniumbase's Driver "
             "has no equivalent knob. INDEED_SESSION_START_TIMEOUT_SECONDS "
             "overrides it."
+        ),
+    )
+
+    session_start_attempts: int = Field(
+        default=3,
+        description=(
+            "How many times open_session() tries to start a browser before "
+            "giving up on a queue row. More than one because on a small VM a "
+            "launch can fail on available memory rather than on anything "
+            "wrong with the request: on the CI runner the identical Chrome "
+            "flag set failed at 127s in one run and started in 49s in "
+            "another. UC-off path only — seleniumbase's Driver does its own "
+            "thing and is left alone. INDEED_SESSION_START_ATTEMPTS "
+            "overrides it."
+        ),
+    )
+
+    session_start_retry_wait_seconds: float = Field(
+        default=15.0,
+        description=(
+            "Base pause between session-start attempts, multiplied by the "
+            "attempt number so a retry doesn't immediately re-collide with "
+            "whatever was still holding memory. "
+            "INDEED_SESSION_START_RETRY_WAIT_SECONDS overrides it."
         ),
     )
 

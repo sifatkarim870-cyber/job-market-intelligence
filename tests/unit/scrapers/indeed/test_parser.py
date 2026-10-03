@@ -80,9 +80,7 @@ class TestParseSearchPage:
         # The id="job_<jk>" attribute is preferred over parsing the
         # tracking-heavy href — confirm it's actually being used, not
         # just coincidentally matching via the href fallback.
-        card = _ORGANIC_CARD.replace(
-            'id="job_aabbccdd11223344"', 'id="job_ffffffffffffffff"'
-        )
+        card = _ORGANIC_CARD.replace('id="job_aabbccdd11223344"', 'id="job_ffffffffffffffff"')
         jobs = parse_search_page(
             f"<html><body>{card}</body></html>",
             query_text="q",

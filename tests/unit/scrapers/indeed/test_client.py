@@ -19,6 +19,7 @@ manual/live run, not something worth slowing down `pytest` for.
 from __future__ import annotations
 
 import sys
+import time
 import types
 from unittest.mock import MagicMock
 
@@ -344,6 +345,97 @@ class TestOpenSession:
         assert "--disable-dev-shm-usage" not in _PLAIN_CHROME_ARGS
         # --no-sandbox is the opposite case: still required there.
         assert "--no-sandbox" in _PLAIN_CHROME_ARGS
+
+    def test_open_session_retries_a_launch_that_fails_on_available_memory(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A failed launch is retried before the row is written off.
+
+        On the CI runner the identical Chrome flag set failed at 127s in one
+        run and started in 49s in another, with available memory swinging
+        279MiB -> 378MiB between them. That is a coin flip, not a bug, so a
+        second attempt is the right response and writing the queue row off
+        after one is not.
+        """
+        monkeypatch.setitem(sys.modules, "seleniumbase", types.SimpleNamespace(Driver=MagicMock()))
+        monkeypatch.setattr(time, "sleep", lambda _: None)
+
+        attempts = 0
+
+        def flaky_chrome(**_: object) -> MagicMock:
+            nonlocal attempts
+            attempts += 1
+            if attempts < 3:
+                raise RuntimeError("DevToolsActivePort file doesn't exist")
+            return MagicMock()
+
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium",
+            types.SimpleNamespace(
+                webdriver=types.SimpleNamespace(
+                    Chrome=MagicMock(side_effect=flaky_chrome),
+                    ChromeOptions=MagicMock(return_value=MagicMock()),
+                )
+            ),
+        )
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium.webdriver.chrome.service",
+            types.SimpleNamespace(Service=MagicMock(return_value=MagicMock())),
+        )
+
+        settings = IndeedSettings(
+            headless=True,
+            uc_enabled=False,
+            session_start_attempts=3,
+            session_start_retry_wait_seconds=0.0,
+        )
+        client = IndeedClient(settings=settings)
+        client.open_session()
+
+        assert attempts == 3
+        assert client._driver is not None  # noqa: SLF001 - the point of the test
+
+    def test_open_session_gives_up_after_the_configured_number_of_attempts(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setitem(sys.modules, "seleniumbase", types.SimpleNamespace(Driver=MagicMock()))
+        monkeypatch.setattr(time, "sleep", lambda _: None)
+
+        attempts = 0
+
+        def always_fails(**_: object) -> None:
+            nonlocal attempts
+            attempts += 1
+            raise RuntimeError("DevToolsActivePort file doesn't exist")
+
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium",
+            types.SimpleNamespace(
+                webdriver=types.SimpleNamespace(
+                    Chrome=MagicMock(side_effect=always_fails),
+                    ChromeOptions=MagicMock(return_value=MagicMock()),
+                )
+            ),
+        )
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium.webdriver.chrome.service",
+            types.SimpleNamespace(Service=MagicMock(return_value=MagicMock())),
+        )
+
+        settings = IndeedSettings(
+            headless=True,
+            uc_enabled=False,
+            session_start_attempts=2,
+            session_start_retry_wait_seconds=0.0,
+        )
+        with pytest.raises(IndeedFetchError, match="2 attempts"):
+            IndeedClient(settings=settings).open_session()
+
+        assert attempts == 2
 
     def test_open_session_plain_driver_raises_indeed_fetch_error_when_it_will_not_start(
         self, monkeypatch: pytest.MonkeyPatch

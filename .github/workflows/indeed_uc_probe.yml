@@ -38,10 +38,16 @@ jobs:
           INDEED_UC_ENABLED: "false"
           INDEED_HEADLESS: "true"
         run: |
-          # Memory is the suspected root cause (837MiB total, ~279MiB free,
-          # no swap), and xvfb-run holds an X server resident for the whole
-          # job even though headless=new never uses it. Compare against the
-          # same probe without a display at all.
+          # The job shell is `bash -e`, so without this a single failing
+          # pkill (nothing left to kill) aborts the step and every later
+          # variant silently goes unrun.
+          set +e
+
+          # Memory is the suspected root cause (837MiB total, no swap, and
+          # available memory measured anywhere between 279MiB and 378MiB on
+          # different runs), and xvfb-run holds an X server resident for the
+          # whole job even though headless=new never reads DISPLAY. Compare
+          # against the same variants with no display at all.
           echo "=== with xvfb ==="
           for variant in ${{ inputs.variants }}; do
             echo "----- PROBING (xvfb) $variant -----"
@@ -49,8 +55,8 @@ jobs:
             # and wedges must not be able to affect the next attempt.
             timeout 150 xvfb-run -a .venv/bin/python scripts/_probe_raw_session.py "$variant"
             echo "----- exit=$? for (xvfb) $variant -----"
-            pkill -f chromedriver 2>/dev/null
-            pkill -f 'chrome --' 2>/dev/null
+            pkill -x chromedriver 2>/dev/null
+            pkill -x chrome 2>/dev/null
             sleep 2
           done
 
@@ -62,8 +68,8 @@ jobs:
             echo "----- PROBING (no-xvfb) $variant -----"
             timeout 150 .venv/bin/python scripts/_probe_raw_session.py "$variant"
             echo "----- exit=$? for (no-xvfb) $variant -----"
-            pkill -f chromedriver 2>/dev/null
-            pkill -f 'chrome --' 2>/dev/null
+            pkill -x chromedriver 2>/dev/null
+            pkill -x chrome 2>/dev/null
             sleep 2
           done
 

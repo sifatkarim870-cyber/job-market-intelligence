@@ -264,16 +264,39 @@ class IndeedClient:
                 )
                 super().__init__(*args, **kwargs)
 
+        attempts = max(1, int(self._settings.session_start_attempts))
         started = time.monotonic()
         # mypy reads this module attribute as a type; swapping the class out
         # at runtime is the point, hence the ignores.
         chromium_webdriver.ChromiumRemoteConnection = _PatientChromeConnection  # type: ignore[misc]
         try:
-            driver = webdriver.Chrome(options=options, service=service)
-        except Exception as exc:
-            raise IndeedFetchError(
-                f"chrome session failed to start after {time.monotonic() - started:.0f}s: {exc}"
-            ) from exc
+            for attempt in range(1, attempts + 1):
+                try:
+                    driver = webdriver.Chrome(options=options, service=service)
+                    break
+                except Exception as exc:  # noqa: BLE001 - retried, then re-raised
+                    elapsed = time.monotonic() - started
+                    if attempt == attempts:
+                        raise IndeedFetchError(
+                            f"chrome session failed to start after {elapsed:.0f}s "
+                            f"({attempts} attempts): {exc}"
+                        ) from exc
+                    # Worth retrying: on a memory-constrained machine a launch
+                    # can fail purely because something else was resident at
+                    # the time. Observed on the CI runner — the same flag set
+                    # failed at 127s in one run and started in 49s in another,
+                    # with available memory swinging 279MiB -> 378MiB between
+                    # them. A short settle gap plus a fresh attempt turns that
+                    # coin flip into something that usually lands.
+                    logger.warning(
+                        "indeed.session.start_attempt_failed attempt=%d/%d elapsed=%.0fs reason=%s",
+                        attempt,
+                        attempts,
+                        elapsed,
+                        exc,
+                    )
+                    self._driver = None
+                    time.sleep(self._settings.session_start_retry_wait_seconds * attempt)
         finally:
             chromium_webdriver.ChromiumRemoteConnection = original_connection  # type: ignore[misc]
 
