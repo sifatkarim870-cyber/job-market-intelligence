@@ -102,23 +102,29 @@ class IndeedClient:
         from seleniumbase import Driver
 
         logger.info("indeed.session.open headless=%s", self._settings.headless)
-        self._driver = Driver(
-            browser="chrome",
-            uc=self._settings.uc_enabled,
-            headless2=self._settings.headless,
-            agent=self._settings.request_user_agent,
-            page_load_strategy="eager",
-            # Linux runners: without these Chrome cannot start its session,
-            # dies before creating any window, and the driver session
-            # times out with "session not created: cannot connect to chrome
-            # at 127.0.0.1:9222". no_sandbox bypasses namespaces that the
-            # VM's lid/session sandbox can't provide; dev-shm keeps Chrome
-            # from crashing on a small /dev/shm partition. Harmless on
-            # Windows/macOS.
-            no_sandbox=True,
-            disable_gpu=True,
-            chromium_arg="--disable-dev-shm-usage",
-        )
+        if self._settings.uc_enabled:
+            # Default: undetected-Chrome mode, the non-fingerprinted way
+            # to talk to Indeed, confirmed on local machines / dedicated
+            # host with a real display.
+            self._driver = Driver(
+                uc=True,
+                headless2=self._settings.headless,
+                agent=self._settings.request_user_agent,
+                page_load_strategy="eager",
+            )
+        else:
+            # UC-off path only exercised on the self-hosted CI runner,
+            # where UC mode hangs. Probed settings variants: plain
+            # Driver(browser=..., headless2=True, no_sandbox=True) is the
+            # minimal configuration that both starts and loads pages on
+            # that VM. Extra options such as --disable-dev-shm-usage,
+            # disable_gpu, or custom page_load strategy consistently stall
+            # the session-start handshake there.
+            self._driver = Driver(
+                browser="chrome",
+                headless2=self._settings.headless,
+                no_sandbox=True,
+            )
         self._driver.set_page_load_timeout(self._settings.page_load_timeout_seconds)
         self._search_pages_visited = 0
         self._detail_pages_visited = 0

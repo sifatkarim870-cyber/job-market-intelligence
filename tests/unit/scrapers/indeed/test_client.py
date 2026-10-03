@@ -135,11 +135,22 @@ class TestOpenSession:
 
         mock_driver_ctor.assert_called_once()
         assert mock_driver_ctor.call_args.kwargs["uc"] is True
-        assert mock_driver_ctor.call_args.kwargs["browser"] == "chrome"
-        assert mock_driver_ctor.call_args.kwargs["no_sandbox"] is True
-        assert (
-            mock_driver_ctor.call_args.kwargs["chromium_arg"] == "--disable-dev-shm-usage"
-        )
         mock_driver_instance.set_page_load_timeout.assert_called_once_with(
             client._settings.page_load_timeout_seconds  # noqa: SLF001 - deliberate assertion on config wiring
+        )
+
+    def test_open_session_plain_driver_when_uc_disabled(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mock_driver_instance = MagicMock()
+        mock_driver_ctor = MagicMock(return_value=mock_driver_instance)
+        fake_seleniumbase = types.SimpleNamespace(Driver=mock_driver_ctor)
+
+        monkeypatch.setitem(sys.modules, "seleniumbase", fake_seleniumbase)
+
+        client = IndeedClient(settings=IndeedSettings(headless=True, uc_enabled=False))
+        client.open_session()
+
+        mock_driver_ctor.assert_called_once_with(
+            browser="chrome", headless2=True, no_sandbox=True
         )
