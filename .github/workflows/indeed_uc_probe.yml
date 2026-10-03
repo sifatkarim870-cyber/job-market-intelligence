@@ -25,18 +25,25 @@ jobs:
           which Xvfb
           ls /dev/shm
           free -h
-      - name: Probe plain seleniumbase under xvfb-run
+      - name: Probe client with CI env vars
+        env:
+          INDEED_UC_ENABLED: "false"
+          INDEED_HEADLESS: "true"
         run: |
           cd "$GITHUB_WORKSPACE"
-          (
-            xvfb-run -a uv run python -c "
-          from seleniumbase import Driver
-          d = Driver(browser='chrome', headless2=True, no_sandbox=True)
-          d.get('https://example.com')
-          print('TITLE OK:', 'example' in d.page_source.lower())
-          d.quit()
+          timeout 240 xvfb-run -a uv run python -c "
+          from job_market_intel.scrapers.indeed.client import IndeedClient
+          from job_market_intel.scrapers.indeed.config import IndeedSettings
+          s = IndeedSettings()
+          print('headless=', s.headless, 'uc_enabled=', s.uc_enabled)
+          c = IndeedClient(settings=s)
+          c.open_session()
+          print('open_session OK')
+          c._driver.get('https://example.com')
+          print('TITLE OK:', 'example' in c._driver.page_source.lower())
+          c.close_session()
           "
-          ) || echo "plain seleniumbase probe FAILED"
+          echo "client probe exit: $?"
           timeout 60 xvfb-run -a google-chrome-stable --no-sandbox --disable-gpu \
             --user-data-dir=/tmp/chrome-probe --dump-dom about:blank 2>&1 | tail -40
           echo "chrome exit: $?"
