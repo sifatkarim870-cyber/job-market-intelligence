@@ -64,63 +64,49 @@ _CHALLENGE_MARKERS = (
 
 _NEXT_PAGE_SELECTOR = 'a[aria-label="Next Page"], a[data-testid="pagination-page-next"]'
 
-# Chrome flags used by the UC-off path (see open_session). Measured on the
+# Chrome flags used by the UC-off path (see open_session), measured on the
 # self-hosted CI runner (an 837MiB, 0-swap Azure VM with a 419MiB /dev/shm)
-# rather than guessed — see .github/workflows/indeed_uc_probe.yml, which
-# tries each of these sets in its own process:
+# rather than guessed. .github/workflows/indeed_uc_probe.yml re-runs these
+# comparisons; the numbers below are from run 37129170777, which finally got
+# past its own self-inflicted failures and tested the real arg list:
 #
+#     --headless=new --no-sandbox                                     -> 68s  OK
 #     --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage
-#         -> FAILED, 127s, ReadTimeoutError from the driver
-#     --headless=new --no-sandbox --disable-dev-shm-usage            -> 69s
-#     --headless=new --no-sandbox                                    -> 49s  <- this set
-#     ... + --renderer-process-limit=1                               -> 63s
-#     ... + --single-process                                          -> died, 22s
-#     --headless=old --no-sandbox --disable-gpu --disable-dev-shm-usage -> 81s
+#         -> 110s OK under xvfb, 92s/49s/127s(fail) across earlier runs
+#     --headless=new + the full 20-flag list below                    -> FAILS
+#         -> SessionNotCreatedException at 86s under xvfb, and exit 137
+#            (SIGKILL) with no display at all
 #
-# So two of the three flags that looked obviously right for a small VM were
-# the problem, and for opposite reasons:
+# So this list is deliberately just the one flag that is actually required.
+# Everything else it used to carry — --disable-gpu, --disable-dev-shm-usage,
+# --window-size, --no-first-run, --disable-background-networking,
+# --disable-component-update, --disable-sync, --disable-extensions,
+# --use-mock-keychain and a --disable-features list — was added on the
+# reasonable-sounding assumption that it would help a small VM, and measured
+# on Linux to make the session worse or not start at all. It passed on
+# Windows, which is presumably why it survived as long as it did: this is a
+# Linux-only failure and only the CI runner ever sees it.
+#
+# Two of them were actively harmful for opposite reasons:
 #
 #   --disable-gpu: on a VM with no GPU this still stands up Chrome's GPU
-#     process rather than skipping it, and the extra process is what pushes
-#     the browser past this VM's memory budget. Dropping it was the single
-#     change between the 127s timeout and a session.
+#     process rather than skipping it, and the extra process is part of what
+#     pushes the browser past this VM's memory budget.
 #   --disable-dev-shm-usage: /dev/shm here is 419MiB, comfortably enough,
 #     so the flag only forces Chrome's shared memory out to disk in /tmp.
-#     Slower, and it was the second-worst set measured.
 #
-# The remaining flags silence Chrome's own first-run/background network
-# chatter (DBus lookups, GCM registration, component-update checks), which
-# the driver log showed eating a cold start on this machine. They don't fix
-# anything on their own — startup is still ~49s, which is why
-# session_start_timeout_seconds exists — but they shave it and cost nothing.
+# The rest are the "silence Chrome's first-run chatter" family. The reasoning
+# behind them was plausible and the measurement says otherwise, so they are
+# gone rather than left in as decoration. If a future run needs them back,
+# add them one at a time and let the probe decide.
 #
-# Deliberately *not* here: anything that only exists to make the browser
-# look less like automation. These are about getting a browser started on a
+# --no-sandbox stays because the runner has no user namespaces available.
+#
+# Deliberately *not* here: anything that only exists to make the browser look
+# less like automation. These are about getting a browser started on a
 # constrained machine; the anti-fingerprinting job belongs to UC mode, which
 # is the default (see IndeedSettings.uc_enabled).
-_PLAIN_CHROME_ARGS = (
-    "--no-sandbox",
-    "--window-size=1920,1080",
-    "--no-first-run",
-    "--no-default-browser-check",
-    "--disable-background-networking",
-    "--disable-component-update",
-    "--disable-client-side-phishing-detection",
-    "--disable-sync",
-    "--disable-default-apps",
-    "--disable-extensions",
-    "--disable-breakpad",
-    "--disable-popup-blocking",
-    "--disable-search-engine-choice-screen",
-    "--metrics-recording-only",
-    "--password-store=basic",
-    "--use-mock-keychain",
-    "--disable-features="
-    "Translate,OptimizationHints,MediaRouter,InterestFeedContentSuggestions,CalculateNativeWinOcclusion",
-    "--disable-background-timer-throttling",
-    "--disable-backgrounding-occluded-windows",
-    "--disable-renderer-backgrounding",
-)
+_PLAIN_CHROME_ARGS = ("--no-sandbox",)
 
 # Where the UC-off path points chromedriver's own stderr. On CI this is the
 # single most useful thing to have when a session fails to start, so it goes

@@ -215,18 +215,20 @@ jobs:
           # on this VM (see the probe workflow history). Trade-off noted:
           # headless=new is less stealthy than a real display session.
           INDEED_HEADLESS: "true"
-        # xvfb-run -a starts a virtual display, runs the command against
-        # it, and tears it down after — -a auto-selects a free display
-        # number rather than assuming one is free. Chrome is headless
-        # (INDEED_HEADLESS above), so the display isn't strictly needed
-        # here, but it's what makes flipping that setting back to "false" a
-        # one-line change rather than an investigation.
+        # No xvfb-run here. Chrome runs with --headless=new (INDEED_HEADLESS
+        # above), which never reads DISPLAY, so the X server was pure
+        # overhead — and on an 837MiB VM with no swap, measured overhead:
+        # 110s to start a session with xvfb-run versus 68s without it, plus
+        # a resident process competing with Chrome for memory. Flipping
+        # INDEED_HEADLESS to "false" would need a display back, which is why
+        # that setting stays "true" here; see indeed_uc_probe.yml, which
+        # runs both ways so the comparison stays reproducible.
         #
         # .venv/bin/python rather than `uv run python`: uv re-resolves the
         # environment on every invocation, and running the scraper that way
         # on this runner reliably produced browser sessions that never came
         # up. Same interpreter, same venv, without that indirection.
-        run: xvfb-run -a .venv/bin/python scripts/run_indeed_scraper.py
+        run: .venv/bin/python scripts/run_indeed_scraper.py
 
       - name: Dump browser diagnostics
         # `always()`, not `failure()`: a session that won't start is reported

@@ -328,23 +328,20 @@ class TestOpenSession:
             type,
         )  # not left as an instance or a bare function
 
-    def test_plain_chrome_args_omit_the_two_flags_that_break_the_ci_runner(
-        self,
-    ) -> None:
+    def test_plain_chrome_args_stay_minimal(self) -> None:
         """Regression guard for a measured failure, not a preference.
 
-        On the 837MiB CI runner, --disable-gpu made Chrome stand up a GPU
-        process it doesn't need and the session never started (127s
-        timeout), and --disable-dev-shm-usage pushed shared memory to disk
-        for no benefit since /dev/shm there is 419MiB. Both were in the
-        flag list for a long time on the assumption that they were
-        obviously right for a small VM. See _PLAIN_CHROME_ARGS's comment for
-        the full set of measurements.
+        On the 837MiB CI runner, a 20-flag "help a small VM" list made the
+        session fail outright — SessionNotCreatedException under xvfb, and
+        SIGKILL with no display — while the same list started fine on
+        Windows. It passed locally every time, so the only thing that ever
+        saw the real behaviour was CI. Anything added here has to earn its
+        place on the runner; see _PLAIN_CHROME_ARGS's comment for the
+        measurements behind each flag that was removed.
         """
-        assert "--disable-gpu" not in _PLAIN_CHROME_ARGS
-        assert "--disable-dev-shm-usage" not in _PLAIN_CHROME_ARGS
-        # --no-sandbox is the opposite case: still required there.
-        assert "--no-sandbox" in _PLAIN_CHROME_ARGS
+        # --no-sandbox is the one flag the runner actually requires (no user
+        # namespaces available there).
+        assert _PLAIN_CHROME_ARGS == ("--no-sandbox",)
 
     def test_open_session_retries_a_launch_that_fails_on_available_memory(
         self, monkeypatch: pytest.MonkeyPatch
