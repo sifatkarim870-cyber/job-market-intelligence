@@ -28,18 +28,20 @@ jobs:
       - name: Probe plain seleniumbase under xvfb-run
         run: |
           cd "$GITHUB_WORKSPACE"
-          xvfb-run -a uv run python -c "
+          (
+            xvfb-run -a uv run python -c "
           from seleniumbase import Driver
           d = Driver(browser='chrome', headless2=False, no_sandbox=True)
           d.get('https://example.com')
           print('TITLE OK:', 'example' in d.page_source.lower())
           d.quit()
           "
-      - name: Probe raw google-chrome direct
-        run: |
+          ) || echo "plain seleniumbase probe FAILED"
           timeout 60 xvfb-run -a google-chrome-stable --no-sandbox --disable-gpu \
             --user-data-dir=/tmp/chrome-probe --dump-dom about:blank 2>&1 | tail -40
           echo "chrome exit: $?"
           timeout 60 xvfb-run -a google-chrome-stable --no-sandbox --disable-gpu \
             --headless=new --dump-dom https://example.com 2>&1 | head -5
           echo "chrome headless exit: $?"
+          ulimit -a
+          dmesg 2>/dev/null | tail -20 || true
