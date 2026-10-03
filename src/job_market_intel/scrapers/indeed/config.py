@@ -78,6 +78,19 @@ class IndeedSettings(BaseSettings):
     base_url: str = "https://www.indeed.com"
     headless: bool = False
 
+    uc_enabled: bool = Field(
+        default=True,
+        description=(
+            "Whether seleniumbase launches Chrome in UC (undetected) mode. "
+            "True preserves this project's anti-fingerprinting decision "
+            "(plain Selenium is commonly blocked on Indeed). The self-hosted "
+            "CI runner is a documented exception: UC mode there hangs on "
+            "session start / page load against that VM's Chrome, while the "
+            "plain seleniumbase driver works — so the Indeed CI step sets "
+            "INDEED_UC_ENABLED=false (see .github/workflows/scrape.yml)."
+        ),
+    )
+
     page_action_min_wait_seconds: float = 4.0
     page_action_max_wait_seconds: float = 9.0
 

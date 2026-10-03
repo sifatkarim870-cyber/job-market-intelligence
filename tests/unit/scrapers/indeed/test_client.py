@@ -134,7 +134,8 @@ class TestOpenSession:
         client.open_session()
 
         mock_driver_ctor.assert_called_once()
-        assert mock_driver_ctor.call_args.kwargs["uc_subprocess"] is True
+        assert mock_driver_ctor.call_args.kwargs["uc"] is True
+        assert mock_driver_ctor.call_args.kwargs["browser"] == "chrome"
         assert mock_driver_ctor.call_args.kwargs["no_sandbox"] is True
         assert (
             mock_driver_ctor.call_args.kwargs["chromium_arg"] == "--disable-dev-shm-usage"

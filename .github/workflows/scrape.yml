@@ -196,6 +196,13 @@ jobs:
       - name: Run Indeed scraper
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # UC ("undetected") seleniumbase mode hangs on this self-hosted
+          # runner's Chrome every time (session starts, page loads never
+          # complete -> SessionNotCreatedException timeout; with
+          # uc_subprocess the session itself never starts). The plain
+          # seleniumbase driver works on the same binary, so CI runs
+          # without UC; local Windows/Linux runs keep UC by default.
+          INDEED_UC_ENABLED: "false"
         # xvfb-run -a starts a virtual display, runs the command against
         # it, and tears it down after — -a auto-selects a free display
         # number rather than assuming one is free.

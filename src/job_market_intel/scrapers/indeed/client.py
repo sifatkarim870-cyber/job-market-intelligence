@@ -103,13 +103,13 @@ class IndeedClient:
 
         logger.info("indeed.session.open headless=%s", self._settings.headless)
         self._driver = Driver(
-            uc=True,
-            uc_subprocess=True,
+            browser="chrome",
+            uc=self._settings.uc_enabled,
             headless2=self._settings.headless,
             agent=self._settings.request_user_agent,
             page_load_strategy="eager",
             # Linux runners: without these Chrome cannot start its session,
-            # dies before creating any window, and the uc_driver session
+            # dies before creating any window, and the driver session
             # times out with "session not created: cannot connect to chrome
             # at 127.0.0.1:9222". no_sandbox bypasses namespaces that the
             # VM's lid/session sandbox can't provide; dev-shm keeps Chrome
