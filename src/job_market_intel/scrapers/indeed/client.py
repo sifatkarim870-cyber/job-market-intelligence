@@ -117,6 +117,7 @@ class IndeedClient:
             # where any seleniumbase Driver variant hung sessions. Plain
             # selenium's own webdriver.Chrome works on the same VM.
             from selenium import webdriver
+            from selenium.webdriver.chrome.service import Service
 
             options = webdriver.ChromeOptions()
             for arg in (
@@ -126,7 +127,8 @@ class IndeedClient:
                 "--disable-dev-shm-usage",
             ):
                 options.add_argument(arg)
-            self._driver = webdriver.Chrome(options=options)
+            service = Service(log_output="/tmp/chromedriver.log")
+            self._driver = webdriver.Chrome(options=options, service=service)
         self._driver.set_page_load_timeout(self._settings.page_load_timeout_seconds)
         self._search_pages_visited = 0
         self._detail_pages_visited = 0

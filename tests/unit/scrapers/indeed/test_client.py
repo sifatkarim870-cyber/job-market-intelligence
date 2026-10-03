@@ -149,6 +149,7 @@ class TestOpenSession:
         monkeypatch.setitem(sys.modules, "seleniumbase", fake_seleniumbase)
 
         mock_options = MagicMock()
+        mock_service = MagicMock()
         mock_webdriver = types.SimpleNamespace(
             Chrome=MagicMock(return_value=mock_driver_instance),
             ChromeOptions=MagicMock(return_value=mock_options),
@@ -157,6 +158,18 @@ class TestOpenSession:
             sys.modules,
             "selenium",
             types.SimpleNamespace(webdriver=mock_webdriver),
+        )
+        fake_service_mod = types.SimpleNamespace(Service=MagicMock(return_value=mock_service))
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium.webdriver.chrome.service",
+            fake_service_mod,
+        )
+        # `from selenium.webdriver.chrome.service import Service` must resolve
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium.webdriver.chrome.service",
+            fake_service_mod,
         )
 
         client = IndeedClient(settings=IndeedSettings(headless=True, uc_enabled=False))
