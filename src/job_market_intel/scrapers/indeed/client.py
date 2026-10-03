@@ -114,17 +114,19 @@ class IndeedClient:
             )
         else:
             # UC-off path only exercised on the self-hosted CI runner,
-            # where UC mode hangs. Probed settings variants: plain
-            # Driver(browser=..., headless2=True, no_sandbox=True) is the
-            # minimal configuration that both starts and loads pages on
-            # that VM. Extra options such as --disable-dev-shm-usage,
-            # disable_gpu, or custom page_load strategy consistently stall
-            # the session-start handshake there.
-            self._driver = Driver(
-                browser="chrome",
-                headless2=self._settings.headless,
-                no_sandbox=True,
-            )
+            # where any seleniumbase Driver variant hung sessions. Plain
+            # selenium's own webdriver.Chrome works on the same VM.
+            from selenium import webdriver
+
+            options = webdriver.ChromeOptions()
+            for arg in (
+                "--headless=new",
+                "--no-sandbox",
+                "--disable-gpu",
+                "--disable-dev-shm-usage",
+            ):
+                options.add_argument(arg)
+            self._driver = webdriver.Chrome(options=options)
         self._driver.set_page_load_timeout(self._settings.page_load_timeout_seconds)
         self._search_pages_visited = 0
         self._detail_pages_visited = 0

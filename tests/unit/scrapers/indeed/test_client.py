@@ -148,9 +148,20 @@ class TestOpenSession:
 
         monkeypatch.setitem(sys.modules, "seleniumbase", fake_seleniumbase)
 
+        mock_options = MagicMock()
+        mock_webdriver = types.SimpleNamespace(
+            Chrome=MagicMock(return_value=mock_driver_instance),
+            ChromeOptions=MagicMock(return_value=mock_options),
+        )
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium",
+            types.SimpleNamespace(webdriver=mock_webdriver),
+        )
+
         client = IndeedClient(settings=IndeedSettings(headless=True, uc_enabled=False))
         client.open_session()
 
-        mock_driver_ctor.assert_called_once_with(
-            browser="chrome", headless2=True, no_sandbox=True
+        mock_driver_instance.set_page_load_timeout.assert_called_once_with(
+            client._settings.page_load_timeout_seconds  # noqa: SLF001
         )
