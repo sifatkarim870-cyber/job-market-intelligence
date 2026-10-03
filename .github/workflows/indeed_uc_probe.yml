@@ -31,7 +31,7 @@ jobs:
           (
             xvfb-run -a uv run python -c "
           from seleniumbase import Driver
-          d = Driver(browser='chrome', headless2=False, no_sandbox=True)
+          d = Driver(browser='chrome', headless2=True, no_sandbox=True)
           d.get('https://example.com')
           print('TITLE OK:', 'example' in d.page_source.lower())
           d.quit()
