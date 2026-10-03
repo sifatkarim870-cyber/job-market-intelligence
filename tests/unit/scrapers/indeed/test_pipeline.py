@@ -243,6 +243,35 @@ class TestBlockedSession:
         assert results[0].queue_status == "failed"
         assert "consecutive fetch failures" in results[0].blocked_reason
 
+    def test_session_will_not_start_marks_failed_instead_of_raising(self) -> None:
+        """A browser that can't start is this row's problem, not the run's.
+        See pipeline._run_browser_phase's session_start_failed branch — on CI
+        this is the difference between a reported no-op and a red job.
+        """
+        claimed = ClaimedQuery(
+            query_id=7, query_text="engineer", location_text="Remote", last_page_reached=0
+        )
+        client = MagicMock()
+        client.open_session.side_effect = IndeedFetchError(
+            "chrome session failed to start after 300s: Read timed out"
+        )
+        client.search_pages_visited = 0
+        client.detail_pages_visited = 0
+
+        pipeline, repository, queue_repository = _build_pipeline(claimed=claimed, client=client)
+
+        with patch("job_market_intel.scrapers.indeed.pipeline.get_session", _fake_get_session):
+            results = pipeline.run(store_db=True)
+
+        assert results[0].queue_status == "failed"
+        assert "could not start browser session" in results[0].blocked_reason
+        # Nothing was opened, so there is nothing to close.
+        client.close_session.assert_not_called()
+        client.open_search.assert_not_called()
+        _, kwargs = queue_repository.mark_query_result.call_args
+        assert kwargs["status"] == "failed"
+        assert kwargs["error"] == results[0].blocked_reason
+
     def test_close_session_always_called_even_when_blocked(self) -> None:
         claimed = ClaimedQuery(
             query_id=6, query_text="engineer", location_text="Remote", last_page_reached=0

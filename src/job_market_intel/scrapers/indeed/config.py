@@ -61,6 +61,10 @@ class IndeedSettings(BaseSettings):
             is treated as blocked and stops immediately. See
             ``exceptions.IndeedBlockedError``.
         page_load_timeout_seconds: Selenium page-load timeout.
+        session_start_timeout_seconds: Bound on the session *handshake*
+            (see the field description) — the one timeout that has to be
+            generous on slow machines, since nothing has happened yet that
+            ``page_load_timeout_seconds`` could bound.
         request_user_agent: Not sent as a raw HTTP header the way
             ``common/http_client.py``'s scrapers do — Selenium controls
             the real browser's own UA. Kept here anyway as the value
@@ -118,6 +122,23 @@ class IndeedSettings(BaseSettings):
     )
 
     page_load_timeout_seconds: float = 30.0
+
+    session_start_timeout_seconds: float = Field(
+        default=300.0,
+        description=(
+            "How long to wait for the browser session handshake itself (the "
+            "WebDriver NEW_SESSION call) before giving up on open_session(). "
+            "This is a different thing from page_load_timeout_seconds, which "
+            "only bounds a page once a session exists: a cold Chrome on a "
+            "low-memory VM can spend the best part of a minute just reaching "
+            "the point where it can answer that first request, which is well "
+            "past selenium's own built-in 120s HTTP read timeout for driver "
+            "calls. Only applies to the UC-off path; seleniumbase's Driver "
+            "has no equivalent knob. INDEED_SESSION_START_TIMEOUT_SECONDS "
+            "overrides it."
+        ),
+    )
+
     request_user_agent: str = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"

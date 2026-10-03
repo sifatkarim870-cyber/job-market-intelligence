@@ -18,6 +18,7 @@ manual/live run, not something worth slowing down `pytest` for.
 
 from __future__ import annotations
 
+import socket
 import sys
 import types
 from unittest.mock import MagicMock
@@ -178,3 +179,74 @@ class TestOpenSession:
         mock_driver_instance.set_page_load_timeout.assert_called_once_with(
             client._settings.page_load_timeout_seconds  # noqa: SLF001
         )
+
+    def test_open_session_plain_driver_gets_a_generous_handshake_timeout(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A slow machine's session start must not die on selenium's own
+        120s driver read timeout — see _start_plain_chrome's docstring.
+        """
+        mock_driver_instance = MagicMock()
+        observed_timeouts: list[float | None] = []
+        fake_seleniumbase = types.SimpleNamespace(Driver=MagicMock())
+        monkeypatch.setitem(sys.modules, "seleniumbase", fake_seleniumbase)
+
+        def fake_chrome(**_: object) -> MagicMock:
+            # Reads the ambient socket default timeout at the moment the
+            # driver handshake would be made, which is the value under test.
+            observed_timeouts.append(socket.getdefaulttimeout())
+            return mock_driver_instance
+
+        mock_options = MagicMock()
+        mock_service = MagicMock()
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium",
+            types.SimpleNamespace(
+                webdriver=types.SimpleNamespace(
+                    Chrome=MagicMock(side_effect=fake_chrome),
+                    ChromeOptions=MagicMock(return_value=mock_options),
+                )
+            ),
+        )
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium.webdriver.chrome.service",
+            types.SimpleNamespace(Service=MagicMock(return_value=mock_service)),
+        )
+
+        settings = IndeedSettings(
+            headless=True, uc_enabled=False, session_start_timeout_seconds=777.0
+        )
+        IndeedClient(settings=settings).open_session()
+
+        # Recorded while Chrome was being constructed, i.e. the timeout the
+        # driver handshake actually ran under.
+        assert observed_timeouts == [777.0]
+        # ...and restored afterwards rather than leaking into the DB engine
+        # and every other socket in the process.
+        assert socket.getdefaulttimeout() != 777.0
+
+    def test_open_session_plain_driver_raises_indeed_fetch_error_when_it_will_not_start(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setitem(sys.modules, "seleniumbase", types.SimpleNamespace(Driver=MagicMock()))
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium",
+            types.SimpleNamespace(
+                webdriver=types.SimpleNamespace(
+                    Chrome=MagicMock(side_effect=RuntimeError("chrome is not coming up")),
+                    ChromeOptions=MagicMock(return_value=MagicMock()),
+                )
+            ),
+        )
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium.webdriver.chrome.service",
+            types.SimpleNamespace(Service=MagicMock(return_value=MagicMock())),
+        )
+
+        client = IndeedClient(settings=IndeedSettings(headless=True, uc_enabled=False))
+        with pytest.raises(IndeedFetchError, match="chrome is not coming up"):
+            client.open_session()

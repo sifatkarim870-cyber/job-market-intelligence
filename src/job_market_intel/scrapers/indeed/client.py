@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import logging
 import random
+import socket
 import time
 from typing import Any
 from urllib.parse import quote_plus
@@ -63,6 +64,61 @@ _CHALLENGE_MARKERS = (
 )
 
 _NEXT_PAGE_SELECTOR = 'a[aria-label="Next Page"], a[data-testid="pagination-page-next"]'
+
+# Chrome flags used by the UC-off path (see open_session). Two groups, and
+# on the self-hosted CI runner both are load-bearing:
+#
+#   1. Sandbox/shm basics. The runner is a small Azure VM with no user
+#      namespaces available and a tiny /dev/shm, so --no-sandbox and
+#      --disable-dev-shm-usage are required for Chrome to come up at all;
+#      --disable-gpu because there is no GPU.
+#   2. Startup chatter. A cold Chrome there took ~45s to reach the point
+#      where it could answer the driver's first request (measured: the
+#      probe's InitSession took 45.6s), and the driver log shows nearly all
+#      of that spent on DBus lookups, GCM registration and component-update
+#      checks — none of which this scraper needs. Silencing that startup
+#      work is what brings a session back to seconds instead of minutes,
+#      which matters because open_session() runs once per queue row.
+#
+# Deliberately *not* here: anything that only exists to make the browser
+# look less like automation. The flags above are about getting a browser
+# started on a constrained machine; the anti-fingerprinting job belongs to
+# UC mode, which is the default (see IndeedSettings.uc_enabled).
+_PLAIN_CHROME_ARGS = (
+    "--no-sandbox",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--window-size=1920,1080",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-background-networking",
+    "--disable-component-update",
+    "--disable-client-side-phishing-detection",
+    "--disable-sync",
+    "--disable-default-apps",
+    "--disable-extensions",
+    "--disable-breakpad",
+    "--disable-popup-blocking",
+    "--disable-search-engine-choice-screen",
+    "--metrics-recording-only",
+    "--password-store=basic",
+    "--use-mock-keychain",
+    "--disable-features="
+    "Translate,OptimizationHints,MediaRouter,InterestFeedContentSuggestions,CalculateNativeWinOcclusion",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-renderer-backgrounding",
+)
+
+# Where the UC-off path points chromedriver's own stderr. On CI this is the
+# single most useful thing to have when a session fails to start, so it goes
+# to a file the workflow can cat rather than into the scraper's own log.
+_CHROMEDRIVER_LOG_PATH = "/tmp/chromedriver.log"
+
+# Selenium's built-in HTTP read timeout for driver calls, and what open_session
+# puts back once the session is up (see the socket.setdefaulttimeout dance
+# there — the long handshake timeout is only wanted for the handshake).
+_SELENIUM_DEFAULT_DRIVER_TIMEOUT = 120.0
 
 
 class IndeedClient:
@@ -120,18 +176,71 @@ class IndeedClient:
             from selenium.webdriver.chrome.service import Service
 
             options = webdriver.ChromeOptions()
-            for arg in (
-                "--headless=new",
-                "--no-sandbox",
-                "--disable-gpu",
-                "--disable-dev-shm-usage",
-            ):
+            if self._settings.headless:
+                # headless=new (the modern headless, not the removed old
+                # one) is the only Chrome mode that starts reliably on that
+                # VM -- the Xvfb-backed alternative never came up there.
+                options.add_argument("--headless=new")
+            for arg in _PLAIN_CHROME_ARGS:
                 options.add_argument(arg)
-            service = Service(log_output="/tmp/chromedriver.log")
-            self._driver = webdriver.Chrome(options=options, service=service)
+            options.add_argument(f"--user-agent={self._settings.request_user_agent}")
+            service = Service(log_output=_CHROMEDRIVER_LOG_PATH)
+            self._driver = self._start_plain_chrome(options, service)
         self._driver.set_page_load_timeout(self._settings.page_load_timeout_seconds)
         self._search_pages_visited = 0
         self._detail_pages_visited = 0
+
+    def _start_plain_chrome(self, options: Any, service: Any) -> Any:
+        """Builds the non-UC Chrome session, with two concessions to slow
+        machines that are otherwise easy to mistake for a scraper bug.
+
+        First, selenium gives every driver HTTP call a 120s read timeout,
+        and a cold Chrome on a low-memory machine can spend longer than
+        that just launching before it can answer the very first request --
+        on the CI runner it was ~45s when it worked and unbounded when it
+        didn't, so the honest failure was an opaque urllib3 ReadTimeoutError
+        from inside selenium rather than anything actionable. selenium has no
+        public knob for that timeout (ChromiumDriver constructs its own
+        ClientConfig, whose timeout defaults to socket.getdefaulttimeout()),
+        so the default socket timeout is raised for the duration of the
+        constructor call and restored immediately after. Only the handshake
+        gets the generous budget: the driver's read timeout is put back to
+        selenium's default once there's a session, since
+        set_page_load_timeout() bounds actual page loads from that point on
+        and leaving it large would just make a dead driver hang for minutes.
+
+        Second, a driver that never starts is reported as IndeedFetchError
+        with how long it took, so the pipeline can record it as a controlled
+        failure for this queue row instead of the whole run dying on a
+        traceback -- see pipeline._run_browser_phase().
+        """
+        from selenium import webdriver
+
+        started = time.monotonic()
+        previous_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(self._settings.session_start_timeout_seconds)
+        try:
+            driver = webdriver.Chrome(options=options, service=service)
+        except Exception as exc:
+            raise IndeedFetchError(
+                f"chrome session failed to start after {time.monotonic() - started:.0f}s: {exc}"
+            ) from exc
+        finally:
+            socket.setdefaulttimeout(previous_timeout)
+
+        elapsed = time.monotonic() - started
+        logger.info("indeed.session.plain_chrome_started elapsed=%.1fs", elapsed)
+        if elapsed > 60:
+            # Worth saying out loud: this is the signal that a machine is
+            # too slow/too small for the flags above to have helped, and the
+            # number to compare against when that changes.
+            logger.warning("indeed.session.slow_start elapsed=%.1fs", elapsed)
+
+        executor = getattr(driver, "command_executor", None)
+        client_config = getattr(executor, "client_config", None)
+        if client_config is not None:
+            client_config.timeout = _SELENIUM_DEFAULT_DRIVER_TIMEOUT
+        return driver
 
     def close_session(self) -> None:
         if self._driver is not None:

@@ -252,7 +252,21 @@ class IndeedPipeline:
         consecutive_failures = 0
         blocked_reason: str | None = None
 
-        self.client.open_session()
+        try:
+            self.client.open_session()
+        except IndeedFetchError as exc:
+            # A browser that won't start isn't an Indeed block, but it is
+            # still just this one queue row's problem, not the whole run's:
+            # recorded as failed with the reason (same shape as a block, so
+            # run() releases the other claimed rows back to pending) rather
+            # than propagated, which would abandon the batch to a transient
+            # machine failure — on CI that's the difference between a
+            # reported no-op and a red scheduled job.
+            blocked_reason = f"could not start browser session: {exc}"
+            queue_status = "failed"
+            logger.error("indeed.pipeline.session_start_failed reason={}", blocked_reason)
+            return raw_jobs, last_completed_page, queue_status, blocked_reason
+
         try:
             try:
                 page_source = self._first_page_or_none(query_text, location_text, resume_from_page)

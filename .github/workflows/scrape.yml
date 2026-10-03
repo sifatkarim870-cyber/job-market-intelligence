@@ -211,8 +211,33 @@ jobs:
           INDEED_HEADLESS: "true"
         # xvfb-run -a starts a virtual display, runs the command against
         # it, and tears it down after — -a auto-selects a free display
-        # number rather than assuming one is free.
+        # number rather than assuming one is free. Chrome is headless
+        # (INDEED_HEADLESS above), so the display isn't strictly needed
+        # here, but it's what makes flipping that setting back to "false" a
+        # one-line change rather than an investigation.
+        #
+        # .venv/bin/python rather than `uv run python`: uv re-resolves the
+        # environment on every invocation, and running the scraper that way
+        # on this runner reliably produced browser sessions that never came
+        # up. Same interpreter, same venv, without that indirection.
         run: xvfb-run -a .venv/bin/python scripts/run_indeed_scraper.py
+
+      - name: Dump browser diagnostics (on failure)
+        # The single most useful artifact when a session fails to start on
+        # this runner is chromedriver's own stderr, which client.py points
+        # at /tmp/chromedriver.log precisely so it can be read here. Also
+        # snapshot memory/disk, since a VM this size can fail a browser
+        # start by simply running out of either.
+        if: failure()
+        run: |
+          echo "=== /tmp/chromedriver.log ==="
+          cat /tmp/chromedriver.log 2>/dev/null || echo "(no chromedriver log)"
+          echo "=== memory ==="
+          free -m || true
+          echo "=== disk ==="
+          df -h / /tmp /dev/shm || true
+          echo "=== scraper log tail ==="
+          tail -n 60 logs/job_market_intel.log 2>/dev/null || echo "(no scraper log)"
 
   reed:
     # NOTE (2026-10-01): a hashFiles()-based guard was here briefly,
