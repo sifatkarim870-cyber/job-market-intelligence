@@ -1,11 +1,16 @@
 name: Indeed CI probe (debug)
 on:
   workflow_dispatch:
+    inputs:
+      variants:
+        description: Space-separated flag-set names to try (see scripts/_probe_raw_session.py)
+        required: false
+        default: "minimal no-gpu-flag real-shm single-renderer single-process old-headless"
 
 jobs:
   probe:
     runs-on: [self-hosted, indeed-runner]
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -18,22 +23,34 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: uv sync --extra dev --extra test --extra selenium
-      - name: Chrome + Xvfb present
+      - name: Install Chrome and Xvfb
         run: |
           which google-chrome-stable
           google-chrome-stable --version
           which Xvfb
-          ls /dev/shm
-          free -h
-      - name: Probe seleniumbase variants
+          echo "=== /dev/shm ==="
+          df -h /dev/shm
+          echo "=== memory ==="
+          free -m
+          nproc
+      - name: Try each Chrome flag set in its own process
         env:
           INDEED_UC_ENABLED: "false"
           INDEED_HEADLESS: "true"
         run: |
-          cd "$GITHUB_WORKSPACE"
           set +e
-          cd "$GITHUB_WORKSPACE"
-          timeout 60 xvfb-run -a .venv/bin/python scripts/_probe_raw_session.py
-          echo "=== chromedriver.log ==="
-          cat /tmp/chromedriver.log 2>/dev/null || true
+          for variant in ${{ inputs.variants }}; do
+            echo "----- PROBING $variant -----"
+            # One process per attempt on purpose: a browser that half-starts
+            # and wedges must not be able to affect the next attempt.
+            timeout 150 xvfb-run -a .venv/bin/python scripts/_probe_raw_session.py "$variant"
+            echo "----- exit=$? for $variant -----"
+            pkill -f chromedriver 2>/dev/null
+            pkill -f 'chrome --' 2>/dev/null
+            sleep 2
+          done
+          echo "=== last chromedriver.log ==="
+          tail -n 40 /tmp/chromedriver.log 2>/dev/null || echo "(none)"
+          echo "=== kernel oom kills ==="
+          dmesg 2>/dev/null | grep -i -E 'out of memory|oom-kill|killed process' | tail -n 20 || echo "(no dmesg access)"
           echo "ALL PROBES DONE ============"
