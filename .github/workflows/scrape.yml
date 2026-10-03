@@ -228,13 +228,13 @@ jobs:
         # up. Same interpreter, same venv, without that indirection.
         run: xvfb-run -a .venv/bin/python scripts/run_indeed_scraper.py
 
-      - name: Dump browser diagnostics (on failure)
-        # The single most useful artifact when a session fails to start on
-        # this runner is chromedriver's own stderr, which client.py points
-        # at /tmp/chromedriver.log precisely so it can be read here. Also
-        # snapshot memory/disk, since a VM this size can fail a browser
-        # start by simply running out of either.
-        if: failure()
+      - name: Dump browser diagnostics
+        # `always()`, not `failure()`: a session that won't start is reported
+        # as a controlled no-op, so the scraper step exits 0 and `failure()`
+        # never fires -- which is exactly the case whose log matters most.
+        # The single most useful artifact here is chromedriver's own stderr,
+        # which client.py points at /tmp/chromedriver.log for this purpose.
+        if: always()
         run: |
           echo "=== /tmp/chromedriver.log ==="
           cat /tmp/chromedriver.log 2>/dev/null || echo "(no chromedriver log)"

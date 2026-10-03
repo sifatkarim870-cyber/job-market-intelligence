@@ -58,21 +58,79 @@ VARIANTS = {
         "--disable-gpu",
         "--disable-dev-shm-usage",
     ],
+    # The exact arg list the real scraper uses, pulled from the source so
+    # this can never drift from it. The known-good "minimal" set above wins
+    # in the probe while the real job still fails with
+    # "DevToolsActivePort file doesn't exist", so the question this answers
+    # is whether one of the extra flags is the culprit.
+    "client-args": None,  # resolved from job_market_intel.scrapers.indeed.client
+    # Same, minus the one flag that takes the longest comma-joined value and
+    # is the most likely to be mis-parsed: --disable-features.
+    "client-args-no-features": None,
+    # Minimal flags, but after importing the whole scraper package and
+    # taking a DB session -- i.e. the process shape of the real job rather
+    # than of this probe. Isolates "bad flags" from "not enough free RAM for
+    # Chrome once the app is loaded".
+    "minimal-heavy-process": ["--headless=new", "--no-sandbox"],
 }
+
+
+def _resolve(name: str) -> list[str]:
+    """Variant name -> flags. The two ``None`` entries are derived from the
+    real client module so the probe can't silently drift from production."""
+    args = VARIANTS[name]
+    if args is not None:
+        return args
+    from job_market_intel.scrapers.indeed.client import _PLAIN_CHROME_ARGS
+
+    resolved = [
+        "--headless=new",
+        *(
+            _PLAIN_CHROME_ARGS
+            if name == "client-args"
+            else _without(_PLAIN_CHROME_ARGS, "--disable-features=")
+        ),
+    ]
+    if name == "minimal-heavy-process":
+        # Load the same things the scraper loads before opening a session.
+        import sqlalchemy
+
+        from job_market_intel.common.config import get_settings
+        from job_market_intel.db.engine import get_engine
+
+        sqlalchemy  # noqa: B018 - imported for its side effect on memory
+        get_settings()
+        get_engine()
+    return resolved
+
+
+def _without(args: tuple[str, ...], prefix: str) -> list[str]:
+    return [arg for arg in args if not arg.startswith(prefix)]
+
+
+def _log_path() -> str:
+    """Where to send chromedriver's stderr. Deliberately a directory that
+    exists rather than a hardcoded /tmp/... — a log path that isn't there
+    makes chromedriver exit 1 immediately with a misleading "unexpectedly
+    exited", which looks exactly like a broken flag list."""
+    import os
+    import tempfile
+
+    return os.path.join(tempfile.gettempdir(), "chromedriver.log")
+
+
+_LOG_PATH = _log_path()
 
 
 def main() -> int:
     name = sys.argv[1]
-    args = VARIANTS[name]
+    args = _resolve(name)
     print(f"PROBE {name}: args={' '.join(args)}", flush=True)
     tracemalloc.start()
     started = time.monotonic()
     driver = None
     try:
-        driver = webdriver.Chrome(
-            options=_options(args),
-            service=Service(log_output="/tmp/chromedriver.log"),
-        )
+        driver = webdriver.Chrome(options=_options(args), service=Service(log_output=_LOG_PATH))
         elapsed = time.monotonic() - started
         _, peak = tracemalloc.get_traced_memory()
         print(
