@@ -32,8 +32,8 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           set +e
-          for m in plain plain_ns plain_all_eager plain_all; do
-            echo "=== MODE $m ==="
-            timeout 60 xvfb-run -a .venv/bin/python scripts/_probe_sb_mode.py "$m" || echo "MODE $m exit=$?"
-          done
+          cd "$GITHUB_WORKSPACE"
+          timeout 60 xvfb-run -a .venv/bin/python scripts/_probe_raw_session.py
+          echo "=== chromedriver.log ==="
+          cat /tmp/chromedriver.log 2>/dev/null || true
           echo "ALL PROBES DONE ============"
