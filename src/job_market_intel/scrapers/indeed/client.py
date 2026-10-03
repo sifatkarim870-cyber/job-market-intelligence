@@ -40,7 +40,6 @@ from __future__ import annotations
 
 import logging
 import random
-import socket
 import time
 from typing import Any
 from urllib.parse import quote_plus
@@ -128,9 +127,11 @@ _PLAIN_CHROME_ARGS = (
 # to a file the workflow can cat rather than into the scraper's own log.
 _CHROMEDRIVER_LOG_PATH = "/tmp/chromedriver.log"
 
-# Selenium's built-in HTTP read timeout for driver calls, and what open_session
-# puts back once the session is up (see the socket.setdefaulttimeout dance
-# there — the long handshake timeout is only wanted for the handshake).
+# selenium 4.49's own hardcoded driver read timeout (ChromiumRemoteConnection
+# builds its ClientConfig with timeout=120). Restored for every call *after*
+# the session handshake, since set_page_load_timeout() bounds real page loads
+# from that point on and a 5-minute read timeout would only make a wedged
+# driver hang for minutes before giving up. See _start_plain_chrome().
 _SELENIUM_DEFAULT_DRIVER_TIMEOUT = 120.0
 
 
@@ -204,34 +205,69 @@ class IndeedClient:
         self._detail_pages_visited = 0
 
     def _start_plain_chrome(self, options: Any, service: Any) -> Any:
-        """Builds the non-UC Chrome session, with two concessions to slow
-        machines that are otherwise easy to mistake for a scraper bug.
+        """Builds the non-UC Chrome session.
 
-        First, selenium gives every driver HTTP call a 120s read timeout,
-        and a cold Chrome on a low-memory machine can spend longer than
-        that just launching before it can answer the very first request --
-        on the CI runner it was ~45s when it worked and unbounded when it
-        didn't, so the honest failure was an opaque urllib3 ReadTimeoutError
-        from inside selenium rather than anything actionable. selenium has no
-        public knob for that timeout (ChromiumDriver constructs its own
-        ClientConfig, whose timeout defaults to socket.getdefaulttimeout()),
-        so the default socket timeout is raised for the duration of the
-        constructor call and restored immediately after. Only the handshake
-        gets the generous budget: the driver's read timeout is put back to
-        selenium's default once there's a session, since
-        set_page_load_timeout() bounds actual page loads from that point on
-        and leaving it large would just make a dead driver hang for minutes.
+        Two concessions to slow machines, both of which are otherwise easy to
+        mistake for a scraper bug:
 
-        Second, a driver that never starts is reported as IndeedFetchError
-        with how long it took, so the pipeline can record it as a controlled
-        failure for this queue row instead of the whole run dying on a
-        traceback -- see pipeline._run_browser_phase().
+        First, the session *handshake* needs a much longer deadline than
+        selenium gives it by default. A cold Chrome on a low-memory machine
+        can spend well over two minutes before it answers the driver's very
+        first request, and selenium 4.49 hardcodes a 120s read timeout for
+        every driver call (ChromiumRemoteConnection constructs its own
+        ClientConfig with ``timeout=120``), which is what produced the
+        urllib3 ReadTimeoutError this run kept dying on.
+
+        That hardcoded literal is not reachable through webdriver.Chrome()'s
+        signature at all, so the connection class webdriver.Chrome() actually
+        instantiates is swapped for a subclass that supplies its own
+        ClientConfig, for the duration of the constructor call only.
+        ``try/finally`` puts the original back. The long budget is scoped to
+        the handshake deliberately: once a session exists,
+        ``set_page_load_timeout()`` bounds real page loads, and leaving a
+        5-minute read timeout on every later call would only make a wedged
+        driver hang for minutes before giving up.
+
+        Second, a driver that never starts is re-raised as IndeedFetchError
+        carrying how long it took, so the pipeline can record it as a
+        controlled failure for this queue row instead of the whole run dying
+        on a traceback -- see pipeline._run_browser_phase().
         """
         from selenium import webdriver
+        from selenium.webdriver.chromium import webdriver as chromium_webdriver
+        from selenium.webdriver.remote.client_config import ClientConfig
+
+        # selenium's ClientConfig annotates timeout as int | None but treats it
+        # as a plain pass-through to urllib3, which takes a float happily;
+        # session_start_timeout_seconds is a float for that reason.
+        timeout = int(self._settings.session_start_timeout_seconds)
+        original_connection = chromium_webdriver.ChromiumRemoteConnection
+
+        class _PatientChromeConnection(original_connection):  # type: ignore[misc, valid-type]
+            """Identical connection, minus selenium's 120s handshake deadline.
+
+            webdriver.Chrome() builds its own ChromiumRemoteConnection
+            internally and never exposes a client_config argument, and the
+            parent class hardcodes ``timeout=120`` when it has to construct
+            one itself — so the subclass supplies one instead. Both the
+            remote_server_addr and keep_alive values are read out of whatever
+            the caller passed rather than assumed, since selenium 4.49 calls
+            this with keyword arguments.
+            """
+
+            def __init__(self, *args: Any, **kwargs: Any) -> None:
+                address = kwargs.get("remote_server_addr") or (args[0] if args else "")
+                kwargs["client_config"] = ClientConfig(
+                    remote_server_addr=str(address),
+                    keep_alive=kwargs.get("keep_alive", True),
+                    timeout=timeout,
+                )
+                super().__init__(*args, **kwargs)
 
         started = time.monotonic()
-        previous_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(self._settings.session_start_timeout_seconds)
+        # mypy reads this module attribute as a type; swapping the class out
+        # at runtime is the point, hence the ignores.
+        chromium_webdriver.ChromiumRemoteConnection = _PatientChromeConnection  # type: ignore[misc]
         try:
             driver = webdriver.Chrome(options=options, service=service)
         except Exception as exc:
@@ -239,16 +275,17 @@ class IndeedClient:
                 f"chrome session failed to start after {time.monotonic() - started:.0f}s: {exc}"
             ) from exc
         finally:
-            socket.setdefaulttimeout(previous_timeout)
+            chromium_webdriver.ChromiumRemoteConnection = original_connection  # type: ignore[misc]
 
         elapsed = time.monotonic() - started
         logger.info("indeed.session.plain_chrome_started elapsed=%.1fs", elapsed)
         if elapsed > 60:
-            # Worth saying out loud: this is the signal that a machine is
-            # too slow/too small for the flags above to have helped, and the
-            # number to compare against when that changes.
+            # Worth saying out loud: this is the signal that the machine is
+            # too slow or too small, and the number to compare against when
+            # that changes.
             logger.warning("indeed.session.slow_start elapsed=%.1fs", elapsed)
 
+        # Back to selenium's own default for everything after the handshake.
         executor = getattr(driver, "command_executor", None)
         client_config = getattr(executor, "client_config", None)
         if client_config is not None:

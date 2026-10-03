@@ -18,7 +18,6 @@ manual/live run, not something worth slowing down `pytest` for.
 
 from __future__ import annotations
 
-import socket
 import sys
 import types
 from unittest.mock import MagicMock
@@ -183,36 +182,60 @@ class TestOpenSession:
     def test_open_session_plain_driver_gets_a_generous_handshake_timeout(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """A slow machine's session start must not die on selenium's own
-        120s driver read timeout — see _start_plain_chrome's docstring.
+        """A slow machine's session start must not die on selenium's own 120s
+        driver read timeout.
+
+        The mechanism matters here: an earlier version raised
+        socket.getdefaulttimeout() instead, which does nothing at all, because
+        ChromiumRemoteConnection passes an explicit timeout=120 when it builds
+        its own ClientConfig. That version still failed at exactly
+        "read timeout=120" with INDEED_SESSION_START_TIMEOUT_SECONDS=300 set.
         """
         mock_driver_instance = MagicMock()
         observed_timeouts: list[float | None] = []
-        fake_seleniumbase = types.SimpleNamespace(Driver=MagicMock())
-        monkeypatch.setitem(sys.modules, "seleniumbase", fake_seleniumbase)
+        monkeypatch.setitem(sys.modules, "seleniumbase", types.SimpleNamespace(Driver=MagicMock()))
+
+        # Stand in for the connection class selenium instantiates internally,
+        # recording the ClientConfig timeout it is handed. client.py patches
+        # the real class on the real chromium webdriver module (that's the
+        # only place webdriver.Chrome() looks it up), so these tests patch the
+        # real module attributes rather than replacing sys.modules entries.
+        from selenium.webdriver.chromium import webdriver as chromium_webdriver
+
+        class FakeConnection:
+            def __init__(
+                self, *args: object, client_config: object = None, **kwargs: object
+            ) -> None:
+                observed_timeouts.append(getattr(client_config, "timeout", None))
+
+        original_connection = chromium_webdriver.ChromiumRemoteConnection
+        monkeypatch.setattr(chromium_webdriver, "ChromiumRemoteConnection", FakeConnection)
 
         def fake_chrome(**_: object) -> MagicMock:
-            # Reads the ambient socket default timeout at the moment the
-            # driver handshake would be made, which is the value under test.
-            observed_timeouts.append(socket.getdefaulttimeout())
+            # Mirrors what webdriver.Chrome() does internally: instantiate
+            # whatever connection class the module currently holds.
+            chromium_webdriver.ChromiumRemoteConnection(
+                remote_server_addr="http://localhost:1234",
+                vendor_prefix="goog",
+                browser_name="chrome",
+                keep_alive=True,
+            )
             return mock_driver_instance
 
-        mock_options = MagicMock()
-        mock_service = MagicMock()
         monkeypatch.setitem(
             sys.modules,
             "selenium",
             types.SimpleNamespace(
                 webdriver=types.SimpleNamespace(
                     Chrome=MagicMock(side_effect=fake_chrome),
-                    ChromeOptions=MagicMock(return_value=mock_options),
+                    ChromeOptions=MagicMock(return_value=MagicMock()),
                 )
             ),
         )
         monkeypatch.setitem(
             sys.modules,
             "selenium.webdriver.chrome.service",
-            types.SimpleNamespace(Service=MagicMock(return_value=mock_service)),
+            types.SimpleNamespace(Service=MagicMock(return_value=MagicMock())),
         )
 
         settings = IndeedSettings(
@@ -220,12 +243,89 @@ class TestOpenSession:
         )
         IndeedClient(settings=settings).open_session()
 
-        # Recorded while Chrome was being constructed, i.e. the timeout the
-        # driver handshake actually ran under.
+        # The whole point: the handshake ran under 777s, not selenium's 120s.
         assert observed_timeouts == [777.0]
-        # ...and restored afterwards rather than leaking into the DB engine
-        # and every other socket in the process.
-        assert socket.getdefaulttimeout() != 777.0
+        # Whatever was in place when open_session() ran is back afterwards, so
+        # the override can't leak into a later session in the same process.
+        # (FakeConnection here stands in for "what was there before".)
+        assert chromium_webdriver.ChromiumRemoteConnection is FakeConnection
+        assert original_connection.__name__ == "ChromiumRemoteConnection"
+
+    def test_plain_driver_timeout_override_survives_a_failed_start(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The restore is in a finally: a failed handshake must not leave the
+        process-wide swap in place for the next attempt.
+        """
+        from selenium.webdriver.chromium import webdriver as chromium_webdriver
+
+        class FakeConnection:
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                self.client_config = object()
+
+        monkeypatch.setattr(chromium_webdriver, "ChromiumRemoteConnection", FakeConnection)
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium",
+            types.SimpleNamespace(
+                webdriver=types.SimpleNamespace(
+                    Chrome=MagicMock(side_effect=RuntimeError("no chrome here")),
+                    ChromeOptions=MagicMock(return_value=MagicMock()),
+                )
+            ),
+        )
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium.webdriver.chrome.service",
+            types.SimpleNamespace(Service=MagicMock(return_value=MagicMock())),
+        )
+
+        client = IndeedClient(settings=IndeedSettings(headless=True, uc_enabled=False))
+        with pytest.raises(IndeedFetchError, match="no chrome here"):
+            client.open_session()
+
+        assert chromium_webdriver.ChromiumRemoteConnection is FakeConnection
+
+    def test_plain_driver_timeout_override_is_not_left_behind(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The swap only lasts for the handshake — a process-wide patch left in
+        place would silently give every later driver call a 5-minute deadline.
+        """
+        monkeypatch.setitem(sys.modules, "seleniumbase", types.SimpleNamespace(Driver=MagicMock()))
+
+        sentinel = object()
+
+        class FakeConnection:
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                self.client_config = sentinel  # no real timeout to reset
+
+        from selenium.webdriver.chromium import webdriver as chromium_webdriver
+
+        monkeypatch.setattr(chromium_webdriver, "ChromiumRemoteConnection", FakeConnection)
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium",
+            types.SimpleNamespace(
+                webdriver=types.SimpleNamespace(
+                    Chrome=MagicMock(return_value=MagicMock()),
+                    ChromeOptions=MagicMock(return_value=MagicMock()),
+                )
+            ),
+        )
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium.webdriver.chrome.service",
+            types.SimpleNamespace(Service=MagicMock(return_value=MagicMock())),
+        )
+
+        IndeedClient(settings=IndeedSettings(headless=True, uc_enabled=False)).open_session()
+
+        assert chromium_webdriver.ChromiumRemoteConnection is FakeConnection
+        assert isinstance(
+            chromium_webdriver.ChromiumRemoteConnection,
+            type,
+        )  # not left as an instance or a bare function
 
     def test_plain_chrome_args_omit_the_two_flags_that_break_the_ci_runner(
         self,
