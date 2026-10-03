@@ -212,7 +212,7 @@ jobs:
         # xvfb-run -a starts a virtual display, runs the command against
         # it, and tears it down after — -a auto-selects a free display
         # number rather than assuming one is free.
-        run: xvfb-run -a uv run python scripts/run_indeed_scraper.py
+        run: xvfb-run -a .venv/bin/python scripts/run_indeed_scraper.py
 
   reed:
     # NOTE (2026-10-01): a hashFiles()-based guard was here briefly,
