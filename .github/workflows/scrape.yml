@@ -196,6 +196,12 @@ jobs:
       - name: Run Indeed scraper
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # A cold Chrome on this VM takes ~49s just to answer the driver's
+          # first request, against selenium's own 120s driver read timeout —
+          # close enough that a slightly busier run tips over into a
+          # ReadTimeoutError. Measured, not guessed: see client.py's
+          # _PLAIN_CHROME_ARGS comment and indeed_uc_probe.yml.
+          INDEED_SESSION_START_TIMEOUT_SECONDS: "300"
           # UC ("undetected") seleniumbase mode hangs on this self-hosted
           # runner's Chrome every time (session starts, page loads never
           # complete -> SessionNotCreatedException timeout; with

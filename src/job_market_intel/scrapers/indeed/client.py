@@ -65,29 +65,42 @@ _CHALLENGE_MARKERS = (
 
 _NEXT_PAGE_SELECTOR = 'a[aria-label="Next Page"], a[data-testid="pagination-page-next"]'
 
-# Chrome flags used by the UC-off path (see open_session). Two groups, and
-# on the self-hosted CI runner both are load-bearing:
+# Chrome flags used by the UC-off path (see open_session). Measured on the
+# self-hosted CI runner (an 837MiB, 0-swap Azure VM with a 419MiB /dev/shm)
+# rather than guessed — see .github/workflows/indeed_uc_probe.yml, which
+# tries each of these sets in its own process:
 #
-#   1. Sandbox/shm basics. The runner is a small Azure VM with no user
-#      namespaces available and a tiny /dev/shm, so --no-sandbox and
-#      --disable-dev-shm-usage are required for Chrome to come up at all;
-#      --disable-gpu because there is no GPU.
-#   2. Startup chatter. A cold Chrome there took ~45s to reach the point
-#      where it could answer the driver's first request (measured: the
-#      probe's InitSession took 45.6s), and the driver log shows nearly all
-#      of that spent on DBus lookups, GCM registration and component-update
-#      checks — none of which this scraper needs. Silencing that startup
-#      work is what brings a session back to seconds instead of minutes,
-#      which matters because open_session() runs once per queue row.
+#     --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage
+#         -> FAILED, 127s, ReadTimeoutError from the driver
+#     --headless=new --no-sandbox --disable-dev-shm-usage            -> 69s
+#     --headless=new --no-sandbox                                    -> 49s  <- this set
+#     ... + --renderer-process-limit=1                               -> 63s
+#     ... + --single-process                                          -> died, 22s
+#     --headless=old --no-sandbox --disable-gpu --disable-dev-shm-usage -> 81s
+#
+# So two of the three flags that looked obviously right for a small VM were
+# the problem, and for opposite reasons:
+#
+#   --disable-gpu: on a VM with no GPU this still stands up Chrome's GPU
+#     process rather than skipping it, and the extra process is what pushes
+#     the browser past this VM's memory budget. Dropping it was the single
+#     change between the 127s timeout and a session.
+#   --disable-dev-shm-usage: /dev/shm here is 419MiB, comfortably enough,
+#     so the flag only forces Chrome's shared memory out to disk in /tmp.
+#     Slower, and it was the second-worst set measured.
+#
+# The remaining flags silence Chrome's own first-run/background network
+# chatter (DBus lookups, GCM registration, component-update checks), which
+# the driver log showed eating a cold start on this machine. They don't fix
+# anything on their own — startup is still ~49s, which is why
+# session_start_timeout_seconds exists — but they shave it and cost nothing.
 #
 # Deliberately *not* here: anything that only exists to make the browser
-# look less like automation. The flags above are about getting a browser
-# started on a constrained machine; the anti-fingerprinting job belongs to
-# UC mode, which is the default (see IndeedSettings.uc_enabled).
+# look less like automation. These are about getting a browser started on a
+# constrained machine; the anti-fingerprinting job belongs to UC mode, which
+# is the default (see IndeedSettings.uc_enabled).
 _PLAIN_CHROME_ARGS = (
     "--no-sandbox",
-    "--disable-gpu",
-    "--disable-dev-shm-usage",
     "--window-size=1920,1080",
     "--no-first-run",
     "--no-default-browser-check",

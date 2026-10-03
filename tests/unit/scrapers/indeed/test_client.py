@@ -25,7 +25,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from job_market_intel.scrapers.indeed.client import IndeedClient
+from job_market_intel.scrapers.indeed.client import _PLAIN_CHROME_ARGS, IndeedClient
 from job_market_intel.scrapers.indeed.config import IndeedSettings
 from job_market_intel.scrapers.indeed.exceptions import IndeedFetchError
 
@@ -226,6 +226,24 @@ class TestOpenSession:
         # ...and restored afterwards rather than leaking into the DB engine
         # and every other socket in the process.
         assert socket.getdefaulttimeout() != 777.0
+
+    def test_plain_chrome_args_omit_the_two_flags_that_break_the_ci_runner(
+        self,
+    ) -> None:
+        """Regression guard for a measured failure, not a preference.
+
+        On the 837MiB CI runner, --disable-gpu made Chrome stand up a GPU
+        process it doesn't need and the session never started (127s
+        timeout), and --disable-dev-shm-usage pushed shared memory to disk
+        for no benefit since /dev/shm there is 419MiB. Both were in the
+        flag list for a long time on the assumption that they were
+        obviously right for a small VM. See _PLAIN_CHROME_ARGS's comment for
+        the full set of measurements.
+        """
+        assert "--disable-gpu" not in _PLAIN_CHROME_ARGS
+        assert "--disable-dev-shm-usage" not in _PLAIN_CHROME_ARGS
+        # --no-sandbox is the opposite case: still required there.
+        assert "--no-sandbox" in _PLAIN_CHROME_ARGS
 
     def test_open_session_plain_driver_raises_indeed_fetch_error_when_it_will_not_start(
         self, monkeypatch: pytest.MonkeyPatch
