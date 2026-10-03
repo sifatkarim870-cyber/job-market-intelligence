@@ -108,6 +108,16 @@ class IndeedClient:
             headless2=self._settings.headless,
             agent=self._settings.request_user_agent,
             page_load_strategy="eager",
+            # Linux runners: without these Chrome cannot start its session,
+            # dies before creating any window, and the uc_driver session
+            # times out with "session not created: cannot connect to chrome
+            # at 127.0.0.1:9222". no_sandbox bypasses namespaces that the
+            # VM's lid/session sandbox can't provide; dev-shm keeps Chrome
+            # from crashing on a small /dev/shm partition. Harmless on
+            # Windows/macOS.
+            no_sandbox=True,
+            disable_gpu=True,
+            chromium_arg="--disable-dev-shm-usage",
         )
         self._driver.set_page_load_timeout(self._settings.page_load_timeout_seconds)
         self._search_pages_visited = 0

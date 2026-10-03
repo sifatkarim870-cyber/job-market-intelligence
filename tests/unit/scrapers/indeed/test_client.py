@@ -135,6 +135,10 @@ class TestOpenSession:
 
         mock_driver_ctor.assert_called_once()
         assert mock_driver_ctor.call_args.kwargs["uc_subprocess"] is True
+        assert mock_driver_ctor.call_args.kwargs["no_sandbox"] is True
+        assert (
+            mock_driver_ctor.call_args.kwargs["chromium_arg"] == "--disable-dev-shm-usage"
+        )
         mock_driver_instance.set_page_load_timeout.assert_called_once_with(
             client._settings.page_load_timeout_seconds  # noqa: SLF001 - deliberate assertion on config wiring
         )
