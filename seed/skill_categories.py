@@ -23,6 +23,18 @@ SKILL_CATEGORIES = [
     "Soft Skill",
     "Business Skill",
     "Other Tool",
+    "Healthcare Skill",
+    "Education Skill",
+    "Retail & Hospitality Skill",
+    "Construction & Trades Skill",
+    "Manufacturing Skill",
+    "Agriculture Skill",
+    "Transport & Logistics Skill",
+    "Government & Public Sector Skill",
+    "Media & Arts Skill",
+    "Beauty & Wellness Skill",
+    "Banking & Finance Skill",
+    "Business & Management Skill",
 ]
 
 
