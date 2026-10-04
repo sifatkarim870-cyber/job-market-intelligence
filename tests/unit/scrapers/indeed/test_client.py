@@ -55,6 +55,25 @@ class TestDetectChallenge:
     def test_challenge_markers_detected(self, page_source: str) -> None:
         assert IndeedClient.detect_challenge(page_source) is True
 
+    def test_cloudflare_edge_block_is_recognised(self) -> None:
+        """A Cloudflare block is not Indeed's CAPTCHA, but it is just as fatal.
+
+        Markers taken from the page actually served to the CI runner at
+        172.197.177.36. Without these the page scored False, so the pipeline
+        went on to parse it as search results, found no job cards, and
+        reported "the feed may be down" instead of the real cause.
+        """
+        html = (
+            "<html><head><title>Blocked - Indeed.com</title></head><body>"
+            "<h1>Access Denied</h1><p>Your request has been blocked.</p>"
+            "<p>Request Blocked</p><p>You have been blocked.</p>"
+            "<p>Your Ray ID for this request is a450999efbd988e1</p>"
+            "<p>Your current IP for this request is 172.197.177.36</p>"
+            "<div class='cf-error-details'>Troubleshooting Cloudflare Errors</div>"
+            "</body></html>"
+        )
+        assert IndeedClient.detect_challenge(html) is True
+
     def test_ordinary_page_not_flagged(self) -> None:
         html = "<html><body><div class='job_seen_beacon'>Software Engineer</div></body></html>"
         assert IndeedClient.detect_challenge(html) is False
@@ -251,6 +270,70 @@ class TestOpenSession:
         # (FakeConnection here stands in for "what was there before".)
         assert chromium_webdriver.ChromiumRemoteConnection is FakeConnection
         assert original_connection.__name__ == "ChromiumRemoteConnection"
+
+    def test_each_retry_attempt_gets_a_fresh_service_and_drops_the_failed_one(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A retry must not leak a browser per attempt.
+
+        selenium's Service.start() has no already-started guard -- it spawns a
+        new chromedriver and overwrites self.process -- and it only stops the
+        service itself when start() fails. This scraper's failure happens later,
+        in InitSession, so nothing stops it: sharing one Service across attempts
+        orphans a chromedriver plus its whole Chrome tree every time, which on
+        the 837MiB CI runner starved later attempts no matter how much headroom
+        they began with. Each attempt therefore gets its own Service, and a
+        failed one is explicitly stopped.
+        """
+        monkeypatch.setitem(sys.modules, "seleniumbase", types.SimpleNamespace(Driver=MagicMock()))
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium",
+            types.SimpleNamespace(
+                webdriver=types.SimpleNamespace(
+                    Chrome=MagicMock(return_value=MagicMock()),
+                    ChromeOptions=MagicMock(return_value=MagicMock()),
+                )
+            ),
+        )
+
+        built: list[MagicMock] = []
+
+        def make_service(**_: object) -> MagicMock:
+            service = MagicMock()
+            built.append(service)
+            return service
+
+        monkeypatch.setitem(
+            sys.modules,
+            "selenium.webdriver.chrome.service",
+            types.SimpleNamespace(Service=MagicMock(side_effect=make_service)),
+        )
+
+        webdriver_module = sys.modules["selenium"].webdriver
+        # Fail twice, then succeed, so the loop covers both outcomes.
+        webdriver_module.Chrome.side_effect = [
+            RuntimeError("session not created"),
+            RuntimeError("session not created"),
+            MagicMock(),
+        ]
+
+        settings = IndeedSettings(
+            headless=True,
+            uc_enabled=False,
+            session_start_attempts=3,
+            session_start_retry_wait_seconds=0.0,
+        )
+        IndeedClient(settings=settings).open_session()
+
+        # One Service per attempt, not one shared across three.
+        assert len(built) == 3
+        assert len({id(s) for s in built}) == 3
+        # The two that failed are torn down; the one that succeeded is not
+        # stopped here (quit() owns that).
+        assert built[0].stop.called
+        assert built[1].stop.called
+        assert not built[2].stop.called
 
     def test_plain_driver_timeout_override_survives_a_failed_start(
         self, monkeypatch: pytest.MonkeyPatch

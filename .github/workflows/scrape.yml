@@ -174,17 +174,15 @@ jobs:
         run: uv sync --extra dev --extra test --extra selenium
 
       - name: Install Chrome and Xvfb
-        # Confirmed decision: run genuinely non-headless in CI, the same
-        # way this scraper runs locally, rather than setting
-        # INDEED_HEADLESS=true for this job. headless=False is a
-        # deliberate anti-fingerprinting default (see
-        # scrapers/indeed/config.py's own docstring) — flipping it just
-        # for CI would quietly undo that trade-off exactly where the
-        # traffic matters most (real, unattended, scheduled runs). Xvfb
-        # gives Chrome a real virtual display so no headless flag is
-        # needed at all; this is a standard, well-trodden pattern for
-        # browser automation on GitHub-hosted runners generally. This
-        # self-hosted runner also needs Chrome installed explicitly.
+        # Chrome has to be installed explicitly on this self-hosted runner; the
+        # GitHub-hosted ones only need setup-chrome.
+        #
+        # Note this job runs Chrome with --headless=new (INDEED_HEADLESS=true
+        # below), NOT under Xvfb. headless=new never reads DISPLAY, so an X
+        # server here would be pure overhead; the earlier comment in this file
+        # claimed the opposite and was wrong. xvfb is still in the apt line
+        # because indeed_uc_probe.yml drives the Xvfb-backed variant on this
+        # same runner to keep that comparison reproducible.
         run: |
           wget -q -O - https://dl.google.com/linux/linux_signing_key.pub \
             | sudo gpg --batch --yes --no-tty --dearmor -o /usr/share/keyrings/google-linux.gpg

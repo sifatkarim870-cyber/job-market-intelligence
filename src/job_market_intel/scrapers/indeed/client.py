@@ -42,6 +42,7 @@ import logging
 import random
 import tempfile
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
@@ -62,13 +63,29 @@ _CHALLENGE_MARKERS = (
     "unusual traffic",
     "please verify you are a human",
     "checking your browser",
+    # Cloudflare edge block, which is a different failure from Indeed's own
+    # CAPTCHA and was measured being served here. The runner's egress IP
+    # (172.197.177.36) is refused outright: a plain `curl` with no browser at
+    # all gets HTTP 403 and one of these pages, so this is not something any
+    # browser configuration can talk its way out of.
+    #
+    # It matters that these are recognised. With only the five markers above,
+    # this page scored False -- the run then tried to parse it as search
+    # results, found no job cards, and reported a confusing "feed may be down"
+    # validation failure instead of the true cause. Phrasing is kept specific
+    # to this page so ordinary result markup cannot match.
+    "blocked - indeed.com",
+    "your request has been blocked",
+    "you have been blocked",
+    "your ray id",
+    "cf-error-details",
 )
 
 _NEXT_PAGE_SELECTOR = 'a[aria-label="Next Page"], a[data-testid="pagination-page-next"]'
 
 # Chrome flags used by the UC-off path (see open_session), measured on the
-# self-hosted CI runner (an 837MiB, 0-swap Azure VM with a 419MiB /dev/shm)
-# rather than guessed. .github/workflows/indeed_uc_probe.yml re-runs these
+# self-hosted CI runner (an 837MiB Azure VM with a 419MiB /dev/shm) rather
+# than guessed. .github/workflows/indeed_uc_probe.yml re-runs these
 # comparisons; the numbers below are from run 37129170777, which finally got
 # past its own self-inflicted failures and tested the real arg list:
 #
@@ -103,6 +120,13 @@ _NEXT_PAGE_SELECTOR = 'a[aria-label="Next Page"], a[data-testid="pagination-page
 # add them one at a time and let the probe decide.
 #
 # --no-sandbox stays because the runner has no user namespaces available.
+#
+# Memory, not flags, turned out to be the dominant factor, and the flag work
+# above was chasing a symptom of it. Once the runner had swap (4GiB) and the
+# leftover Xvfb processes were gone, this exact two-flag list started a
+# session in 1.0s / 1.2s / 4.7s / 14.2s / 22.5s across five consecutive tries,
+# versus three failures in 451s before. Worth remembering before adding flags
+# again: check free -m first.
 #
 # Deliberately *not* here: anything that only exists to make the browser look
 # less like automation. These are about getting a browser started on a
@@ -194,13 +218,16 @@ class IndeedClient:
             for arg in _PLAIN_CHROME_ARGS:
                 options.add_argument(arg)
             options.add_argument(f"--user-agent={self._settings.request_user_agent}")
-            service = Service(log_output=_CHROMEDRIVER_LOG_PATH)
-            self._driver = self._start_plain_chrome(options, service)
+            # A factory, not a Service: each retry attempt needs its own, and
+            # a Service cannot be restarted once used. See _start_plain_chrome.
+            self._driver = self._start_plain_chrome(
+                options, lambda: Service(log_output=_CHROMEDRIVER_LOG_PATH)
+            )
         self._driver.set_page_load_timeout(self._settings.page_load_timeout_seconds)
         self._search_pages_visited = 0
         self._detail_pages_visited = 0
 
-    def _start_plain_chrome(self, options: Any, service: Any) -> Any:
+    def _start_plain_chrome(self, options: Any, service_factory: Callable[[], Any]) -> Any:
         """Builds the non-UC Chrome session.
 
         Two concessions to slow machines, both of which are otherwise easy to
@@ -228,6 +255,20 @@ class IndeedClient:
         carrying how long it took, so the pipeline can record it as a
         controlled failure for this queue row instead of the whole run dying
         on a traceback -- see pipeline._run_browser_phase().
+
+        Third, and least obvious: every attempt gets its *own* Service, built
+        by the caller-supplied factory, and a failed attempt is explicitly
+        stopped. A Service cannot safely be reused or abandoned here.
+        selenium's Service.start() has no already-started guard -- it spawns a
+        new chromedriver unconditionally and overwrites self.process -- and it
+        only calls stop() itself when start() fails. Our failure happens later,
+        inside InitSession, after start() has already returned, so nothing
+        stops it: the previous chromedriver is orphaned the moment the next
+        attempt overwrites the handle, taking its whole Chrome tree (measured
+        at 150-400MB on the CI runner) with it. Reusing one Service therefore
+        made the retry actively harmful, leaking a browser per attempt on a
+        machine with 837MiB of RAM -- attempt 1 could starve attempts 2 and 3
+        no matter how much headroom they started with.
         """
         from selenium import webdriver
         from selenium.webdriver.chromium import webdriver as chromium_webdriver
@@ -267,10 +308,19 @@ class IndeedClient:
         chromium_webdriver.ChromiumRemoteConnection = _PatientChromeConnection  # type: ignore[misc]
         try:
             for attempt in range(1, attempts + 1):
+                # Fresh Service per attempt: see the docstring. Reusing one
+                # orphans a chromedriver (and its Chrome tree) every time.
+                service = service_factory()
                 try:
                     driver = webdriver.Chrome(options=options, service=service)
                     break
                 except Exception as exc:  # noqa: BLE001 - retried, then re-raised
+                    # Nothing in selenium tears this down: the failure is in
+                    # InitSession, after Service.start() already succeeded.
+                    try:
+                        service.stop()
+                    except Exception:  # noqa: BLE001,S110 - best effort cleanup
+                        pass
                     elapsed = time.monotonic() - started
                     if attempt == attempts:
                         raise IndeedFetchError(
@@ -429,10 +479,11 @@ class IndeedClient:
     @staticmethod
     def detect_challenge(page_source: str) -> bool:
         """True if the given page source looks like Indeed's own CAPTCHA/
-        human-verification interstitial rather than real content. Checked
-        by the pipeline after every navigation; a positive result raises
-        IndeedBlockedError and ends the session — this function itself
-        never raises, never retries, never attempts to solve anything.
+        human-verification interstitial, or a Cloudflare edge block, rather
+        than real content. Checked by the pipeline after every navigation; a
+        positive result raises IndeedBlockedError and ends the session -- this
+        function itself never raises, never retries, never attempts to solve
+        anything.
         """
         lowered = page_source.lower()
         return any(marker in lowered for marker in _CHALLENGE_MARKERS)
