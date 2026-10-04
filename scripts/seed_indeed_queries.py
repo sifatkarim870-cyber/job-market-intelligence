@@ -35,8 +35,91 @@ from job_market_intel.db.job_repository import JobRepository
 from job_market_intel.db.scrape_queue_repository import ScrapeQueueRepository
 from job_market_intel.db.session import get_session
 
-_DEFAULT_QUERIES = ["software engineer", "data analyst", "product manager", "data engineer"]
-_DEFAULT_LOCATIONS = ["Remote", "New York, NY", "Austin, TX", "San Francisco, CA"]
+# Job titles spanning every major Indeed category — tech/cloud, management,
+# finance/legal, healthcare, education, marketing/sales/CS, retail/hospitality,
+# trades/labour, and the professional-services adjuncts. Each is a real, common
+# search term on Indeed rather than a job-family label ("engineering" wouldn't
+# be typed into the search box).
+_DEFAULT_QUERIES = [
+    # Tech & engineering. "software developer", "data scientist", ... are all
+    # separately indexed on Indeed, so they get their own rows rather than
+    # being folded into one generic "tech" row.
+    "software engineer", "software developer", "web developer",
+    "data analyst", "data scientist", "data engineer",
+    "machine learning engineer", "devops engineer", "cybersecurity analyst",
+    "it support specialist",
+    # Management & business.
+    "product manager", "project manager", "program manager",
+    "business analyst", "operations manager", "supply chain manager",
+    "logistics manager", "human resources manager",
+    # Finance & legal.
+    "financial analyst", "accountant", "auditor", "tax accountant",
+    "paralegal", "lawyer",
+    # Healthcare.
+    "nurse", "registered nurse", "physician", "pharmacist",
+    "physical therapist", "medical assistant", "dentist",
+    # Education.
+    "teacher", "elementary teacher", "professor", "school counselor",
+    # Marketing, sales & customer experience.
+    "marketing manager", "social media manager", "sales representative",
+    "account executive", "customer service representative", "call center agent",
+    # Retail, hospitality & food.
+    "retail sales associate", "cashier", "barista", "waiter",
+    "hotel manager", "event planner", "chef",
+    # Trades, construction & logistics.
+    "electrician", "plumber", "carpenter", "hvac technician",
+    "forklift operator", "warehouse worker", "truck driver",
+    "construction worker", "landscaper", "security guard",
+    # Science, design & real estate.
+    "research scientist", "environmental scientist", "graphic designer",
+    "mechanic", "real estate agent",
+]
+
+# Locations: one row per (title, location). Non-US entries end in the country
+# alias so base_url_for_location() routes them to that country's Indeed site —
+# without that, the US portal silently ignores a foreign location string and
+# returns US jobs instead of that country's jobs. "Remote" and US "City, ST"
+# entries route to the US site.
+_DEFAULT_LOCATIONS = [
+    # US.
+    "Remote",
+    "New York, NY", "Los Angeles, CA", "San Francisco, CA", "Seattle, WA",
+    "Austin, TX", "Chicago, IL", "Boston, MA", "Washington, DC",
+    "Denver, CO", "Miami, FL", "Atlanta, GA", "Dallas, TX",
+    # UK.
+    "London, UK", "Manchester, UK", "Birmingham, UK", "Leeds, UK",
+    # Germany.
+    "Berlin, Germany", "Munich, Germany", "Frankfurt, Germany", "Hamburg, Germany",
+    # France.
+    "Paris, France", "Lyon, France",
+    # Canada.
+    "Toronto, Canada", "Vancouver, Canada", "Montreal, Canada",
+    # India.
+    "Bangalore, India", "Mumbai, India", "Delhi, India",
+    "Hyderabad, India", "Chennai, India",
+    # Australia.
+    "Sydney, Australia", "Melbourne, Australia", "Brisbane, Australia",
+    # Netherlands / Spain / Italy.
+    "Amsterdam, Netherlands", "Rotterdam, Netherlands",
+    "Madrid, Spain", "Barcelona, Spain",
+    "Milan, Italy", "Rome, Italy",
+    # Asia-Pacific.
+    "Singapore", "Tokyo, Japan", "Osaka, Japan",
+    "Seoul, South Korea", "Jakarta, Indonesia",
+    "Ho Chi Minh City, Vietnam", "Bangkok, Thailand",
+    # Latin America.
+    "São Paulo, Brazil", "Rio de Janeiro, Brazil", "Mexico City, Mexico",
+    "Guadalajara, Mexico", "Buenos Aires, Argentina",
+    # Middle East & Africa.
+    "Dubai, UAE", "Riyadh, Saudi Arabia", "Lagos, Nigeria",
+    "Cape Town, South Africa", "Johannesburg, South Africa",
+    # Oceania & rest of Europe.
+    "Auckland, New Zealand", "Dublin, Ireland", "Zurich, Switzerland",
+    "Stockholm, Sweden", "Warsaw, Poland", "Lisbon, Portugal",
+    "Athens, Greece", "Prague, Czech Republic", "Vienna, Austria",
+    "Brussels, Belgium", "Copenhagen, Denmark", "Oslo, Norway",
+    "Helsinki, Finland", "Istanbul, Turkey",
+]
 
 
 def _seed_defaults(repo: ScrapeQueueRepository, source_id: int) -> int:

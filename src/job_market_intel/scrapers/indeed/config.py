@@ -20,6 +20,95 @@ from __future__ import annotations
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Default Indeed domain. Country domains (uk/de/in/...) are what make
+# worldwide coverage actually return *local* results: the US portal ignores
+# the foreign part of a location string and serves US jobs regardless, which
+# we confirmed live -- q=x&l=Tokyo on www.indeed.com returned jobs in Phoenix,
+# AZ. Each country domain + its own location string returns real local jobs
+# (uk.indeed.com/London, de.indeed.com/Germany, in.indeed.com/India -- all
+# verified returning country-local results from the same residential IP).
+_DEFAULT_BASE_URL = "https://www.indeed.com"
+
+# Location alias -> Indeed country domain. Aliases are matched against the
+# final comma-separated segment of the location, lowercased, so both
+# "London, UK" (-> uk) and "Berlin, Germany" (-> de) work while US
+# locations like "Austin, TX" fall through to the US default below. This is
+# deliberately a flat lookup rather than a parsed "country object": the queue
+# only ever carries free-text locations.
+_COUNTRY_DOMAINS: dict[str, str] = {
+    # North America
+    "us": "https://www.indeed.com", "usa": "https://www.indeed.com",
+    "united states": "https://www.indeed.com", "canada": "https://ca.indeed.com",
+    # Europe
+    "uk": "https://uk.indeed.com", "united kingdom": "https://uk.indeed.com",
+    "ireland": "https://ie.indeed.com", "germany": "https://de.indeed.com",
+    "france": "https://fr.indeed.com", "spain": "https://es.indeed.com",
+    "italy": "https://it.indeed.com", "netherlands": "https://nl.indeed.com",
+    "belgium": "https://be.indeed.com", "austria": "https://at.indeed.com",
+    "switzerland": "https://ch.indeed.com", "sweden": "https://se.indeed.com",
+    "norway": "https://no.indeed.com", "denmark": "https://dk.indeed.com",
+    "finland": "https://fi.indeed.com", "poland": "https://pl.indeed.com",
+    "portugal": "https://pt.indeed.com", "greece": "https://gr.indeed.com",
+    "czech republic": "https://cz.indeed.com", "czechia": "https://cz.indeed.com",
+    "romania": "https://ro.indeed.com", "hungary": "https://hu.indeed.com",
+    "croatia": "https://hr.indeed.com", "bulgaria": "https://bg.indeed.com",
+    "luxembourg": "https://lu.indeed.com", "ukraine": "https://ua.indeed.com",
+    # Asia / Oceania
+    "india": "https://in.indeed.com", "japan": "https://jp.indeed.com",
+    "china": "https://cn.indeed.com", "singapore": "https://sg.indeed.com",
+    "hong kong": "https://hk.indeed.com", "malaysia": "https://my.indeed.com",
+    "indonesia": "https://id.indeed.com", "philippines": "https://ph.indeed.com",
+    "thailand": "https://th.indeed.com", "vietnam": "https://vn.indeed.com",
+    "south korea": "https://kr.indeed.com", "taiwan": "https://tw.indeed.com",
+    "pakistan": "https://pk.indeed.com",
+    "australia": "https://au.indeed.com", "new zealand": "https://nz.indeed.com",
+    # Middle East / Africa / LatAm
+    "uae": "https://ae.indeed.com", "saudi arabia": "https://sa.indeed.com",
+    "egypt": "https://eg.indeed.com", "south africa": "https://za.indeed.com",
+    "nigeria": "https://ng.indeed.com",
+    "mexico": "https://mx.indeed.com", "brazil": "https://br.indeed.com",
+    "argentina": "https://ar.indeed.com", "chile": "https://cl.indeed.com",
+    "colombia": "https://co.indeed.com", "peru": "https://pe.indeed.com",
+}
+
+# US state codes, so "Austin, TX" and "Remote, NY" route to the US site.
+_US_STATE_CODES = {
+    "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id",
+    "il", "in", "ia", "ks", "ky", "la", "me", "md", "ma", "mi", "mn", "ms",
+    "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd", "oh", "ok",
+    "or", "pa", "ri", "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv",
+    "wi", "wy", "dc",
+}
+
+
+def base_url_for_location(location_text: str) -> str:
+    """Picks the Indeed country domain for a queue location string.
+
+    "Remote" (the US default) and US city/state pairs route to the US site;
+    a trailing country segment routes to that country's site; anything else
+    falls back to the US default. Never raises -- an unknown location just
+    gets the US portal, which is harmless (it's what every row got before).
+    """
+    cleaned = location_text.strip().lower()
+    if not cleaned:
+        return _DEFAULT_BASE_URL
+    if cleaned in ("remote", "anywhere", "worldwide"):
+        return _DEFAULT_BASE_URL
+
+    parts = [p.strip() for p in cleaned.split(",")]
+    last = parts[-1]
+    # "Austin, TX" style: trailing segment is a US state code.
+    if last in _US_STATE_CODES:
+        return _DEFAULT_BASE_URL
+    if last in _COUNTRY_DOMAINS:
+        return _COUNTRY_DOMAINS[last]
+
+    # "Berlin, Germany" already handled; also try the whole string, so
+    # a bare "Germany" row matches even without a trailing-segment split.
+    if cleaned in _COUNTRY_DOMAINS:
+        return _COUNTRY_DOMAINS[cleaned]
+    return _DEFAULT_BASE_URL
+
 
 class IndeedSettings(BaseSettings):
     """Configuration for the Indeed scraper, loaded from environment/.env.

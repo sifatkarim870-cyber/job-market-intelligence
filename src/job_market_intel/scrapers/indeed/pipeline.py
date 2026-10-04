@@ -33,7 +33,7 @@ from pydantic import BaseModel, Field
 
 from job_market_intel.db.session import get_session
 from job_market_intel.scrapers.indeed.client import IndeedClient
-from job_market_intel.scrapers.indeed.config import IndeedSettings
+from job_market_intel.scrapers.indeed.config import IndeedSettings, base_url_for_location
 from job_market_intel.scrapers.indeed.exceptions import IndeedBlockedError, IndeedFetchError
 from job_market_intel.scrapers.indeed.models import RawIndeedJob
 from job_market_intel.scrapers.indeed.parser import parse_detail_page, parse_search_page
@@ -188,10 +188,18 @@ class IndeedPipeline:
         result = IndeedPipelineRunResult()
         result.query_text = claimed.query_text
         result.location_text = claimed.location_text
+
+        # The client reads settings.base_url fresh on every open_search, and
+        # the client was built with this same settings object (line 90), so
+        # this one assignment steers the whole upcoming browser phase -- all
+        # search pages and the detail links parsed from them inherit this
+        # country's domain, since the cards were found on that domain.
+        self.settings.base_url = base_url_for_location(claimed.location_text)
         logger.info(
-            "indeed.pipeline.claimed query={!r} location={!r} resume_from_page={}",
+            "indeed.pipeline.claimed query={!r} location={!r} base_url={} resume_from_page={}",
             claimed.query_text,
             claimed.location_text,
+            self.settings.base_url,
             claimed.last_page_reached + 1,
         )
 
