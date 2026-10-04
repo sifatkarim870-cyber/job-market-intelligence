@@ -26,6 +26,8 @@ a block should be retried into a worse block within the same run.
 
 from __future__ import annotations
 
+import random
+import time
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
@@ -469,6 +471,15 @@ class IndeedPipeline:
             description = parse_detail_page(detail_source)
             if description is not None:
                 raw_jobs[index] = job.model_copy(update={"description_raw": description})
+            # Pause between detail pages rather than hitting Cloudflare's
+            # edge in a tight burst -- this is the thing that was triggering
+            # the managed-challenge responses. Honour the configured window.
+            time.sleep(
+                random.uniform(
+                    self.settings.detail_page_delay_min_seconds,
+                    self.settings.detail_page_delay_max_seconds,
+                )
+            )
 
     def _persist_and_record(
         self,

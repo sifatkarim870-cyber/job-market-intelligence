@@ -87,6 +87,12 @@ def _build_pipeline(
         validator=validator,
         cleaner=cleaner,
     )
+    # Tests must stay fast: zero the per-detail-page pacing window so the
+    # real time.sleep in _fill_in_descriptions doesn't slow the unit suite.
+    # Client is a MagicMock, so it never reads these values itself.
+    pipeline.settings.detail_page_delay_min_seconds = 0
+    pipeline.settings.detail_page_delay_max_seconds = 0
+
     return pipeline, repository, queue_repository
 
 

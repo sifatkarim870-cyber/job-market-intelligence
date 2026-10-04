@@ -253,6 +253,14 @@ class IndeedSettings(BaseSettings):
     page_action_min_wait_seconds: float = 4.0
     page_action_max_wait_seconds: float = 9.0
 
+    # Per-detail-page delay: pause between scraping one job's detail page and
+    # moving on to the next one. This is the pacing a human reader actually
+    # has -- large enough that Cloudflare's edge isn't hit with a burst of
+    # rapid detail requests (which is what triggered the managed-challenge
+    # responses we were getting), small enough to keep the overall run bounded.
+    detail_page_delay_min_seconds: float = 2.0
+    detail_page_delay_max_seconds: float = 4.0
+
     long_pause_every_n_pages: int = 5
     long_pause_min_seconds: float = 45.0
     long_pause_max_seconds: float = 90.0
