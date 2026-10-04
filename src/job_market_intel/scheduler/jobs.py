@@ -68,14 +68,18 @@ def run_indeed_pipeline_job() -> None:
     point of this scraper is running unattended for years.
 
     Unlike RemoteOK's job, a "successful" run here isn't automatically
-    good news at the INFO level: ``queue_status == "failed"`` means the
+    good news at the INFO level: a non-None ``blocked_reason`` means the
     session hit ``IndeedBlockedError`` (a detected challenge, or too many
     consecutive fetch failures - see ``scrapers/indeed/pipeline.py``) and
     stopped itself cleanly, exactly as designed. That's not a bug and
     shouldn't look like one in the logs, but it's also not routine
     "nothing to see here" news either - logged at WARNING so it's visible
     in a scan of scheduler logs without being mistaken for a Python
-    exception. ``queue_empty`` (nothing left in ``ops.scrape_query_queue``
+    exception. Note this is *not* signalled by queue_status: a blocked
+    row is left 'pending' so it stays claimable, so queue_status is
+    "pending" both for a block and for an ordinary page-cap stop, and
+    ``blocked_reason`` is what actually distinguishes them.
+    ``queue_empty`` (nothing left in ``ops.scrape_query_queue``
     to claim) is logged as its own distinct, calmer case - it means the
     scraper is idle for a legitimate reason, not that anything went wrong.
 
@@ -107,7 +111,10 @@ def run_indeed_pipeline_job() -> None:
     total_updated = sum(r.updated_count for r in results)
     total_unchanged = sum(r.unchanged_count for r in results)
     total_failed = sum(r.failed_count for r in results)
-    blocked = next((r for r in results if r.queue_status == "failed"), None)
+    # Keyed off blocked_reason, not queue_status: a blocked row is left
+    # 'pending' so it can be retried, so queue_status no longer identifies
+    # blocks (and 'pending' also means an ordinary page-cap stop).
+    blocked = next((r for r in results if r.blocked_reason is not None), None)
 
     logger.info(
         "Scheduled Indeed pipeline run complete: {} item(s) worked, "

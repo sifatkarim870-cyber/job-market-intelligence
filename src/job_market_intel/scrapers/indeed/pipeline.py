@@ -162,7 +162,10 @@ class IndeedPipeline:
         for index, claimed in enumerate(claimed_list):
             result = self._run_one(claimed, store_db=store_db)
             results.append(result)
-            if result.queue_status == "failed":
+            # blocked_reason, not queue_status, is the signal to stop: a
+            # blocked row is left 'pending' (see _run_browser_phase), so it
+            # can no longer double as this batch's "stop here" marker.
+            if result.blocked_reason is not None:
                 remaining = claimed_list[index + 1 :]
                 if remaining:
                     logger.warning(
@@ -242,8 +245,20 @@ class IndeedPipeline:
         """Runs the paced, capped browser session. Returns (collected
         records, last search page successfully parsed, queue_status,
         blocked_reason). Never raises — IndeedBlockedError is caught here
-        and turned into queue_status='failed' with the reason recorded,
+        and turned into queue_status='pending' with the reason recorded,
         so callers never need their own try/except for it.
+
+        A block leaves the row 'pending', not 'failed'. A block is
+        Indeed's edge refusing this IP for a while, not evidence that
+        anything is wrong with the (query, location) pair, and 'failed'
+        rows are never auto-reclaimed (see claim_next_queries). Marking
+        them 'failed' therefore quietly deleted one queue row per
+        blocked run -- measured at 4 of 16 rows already lost this way
+        after a handful of runs against a blocked IP, which would have
+        drained the queue to nothing given enough time. 'pending' is the
+        right status because last_completed_page is still recorded, so
+        the next run resumes from where this one stopped instead of
+        redoing it.
         """
         raw_jobs: list[RawIndeedJob] = []
         attempted_detail_ids: set[str] = set()
@@ -257,13 +272,13 @@ class IndeedPipeline:
         except IndeedFetchError as exc:
             # A browser that won't start isn't an Indeed block, but it is
             # still just this one queue row's problem, not the whole run's:
-            # recorded as failed with the reason (same shape as a block, so
-            # run() releases the other claimed rows back to pending) rather
-            # than propagated, which would abandon the batch to a transient
-            # machine failure — on CI that's the difference between a
-            # reported no-op and a red scheduled job.
+            # recorded with the reason and left claimable (same shape as a
+            # block, so run() releases the other claimed rows back to
+            # pending) rather than propagated, which would abandon the batch
+            # to a transient machine failure — on CI that's the difference
+            # between a reported no-op and a red scheduled job.
             blocked_reason = f"could not start browser session: {exc}"
-            queue_status = "failed"
+            queue_status = "pending"
             logger.error("indeed.pipeline.session_start_failed reason={}", blocked_reason)
             return raw_jobs, last_completed_page, queue_status, blocked_reason
 
@@ -312,7 +327,9 @@ class IndeedPipeline:
             queue_status = "done" if page_source is None else "pending"
         except IndeedBlockedError as exc:
             blocked_reason = str(exc)
-            queue_status = "failed"
+            # 'pending', not 'failed' -- see the docstring: the row stays
+            # claimable and resumes from last_completed_page next run.
+            queue_status = "pending"
             logger.error("indeed.pipeline.blocked reason={}", blocked_reason)
         finally:
             self.client.close_session()
@@ -441,7 +458,11 @@ class IndeedPipeline:
         self.repository.finish_scraping_session(
             session=session,
             session_id=scraping_session_id,
-            status=status if queue_status != "failed" else "failed",
+            # Keyed off blocked_reason rather than queue_status: a blocked
+            # session leaves the queue row 'pending' (so it can be retried),
+            # but the session itself genuinely did not finish and must not
+            # be recorded as a success.
+            status="failed" if blocked_reason else status,
             jobs_found=raw_count,
             jobs_new=counts["inserted"],
             jobs_updated=counts["updated"],

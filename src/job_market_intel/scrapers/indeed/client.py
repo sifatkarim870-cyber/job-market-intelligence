@@ -38,6 +38,7 @@ exceptions.py and pipeline.py.
 
 from __future__ import annotations
 
+import json
 import logging
 import random
 import tempfile
@@ -201,6 +202,8 @@ class IndeedClient:
                 headless2=self._settings.headless,
                 agent=self._settings.request_user_agent,
                 page_load_strategy="eager",
+                proxy=self._settings.proxy_server,
+                proxy_auth=self._proxy_auth(),
             )
         else:
             # UC-off path only exercised on the self-hosted CI runner,
@@ -218,6 +221,19 @@ class IndeedClient:
             for arg in _PLAIN_CHROME_ARGS:
                 options.add_argument(arg)
             options.add_argument(f"--user-agent={self._settings.request_user_agent}")
+            if self._settings.proxy_server:
+                # Only ever the egress route, never a fingerprint setting.
+                # Everything else about this session is identical with and
+                # without it, so a result here transfers to an unproxied run.
+                options.add_argument(f"--proxy-server={self._settings.proxy_server}")
+                logger.info(
+                    "indeed.session.proxy configured server=%s authenticated=%s",
+                    self._settings.proxy_server,
+                    bool(self._proxy_auth()),
+                )
+                auth_extension = self._write_proxy_auth_extension()
+                if auth_extension is not None:
+                    options.add_extension(auth_extension)
             # A factory, not a Service: each retry attempt needs its own, and
             # a Service cannot be restarted once used. See _start_plain_chrome.
             self._driver = self._start_plain_chrome(
@@ -226,6 +242,82 @@ class IndeedClient:
         self._driver.set_page_load_timeout(self._settings.page_load_timeout_seconds)
         self._search_pages_visited = 0
         self._detail_pages_visited = 0
+
+    def _proxy_credentials(self) -> dict[str, str] | None:
+        """Proxy username/password as a dict, or None when it needs no auth.
+
+        Requires *both* halves: a username with no password (or the reverse)
+        is far more likely to be a half-finished configuration than a proxy
+        that genuinely wants one of them, and silently sending a blank
+        password produces a 407 that is tedious to trace back to here.
+        """
+        username = self._settings.proxy_username
+        password = self._settings.proxy_password
+        if not username or not password:
+            return None
+        return {"username": username, "password": password}
+
+    def _proxy_auth(self) -> str | None:
+        """``user:pass`` for seleniumbase's proxy_auth, or None.
+
+        Built from the dict rather than the other way round: round-tripping
+        through a colon-joined string and re-splitting it would mangle any
+        password containing a colon.
+        """
+        credentials = self._proxy_credentials()
+        if credentials is None:
+            return None
+        return f"{credentials['username']}:{credentials['password']}"
+
+    def _write_proxy_auth_extension(self) -> str | None:
+        """Write a minimal unpacked Chrome extension that answers proxy basic
+        auth, and return its path.
+
+        Chrome deliberately ignores credentials in ``--proxy-server`` -- the
+        flag takes a host:port and nothing else -- so basic-auth proxies need
+        a ``chrome.webRequest.onAuthRequired`` listener. That listener is the
+        whole point of this file; there is no headless-safe command-line
+        equivalent. ``add_extension`` wants a directory, so it is written to a
+        temp dir that outlives only this process.
+
+        Returns None when the proxy needs no auth, or when only one of
+        username/password is set (see ``_proxy_credentials``).
+        """
+        credentials = self._proxy_credentials()
+        if credentials is None:
+            return None
+
+        extension_dir = Path(tempfile.mkdtemp(prefix="indeed-proxy-auth-"))
+        (extension_dir / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "manifest_version": 3,
+                    "name": "Indeed proxy auth",
+                    "version": "1.0",
+                    # No permissions beyond the one listener: this exists to
+                    # answer a 407, not to inspect traffic.
+                    "permissions": ["webRequest", "webRequestAuthProvider"],
+                    "host_permissions": ["<all_urls>"],
+                    "background": {"service_worker": "background.js"},
+                }
+            ),
+            encoding="utf-8",
+        )
+        # The credentials live in a generated file inside a temp dir rather
+        # than in the command line, so they don't show up in `ps` output.
+        (extension_dir / "background.js").write_text(
+            "const credentials = "
+            + json.dumps(credentials)
+            + ";\n"
+            "chrome.webRequest.onAuthRequired.addListener(\n"
+            "  () => ({authCredentials: credentials}),\n"
+            "  {urls: ['<all_urls>']},\n"
+            "  ['blocking']\n"
+            ");\n",
+            encoding="utf-8",
+        )
+        logger.info("indeed.session.proxy_auth extension written to %s", extension_dir)
+        return str(extension_dir)
 
     def _start_plain_chrome(self, options: Any, service_factory: Callable[[], Any]) -> Any:
         """Builds the non-UC Chrome session.

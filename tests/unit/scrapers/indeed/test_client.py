@@ -21,6 +21,7 @@ from __future__ import annotations
 import sys
 import time
 import types
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -41,6 +42,193 @@ def client_with_mock_driver() -> IndeedClient:
     client._driver = MagicMock()  # noqa: SLF001 - deliberate test injection, see module docstring
     client._driver.page_source = "<html>ok</html>"
     return client
+
+
+def _open_session_options(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    added_extensions: list[str] | None = None,
+    **_: object,
+) -> MagicMock:
+    """Stub out selenium and run a real open_session(), returning the
+    ChromeOptions it built.
+
+    Recorded as args rather than asserting on internals, because "does the
+    flag reach Chrome" is the only question that matters here -- whether a
+    given proxy is any good is a question about the proxy, not the code.
+    """
+    options = MagicMock()
+    monkeypatch.setitem(sys.modules, "seleniumbase", types.SimpleNamespace(Driver=MagicMock()))
+    monkeypatch.setitem(
+        sys.modules,
+        "selenium",
+        types.SimpleNamespace(
+            webdriver=types.SimpleNamespace(
+                Chrome=MagicMock(return_value=MagicMock()),
+                ChromeOptions=MagicMock(return_value=options),
+            )
+        ),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "selenium.webdriver.chrome.service",
+        types.SimpleNamespace(Service=MagicMock(return_value=MagicMock())),
+    )
+    if added_extensions is not None:
+        options.add_extension.side_effect = added_extensions.append
+    return options
+
+
+def _chrome_argv(options: MagicMock) -> list[str]:
+    """Every --flag that was added to these options, as plain strings."""
+    return [
+        call.args[0]
+        for call in options.add_argument.call_args_list
+        if call.args and isinstance(call.args[0], str)
+    ]
+
+
+class TestProxyConfiguration:
+    """The proxy exists because Indeed's edge refuses the CI runner's IP.
+
+    These check wiring only -- that the flag reaches Chrome and that
+    credentials are supplied the way Chrome actually accepts them. Whether a
+    given proxy is any good is a question about the proxy, not the code.
+    """
+
+    def test_no_proxy_adds_no_proxy_flag(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        options = _open_session_options(monkeypatch)
+        IndeedClient(settings=IndeedSettings(headless=True, uc_enabled=False)).open_session()
+        args = _chrome_argv(options)
+        assert not any(a.startswith("--proxy-server") for a in args)
+
+    def test_proxy_server_becomes_a_chrome_flag(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        options = _open_session_options(
+            monkeypatch, proxy_server="http://proxy.example:8080"
+        )
+        IndeedClient(
+            settings=IndeedSettings(
+                headless=True, uc_enabled=False, proxy_server="http://proxy.example:8080"
+            )
+        ).open_session()
+        assert "--proxy-server=http://proxy.example:8080" in _chrome_argv(options)
+
+    def test_credentials_become_an_extension_not_a_flag(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Chrome ignores credentials in --proxy-server, so they must not be
+        put there: that would silently produce a 407.
+        """
+        added_extensions: list[str] = []
+        options = _open_session_options(
+            monkeypatch,
+            proxy_server="http://proxy.example:8080",
+            proxy_username="bob",
+            proxy_password="s3cret",
+            added_extensions=added_extensions,
+        )
+        IndeedClient(
+            settings=IndeedSettings(
+                headless=True,
+                uc_enabled=False,
+                proxy_server="http://proxy.example:8080",
+                proxy_username="bob",
+                proxy_password="s3cret",
+            )
+        ).open_session()
+
+        args = _chrome_argv(options)
+        # The flag carries the endpoint only.
+        assert "--proxy-server=http://proxy.example:8080" in args
+        assert not any("s3cret" in a for a in args)
+        # And exactly one extension was supplied to carry the credentials.
+        assert len(added_extensions) == 1
+
+    def test_half_configured_credentials_are_ignored(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A username with no password is far more likely to be a
+        half-finished setup than a proxy that wants a blank password, and a
+        blank password surfaces as an opaque 407.
+        """
+        added_extensions: list[str] = []
+        _open_session_options(
+            monkeypatch,
+            proxy_server="http://proxy.example:8080",
+            proxy_username="bob",
+            added_extensions=added_extensions,
+        )
+        IndeedClient(
+            settings=IndeedSettings(
+                headless=True,
+                uc_enabled=False,
+                proxy_server="http://proxy.example:8080",
+                proxy_username="bob",
+            )
+        ).open_session()
+        assert added_extensions == []
+
+    def test_password_containing_a_colon_survives_intact(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Guards a real regression risk: joining credentials into "user:pass"
+        and re-splitting on ":" mangles any password containing a colon, which
+        would turn into an opaque 407 at the proxy rather than a wrong-but-
+        obvious config error.
+        """
+        added_extensions: list[str] = []
+        _open_session_options(
+            monkeypatch,
+            proxy_server="http://proxy.example:8080",
+            proxy_username="bob",
+            proxy_password="pa:ss:word",
+            added_extensions=added_extensions,
+        )
+        IndeedClient(
+            settings=IndeedSettings(
+                headless=True,
+                uc_enabled=False,
+                proxy_server="http://proxy.example:8080",
+                proxy_username="bob",
+                proxy_password="pa:ss:word",
+            )
+        ).open_session()
+
+        background = (Path(added_extensions[0]) / "background.js").read_text(encoding="utf-8")
+        # Serialized as JSON, so the whole password is one intact string.
+        assert '"password": "pa:ss:word"' in background
+
+    def test_extension_contents_answer_auth_challenges(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        added_extensions: list[str] = []
+        _open_session_options(
+            monkeypatch,
+            proxy_server="http://proxy.example:8080",
+            proxy_username="bob",
+            proxy_password="s3cret",
+            added_extensions=added_extensions,
+        )
+        IndeedClient(
+            settings=IndeedSettings(
+                headless=True,
+                uc_enabled=False,
+                proxy_server="http://proxy.example:8080",
+                proxy_username="bob",
+                proxy_password="s3cret",
+            )
+        ).open_session()
+
+        ext_dir = Path(added_extensions[0])
+        assert (ext_dir / "manifest.json").is_file()
+        background = (ext_dir / "background.js").read_text(encoding="utf-8")
+        # MV3 service worker, the listener, and blocking so it can answer.
+        assert "onAuthRequired" in background
+        assert "authCredentials" in background
+        assert "blocking" in background
+        assert "s3cret" in background
 
 
 class TestDetectChallenge:

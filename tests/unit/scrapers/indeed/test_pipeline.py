@@ -193,7 +193,14 @@ class TestHappyPath:
 
 
 class TestBlockedSession:
-    def test_challenge_on_first_page_marks_failed_with_reason(self) -> None:
+    def test_challenge_on_first_page_leaves_row_pending_with_reason(self) -> None:
+        """A block must leave the row claimable.
+
+        'failed' rows are never auto-reclaimed, so marking a block 'failed'
+        deletes a queue row per blocked run. The row goes back to 'pending'
+        with its page progress intact instead, and the batch stops on
+        blocked_reason rather than on queue_status.
+        """
         claimed = ClaimedQuery(
             query_id=4, query_text="engineer", location_text="Remote", last_page_reached=0
         )
@@ -208,13 +215,17 @@ class TestBlockedSession:
         with patch("job_market_intel.scrapers.indeed.pipeline.get_session", _fake_get_session):
             results = pipeline.run(store_db=True)
 
-        assert results[0].queue_status == "failed"
+        assert results[0].queue_status == "pending"
         assert results[0].blocked_reason is not None
         assert "challenge detected" in results[0].blocked_reason
         client.close_session.assert_called_once()
         _, kwargs = queue_repository.mark_query_result.call_args
-        assert kwargs["status"] == "failed"
+        assert kwargs["status"] == "pending"
         assert kwargs["error"] == results[0].blocked_reason
+        # The row is retried, but the session itself is still a failure —
+        # recording it as 'completed' would hide the block in session history.
+        _, finish_kwargs = repository.finish_scraping_session.call_args
+        assert finish_kwargs["status"] == "failed"
 
     def test_consecutive_fetch_failures_trigger_blocked(self) -> None:
         claimed = ClaimedQuery(
@@ -240,13 +251,15 @@ class TestBlockedSession:
         ):
             results = pipeline.run(store_db=True)
 
-        assert results[0].queue_status == "failed"
+        assert results[0].queue_status == "pending"
         assert "consecutive fetch failures" in results[0].blocked_reason
 
-    def test_session_will_not_start_marks_failed_instead_of_raising(self) -> None:
+    def test_session_will_not_start_leaves_row_pending_instead_of_raising(self) -> None:
         """A browser that can't start is this row's problem, not the run's.
         See pipeline._run_browser_phase's session_start_failed branch — on CI
-        this is the difference between a reported no-op and a red job.
+        this is the difference between a reported no-op and a red job. The row
+        stays claimable, since a machine that was briefly out of memory is no
+        reason to retire a query.
         """
         claimed = ClaimedQuery(
             query_id=7, query_text="engineer", location_text="Remote", last_page_reached=0
@@ -263,13 +276,13 @@ class TestBlockedSession:
         with patch("job_market_intel.scrapers.indeed.pipeline.get_session", _fake_get_session):
             results = pipeline.run(store_db=True)
 
-        assert results[0].queue_status == "failed"
+        assert results[0].queue_status == "pending"
         assert "could not start browser session" in results[0].blocked_reason
         # Nothing was opened, so there is nothing to close.
         client.close_session.assert_not_called()
         client.open_search.assert_not_called()
         _, kwargs = queue_repository.mark_query_result.call_args
-        assert kwargs["status"] == "failed"
+        assert kwargs["status"] == "pending"
         assert kwargs["error"] == results[0].blocked_reason
 
     def test_close_session_always_called_even_when_blocked(self) -> None:
@@ -347,7 +360,11 @@ class TestMultiItemRun:
             results = pipeline.run(store_db=True)
 
         assert len(results) == 1
-        assert results[0].queue_status == "failed"
+        # Stopped on blocked_reason, not on queue_status -- the blocked row is
+        # left 'pending' so it can be retried, which means queue_status can no
+        # longer be this batch's "stop here" marker.
+        assert results[0].blocked_reason is not None
+        assert results[0].queue_status == "pending"
         queue_repository.release_claimed_queries.assert_called_once()
         released_ids = queue_repository.release_claimed_queries.call_args[0][1]
         assert released_ids == [21]

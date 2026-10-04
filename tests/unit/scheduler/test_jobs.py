@@ -12,10 +12,12 @@ What these tests verify, and why each matters:
       run along with it.
     - Any other unexpected exception is caught the same way, for the same
       reason - defensively, not just the errors we anticipated.
-    - Indeed-specific: queue_empty and queue_status == "failed" are each
+    - Indeed-specific: queue_empty and a non-None blocked_reason are each
       logged as their own distinct, non-crashing cases - see
       run_indeed_pipeline_job's own docstring for why neither should look
-      like a Python exception in the logs.
+      like a Python exception in the logs. Blocks are identified by
+      blocked_reason rather than queue_status, because a blocked row is left
+      'pending' so it stays claimable.
 """
 
 from __future__ import annotations
@@ -137,7 +139,7 @@ class TestRunIndeedPipelineJob:
     def test_blocked_session_does_not_raise(self, mock_pipeline_cls: MagicMock) -> None:
         mock_pipeline_cls.return_value.run.return_value = [
             _indeed_result(
-                queue_status="failed", blocked_reason="challenge detected on search page 1"
+                queue_status="pending", blocked_reason="challenge detected on search page 1"
             )
         ]
 

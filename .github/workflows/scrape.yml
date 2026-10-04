@@ -191,6 +191,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable xvfb
 
+      - name: Restore Indeed block counter
+        # Must precede the scraper and the alerting step, both of which read
+        # it. A cache miss on the very first run is expected and harmless.
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/indeed_block_state.json
+          key: indeed-block-state-${{ github.run_id }}
+          restore-keys: |
+            indeed-block-state-
+
       - name: Run Indeed scraper
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -213,6 +223,18 @@ jobs:
           # on this VM (see the probe workflow history). Trade-off noted:
           # headless=new is less stealthy than a real display session.
           INDEED_HEADLESS: "true"
+          # Egress proxy. Indeed's edge (Cloudflare) refuses this runner's own
+          # IP outright -- measured from 172.197.177.36, a stock Chrome with
+          # no automation at all was served a managed challenge that never
+          # cleared, so this is an IP-reputation problem rather than a
+          # fingerprint one. A proxy changes only the egress IP.
+          #
+          # Secrets, so credentials stay out of the repo and out of `ps`. If
+          # these are unset the scraper runs unproxied exactly as before, so
+          # this is safe to add before the proxy exists.
+          INDEED_PROXY_SERVER: ${{ secrets.INDEED_PROXY_SERVER }}
+          INDEED_PROXY_USERNAME: ${{ secrets.INDEED_PROXY_USERNAME }}
+          INDEED_PROXY_PASSWORD: ${{ secrets.INDEED_PROXY_PASSWORD }}
         # No xvfb-run here. Chrome runs with --headless=new (INDEED_HEADLESS
         # above), which never reads DISPLAY, so the X server was pure
         # overhead — and on an 837MiB VM with no swap, measured overhead:
@@ -226,7 +248,113 @@ jobs:
         # environment on every invocation, and running the scraper that way
         # on this runner reliably produced browser sessions that never came
         # up. Same interpreter, same venv, without that indirection.
-        run: .venv/bin/python scripts/run_indeed_scraper.py
+        #
+        # --summary-json gives the alerting step below something machine-readable
+        # to read: the scraper exits 0 for a block, an empty queue, and a real
+        # scrape alike, so the log is the only thing that otherwise
+        # distinguishes them.
+        run: .venv/bin/python scripts/run_indeed_scraper.py --summary-json indeed_run_summary.json
+
+      - name: Alert on sustained Indeed blocks
+        # A single Cloudflare challenge is not worth failing a build over, but
+        # a run that silently collects nothing every night is worse than a red
+        # one: the job is green, nothing is collected, and the only clue is a
+        # validation warning buried in a long log. So warn on the first one and
+        # fail only once zero-job runs are consecutive. A run that collected
+        # jobs before being challenged reports "partial" and resets the streak
+        # rather than counting against it.
+        #
+        # The counter lives in the Actions cache rather than the database on
+        # purpose: it is per-run CI bookkeeping, not job data, and this way no
+        # migration is needed for it. Save-as-new-key-each-run plus a prefix
+        # restore-keys chain is what makes the count carry across runs.
+        if: always()
+        env:
+          BLOCK_THRESHOLD: "3"
+        run: |
+          set -uo pipefail
+          STATE_FILE="${RUNNER_TEMP}/indeed_block_state.json"
+
+          # .venv/bin/python rather than bare python3: it is the interpreter the
+          # rest of this job already depends on (see the scraper step), so it is
+          # known-good on this runner. Bare python3 is not verified there, and
+          # depending on it here is how this step silently stops counting -- a
+          # missing interpreter falls back to 0 on every run, so the threshold
+          # is never reached and the job stays green while collecting nothing.
+          # Exactly the failure this step exists to prevent.
+          PY=.venv/bin/python
+
+          # Recover the previous run's counter. A missing file is the normal
+          # first-run case; a file that exists but can't be parsed is not, and
+          # is reported rather than absorbed, for the reason above.
+          COUNT=0
+          if [ -f "$STATE_FILE" ]; then
+            if ! COUNT=$("$PY" -c "import json,sys;print(json.load(open(sys.argv[1]))['consecutive_blocks'])" "$STATE_FILE" 2>/dev/null) || [ -z "$COUNT" ]; then
+              echo "::warning title=Indeed block counter unreadable::Could not read the consecutive-block counter from ${STATE_FILE}; treating the streak as 0. If this recurs, sustained blocking will never fail this job."
+              COUNT=0
+            fi
+          fi
+
+          OUTCOME="unknown"
+          if [ -f indeed_run_summary.json ]; then
+            OUTCOME=$("$PY" -c "import json,sys;print(json.load(open(sys.argv[1]))['outcome'])" indeed_run_summary.json 2>/dev/null || echo unknown)
+          fi
+
+          echo "outcome=$OUTCOME previous_consecutive_blocks=$COUNT threshold=$BLOCK_THRESHOLD"
+
+          case "$OUTCOME" in
+            blocked)
+              # Collected nothing at all. This is the silent failure.
+              COUNT=$((COUNT + 1))
+              echo "::warning title=Indeed blocked::Run ${{ github.run_number }} collected no jobs: Indeed served a challenge page instead of results (consecutive block ${COUNT} of ${BLOCK_THRESHOLD})."
+              ;;
+            partial)
+              # Blocked, but only after real work landed. Evidence the pipeline
+              # functions, so the streak resets -- otherwise a long-running
+              # scrape that is challenged partway through every night could
+              # never reach the threshold despite working.
+              echo "::warning title=Indeed partial::Run ${{ github.run_number }} was challenged partway through but did collect jobs, so this is not counted as a silent block."
+              COUNT=0
+              ;;
+            ok)
+              if [ "$COUNT" -gt 0 ]; then
+                echo "Recovered: this run scraped normally after ${COUNT} consecutive zero-job run(s); resetting the counter."
+              fi
+              COUNT=0
+              ;;
+            empty)
+              # No eligible queue row. Says nothing about whether scraping
+              # works, so it neither counts nor clears.
+              echo "Queue was empty; nothing to scrape and nothing to conclude. Leaving the counter at ${COUNT}."
+              ;;
+            *)
+              # Unknown (summary missing/unreadable, or the scraper itself
+              # crashed). Deliberately does NOT reset the counter, so a broken
+              # pipeline cannot quietly clear a real block streak.
+              echo "::warning title=Indeed outcome unknown::Could not read a definitive outcome; leaving the consecutive-block counter at ${COUNT}."
+              ;;
+          esac
+
+          # Persist before deciding whether to fail. Exiting first would save the
+          # *previous* count, so every subsequent run would re-read the same
+          # number and report the same streak instead of the true one. Failing
+          # repeatedly is correct either way, but a counter that stops counting
+          # is misleading in exactly the situation someone is trying to diagnose.
+          mkdir -p "$(dirname "$STATE_FILE")"
+          printf '{"consecutive_blocks": %s}\n' "$COUNT" > "$STATE_FILE"
+          cat "$STATE_FILE"
+
+          if [ "$OUTCOME" = "blocked" ] && [ "$COUNT" -ge "$BLOCK_THRESHOLD" ]; then
+            echo "::error title=Indeed blocked::${COUNT} consecutive runs collected zero jobs. Failing so this cannot stay silent. If INDEED_PROXY_SERVER is set, check the proxy's health and quota; if it is not set, this runner's egress IP is being refused outright."
+            exit 1
+          fi
+
+      - name: Save Indeed block counter
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/indeed_block_state.json
+          key: indeed-block-state-${{ github.run_id }}
 
       - name: Dump browser diagnostics
         # `always()`, not `failure()`: a session that won't start is reported
@@ -240,10 +368,16 @@ jobs:
           DRIVER_LOG="$(.venv/bin/python -c 'from job_market_intel.scrapers.indeed.client import _CHROMEDRIVER_LOG_PATH as p; print(p)')"
           echo "=== chromedriver log ($DRIVER_LOG) ==="
           cat "$DRIVER_LOG" 2>/dev/null || echo "(no chromedriver log)"
+          echo "=== proxy ==="
+          # Say only whether one is configured and whether it authenticated;
+          # never echo credentials.
+          .venv/bin/python -c "from job_market_intel.scrapers.indeed.config import IndeedSettings as S; s=S(); print('  proxy_server=%s' % (s.proxy_server or '<none>')); print('  authenticated=%s' % bool(s.proxy_username and s.proxy_password))" || true
           echo "=== memory ==="
           free -m || true
           echo "=== disk ==="
           df -h / /tmp /dev/shm || true
+          echo "=== run summary ==="
+          cat indeed_run_summary.json 2>/dev/null || echo "(no summary written)"
           echo "=== scraper log tail ==="
           tail -n 60 logs/job_market_intel.log 2>/dev/null || echo "(no scraper log)"
 

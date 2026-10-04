@@ -1,0 +1,8 @@
+# Shell scripts must stay LF-terminated.
+#
+# core.autocrlf=true on Windows would otherwise check these out with CRLF, and
+# bash then fails on the stray carriage returns -- in a shebang and in every
+# line it tries to parse. tests/workflow/*.sh run under bash on the Linux
+# runner, so a CRLF checkout breaks them only on the machine that could have
+# caught it.
+*.sh text eol=lf

@@ -6,7 +6,7 @@ a paced/capped Selenium session against it, validates, cleans, and (unless
 recording the queue item's outcome for the next run to pick up from.
 
 Usage:
-    python scripts/run_indeed_scraper.py [--no-db]
+    python scripts/run_indeed_scraper.py [--no-db] [--summary-json PATH]
 
 Requires ops.scrape_query_queue to already have at least one row for
 source 'indeed' — run scripts/seed_indeed_queries.py first if it's empty
@@ -17,12 +17,59 @@ if the queue has nothing eligible).
 from __future__ import annotations
 
 import argparse
+import json
+from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
 from job_market_intel.common.config import get_settings
 from job_market_intel.common.logger import configure_logging
 from job_market_intel.scrapers.indeed import IndeedError, IndeedPipeline
+
+# Outcome values written to the summary JSON.
+#
+# "blocked" is deliberately split from "partial" on whether anything was
+# actually collected. A run that scrapes 16 jobs and is then challenged on the
+# next page has worked, and counting that against the alerting threshold would
+# fail builds that did their job — measured locally: 16 jobs over 2 search
+# pages and 16 detail pages, validation passed, then a challenge on page 2.
+# Only a run that collected *nothing* is the silent failure worth escalating.
+OUTCOME_OK = "ok"
+OUTCOME_EMPTY = "empty"
+OUTCOME_BLOCKED = "blocked"
+OUTCOME_PARTIAL = "partial"
+OUTCOME_ERROR = "error"
+
+
+def _classify_outcome(any_blocked: bool, jobs_inserted: int) -> str:
+    """Whether this run collected nothing, collected something, or was stopped
+    by a challenge.
+
+    Split on ``jobs_inserted`` rather than on "was there a block" so that a run
+    which did real work before being challenged is not reported as the silent
+    zero-job failure the alerting exists to catch.
+    """
+    if not any_blocked:
+        return OUTCOME_OK
+    return OUTCOME_PARTIAL if jobs_inserted > 0 else OUTCOME_BLOCKED
+
+
+def _write_summary(path: Path | None, payload: dict[str, Any]) -> None:
+    """Best-effort machine-readable run outcome for CI to act on.
+
+    Never raises: a missing summary must not turn a scrape into a crash. When
+    it is absent the workflow treats the run as "unknown" and does not count it
+    against the consecutive-block threshold, because guessing "not blocked"
+    from a file that failed to write would silently disarm the alerting.
+    """
+    if path is None:
+        return
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    except OSError as exc:
+        logger.warning("Could not write run summary to {}: {}", path, exc)
 
 
 def main() -> int:
@@ -43,7 +90,17 @@ def main() -> int:
             "mode — see IndeedPipeline.run()'s docstring for why."
         ),
     )
+    parser.add_argument(
+        "--summary-json",
+        metavar="PATH",
+        help=(
+            "Write a machine-readable summary of this run (outcome, rows worked, jobs "
+            "inserted, block reasons, whether a proxy was used) to PATH. Read by CI to "
+            "tell a real scrape apart from a silent block, which both exit 0."
+        ),
+    )
     args = parser.parse_args()
+    summary_path = Path(args.summary_json) if args.summary_json else None
 
     settings = get_settings()
     configure_logging(log_dir="logs", console_level=settings.log_level, file_level="DEBUG")
@@ -57,7 +114,14 @@ def main() -> int:
         run_results = pipeline.run(store_db=store_db)
     except IndeedError as exc:
         logger.error("Indeed pipeline run failed: {}", exc)
+        _write_summary(summary_path, {"outcome": OUTCOME_ERROR, "error": str(exc)})
         return 1
+
+    if run_results[0].queue_empty:
+        _write_summary(
+            summary_path,
+            {"outcome": OUTCOME_EMPTY, "rows_worked": 0, "jobs_inserted": 0},
+        )
 
     print()
     print("=" * 70)
@@ -74,7 +138,22 @@ def main() -> int:
     total_updated = sum(r.updated_count for r in run_results)
     total_unchanged = sum(r.unchanged_count for r in run_results)
     total_failed = sum(r.failed_count for r in run_results)
-    any_blocked = any(r.blocked_reason for r in run_results)
+    blocked_reasons = [r.blocked_reason for r in run_results if r.blocked_reason]
+    any_blocked = bool(blocked_reasons)
+
+    _write_summary(
+        summary_path,
+        {
+            "outcome": _classify_outcome(any_blocked, total_inserted),
+            "rows_worked": len(run_results),
+            "jobs_inserted": total_inserted,
+            "jobs_updated": total_updated,
+            "search_pages_visited": sum(r.search_pages_visited for r in run_results),
+            "detail_pages_visited": sum(r.detail_pages_visited for r in run_results),
+            "blocked_reasons": blocked_reasons,
+            "proxy_used": bool(pipeline.settings.proxy_server),
+        },
+    )
 
     print(f"Queue items worked:          {len(run_results)}")
     for run_result in run_results:

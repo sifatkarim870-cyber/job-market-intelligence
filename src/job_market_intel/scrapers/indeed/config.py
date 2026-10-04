@@ -73,6 +73,11 @@ class IndeedSettings(BaseSettings):
             the real browser's own UA. Kept here anyway as the value
             passed to the driver's UA-override option, so it's a single
             documented setting rather than buried in client.py.
+        proxy_server / proxy_username / proxy_password: Optional forward
+            proxy for the browser session. Set all three when the proxy needs
+            basic auth; the client supplies credentials through a generated
+            onAuthRequired extension, because Chrome ignores credentials
+            passed in the --proxy-server flag.
     """
 
     model_config = SettingsConfigDict(
@@ -169,4 +174,35 @@ class IndeedSettings(BaseSettings):
     request_user_agent: str = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    )
+
+    proxy_server: str | None = Field(
+        default=None,
+        description=(
+            "Optional forward proxy for the browser, e.g. 'http://host:port' or "
+            "'socks5://host:port'. Empty means no proxy. This exists because "
+            "Indeed's edge (Cloudflare) refuses the self-hosted CI runner's "
+            "egress IP outright: measured from 172.197.177.36, every browser "
+            "configuration -- plain headless, seleniumbase UC headless, UC "
+            "headful under Xvfb, and a stock Chrome with no automation at all "
+            "-- was served Cloudflare's managed challenge, which never "
+            "cleared. The same code and browser config from a residential IP "
+            "returns a full results page. A proxy changes the egress IP and "
+            "nothing else."
+        ),
+    )
+
+    proxy_username: str | None = Field(
+        default=None,
+        description=(
+            "Username for proxy basic auth, if the proxy requires it. Chrome "
+            "will not take credentials in --proxy-server, so the client "
+            "generates a small onAuthRequired extension when this and "
+            "proxy_password are both set."
+        ),
+    )
+
+    proxy_password: str | None = Field(
+        default=None,
+        description="Password for proxy basic auth, if the proxy requires it."
     )

@@ -199,12 +199,18 @@ class ScrapeQueueRepository(AbstractRepository[Any]):
     ) -> None:
         """Record how a claimed query's session ended.
 
-        status must be one of 'pending' (session's page cap was hit but
-        more results remain — resume next run), 'done' (parser reached
-        the last page), or 'failed' (session hit IndeedBlockedError; see
-        `error`). Raises RepositoryError on an invalid status rather than
-        letting a typo silently violate the table's own CHECK constraint
-        with a less legible database error.
+        status must be one of 'pending' (page cap hit, or the run was
+        blocked, but more results remain — resume next run), 'done'
+        (parser reached the last page), or 'failed'. Raises
+        RepositoryError on an invalid status rather than letting a typo
+        silently violate the table's own CHECK constraint with a less
+        legible database error.
+
+        Note that 'pending' covers a *blocked* run as well as a page-cap
+        run, on purpose. A block is Indeed refusing the egress IP for a
+        while, not a defect in the row, and nothing here ever reclaims a
+        'failed' row — so recording blocks as 'failed' deleted one queue
+        row per blocked run. See IndeedPipeline._run_browser_phase.
         """
         if status not in ("pending", "done", "failed"):
             raise RepositoryError(
