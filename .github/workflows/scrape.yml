@@ -7,7 +7,7 @@ name: Scheduled scraping
 # then tears the runner down. scheduler/ can stay in the repo for local
 # dev convenience, but nothing here depends on it.
 #
-# All three feed-based sources share one interval (every 12 hours) rather
+# All five feed-based sources share one interval (every 12 hours) rather
 # than separate per-source schedules — this project's stated principle is
 # to avoid unnecessary abstraction until something concrete needs it, and
 # nothing currently does. Remotive's own scraper config already assumed
@@ -15,7 +15,9 @@ name: Scheduled scraping
 # ceiling of 4 requests/day; twice a day stays well under that. WWR's
 # RSS feed and RemoteOK's public API have no documented rate ceiling at
 # this frequency either. Change the cron lines below if you later want
-# different cadences per source — each job is independent.
+# different cadences per source — each job is independent. Emploitic
+# (added 2026-10-05) fetches 5 paginated listing pages per run (~0.06
+# req/min), also well within any reasonable politeness budget at 2x/day.
 #
 # indeed shares that same 12-hour cron, confirmed as the same cadence
 # already used by the local scheduler (src/job_market_intel/scheduler/) —
@@ -83,6 +85,30 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: uv run python scripts/run_remoteok_scraper.py
+
+  emploitic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run Emploitic scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python scripts/run_emploitic_scraper.py
 
   weworkremotely:
     runs-on: ubuntu-latest

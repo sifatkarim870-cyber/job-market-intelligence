@@ -21,6 +21,7 @@ example (Step 18).
 """
 
 from .common import BatchValidationReport, validate_batch
+from .emploitic_validator import EmploiticBatchValidator, EmploiticValidationSettings
 from .reed_validator import ReedBatchValidator, ReedValidationSettings
 from .remoteok_validator import RemoteOKBatchValidator, RemoteOKValidationSettings
 from .remotive_validator import RemotiveBatchValidator, RemotiveValidationSettings
@@ -31,6 +32,8 @@ __all__ = [
     "validate_batch",
     "ReedBatchValidator",
     "ReedValidationSettings",
+    "EmploiticBatchValidator",
+    "EmploiticValidationSettings",
     "RemoteOKBatchValidator",
     "RemoteOKValidationSettings",
     "RemotiveBatchValidator",

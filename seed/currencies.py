@@ -54,6 +54,10 @@ CURRENCIES: list[dict] = [
     {"iso_code": "PKR", "currency_name": "Pakistani Rupee", "symbol": "₨"},
     {"iso_code": "BDT", "currency_name": "Bangladeshi Taka", "symbol": "৳"},
     {"iso_code": "UAH", "currency_name": "Ukrainian Hryvnia", "symbol": "₴"},
+    # Added for Emploitic (Algeria): listings carry no salary field, but
+    # the cleaner asserts DZD as the home-market currency for CleanedJob's
+    # required currency field, so the ref row must exist.
+    {"iso_code": "DZD", "currency_name": "Algerian Dinar", "symbol": "دج"},
 ]
 
 

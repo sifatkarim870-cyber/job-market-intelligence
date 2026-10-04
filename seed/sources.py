@@ -38,6 +38,10 @@ _SOURCES = [
     # real, verified production runs against it. See
     # scrapers/reed/search_queries.py's module docstring for the history.
     ("reed", "Reed", "job_board", "https://www.reed.co.uk", 0.80, True, True),
+    # Emploitic: first of the audit-driven FREE-API-style sources (no
+    # published JSON API; Next.js __NEXT_DATA__ JSON embedded in listing
+    # pages — see scrapers/emploitic/client.py). No auth needed.
+    ("emploitic", "Emploitic", "job_board", "https://emploitic.com", 0.70, True, False),
     ("indeed", "Indeed", "aggregator", "https://indeed.com", 0.80, False, False),
     ("linkedin", "LinkedIn", "job_board", "https://linkedin.com", 0.85, False, False),
     ("glassdoor", "Glassdoor", "job_board", "https://glassdoor.com", 0.75, False, False),
