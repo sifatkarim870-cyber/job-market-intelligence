@@ -7,7 +7,7 @@ name: Scheduled scraping
 # then tears the runner down. scheduler/ can stay in the repo for local
 # dev convenience, but nothing here depends on it.
 #
-# All five feed-based sources share one interval (every 12 hours) rather
+# All feed-based sources share one interval (every 12 hours) rather
 # than separate per-source schedules — this project's stated principle is
 # to avoid unnecessary abstraction until something concrete needs it, and
 # nothing currently does. Remotive's own scraper config already assumed
@@ -19,19 +19,6 @@ name: Scheduled scraping
 # (added 2026-10-05) fetches 5 paginated listing pages per run (~0.06
 # req/min), also well within any reasonable politeness budget at 2x/day.
 #
-# indeed shares that same 12-hour cron, confirmed as the same cadence
-# already used by the local scheduler (src/job_market_intel/scheduler/) —
-# but it is NOT the same kind of job as the other three. Each invocation
-# claims and works exactly one (query, location) row from
-# ops.scrape_query_queue, not an entire feed — see
-# scripts/run_indeed_scraper.py and scrapers/indeed/pipeline.py for why.
-# That queue table must already exist and be seeded on whatever database
-# DATABASE_URL points to before this job can do anything (see
-# migrations/add_scrape_query_queue_table.sql and
-# scripts/seed_indeed_queries.py) — a schema/seeding prerequisite this
-# workflow does not check or perform itself.
-
-#
 # reed also shares the same 12-hour cron. Closer to indeed's shape than
 # the first three's: each run claims REED_QUERIES_CLAIMED_PER_RUN rows
 # (default 5) from its own separate queue, ops.reed_search_queue — NOT
@@ -41,7 +28,7 @@ name: Scheduled scraping
 # seeded before this job can do anything (see that same migration and
 # scripts/seed_reed_queries.py) — same unchecked prerequisite as indeed's
 # queue. Also needs its own secret, REED_API_KEY (Reed's API requires an
-# API key; none of the other four sources need any authentication at
+# API key; none of the other sources need any authentication at
 # all) — set it under this repo's Settings -> Secrets and variables ->
 # Actions before this job can succeed.
 
@@ -158,255 +145,6 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: uv run python scripts/run_remotive_scraper.py
 
-  indeed:
-    # Runs on a self-hosted runner (a small Azure VM), not GitHub's own
-    # shared ubuntu-latest pool — confirmed decision after a real run on
-    # ubuntu-latest got blocked ("challenge detected on search page 1")
-    # on its very first request. GitHub-hosted runner IPs are a well-known,
-    # heavily-reused shared range; a dedicated VM's IP is a genuinely
-    # different (though not risk-free) bet. See this project's own chat
-    # history for the full diagnosis. The "indeed-runner" label is set
-    # during that VM's runner registration (see scripts/setup_runner.sh,
-    # not part of this repo — a one-off provisioning script).
-    runs-on: [self-hosted, indeed-runner]
-    # Bumped from 45 to 240 once items_per_run (IndeedSettings) went from
-    # 1 to 10: ten sequential browser sessions, each individually paced
-    # (4-9s between actions, 45-90s every 5 pages, up to 5 search + 60
-    # detail pages), plus a 30-90s pause BETWEEN items, could plausibly
-    # run past 45 minutes on a queue item that uses the full session caps
-    # on every one of the ten items. This is a generous estimate, not a
-    # guarantee — self-hosted runners have no GitHub-imposed maximum the
-    # way ubuntu-latest jobs do, so there's room to raise this further if
-    # real runs still time out.
-    timeout-minutes: 240
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        # --extra selenium is the one genuine difference from the other
-        # three jobs' install step: seleniumbase is only ever needed for
-        # Indeed, kept as its own extra so the other three sources' jobs
-        # don't pay for a Chromium-adjacent dependency they never touch.
-        run: uv sync --extra dev --extra test --extra selenium
-
-      - name: Install Chrome and Xvfb
-        # Chrome has to be installed explicitly on this self-hosted runner; the
-        # GitHub-hosted ones only need setup-chrome.
-        #
-        # Note this job runs Chrome with --headless=new (INDEED_HEADLESS=true
-        # below), NOT under Xvfb. headless=new never reads DISPLAY, so an X
-        # server here would be pure overhead; the earlier comment in this file
-        # claimed the opposite and was wrong. xvfb is still in the apt line
-        # because indeed_uc_probe.yml drives the Xvfb-backed variant on this
-        # same runner to keep that comparison reproducible.
-        run: |
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub \
-            | sudo gpg --batch --yes --no-tty --dearmor -o /usr/share/keyrings/google-linux.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
-            | sudo tee /etc/apt/sources.list.d/google-chrome.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable xvfb
-
-      - name: Restore Indeed block counter
-        # Must precede the scraper and the alerting step, both of which read
-        # it. A cache miss on the very first run is expected and harmless.
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ runner.temp }}/indeed_block_state.json
-          key: indeed-block-state-${{ github.run_id }}
-          restore-keys: |
-            indeed-block-state-
-
-      - name: Run Indeed scraper
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # A cold Chrome on this VM takes ~49s just to answer the driver's
-          # first request, against selenium's own 120s driver read timeout —
-          # close enough that a slightly busier run tips over into a
-          # ReadTimeoutError. Measured, not guessed: see client.py's
-          # _PLAIN_CHROME_ARGS comment and indeed_uc_probe.yml.
-          INDEED_SESSION_START_TIMEOUT_SECONDS: "300"
-          # UC ("undetected") seleniumbase mode hangs on this self-hosted
-          # runner's Chrome every time (session starts, page loads never
-          # complete -> SessionNotCreatedException timeout; with
-          # uc_subprocess the session itself never starts). The plain
-          # seleniumbase driver works on the same binary, so CI runs
-          # without UC; local Windows/Linux runs keep UC by default.
-          INDEED_UC_ENABLED: "false"
-          # Headless also has to be forced: with UC off, headless2=False
-          # fails in CI just like UC did — headless=new (driven by this
-          # setting's True) is the only Chrome mode that starts reliably
-          # on this VM (see the probe workflow history). Trade-off noted:
-          # headless=new is less stealthy than a real display session.
-          INDEED_HEADLESS: "true"
-          # Egress proxy. Indeed's edge (Cloudflare) refuses this runner's own
-          # IP outright -- measured from 172.197.177.36, a stock Chrome with
-          # no automation at all was served a managed challenge that never
-          # cleared, so this is an IP-reputation problem rather than a
-          # fingerprint one. A proxy changes only the egress IP.
-          #
-          # Secrets, so credentials stay out of the repo and out of `ps`. If
-          # these are unset the scraper runs unproxied exactly as before, so
-          # this is safe to add before the proxy exists.
-          INDEED_PROXY_SERVER: ${{ secrets.INDEED_PROXY_SERVER }}
-          INDEED_PROXY_USERNAME: ${{ secrets.INDEED_PROXY_USERNAME }}
-          INDEED_PROXY_PASSWORD: ${{ secrets.INDEED_PROXY_PASSWORD }}
-        # No xvfb-run here. Chrome runs with --headless=new (INDEED_HEADLESS
-        # above), which never reads DISPLAY, so the X server was pure
-        # overhead — and on an 837MiB VM with no swap, measured overhead:
-        # 110s to start a session with xvfb-run versus 68s without it, plus
-        # a resident process competing with Chrome for memory. Flipping
-        # INDEED_HEADLESS to "false" would need a display back, which is why
-        # that setting stays "true" here; see indeed_uc_probe.yml, which
-        # runs both ways so the comparison stays reproducible.
-        #
-        # .venv/bin/python rather than `uv run python`: uv re-resolves the
-        # environment on every invocation, and running the scraper that way
-        # on this runner reliably produced browser sessions that never came
-        # up. Same interpreter, same venv, without that indirection.
-        #
-        # --summary-json gives the alerting step below something machine-readable
-        # to read: the scraper exits 0 for a block, an empty queue, and a real
-        # scrape alike, so the log is the only thing that otherwise
-        # distinguishes them.
-        run: .venv/bin/python scripts/run_indeed_scraper.py --summary-json indeed_run_summary.json
-
-      - name: Alert on sustained Indeed blocks
-        # A single Cloudflare challenge is not worth failing a build over, but
-        # a run that silently collects nothing every night is worse than a red
-        # one: the job is green, nothing is collected, and the only clue is a
-        # validation warning buried in a long log. So warn on the first one and
-        # fail only once zero-job runs are consecutive. A run that collected
-        # jobs before being challenged reports "partial" and resets the streak
-        # rather than counting against it.
-        #
-        # The counter lives in the Actions cache rather than the database on
-        # purpose: it is per-run CI bookkeeping, not job data, and this way no
-        # migration is needed for it. Save-as-new-key-each-run plus a prefix
-        # restore-keys chain is what makes the count carry across runs.
-        if: always()
-        env:
-          BLOCK_THRESHOLD: "3"
-        run: |
-          set -uo pipefail
-          STATE_FILE="${RUNNER_TEMP}/indeed_block_state.json"
-
-          # .venv/bin/python rather than bare python3: it is the interpreter the
-          # rest of this job already depends on (see the scraper step), so it is
-          # known-good on this runner. Bare python3 is not verified there, and
-          # depending on it here is how this step silently stops counting -- a
-          # missing interpreter falls back to 0 on every run, so the threshold
-          # is never reached and the job stays green while collecting nothing.
-          # Exactly the failure this step exists to prevent.
-          PY=.venv/bin/python
-
-          # Recover the previous run's counter. A missing file is the normal
-          # first-run case; a file that exists but can't be parsed is not, and
-          # is reported rather than absorbed, for the reason above.
-          COUNT=0
-          if [ -f "$STATE_FILE" ]; then
-            if ! COUNT=$("$PY" -c "import json,sys;print(json.load(open(sys.argv[1]))['consecutive_blocks'])" "$STATE_FILE" 2>/dev/null) || [ -z "$COUNT" ]; then
-              echo "::warning title=Indeed block counter unreadable::Could not read the consecutive-block counter from ${STATE_FILE}; treating the streak as 0. If this recurs, sustained blocking will never fail this job."
-              COUNT=0
-            fi
-          fi
-
-          OUTCOME="unknown"
-          if [ -f indeed_run_summary.json ]; then
-            OUTCOME=$("$PY" -c "import json,sys;print(json.load(open(sys.argv[1]))['outcome'])" indeed_run_summary.json 2>/dev/null || echo unknown)
-          fi
-
-          echo "outcome=$OUTCOME previous_consecutive_blocks=$COUNT threshold=$BLOCK_THRESHOLD"
-
-          case "$OUTCOME" in
-            blocked)
-              # Collected nothing at all. This is the silent failure.
-              COUNT=$((COUNT + 1))
-              echo "::warning title=Indeed blocked::Run ${{ github.run_number }} collected no jobs: Indeed served a challenge page instead of results (consecutive block ${COUNT} of ${BLOCK_THRESHOLD})."
-              ;;
-            partial)
-              # Blocked, but only after real work landed. Evidence the pipeline
-              # functions, so the streak resets -- otherwise a long-running
-              # scrape that is challenged partway through every night could
-              # never reach the threshold despite working.
-              echo "::warning title=Indeed partial::Run ${{ github.run_number }} was challenged partway through but did collect jobs, so this is not counted as a silent block."
-              COUNT=0
-              ;;
-            ok)
-              if [ "$COUNT" -gt 0 ]; then
-                echo "Recovered: this run scraped normally after ${COUNT} consecutive zero-job run(s); resetting the counter."
-              fi
-              COUNT=0
-              ;;
-            empty)
-              # No eligible queue row. Says nothing about whether scraping
-              # works, so it neither counts nor clears.
-              echo "Queue was empty; nothing to scrape and nothing to conclude. Leaving the counter at ${COUNT}."
-              ;;
-            *)
-              # Unknown (summary missing/unreadable, or the scraper itself
-              # crashed). Deliberately does NOT reset the counter, so a broken
-              # pipeline cannot quietly clear a real block streak.
-              echo "::warning title=Indeed outcome unknown::Could not read a definitive outcome; leaving the consecutive-block counter at ${COUNT}."
-              ;;
-          esac
-
-          # Persist before deciding whether to fail. Exiting first would save the
-          # *previous* count, so every subsequent run would re-read the same
-          # number and report the same streak instead of the true one. Failing
-          # repeatedly is correct either way, but a counter that stops counting
-          # is misleading in exactly the situation someone is trying to diagnose.
-          mkdir -p "$(dirname "$STATE_FILE")"
-          printf '{"consecutive_blocks": %s}\n' "$COUNT" > "$STATE_FILE"
-          cat "$STATE_FILE"
-
-          if [ "$OUTCOME" = "blocked" ] && [ "$COUNT" -ge "$BLOCK_THRESHOLD" ]; then
-            echo "::error title=Indeed blocked::${COUNT} consecutive runs collected zero jobs. Failing so this cannot stay silent. If INDEED_PROXY_SERVER is set, check the proxy's health and quota; if it is not set, this runner's egress IP is being refused outright."
-            exit 1
-          fi
-
-      - name: Save Indeed block counter
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ runner.temp }}/indeed_block_state.json
-          key: indeed-block-state-${{ github.run_id }}
-
-      - name: Dump browser diagnostics
-        # `always()`, not `failure()`: a session that won't start is reported
-        # as a controlled no-op, so the scraper step exits 0 and `failure()`
-        # never fires -- which is exactly the case whose log matters most.
-        # The single most useful artifact here is chromedriver's own stderr.
-        if: always()
-        run: |
-          # Ask client.py where it put the log rather than assuming a path,
-          # so this keeps working if the location ever moves.
-          DRIVER_LOG="$(.venv/bin/python -c 'from job_market_intel.scrapers.indeed.client import _CHROMEDRIVER_LOG_PATH as p; print(p)')"
-          echo "=== chromedriver log ($DRIVER_LOG) ==="
-          cat "$DRIVER_LOG" 2>/dev/null || echo "(no chromedriver log)"
-          echo "=== proxy ==="
-          # Say only whether one is configured and whether it authenticated;
-          # never echo credentials.
-          .venv/bin/python -c "from job_market_intel.scrapers.indeed.config import IndeedSettings as S; s=S(); print('  proxy_server=%s' % (s.proxy_server or '<none>')); print('  authenticated=%s' % bool(s.proxy_username and s.proxy_password))" || true
-          echo "=== memory ==="
-          free -m || true
-          echo "=== disk ==="
-          df -h / /tmp /dev/shm || true
-          echo "=== run summary ==="
-          cat indeed_run_summary.json 2>/dev/null || echo "(no summary written)"
-          echo "=== scraper log tail ==="
-          tail -n 60 logs/job_market_intel.log 2>/dev/null || echo "(no scraper log)"
-
   reed:
     # NOTE (2026-10-01): a hashFiles()-based guard was here briefly,
     # adapted from an unmerged, never-actually-run Copilot branch
@@ -428,8 +166,7 @@ jobs:
     # calls plus up to REED_MAX_JOBS_PROCESSED_PER_RUN Details calls, not
     # one fetch). Real observed runs during scoping (2026-09-28) took
     # ~7-8 minutes end to end for the defaults (5 queries, 200 jobs) --
-    # 20 minutes leaves real margin without indeed's much larger
-    # Selenium-session budget.
+    # 20 minutes leaves real margin.
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
