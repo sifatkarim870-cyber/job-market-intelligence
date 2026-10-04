@@ -58,6 +58,30 @@ CURRENCIES: list[dict] = [
     # the cleaner asserts DZD as the home-market currency for CleanedJob's
     # required currency field, so the ref row must exist.
     {"iso_code": "DZD", "currency_name": "Algerian Dinar", "symbol": "دج"},
+    # Round 2: currencies needed for the audit-driven non-tech/global
+    # sources (Africa, MENA, South/SE Asia) added to ref.sources over time.
+    {"iso_code": "MUR", "currency_name": "Mauritian Rupee", "symbol": "₨"},
+    {"iso_code": "MAD", "currency_name": "Moroccan Dirham", "symbol": "د.م."},
+    {"iso_code": "TND", "currency_name": "Tunisian Dinar", "symbol": "د.ت"},
+    {"iso_code": "GHS", "currency_name": "Ghanaian Cedi", "symbol": "₵"},
+    {"iso_code": "UGX", "currency_name": "Ugandan Shilling", "symbol": "USh"},
+    {"iso_code": "TZS", "currency_name": "Tanzanian Shilling", "symbol": "TSh"},
+    {"iso_code": "ETB", "currency_name": "Ethiopian Birr", "symbol": "Br"},
+    {"iso_code": "RWF", "currency_name": "Rwandan Franc", "symbol": "RF"},
+    {"iso_code": "XOF", "currency_name": "West African CFA Franc", "symbol": "CFA"},
+    {"iso_code": "XAF", "currency_name": "Central African CFA Franc", "symbol": "FCFA"},
+    {"iso_code": "AOA", "currency_name": "Angolan Kwanza", "symbol": "Kz"},
+    {"iso_code": "ZMW", "currency_name": "Zambian Kwacha", "symbol": "ZK"},
+    {"iso_code": "MZN", "currency_name": "Mozambican Metical", "symbol": "MT"},
+    {"iso_code": "BWP", "currency_name": "Botswana Pula", "symbol": "P"},
+    {"iso_code": "MGA", "currency_name": "Malagasy Ariary", "symbol": "Ar"},
+    {"iso_code": "TWD", "currency_name": "New Taiwan Dollar", "symbol": "NT$"},
+    {"iso_code": "JOD", "currency_name": "Jordanian Dinar", "symbol": "د.ا"},
+    {"iso_code": "KWD", "currency_name": "Kuwaiti Dinar", "symbol": "د.ك"},
+    {"iso_code": "BHD", "currency_name": "Bahraini Dinar", "symbol": ".د.ب"},
+    {"iso_code": "QAR", "currency_name": "Qatari Riyal", "symbol": "ر.ق"},
+    {"iso_code": "OMR", "currency_name": "Omani Rial", "symbol": "ر.ع."},
+    {"iso_code": "LBP", "currency_name": "Lebanese Pound", "symbol": "£"},
 ]
 
 

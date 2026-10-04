@@ -46,6 +46,7 @@ _PARENTS = [
     ("security", "Security & Facilities"),
     ("it_services", "IT Services"),
     ("miscellaneous", "Miscellaneous"),
+    ("leadership", "Leadership"),
 ]
 
 # (code, label, parent_code)
@@ -123,6 +124,7 @@ _CHILDREN = [
     ("ins_banking", "Banking & Insurance", "insurance"),
     ("security_facilities", "Security & Facilities", "security"),
     ("it_services", "IT Services", "it_services"),
+    ("executive_leadership", "Executive Leadership", "leadership"),
     ("misc_general", "General & Other", "miscellaneous"),
 ]
 
