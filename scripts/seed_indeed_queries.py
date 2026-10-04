@@ -34,6 +34,12 @@ from job_market_intel.common.logger import configure_logging
 from job_market_intel.db.job_repository import JobRepository
 from job_market_intel.db.scrape_queue_repository import ScrapeQueueRepository
 from job_market_intel.db.session import get_session
+from job_market_intel.scrapers.indeed.config import (
+    _ALL_COUNTRIES as _COUNTRIES,
+)
+from job_market_intel.scrapers.indeed.config import (
+    base_url_for_location,
+)
 
 # Job titles spanning every major Indeed category — tech/cloud, management,
 # finance/legal, healthcare, education, marketing/sales/CS, retail/hospitality,
@@ -45,34 +51,64 @@ _DEFAULT_QUERIES = [
     # separately indexed on Indeed, so they get their own rows rather than
     # being folded into one generic "tech" row.
     "software engineer", "software developer", "web developer",
+    "front end developer", "back end developer", "full stack developer",
     "data analyst", "data scientist", "data engineer",
     "machine learning engineer", "devops engineer", "cybersecurity analyst",
-    "it support specialist",
+    "it support specialist", "systems administrator", "database administrator",
+    "network engineer", "cloud engineer", "security engineer", "qa engineer",
+    "site reliability engineer", "embedded software engineer", "help desk technician",
+    "computer support specialist", "it manager", "technical writer",
+    "business intelligence analyst", "salesforce developer", "servicenow developer",
     # Management & business.
     "product manager", "project manager", "program manager",
     "business analyst", "operations manager", "supply chain manager",
-    "logistics manager", "human resources manager",
+    "logistics manager", "human resources manager", "office manager",
+    "executive assistant", "receptionist", "recruiter", "talent acquisition specialist",
+    "training manager", "marketing manager", "sales manager", "account manager",
     # Finance & legal.
     "financial analyst", "accountant", "auditor", "tax accountant",
-    "paralegal", "lawyer",
+    "paralegal", "lawyer", "bookkeeper", "controller", "actuary",
+    "underwriter", "financial advisor", "loan officer", "mortgage broker",
+    "insurance agent", "billing specialist", "claims adjuster",
     # Healthcare.
     "nurse", "registered nurse", "physician", "pharmacist",
     "physical therapist", "medical assistant", "dentist",
+    "nurse practitioner", "physician assistant", "radiologic technologist",
+    "occupational therapist", "speech therapist", "dental hygienist",
+    "veterinarian", "vet technician", "paramedic", "emt",
+    "surgical technologist", "phlebotomist", "hospital administrator",
+    "caregiver", "home health aide", "dentist hygienist",
     # Education.
     "teacher", "elementary teacher", "professor", "school counselor",
+    "librarian", "academic advisor", "tutor", "social worker",
+    "childcare worker", "therapist", "counselor",
     # Marketing, sales & customer experience.
     "marketing manager", "social media manager", "sales representative",
     "account executive", "customer service representative", "call center agent",
+    "digital marketing manager", "seo specialist", "content writer", "copywriter",
+    "brand manager", "inside sales representative", "customer success manager",
+    "client services manager", "retail sales associate",
     # Retail, hospitality & food.
     "retail sales associate", "cashier", "barista", "waiter",
-    "hotel manager", "event planner", "chef",
+    "hotel manager", "event planner", "chef", "sous chef", "pastry chef",
+    "bartender", "host", "line cook", "dishwasher", "front desk agent",
+    "room attendant", "travel agent", "tour guide", "retail manager",
     # Trades, construction & logistics.
     "electrician", "plumber", "carpenter", "hvac technician",
     "forklift operator", "warehouse worker", "truck driver",
-    "construction worker", "landscaper", "security guard",
-    # Science, design & real estate.
+    "construction worker", "landscaper", "security guard", "welder",
+    "machinist", "diesel mechanic", "aircraft mechanic", "maintenance technician",
+    "building manager", "janitor", "housekeeper", "painter", "roofer",
+    "tiler", "drywall installer", "general laborer", "warehouse manager",
+    "construction manager", "structural engineer", "civil engineer", "architect",
+    # Science, design, education adjuncts, & public services.
     "research scientist", "environmental scientist", "graphic designer",
-    "mechanic", "real estate agent",
+    "mechanic", "real estate agent", "laboratory technician", "statistician",
+    "biotechnologist", "real estate appraiser", "quality assurance",
+    "quality control inspector", "ux designer", "ui designer",
+    "product designer", "school bus driver", "police officer", "firefighter",
+    "postal worker", "military recruiter", "interior designer", "property manager",
+    "drivers", "service technician",
 ]
 
 # Locations: one row per (title, location). Non-US entries end in the country
@@ -119,6 +155,19 @@ _DEFAULT_LOCATIONS = [
     "Athens, Greece", "Prague, Czech Republic", "Vienna, Austria",
     "Brussels, Belgium", "Copenhagen, Denmark", "Oslo, Norway",
     "Helsinki, Finland", "Istanbul, Turkey",
+]
+
+# Every country in the world, as a bare location row, plus the curated
+# nation/city rows above. From those, we only actually seed the locations
+# that route to a real Indeed country domain: Indeed operates in ~53 markets,
+# and seeding rows for the rest would just exercise them forever and always
+# skip. Keeping only the scrapable rows means every queue row corresponds to
+# crawling a real market's local results.
+_ALL_COUNTRIES_BARE = list(_COUNTRIES)
+_DEFAULT_LOCATIONS = [
+    loc
+    for loc in (_DEFAULT_LOCATIONS + _ALL_COUNTRIES_BARE)
+    if base_url_for_location(loc) is not None
 ]
 
 

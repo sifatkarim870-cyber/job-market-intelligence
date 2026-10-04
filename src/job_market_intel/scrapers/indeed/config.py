@@ -63,13 +63,61 @@ _COUNTRY_DOMAINS: dict[str, str] = {
     "pakistan": "https://pk.indeed.com",
     "australia": "https://au.indeed.com", "new zealand": "https://nz.indeed.com",
     # Middle East / Africa / LatAm
-    "uae": "https://ae.indeed.com", "saudi arabia": "https://sa.indeed.com",
+    "uae": "https://ae.indeed.com", "united arab emirates": "https://ae.indeed.com",
+    "saudi arabia": "https://sa.indeed.com",
     "egypt": "https://eg.indeed.com", "south africa": "https://za.indeed.com",
     "nigeria": "https://ng.indeed.com",
     "mexico": "https://mx.indeed.com", "brazil": "https://br.indeed.com",
     "argentina": "https://ar.indeed.com", "chile": "https://cl.indeed.com",
     "colombia": "https://co.indeed.com", "peru": "https://pe.indeed.com",
+    "israel": "https://il.indeed.com",
 }
+
+# Complete-ish sovereign-state list (United Nations members + observer states).
+# The routing table above covers the ~50 markets that actually have an Indeed
+# site. A location whose last segment is any name in this list that is NOT in
+# the table has no Indeed site, so the pipeline marks it unsupported rather
+# than silently returning the wrong country's results.
+_ALL_COUNTRIES: tuple[str, ...] = (
+    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
+    "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
+    "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados",
+    "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia",
+    "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria",
+    "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon",
+    "Canada", "Central African Republic", "Chad", "Chile", "China",
+    "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba",
+    "Cyprus", "Czechia", "Democratic Republic of the Congo", "Denmark",
+    "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt",
+    "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini",
+    "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia",
+    "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea",
+    "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hong Kong", "Hungary",
+    "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
+    "Italy", "Ivory Coast", "Jamaica", "Japan", "Jordan", "Kazakhstan",
+    "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia",
+    "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania",
+    "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali",
+    "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico",
+    "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco",
+    "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands",
+    "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea",
+    "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Panama",
+    "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland",
+    "Portugal", "Qatar", "Romania", "Russia", "Rwanda",
+    "Saint Kitts and Nevis", "Saint Lucia", "Samoa", "San Marino",
+    "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia",
+    "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
+    "Solomon Islands", "Somalia", "South Africa", "South Korea",
+    "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden",
+    "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand",
+    "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia",
+    "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine",
+    "United Arab Emirates", "United Kingdom", "United States", "Uruguay",
+    "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam",
+    "Yemen", "Zambia", "Zimbabwe",
+)
+_KNOWN_COUNTRY_NAMES = {c.lower() for c in _ALL_COUNTRIES}
 
 # US state codes, so "Austin, TX" and "Remote, NY" route to the US site.
 _US_STATE_CODES = {
@@ -81,13 +129,17 @@ _US_STATE_CODES = {
 }
 
 
-def base_url_for_location(location_text: str) -> str:
-    """Picks the Indeed country domain for a queue location string.
+def base_url_for_location(location_text: str) -> str | None:
+    """Picks the Indeed country domain for a queue location string, or None
+    when this location is one Indeed has no site for.
 
     "Remote" (the US default) and US city/state pairs route to the US site;
-    a trailing country segment routes to that country's site; anything else
-    falls back to the US default. Never raises -- an unknown location just
-    gets the US portal, which is harmless (it's what every row got before).
+    a trailing country segment routes to that country's site. A location
+    whose last segment is a country Indeed has no local site for (most of the
+    world) returns None, which the pipeline turns into an explicit
+    "unsupported" no-op rather than running the US portal against a foreign
+    location string -- which would silently return US jobs (confirmed live:
+    q=x&l=Tokyo on www.indeed.com loads Phoenix, AZ).
     """
     cleaned = location_text.strip().lower()
     if not cleaned:
@@ -103,10 +155,16 @@ def base_url_for_location(location_text: str) -> str:
     if last in _COUNTRY_DOMAINS:
         return _COUNTRY_DOMAINS[last]
 
-    # "Berlin, Germany" already handled; also try the whole string, so
-    # a bare "Germany" row matches even without a trailing-segment split.
+    # "Berlin, Germany" already handled; also try the whole string so a bare
+    # "Germany" row matches without depending on the trailing-segment split.
     if cleaned in _COUNTRY_DOMAINS:
         return _COUNTRY_DOMAINS[cleaned]
+    if last in _KNOWN_COUNTRY_NAMES or cleaned in _KNOWN_COUNTRY_NAMES:
+        return None
+    # An unrecognised free-text location: best-effort US portal, same as a
+    # novel but reachable place name. It is not marked unsupported because
+    # the queue's towns/states are all behind US-state or country checks
+    # above; this branch mostly covers edge inputs like a bare "Boston".
     return _DEFAULT_BASE_URL
 
 

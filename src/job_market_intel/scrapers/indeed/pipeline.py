@@ -189,19 +189,56 @@ class IndeedPipeline:
         result.query_text = claimed.query_text
         result.location_text = claimed.location_text
 
-        # The client reads settings.base_url fresh on every open_search, and
-        # the client was built with this same settings object (line 90), so
-        # this one assignment steers the whole upcoming browser phase -- all
-        # search pages and the detail links parsed from them inherit this
-        # country's domain, since the cards were found on that domain.
-        self.settings.base_url = base_url_for_location(claimed.location_text)
+        # Resolve this location once, before any browser. The client's own
+        # settings object is this same settings object (line 90), so this
+        # assignment steers the whole upcoming browser phase -- all search
+        # pages and the detail links parsed from them inherit this country's
+        # domain, since the cards were found on that domain.
+        base_url = base_url_for_location(claimed.location_text)
         logger.info(
             "indeed.pipeline.claimed query={!r} location={!r} base_url={} resume_from_page={}",
             claimed.query_text,
             claimed.location_text,
-            self.settings.base_url,
+            base_url,
             claimed.last_page_reached + 1,
         )
+
+        if base_url is None:
+            # Indeed has no country site for this location. The old behaviour
+            # would have silently run the US portal against it (returned US
+            # jobs), which is exactly the wrong data. Skip it honestly:
+            # record one scrape session with zero jobs and terminate the row
+            # with status 'done' so it stops being claimed every run -- we
+            # are deliberately NOT running the browser, so no Cloudflare
+            # block is ever sought and nothing here trips the blocked-run
+            # alert. blocked_reason stays None for the same reason.
+            logger.info(
+                "indeed.pipeline.unsupported_location query={!r} location={!r}",
+                claimed.query_text,
+                claimed.location_text,
+            )
+            try:
+                with get_session() as session:
+                    self._persist_and_record(
+                        session,
+                        cleaned_jobs=[],
+                        raw_count=0,
+                        query_id=claimed.query_id,
+                        final_page_reached=claimed.last_page_reached,
+                        queue_status="done",
+                        blocked_reason=None,
+                        result=result,
+                    )
+            except Exception as exc:  # noqa: BLE001
+                logger.error("indeed.pipeline.persist_failed error={}", exc)
+            result.queue_status = "done"
+            result.blocked_reason = None
+            result.search_pages_visited = 0
+            result.detail_pages_visited = 0
+            result.parsed_count = 0
+            return result
+
+        self.settings.base_url = base_url
 
         raw_jobs, final_page_reached, queue_status, blocked_reason = self._run_browser_phase(
             query_text=claimed.query_text,
