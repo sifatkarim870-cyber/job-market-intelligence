@@ -33,37 +33,38 @@ What this module deliberately is NOT:
       module is a pure function, called inline from
       ``db.job_repository.save_cleaned_job``, the same way
       ``get_or_create_company`` is.
-    - NOT currency conversion in the general sense. All three live
-      sources (RemoteOK, We Work Remotely, Remotive) are USD-only by
+    - NOT currency conversion in the general sense. The three original
+      feed sources (RemoteOK, We Work Remotely, Remotive) are USD-only by
       construction of their own raw models -- RemoteOK's feed has no
       currency field at all (implicitly USD), Remotive's free-text salary
       parser (``RawRemotiveJob._parse_salary_range``) only matches a
       ``"$..."``-prefixed pattern, and WWR has no salary field of any
-      kind. ``salary.currency_exchange_rates`` is not seeded (confirmed:
-      no seed script for it exists) and seeding it now would be
-      speculative infrastructure with nothing real to validate it
-      against. So this function accepts a currency code as a real
-      parameter (not hard-coded), has a real conversion table with one
-      entry (USD -> USD, rate 1.0), and returns ``(None, None)`` with a
-      logged warning for anything else -- correct and honest today,
-      and it will not silently mis-convert the day a non-USD source is
-      added; it will visibly do nothing until
-      ``salary.currency_exchange_rates`` actually has a rate to use.
+      kind. The conversion table was USD-only while that was true, and
+      grew only when real non-USD sources arrived to use it: GBP (Reed,
+      2026-10), DZD (Emploitic, 2026-10), MUR (MyJob.mu, 2026-10) --
+      dated mid-market reference rates in ``_USD_CONVERSION_RATES``.
+      Any currency still without an entry returns ``(None, None)`` with
+      a logged warning -- correct and honest: it will not silently
+      mis-convert, it visibly does nothing until a rate exists.
 
 Pay-period annualization
 -------------------------
-None of the three live sources captures pay period explicitly (confirmed:
-no ``pay_period`` field exists on ``CleanedJob`` or on any raw model);
-``job_repository`` hard-codes the literal string ``'yearly'`` when writing
-``salary.job_salaries.pay_period``, on the assumption that all three
-sources report full-time-equivalent annual figures. That assumption is
-reasonable for these three sources specifically (RemoteOK's own docs
-describe its salary fields as annual; Remotive's free-text parser only
-matches whole-dollar range strings typical of annual tech-salary
-postings; WWR has no salary at all) but it is an assumption, not a fact
-this module can verify -- see ``job_repository.py``'s
-``_ASSUMED_PAY_PERIOD`` constant, which names it explicitly rather than
-burying it in a bare string literal.
+None of the three original feed sources captures pay period explicitly
+(when this module was written: no ``pay_period`` field existed on
+``CleanedJob`` or on any raw model), so ``job_repository`` defaulted those
+sources' ``salary.job_salaries.pay_period`` to ``'yearly'`` on the
+assumption that all three report full-time-equivalent annual figures.
+That assumption is reasonable for these three sources specifically
+(RemoteOK's own docs describe its salary fields as annual; Remotive's
+free-text parser only matches whole-dollar range strings typical of
+annual tech-salary postings; WWR has no salary at all) but it is an
+assumption, not a fact this module can verify.
+
+Sources that know their own cadence populate ``CleanedJob.pay_period``
+for real (MyJob.mu: monthly MUR ranges; Reed: ``salaryType``), and
+``job_repository`` passes that value straight through -- the earlier
+``_ASSUMED_PAY_PERIOD`` literal no longer exists (see job_repository.py's
+module docstring).
 
 This module's annualization table covers every ``pay_period`` value the
 schema's own CHECK constraint allows (``hourly``, ``daily``, ``weekly``,
@@ -90,11 +91,20 @@ _ANNUALIZATION_MULTIPLIERS: dict[str, float] = {
     "yearly": 1.0,
 }
 
-#: Currency conversion rates to USD. Deliberately contains only USD today
-#: -- see the module docstring for why introducing real FX rates is out
-#: of scope until a non-USD source actually exists to validate against.
+#: Currency conversion rates to USD, as of 2026-10-02 mid-market close
+#: (exchangerates.org.uk / tradingeconomics daily reference rates).
+#: USD was the only entry until the audit-driven non-USD sources arrived
+#: (GBP for Reed, DZD for Emploitic, MUR for MyJob.mu) — each addition
+#: is a rate this codebase now actually uses, not a speculative table.
+#: These are static reference rates for cross-job comparability, not
+#: live FX: re-check and update when a materially different rate regime
+#: matters to an analysis. Currencies with no entry here still return
+#: (None, None) with a logged warning rather than a guessed conversion.
 _USD_CONVERSION_RATES: dict[str, float] = {
     "USD": 1.0,
+    "GBP": 1.3240,  # 1 GBP = 1.3240 USD (02 Oct 2026)
+    "DZD": 0.007462,  # 1 USD = 134.02 DZD (02 Oct 2026)
+    "MUR": 0.02077,  # 1 MUR = 0.02077 USD (02 Oct 2026; 1 USD = 48.15 MUR)
 }
 
 
@@ -144,9 +154,8 @@ def normalize_annual_salary(
     if rate_to_usd is None:
         logger.warning(
             "normalize_annual_salary: no USD conversion rate available for "
-            "currency {!r} (salary.currency_exchange_rates is not seeded -- "
-            "see module docstring). Returning (None, None) rather than "
-            "guessing.",
+            "currency {!r} (not yet in _USD_CONVERSION_RATES -- see module "
+            "docstring). Returning (None, None) rather than guessing.",
             currency_iso_code,
         )
         return None, None

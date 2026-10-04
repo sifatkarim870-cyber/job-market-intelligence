@@ -42,6 +42,10 @@ _SOURCES = [
     # published JSON API; Next.js __NEXT_DATA__ JSON embedded in listing
     # pages — see scrapers/emploitic/client.py). No auth needed.
     ("emploitic", "Emploitic", "job_board", "https://emploitic.com", 0.70, True, False),
+    # MyJob.mu: Mauritius board; Nuxt frontend backed by an undocumented
+    # but plain JSON API (app.myjob.mu/api/job-board/jobs — see
+    # scrapers/myjob/client.py). No auth needed.
+    ("myjob", "MyJob Mauritius", "job_board", "https://www.myjob.mu", 0.70, True, False),
     ("indeed", "Indeed", "aggregator", "https://indeed.com", 0.80, False, False),
     ("linkedin", "LinkedIn", "job_board", "https://linkedin.com", 0.85, False, False),
     ("glassdoor", "Glassdoor", "job_board", "https://glassdoor.com", 0.75, False, False),

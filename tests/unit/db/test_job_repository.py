@@ -714,14 +714,57 @@ class TestPerRecordCurrencyAndPayPeriod:
         assert salary_insert["currency_id"] == 99
         assert salary_insert["pay_period"] == "daily"
 
-    def test_gbp_daily_salary_normalizes_to_none_with_no_exchange_rate(
+    def test_unknown_currency_salary_normalizes_to_none_with_no_exchange_rate(
         self, monkeypatch, make_cleaned_job
     ) -> None:
-        """The concrete case that motivated this whole change: a GBP
-        day-rate posting must NOT be silently treated as an annual USD
-        figure. With no GBP exchange rate seeded (confirmed real state --
-        see normalization/salary_standardization.py), the honest result
-        is normalized_annual_*_usd = None, not a wrong number."""
+        """A salary in a currency with no entry in _USD_CONVERSION_RATES
+        must NOT be silently treated as an annual USD figure. The honest
+        result is normalized_annual_*_usd = None, not a wrong number.
+        (Originally written with GBP, which had no rate then; GBP got a
+        dated rate on 2026-10-05 when Reed's real GBP salaries started
+        normalizing, so EUR now carries the still-unrated case.)"""
+        repo = JobRepository()
+        monkeypatch.setattr(repo, "get_or_create_company", lambda *a, **k: 42)
+        monkeypatch.setattr(repo, "get_currency_id_by_code", lambda *a, **k: 7)
+        monkeypatch.setattr(repo, "get_employment_type_id_by_code", lambda *a, **k: None)
+        session = _mock_session(existing_row=None, new_job_id=999)
+        job = make_cleaned_job(
+            source_job_id="1",
+            job_title="AI Engineer",
+            salary_min=450,
+            salary_max=600,
+            salary_disclosed=True,
+            currency_iso_code="EUR",
+            pay_period="daily",
+        )
+
+        repo.save_cleaned_job(session, job, source_id=1, session_id=1)
+
+        params = session.execute.call_args_list
+        salary_insert = next(
+            c.args[1]
+            for c in params
+            if " ".join(str(c.args[0]).split()).startswith("INSERT INTO salary.job_salaries")
+        )
+        assert salary_insert["normalized_annual_min_usd"] is None
+        assert salary_insert["normalized_annual_max_usd"] is None
+        # And, crucially, the raw native-currency, native-cadence figures
+        # are still stored correctly -- nothing here loses the real
+        # 450-600/day data.
+        assert salary_insert["salary_min"] == 450
+        assert salary_insert["salary_max"] == 600
+        assert salary_insert["pay_period"] == "daily"
+
+    def test_rated_currency_normalizes_with_conversion_and_annualization(
+        self, monkeypatch, make_cleaned_job
+    ) -> None:
+        """The counterpart: a currency WITH a dated rate (GBP, added
+        2026-10-05 alongside the first real GBP salaries) is converted
+        and annualized -- daily GBP * 260 working days * rate_to_usd."""
+        from job_market_intel.normalization.salary_standardization import (
+            _USD_CONVERSION_RATES,
+        )
+
         repo = JobRepository()
         monkeypatch.setattr(repo, "get_or_create_company", lambda *a, **k: 42)
         monkeypatch.setattr(repo, "get_currency_id_by_code", lambda *a, **k: 7)
@@ -745,13 +788,10 @@ class TestPerRecordCurrencyAndPayPeriod:
             for c in params
             if " ".join(str(c.args[0]).split()).startswith("INSERT INTO salary.job_salaries")
         )
-        assert salary_insert["normalized_annual_min_usd"] is None
-        assert salary_insert["normalized_annual_max_usd"] is None
-        # And, crucially, the raw native-cadence figures are still stored
-        # correctly -- nothing here loses the real £450-600/day data.
-        assert salary_insert["salary_min"] == 450
-        assert salary_insert["salary_max"] == 600
-        assert salary_insert["pay_period"] == "daily"
+        expected_min = round(450 * 260 * _USD_CONVERSION_RATES["GBP"], 2)
+        expected_max = round(600 * 260 * _USD_CONVERSION_RATES["GBP"], 2)
+        assert salary_insert["normalized_annual_min_usd"] == expected_min
+        assert salary_insert["normalized_annual_max_usd"] == expected_max
 
 
 class TestClosingDateThreading:
