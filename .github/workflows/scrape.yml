@@ -18,6 +18,10 @@ name: Scheduled scraping
 # different cadences per source — each job is independent. Emploitic
 # (added 2026-10-05) fetches 5 paginated listing pages per run (~0.06
 # req/min), also well within any reasonable politeness budget at 2x/day.
+# job51 (added 2026-10-05) fetches at most 4 search pages per run (~0.07
+# req/min at 2x/day) from an endpoint with no documented rate ceiling;
+# its job-level timeout is 20, not 15 — see the comment on the job itself
+# for the measured reason.
 #
 # reed also shares the same 12-hour cron. Closer to indeed's shape than
 # the first three's: each run claims REED_QUERIES_CLAIMED_PER_RUN rows
