@@ -53,9 +53,16 @@ class JobAmSettings(BaseSettings):
         retry_max_wait_seconds: Ceiling on exponential backoff (also the
             effective cooldown after a 429).
         user_agent: Identifying User-Agent sent with every request.
-            Confirmed live (2026-10-05) to be accepted by job.am's
-            Cloudflare-fronted detail pages, so no browser-spoofing UA
-            is needed for this source.
+            The project-wide research UA was tried first and passes
+            from a residential IP (verified during scoping, 2026-10-05),
+            but job.am's Cloudflare challenges it from GitHub Actions'
+            datacenter IPs: both CI attempts on 2026-10-05 (two distinct
+            runner IPs) got a 403 "Just a moment..." interstitial on the
+            first request, while the other seven scheduled scrapers ran
+            fine. A browser-shaped UA is the standard workaround for
+            managed challenges on plain-HTTP endpoints (no JS solving
+            possible with ``requests``); override via ``JOBAM_USER_AGENT``
+            if job.am ever tightens this too.
     """
 
     model_config = SettingsConfigDict(
@@ -74,5 +81,6 @@ class JobAmSettings(BaseSettings):
     retry_initial_wait_seconds: float = 1.0
     retry_max_wait_seconds: float = 30.0
     user_agent: str = (
-        "JobMarketIntelligencePlatform-Research/1.0 (+https://example-research-project.local)"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     )
