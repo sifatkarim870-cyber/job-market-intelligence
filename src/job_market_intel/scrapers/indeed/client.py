@@ -197,14 +197,30 @@ class IndeedClient:
             # Default: undetected-Chrome mode, the non-fingerprinted way
             # to talk to Indeed, confirmed on local machines / dedicated
             # host with a real display.
-            self._driver = Driver(
-                uc=True,
-                headless2=self._settings.headless,
-                agent=self._settings.request_user_agent,
-                page_load_strategy="eager",
-                proxy=self._settings.proxy_server,
-                proxy_auth=self._proxy_auth(),
-            )
+            #
+            # Proxy basic auth goes through the same generated extension
+            # the plain-Selenium path uses, not a Driver() kwarg: this
+            # used to pass proxy_auth=... which seleniumbase's Driver()
+            # has never accepted (TypeError on session open) -- latent
+            # while every real run used the UC-off CI path, and found
+            # 2026-10-05 when local runs were switched back to UC.
+            uc_kwargs: dict[str, Any] = {
+                "uc": True,
+                "headless2": self._settings.headless,
+                "agent": self._settings.request_user_agent,
+                "page_load_strategy": "eager",
+                "proxy": self._settings.proxy_server,
+            }
+            if self._settings.proxy_server:
+                auth_extension = self._write_proxy_auth_extension()
+                if auth_extension is not None:
+                    uc_kwargs["extension_dir"] = auth_extension
+                logger.info(
+                    "indeed.session.proxy configured server=%s authenticated=%s",
+                    self._settings.proxy_server,
+                    bool(self._proxy_auth()),
+                )
+            self._driver = Driver(**uc_kwargs)
         else:
             # UC-off path only exercised on the self-hosted CI runner,
             # where any seleniumbase Driver variant hung sessions. Plain

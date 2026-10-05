@@ -19,8 +19,19 @@ Set-Location $Repo
 $env:INDEED_ITEMS_PER_RUN = '1'
 $env:INDEED_MAX_SEARCH_PAGES_PER_SESSION = '8'     # ~15 jobs/search page => ~120 available search hits
 $env:INDEED_MAX_DETAIL_PAGES_PER_SESSION = '100'   # fetch detail pages for up to 100 jobs
-$env:INDEED_UC_ENABLED = 'false'
-$env:INDEED_HEADLESS = 'true'
+
+# Anti-fingerprinting is ON for local runs (these are also the code
+# defaults, see IndeedSettings): UC (undetected) mode + a VISIBLE browser.
+# 2026-10-05: this script used to force INDEED_UC_ENABLED=false and
+# INDEED_HEADLESS=true here -- values copied from the GitHub CI job, where
+# they exist only because that memory-starved VM's Chrome hangs in UC mode
+# (see scrapers/indeed/config.py's uc_enabled docstring). On this machine
+# they silently turned the stealth off, and every run from the desktop
+# button was challenged by Cloudflare on search page 1 ("Indeed to Neon"
+# showed outcome=blocked, 0 jobs). Plain headless Selenium is a documented
+# fingerprinting signal on Indeed; do not re-add those two overrides here.
+$env:INDEED_UC_ENABLED = 'true'
+$env:INDEED_HEADLESS = 'false'
 
 # Small pause between each job's detail-page fetch. This is the knob to turn
 # if Cloudflare challenges one run more than usual; raising it makes the
