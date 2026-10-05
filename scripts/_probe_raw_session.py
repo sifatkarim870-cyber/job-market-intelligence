@@ -1,6 +1,8 @@
 """Diagnostic: which Chrome flag set actually starts a session on the CI runner?
 
-Run via .github/workflows/indeed_uc_probe.yml. Not imported by anything.
+Originally driven by .github/workflows/indeed_uc_probe.yml, which was deleted
+2026-10-05 when Indeed left the CI schedule; run this directly if the question
+ever comes back. Not imported by anything.
 
 Each variant is tried in a SEPARATE process (one python invocation per
 variant, from the calling workflow) so a wedged or half-crashed browser can't

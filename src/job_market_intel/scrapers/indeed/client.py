@@ -86,8 +86,9 @@ _NEXT_PAGE_SELECTOR = 'a[aria-label="Next Page"], a[data-testid="pagination-page
 
 # Chrome flags used by the UC-off path (see open_session), measured on the
 # self-hosted CI runner (an 837MiB Azure VM with a 419MiB /dev/shm) rather
-# than guessed. .github/workflows/indeed_uc_probe.yml re-runs these
-# comparisons; the numbers below are from run 37129170777, which finally got
+# than guessed. .github/workflows/indeed_uc_probe.yml used to re-run these
+# comparisons (workflow deleted 2026-10-05, when Indeed left the CI
+# schedule); the numbers below are from run 37129170777, which finally got
 # past its own self-inflicted failures and tested the real arg list:
 #
 #     --headless=new --no-sandbox                                     -> 68s  OK
