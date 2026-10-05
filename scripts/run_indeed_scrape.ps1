@@ -1,5 +1,10 @@
 # Indeed scraper — manual run
 #
+# This is the SCRAPE half of the desktop's two-button split:
+#   Run Indeed Scrape  -> this script: writes to the LOCAL Postgres
+#   Indeed to Neon     -> run_indeed_to_neon.ps1: pushes those local rows
+#                         to Neon (scripts/push_indeed_to_neon.py), no browser.
+#
 # Idempotent per-run behaviour (the pipeline already guarantees this):
 #   - claims up to INDEED_ITEMS_PER_RUN=1 queue row (one combination),
 #   - collects up to the per-session caps from that one combination,
@@ -14,6 +19,16 @@
 $ErrorActionPreference = 'Stop'
 $Repo = 'D:\Research_Project\JobMarketAnalysisPlatform\DataBase\job-market-intel'
 Set-Location $Repo
+
+# Scrape target = LOCAL Postgres for this process only (env is scoped to the
+# child python, nothing in the repo or CI changes). .env's DATABASE_URL
+# stays Neon for every other scraper; this is what makes the split work:
+# data lands here first, and only what you push via the other button
+# reaches Neon.
+$localDsn = Select-String -Path '.env' -Pattern '^LOCAL_DATABASE_URL=(.*)$'
+if (-not $localDsn) { throw 'LOCAL_DATABASE_URL not found in .env' }
+$env:DATABASE_URL = $localDsn.Matches[0].Groups[1].Value
+Write-Host "Scrape target: LOCAL Postgres ($($env:DATABASE_URL -replace ':[^:@/]+@', ':***@'))" -ForegroundColor Cyan
 
 # One combination per run; give that combination room to fill ~100 jobs.
 $env:INDEED_ITEMS_PER_RUN = '1'
