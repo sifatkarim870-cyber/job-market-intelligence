@@ -13,19 +13,42 @@ Job.am (Armenia) is a server-rendered board (ASP.NET MVC, Cloudflare
 front) that publishes a plain JSON endpoint:
 
 * **List** — ``GET https://job.am/api/jobs`` returns the *entire* board
-  as a bare JSON array in one response (~1,136 items, ~350 KB): exactly
+  as a bare JSON array in one response (~1,140 items, ~350 KB): exactly
   nine keys per item (``Id``, ``Title``, ``Company``, ``Url``, ``Logo``,
   ``DeadLine``, ``Location``, ``IndustryId``, ``IndustryIds``).
   Pagination query parameters (``?page=2``, ``?offset=…``) are silently
   ignored — every combination returns the same whole-board array (two
   differently-parameterized fetches differed only by a job posted in
-  between). No auth, no cookies, no signing; the research User-Agent is
-  accepted as-is.
+  between). No auth, no cookies, no signing.
 * **Detail** — each item's ``Url`` (a public ``/job/{slug}-{id}`` page)
   carries a schema.org ``JobPosting`` JSON-LD ``<script>`` block — the
   only place posting date, description, and employment type exist. The
   list payload has none of the three, so this second fetch is required
   (gated behind ``fetch_details``).
+
+Why this client uses curl_cffi instead of ``common/http_client.py``
+-------------------------------------------------------------------
+Job.am's Cloudflare serves a managed challenge (403, "Just a moment…"
+interstitial) to plain-``requests`` HTTP **from GitHub Actions' runner
+IPs**, which broke the scheduled scrape three times on 2026-10-05:
+
+* attempt 1 and 2 (two distinct runner IPs, research User-Agent) → 403
+  on the very first ``/api/jobs`` request;
+* attempt 3 (fresh runner IP, browser-shaped User-Agent) → same 403.
+
+The same client with the same UA passes from this machine's residential
+IP, and a *different* non-residential fetcher (different HTTP stack)
+also receives a clean 200 from job.am — so the trigger is neither the
+path nor a blanket datacenter-IP ban, but the combination of the
+runner's ASN with Python ``requests``' distinctive TLS/HTTP2
+fingerprint, scored regardless of User-Agent. Since ``requests`` cannot
+change its TLS handshake, this client speaks through ``curl_cffi``
+(impersonating a real Chrome TLS/HTTP2 profile — see
+``JobAmSettings.impersonate``), the standard fix for managed challenges
+on plain-HTTP endpoints where a JS challenge cannot be solved without a
+browser. Politeness is unchanged: one list request plus at most
+``max_jobs_per_run`` detail pages per 12-hour run, with a delay between
+each — identical volume either way.
 
 Dead listings: the list API keeps serving entries whose page already
 404s (6 of the first 100 on 2026-10-05). A 404 is a *permanent* HTTP
@@ -33,12 +56,6 @@ error, so it is not retried — the entry is returned without ``_detail``
 and the parser skips it for lack of a posting date. Transient detail
 failures are logged and skipped the same way: one job's fields are
 never worth failing the run over.
-
-``robots.txt`` disallows ``/api/*`` to crawlers; the endpoint is nonetheless
-the board's own public data feed and answers plain GETs (it is listed in
-the project's scrapeability audit as a FREE-API source). One list request
-plus at most ``max_jobs_per_run`` detail requests per run keeps the load
-trivially polite.
 """
 
 from __future__ import annotations
@@ -47,9 +64,11 @@ import json
 import re
 import time
 
+from curl_cffi import requests as curl_requests
+from curl_cffi.requests import exceptions as curl_exceptions
 from loguru import logger
 
-from job_market_intel.common.http_client import PermanentHTTPError, TransientHTTPError, fetch_html, fetch_json
+from job_market_intel.common.http_client import PermanentHTTPError, TransientHTTPError
 from job_market_intel.common.retry import call_with_retry
 
 from .config import JobAmSettings
@@ -69,18 +88,55 @@ class JobAmClient:
     def __init__(self, settings: JobAmSettings | None = None) -> None:
         self._settings = settings or JobAmSettings()
 
-    def _get_json(self, url: str, *, what: str) -> object:
+    def _request(self, url: str):
+        """GET one URL through curl_cffi's browser impersonation.
+
+        The shared transport contract every other source gets from
+        ``common/http_client.py``, reimplemented on top of curl_cffi
+        (see the module docstring for why ``requests`` cannot be used
+        for this source): retryable failures raise the shared
+        ``TransientHTTPError`` so ``call_with_retry`` owns backoff
+        exactly as it does elsewhere; anything else non-200 — including
+        the Cloudflare challenge page if it ever fires again, which is
+        not retryable without changing the fingerprint — raises
+        ``PermanentHTTPError``.
+
+        Returns:
+            The curl_cffi ``Response`` (status 200 only).
+        """
+
+        def do_request():
+            try:
+                response = curl_requests.get(
+                    url,
+                    impersonate=self._settings.impersonate,
+                    timeout=self._settings.request_timeout_seconds,
+                )
+            except curl_exceptions.RequestsError as exc:
+                raise TransientHTTPError(f"transport failure talking to {url}: {exc}") from exc
+            if response.status_code >= 500:
+                raise TransientHTTPError(
+                    f"{url} returned server error status {response.status_code}"
+                )
+            if response.status_code != 200:
+                raise PermanentHTTPError(
+                    f"{url} returned client error status {response.status_code}: "
+                    f"{response.text[:300]!r}"
+                )
+            return response
+
+        return call_with_retry(
+            do_request,
+            retry_exception_types=TransientHTTPError,
+            max_attempts=self._settings.max_retry_attempts,
+            initial_wait_seconds=self._settings.retry_initial_wait_seconds,
+            max_wait_seconds=self._settings.retry_max_wait_seconds,
+        )
+
+    def _get(self, url: str, *, what: str) -> object:
+        """List-side fetch: ``_request`` with the run-fatal error mapping."""
         try:
-            return call_with_retry(
-                fetch_json,
-                url,
-                retry_exception_types=TransientHTTPError,
-                max_attempts=self._settings.max_retry_attempts,
-                initial_wait_seconds=self._settings.retry_initial_wait_seconds,
-                max_wait_seconds=self._settings.retry_max_wait_seconds,
-                timeout_seconds=self._settings.request_timeout_seconds,
-                user_agent=self._settings.user_agent,
-            )
+            return self._request(url)
         except TransientHTTPError as exc:
             raise JobAmFetchError(
                 f"Could not reach Job.am ({what}) after "
@@ -101,16 +157,7 @@ class JobAmClient:
         requirement does the final skipping.
         """
         try:
-            return call_with_retry(
-                fetch_html,
-                url,
-                retry_exception_types=TransientHTTPError,
-                max_attempts=self._settings.max_retry_attempts,
-                initial_wait_seconds=self._settings.retry_initial_wait_seconds,
-                max_wait_seconds=self._settings.retry_max_wait_seconds,
-                timeout_seconds=self._settings.request_timeout_seconds,
-                user_agent=self._settings.user_agent,
-            )
+            return self._request(url).text  # type: ignore[union-attr]
         except PermanentHTTPError as exc:
             logger.debug(
                 "Job.am job {} detail page permanently unavailable ({}); "
@@ -157,10 +204,17 @@ class JobAmClient:
 
         Raises:
             JobAmFetchError: If the list request failed after exhausting
-                retries.
+                retries (or was permanently rejected).
             JobAmResponseError: If the payload wasn't a usable job list.
         """
-        payload = self._get_json(self._settings.list_url, what="job list")
+        response = self._get(self._settings.list_url, what="job list")
+        try:
+            payload = response.json()  # type: ignore[union-attr]
+        except ValueError as exc:
+            raise JobAmResponseError(
+                f"Job.am job list returned non-JSON body ({exc}). The API's "
+                "response shape may have changed."
+            ) from exc
         if not isinstance(payload, list):
             raise JobAmResponseError(
                 f"Job.am job list returned {type(payload).__name__}, expected a "

@@ -16,6 +16,17 @@ authors = [
 dependencies = [
     "apscheduler>=3.10,<4.0",
     "beautifulsoup4>=4.15.0",
+    # Step: Job.am's Cloudflare challenges plain-``requests`` HTTP from
+    # GitHub Actions' runner IPs regardless of User-Agent (three CI
+    # attempts, three runner IPs, two UAs -- all 403 "Just a moment..."
+    # interstitials; same client passes from a residential IP and from
+    # other datacenter fetchers, so the trigger is the TLS/HTTP2
+    # fingerprint * combined with the runner's ASN). curl_cffi speaks
+    # real curl with browser-impersonated TLS/HTTP2 profiles, which is
+    # the standard fix for managed challenges on plain-HTTP endpoints
+    # where a JS challenge cannot be solved. Used only by
+    # scrapers/jobam/client.py -- other sources keep ``requests``.
+    "curl-cffi>=0.7.0",
     "ftfy>=6.3.1",
     "loguru>=0.7.3",
     # Environment/config loading with real validation, type coercion, and

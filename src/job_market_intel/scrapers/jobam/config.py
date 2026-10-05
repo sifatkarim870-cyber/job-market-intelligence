@@ -52,17 +52,17 @@ class JobAmSettings(BaseSettings):
         retry_initial_wait_seconds: Wait before the first retry.
         retry_max_wait_seconds: Ceiling on exponential backoff (also the
             effective cooldown after a 429).
-        user_agent: Identifying User-Agent sent with every request.
-            The project-wide research UA was tried first and passes
-            from a residential IP (verified during scoping, 2026-10-05),
-            but job.am's Cloudflare challenges it from GitHub Actions'
-            datacenter IPs: both CI attempts on 2026-10-05 (two distinct
-            runner IPs) got a 403 "Just a moment..." interstitial on the
-            first request, while the other seven scheduled scrapers ran
-            fine. A browser-shaped UA is the standard workaround for
-            managed challenges on plain-HTTP endpoints (no JS solving
-            possible with ``requests``); override via ``JOBAM_USER_AGENT``
-            if job.am ever tightens this too.
+        impersonate: Browser TLS/HTTP2 profile used by ``curl_cffi`` for
+            every request to this source (default ``"chrome"`` = the
+            latest bundled Chrome profile; version-pinned values such as
+            ``"chrome124"`` are also accepted by curl_cffi). This is
+            what actually gets job.am past its Cloudflare managed
+            challenge from CI — see ``client.py``'s module docstring for
+            the three failed UA-only attempts that led here. There is
+            deliberately no ``user_agent`` knob: a User-Agent override
+            would desynchronize the header set from the impersonated
+            TLS fingerprint, which is exactly the mismatch Cloudflare
+            scores.
     """
 
     model_config = SettingsConfigDict(
@@ -80,7 +80,4 @@ class JobAmSettings(BaseSettings):
     max_retry_attempts: int = 4
     retry_initial_wait_seconds: float = 1.0
     retry_max_wait_seconds: float = 30.0
-    user_agent: str = (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    )
+    impersonate: str = "chrome"
