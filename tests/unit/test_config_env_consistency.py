@@ -32,16 +32,17 @@ from pathlib import Path
 import job_market_intel.db.config as db_config_module
 from job_market_intel.common.config import Settings
 from job_market_intel.db.config import KNOWN_ENV_VARS as DB_KNOWN_ENV_VARS
+from job_market_intel.normalization.translation import TranslationSettings
 from job_market_intel.scheduler.config import SchedulerSettings
-from job_market_intel.scrapers.indeed.config import IndeedSettings
 from job_market_intel.scrapers.emploitic.config import EmploiticSettings
+from job_market_intel.scrapers.indeed.config import IndeedSettings
 from job_market_intel.scrapers.job51.config import Job51Settings
 from job_market_intel.scrapers.jobam.config import JobAmSettings
 from job_market_intel.scrapers.myjob.config import MyJobSettings
 from job_market_intel.scrapers.reed.config import ReedSettings
 from job_market_intel.scrapers.remoteok.config import RemoteOKSettings
-from job_market_intel.validation.indeed_validator import IndeedValidationSettings
 from job_market_intel.validation.emploitic_validator import EmploiticValidationSettings
+from job_market_intel.validation.indeed_validator import IndeedValidationSettings
 from job_market_intel.validation.job51_validator import Job51ValidationSettings
 from job_market_intel.validation.jobam_validator import JobAmValidationSettings
 from job_market_intel.validation.myjob_validator import MyJobValidationSettings
@@ -216,6 +217,13 @@ def test_every_job51_validation_settings_var_is_documented() -> None:
     missing = _pydantic_settings_env_vars(Job51ValidationSettings) - _documented_vars()
     assert not missing, (
         f"Job51ValidationSettings reads {sorted(missing)}, undocumented in .env.example."
+    )
+
+
+def test_every_translation_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(TranslationSettings) - _documented_vars()
+    assert not missing, (
+        f"TranslationSettings reads {sorted(missing)}, undocumented in .env.example."
     )
 
 

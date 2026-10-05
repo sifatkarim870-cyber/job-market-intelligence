@@ -28,6 +28,7 @@ dependencies = [
     # scrapers/jobam/client.py -- other sources keep ``requests``.
     "curl-cffi>=0.7.0",
     "ftfy>=6.3.1",
+    "langdetect>=1.0.9",
     "loguru>=0.7.3",
     # Environment/config loading with real validation, type coercion, and
     # clear error messages — exactly what the Step 3 base config loader
@@ -45,6 +46,7 @@ dependencies = [
     # normalization/title_classification.py's module docstring for the
     # full confirmed design decisions.
     "sentence-transformers>=3.0,<4.0",
+    "sentencepiece>=0.2.2",
     "sqlalchemy>=2.0,<3.0",
     "tenacity>=9.1.4",
 ]

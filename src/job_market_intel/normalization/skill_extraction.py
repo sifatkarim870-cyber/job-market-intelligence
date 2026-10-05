@@ -298,10 +298,18 @@ def fetch_unscanned_jobs(
     Wasteful at scale, not incorrect: re-running extraction on an
     already-processed job with matches is a safe no-op via
     ``apply_skill_extractions``'s ``ON CONFLICT DO NOTHING``.
+
+    ``COALESCE(description_en, description_clean)``: the vocabulary this
+    scans for is English-only (ref.skills), so a translated description
+    when one exists is the *right* text to scan -- that is what lifts
+    non-English sources (51job measured 20% yield on raw Chinese) toward
+    the ~85% English-baseline yield. English rows and untranslated rows
+    fall back to the original (``normalization/translation.py``).
     """
     rows = session.execute(
         text(
-            "SELECT j.job_id, j.posting_date, jd.description_clean "
+            "SELECT j.job_id, j.posting_date, "
+            "COALESCE(jd.description_en, jd.description_clean) AS description_clean "
             "FROM core.jobs j "
             "JOIN core.job_descriptions jd ON jd.job_id = j.job_id "
             "WHERE jd.description_clean IS NOT NULL "

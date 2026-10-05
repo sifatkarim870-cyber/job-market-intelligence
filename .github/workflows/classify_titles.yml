@@ -14,6 +14,18 @@ name: Title classification
 # rows on CPU takes a few minutes, comfortably within that allowance.
 # See normalization/title_classification.py's module docstring for the
 # full confirmed design decisions this workflow relies on.
+#
+# Ordering inside the job: TRANSLATE first, then CLASSIFY. Non-English
+# titles (51job's Chinese, Emploitic's French, job.am's Armenian, and
+# every multilingual site still queued in the audit spreadsheet) get an
+# English translation from the local NLLB batch BEFORE classification
+# runs, so the classifier embeds English against the English-only
+# taxonomy. Translation covers TITLES here (~1-2s per non-English title
+# on CPU); descriptions translate in the local-only batch
+# (scripts/run_translation_batch.py --scope descriptions) because NLLB on
+# CPU is far too slow for description volume inside a CI job. Still zero
+# API cost -- the translation model is local, same as the embedding model.
+# See normalization/translation.py's module docstring for the full design.
 
 on:
   workflow_run:
@@ -25,7 +37,13 @@ jobs:
   classify:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    timeout-minutes: 20
+    # 30, not 20: the translation step added 2026-10-05 needs a cache-miss
+    # NLLB download (~2.4GB, first run after a cache key bump) plus
+    # inference over every untranslated non-English title, on top of the
+    # embedding batch the 20 used to cover. Steady-state (cache warm,
+    # small increments) runs well inside this; the ceiling exists for the
+    # cold-start case so a big backfill cannot get killed mid-write.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -50,6 +68,33 @@ jobs:
         with:
           path: ~/.cache/torch/sentence_transformers
           key: sentence-transformers-paraphrase-multilingual-MiniLM-L12-v2
+
+      # Same idea as the embedding-model cache above: without this, every
+      # run re-downloads the ~2.4GB NLLB translation weights from
+      # Hugging Face before it can translate a single title. The cache
+      # lives under ~/.cache/huggingface (where transformers puts it) and
+      # is shared across runs via the key below -- bump the -v suffix if
+      # TRANSLATE_MODEL_NAME ever changes.
+      - name: Cache NLLB translation model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: nllb-200-distilled-600M-v1
+
+      # Translate non-English titles BEFORE classification so the
+      # classifier matches the English taxonomy with English text.
+      # continue-on-error is deliberate: translation is an accuracy
+      # enhancement, not the reason this workflow exists. If the model
+      # download or inference hiccups, classification still runs against
+      # native text via the multilingual embedding fallback (degraded but
+      # working) instead of leaving the whole batch unclassified until
+      # someone notices a red run. Rows whose translation didn't land are
+      # simply retried next run (language_code stays NULL).
+      - name: Translate non-English titles (before classification)
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python scripts/run_translation_batch.py --scope titles
 
       - name: Run title classification batch
         env:

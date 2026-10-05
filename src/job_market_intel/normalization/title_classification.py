@@ -198,10 +198,22 @@ def fetch_unclassified_jobs(session: Session) -> list[UnclassifiedJob]:
     writes a non-NULL ``title_classification_status`` -- including for
     the "found nothing" case (``no_match``) -- so re-running this query
     naturally never re-selects an already-processed job.
+
+    English translation (``COALESCE``): classification runs against the
+    translated title/description when the translation batch produced one
+    (``scripts/run_translation_batch.py``, which runs before this batch
+    in classify_titles.yml), falling back to the original text for
+    English rows and untranslated rows -- see
+    ``normalization/translation.py``. Matching the English taxonomy with
+    English text is the whole point of the translate-first ordering;
+    multi-script strings are left for the multilingual fallback only
+    when no translation exists.
     """
     rows = session.execute(
         text(
-            "SELECT j.job_id, j.posting_date, j.job_title, jd.description_clean "
+            "SELECT j.job_id, j.posting_date, "
+            "COALESCE(j.job_title_en, j.job_title) AS job_title, "
+            "COALESCE(jd.description_en, jd.description_clean) AS description_clean "
             "FROM core.jobs j "
             "LEFT JOIN core.job_descriptions jd ON jd.job_id = j.job_id "
             "WHERE j.title_classification_status IS NULL"
