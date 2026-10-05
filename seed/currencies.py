@@ -58,6 +58,12 @@ CURRENCIES: list[dict] = [
     # the cleaner asserts DZD as the home-market currency for CleanedJob's
     # required currency field, so the ref row must exist.
     {"iso_code": "DZD", "currency_name": "Algerian Dinar", "symbol": "دج"},
+    # Added for Job.am (Armenia): same reasoning as DZD above — job.am's
+    # payloads carry no salary anywhere, the cleaner asserts AMD as the
+    # home-market currency for CleanedJob's required field, and without
+    # this row every job.am insert logs "No ref.currencies row for
+    # iso_code='AMD'" (observed on the first real run, 2026-10-05).
+    {"iso_code": "AMD", "currency_name": "Armenian Dram", "symbol": "֏"},
     # Round 2: currencies needed for the audit-driven non-tech/global
     # sources (Africa, MENA, South/SE Asia) added to ref.sources over time.
     {"iso_code": "MUR", "currency_name": "Mauritian Rupee", "symbol": "₨"},

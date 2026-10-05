@@ -31,7 +31,7 @@ from __future__ import annotations
 import pytest
 from seed.auth import seed_admin_user, seed_roles
 from seed.benefits import seed_benefits
-from seed.cities import seed_cities
+from seed.cities import _CITIES, seed_cities
 from seed.countries import seed_countries
 from seed.currencies import seed_currencies
 from seed.education_levels import seed_education_levels
@@ -125,7 +125,11 @@ class TestIdempotency:
         seed_cities(conn)  # run again in the same connection
         count_2 = conn.execute(text("SELECT count(*) FROM ref.cities")).scalar_one()
 
-        assert count_1 == count_2 == 82
+        # len(_CITIES) rather than a hardcoded number: this test exists to
+        # catch duplicate inserts on re-run (the NULL-region bug above), not
+        # to pin the dataset's size — deriving it from the seed list keeps
+        # the tripwire working as cities are added (e.g. Armenia, 2026-10-05).
+        assert count_1 == count_2 == len(_CITIES)
 
     def test_cities_second_run_reports_only_updates(self, conn):
         seed_currencies(conn)
@@ -135,7 +139,7 @@ class TestIdempotency:
 
         result = seed_cities(conn)  # second run, same connection
         assert result.inserted == 0
-        assert result.updated == 82
+        assert result.updated == len(_CITIES)
 
 
 # ---------------------------------------------------------------------------

@@ -150,6 +150,16 @@ def normalize_annual_salary(
         )
         return None, None
 
+    # Nothing to annualize: with no salary bounds the conversion rate is
+    # irrelevant, so return before the rate lookup. Otherwise every
+    # no-salary job whose currency has no rate yet logs a misleading
+    # "no USD conversion rate" warning per row — observed on Job.am's
+    # first real run (2026-10-05): 94 warnings, one per job, for a
+    # source whose payloads carry no salary at all. A *real* salary in
+    # an unrated currency still falls through to the warning below.
+    if salary_min is None and salary_max is None:
+        return None, None
+
     rate_to_usd = _USD_CONVERSION_RATES.get(currency_iso_code.upper())
     if rate_to_usd is None:
         logger.warning(

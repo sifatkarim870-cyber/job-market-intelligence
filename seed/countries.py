@@ -54,6 +54,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("IL", "ISR", "Israel", "Asia", "ILS"),
     ("AE", "ARE", "United Arab Emirates", "Asia", "AED"),
     ("SA", "SAU", "Saudi Arabia", "Asia", "SAR"),
+    # Added for Job.am (Armenia, onboarding 2026-10-05): the board's
+    # ~1,100 listings are overwhelmingly Armenian cities, and without a
+    # ref.countries row every one of them fell through to the shared
+    # "unmatched" location (is_global_remote=true) — see seed/cities.py's
+    # Armenian entries for the city half of the same fix.
+    ("AM", "ARM", "Armenia", "Asia", "AMD"),
     ("AU", "AUS", "Australia", "Oceania", "AUD"),
     ("NZ", "NZL", "New Zealand", "Oceania", "NZD"),
     ("ZA", "ZAF", "South Africa", "Africa", "ZAR"),

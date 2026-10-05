@@ -46,6 +46,11 @@ _SOURCES = [
     # but plain JSON API (app.myjob.mu/api/job-board/jobs — see
     # scrapers/myjob/client.py). No auth needed.
     ("myjob", "MyJob Mauritius", "job_board", "https://www.myjob.mu", 0.70, True, False),
+    # Job.am: Armenia board; plain JSON endpoint returning the whole
+    # board in one GET (job.am/api/jobs) + per-job JobPosting JSON-LD —
+    # see scrapers/jobam/client.py. No auth needed. robots.txt disallows
+    # /api/* to crawlers; one list request + ≤100 detail pages per run.
+    ("jobam", "Job.am", "job_board", "https://job.am", 0.70, True, False),
     ("indeed", "Indeed", "aggregator", "https://indeed.com", 0.80, False, False),
     ("linkedin", "LinkedIn", "job_board", "https://linkedin.com", 0.85, False, False),
     ("glassdoor", "Glassdoor", "job_board", "https://glassdoor.com", 0.75, False, False),

@@ -76,6 +76,18 @@ _CITIES: list[tuple[str, str, str | None, float, float, str]] = [
     ("Tel Aviv", "IL", None, 32.0853, 34.7818, "Asia/Jerusalem"),
     ("Dubai", "AE", None, 25.2048, 55.2708, "Asia/Dubai"),
     ("Riyadh", "SA", None, 24.7136, 46.6753, "Asia/Riyadh"),
+    # Armenia: added for Job.am (2026-10-05), whose board is ~85%
+    # Yerevan with the rest spread over Gyumri/Abovyan/… — without
+    # these rows every job.am location resolved to the shared
+    # unmatched fallback (is_global_remote=true) instead of a city.
+    ("Yerevan", "AM", None, 40.1792, 44.4991, "Asia/Yerevan"),
+    ("Gyumri", "AM", None, 40.7894, 43.8475, "Asia/Yerevan"),
+    ("Vanadzor", "AM", None, 40.8128, 44.4883, "Asia/Yerevan"),
+    ("Abovyan", "AM", None, 40.2694, 44.6347, "Asia/Yerevan"),
+    ("Ashtarak", "AM", None, 40.2991, 44.3620, "Asia/Yerevan"),
+    ("Armavir", "AM", None, 40.1072, 44.0336, "Asia/Yerevan"),
+    ("Kapan", "AM", None, 39.2075, 46.4058, "Asia/Yerevan"),
+    ("Hrazdan", "AM", None, 40.4937, 44.7690, "Asia/Yerevan"),
     ("Sydney", "AU", "New South Wales", -33.8688, 151.2093, "Australia/Sydney"),
     ("Melbourne", "AU", "Victoria", -37.8136, 144.9631, "Australia/Melbourne"),
     ("Brisbane", "AU", "Queensland", -27.4698, 153.0251, "Australia/Brisbane"),
