@@ -51,6 +51,13 @@ _SOURCES = [
     # see scrapers/jobam/client.py. No auth needed. robots.txt disallows
     # /api/* to crawlers; one list request + ≤100 detail pages per run.
     ("jobam", "Job.am", "job_board", "https://job.am", 0.70, True, False),
+    # 51job: China's largest board; undocumented but unauthenticated PC
+    # search JSON API (cupid.51job.com/pc/open/noauth/search-h5) — see
+    # scrapers/job51/client.py. No auth, no sign headers needed; ≤300
+    # jobs (3 pages of 100) per run. source_code is "51job" (the site's
+    # own brand); the Python package is "job51" because module names
+    # cannot start with a digit.
+    ("51job", "51job", "job_board", "https://www.51job.com", 0.70, True, False),
     ("indeed", "Indeed", "aggregator", "https://indeed.com", 0.80, False, False),
     ("linkedin", "LinkedIn", "job_board", "https://linkedin.com", 0.85, False, False),
     ("glassdoor", "Glassdoor", "job_board", "https://glassdoor.com", 0.75, False, False),

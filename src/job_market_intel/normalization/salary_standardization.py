@@ -94,8 +94,9 @@ _ANNUALIZATION_MULTIPLIERS: dict[str, float] = {
 #: Currency conversion rates to USD, as of 2026-10-02 mid-market close
 #: (exchangerates.org.uk / tradingeconomics daily reference rates).
 #: USD was the only entry until the audit-driven non-USD sources arrived
-#: (GBP for Reed, DZD for Emploitic, MUR for MyJob.mu) — each addition
-#: is a rate this codebase now actually uses, not a speculative table.
+#: (GBP for Reed, DZD for Emploitic, MUR for MyJob.mu, CNY for 51job) —
+#: each addition is a rate this codebase now actually uses, not a
+#: speculative table.
 #: These are static reference rates for cross-job comparability, not
 #: live FX: re-check and update when a materially different rate regime
 #: matters to an analysis. Currencies with no entry here still return
@@ -105,6 +106,7 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "GBP": 1.3240,  # 1 GBP = 1.3240 USD (02 Oct 2026)
     "DZD": 0.007462,  # 1 USD = 134.02 DZD (02 Oct 2026)
     "MUR": 0.02077,  # 1 MUR = 0.02077 USD (02 Oct 2026; 1 USD = 48.15 MUR)
+    "CNY": 0.1492,  # 1 CNY = 0.1492 USD (02 Oct 2026; 1 USD = 6.7046 CNY)
 }
 
 

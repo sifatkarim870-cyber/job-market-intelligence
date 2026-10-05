@@ -22,6 +22,7 @@ example (Step 18).
 
 from .common import BatchValidationReport, validate_batch
 from .emploitic_validator import EmploiticBatchValidator, EmploiticValidationSettings
+from .job51_validator import Job51BatchValidator, Job51ValidationSettings
 from .jobam_validator import JobAmBatchValidator, JobAmValidationSettings
 from .myjob_validator import MyJobBatchValidator, MyJobValidationSettings
 from .reed_validator import ReedBatchValidator, ReedValidationSettings
@@ -38,6 +39,8 @@ __all__ = [
     "EmploiticValidationSettings",
     "JobAmBatchValidator",
     "JobAmValidationSettings",
+    "Job51BatchValidator",
+    "Job51ValidationSettings",
     "MyJobBatchValidator",
     "MyJobValidationSettings",
     "RemoteOKBatchValidator",
