@@ -147,7 +147,15 @@ jobs:
 
   job51:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 20, not the boilerplate 15: 51job's first-ever CI run (2026-10-05,
+    # session 376) took 14m19s total — the fetch itself was 11s, but
+    # persisting 300 brand-new rows to Neon over WAN took 13.5 minutes
+    # (per-job insert/describe/salary/geo statements at Neon round-trip
+    # latency). Subsequent runs are mostly content-hash unchanged and
+    # much faster, but the all-new case is the real one this cap has to
+    # survive. If a future run ever crosses 20, lower
+    # JOB51_MAX_JOBS_PER_RUN in this job's env rather than raising this.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
