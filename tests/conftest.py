@@ -33,6 +33,7 @@ from typing import Any
 import pytest
 
 from job_market_intel.cleaning.common import CleanedJob
+from job_market_intel.scrapers.glints.models import RawGlintsJob
 from job_market_intel.scrapers.hrge.models import RawHRGeJob
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
 from job_market_intel.scrapers.remotive.models import RawRemotiveJob
@@ -222,5 +223,58 @@ def make_raw_hrge_job() -> Callable[..., RawHRGeJob]:
         }
         defaults.update(overrides)
         return RawHRGeJob.model_validate(defaults)
+
+    return _make
+
+
+@pytest.fixture()
+def make_raw_glints_job() -> Callable[..., RawGlintsJob]:
+    """Factory fixture: build a minimally-valid ``RawGlintsJob``, any field overridable.
+
+    Defaults are a faithful snapshot of what Glints returned for job
+    94d7e90f-f53b-4718-8601-ff4e7d623725 ("Penjaga Rumah", Indonesia)
+    during scoping (2026-10-07): FULL_TIME, disclosed IDR 1–2M monthly
+    salary, Draft.js description JSON, category+industry tags (that job
+    carried no ``JobSkills``), and the sitemap's canonical local-locale
+    URL — so a "healthy job" needs zero overrides, same convention as
+    the other factories above.
+    """
+
+    def _make(**overrides: Any) -> RawGlintsJob:
+        defaults: dict[str, Any] = {
+            "source_job_id": "94d7e90f-f53b-4718-8601-ff4e7d623725",
+            "job_title": "Penjaga Rumah",
+            "company_name": "PT Akari Beauty Group",
+            "country_code": "ID",
+            "category_raw": "Store Crew",
+            "industry_raw": "Accounting",
+            "contract_type_raw": "FULL_TIME",
+            "work_arrangement_raw": "ONSITE",
+            "location_raw": "Penjaringan, Jakarta Utara, DKI Jakarta, Indonesia",
+            "salary_from_raw": 1000000,
+            "salary_to_raw": 2000000,
+            "salary_currency": "IDR",
+            "salary_mode": "MONTH",
+            "payment_frequency": None,
+            "should_show_salary": True,
+            "is_work_from_home": False,
+            "tags": ["Store Crew", "Accounting"],
+            "description_raw": (
+                '{"blocks": [{"text": "PT Akari Beauty Group adalah perusahaan '
+                'yang bergerak di bidang kecantikan."}], "entityMap": {}}'
+            ),
+            "original_url": (
+                "https://glints.com/id/opportunities/jobs/penjaga-rumah/"
+                "94d7e90f-f53b-4718-8601-ff4e7d623725"
+            ),
+            "posting_date": datetime(2026, 10, 6, 21, 19, 26, tzinfo=UTC),
+            "closing_date": datetime(2026, 11, 6, tzinfo=UTC),
+            "status": "OPEN",
+            "job_source": "EMPLOYER",
+            "external_apply_url": None,
+            "raw_payload": {},
+        }
+        defaults.update(overrides)
+        return RawGlintsJob.model_validate(defaults)
 
     return _make

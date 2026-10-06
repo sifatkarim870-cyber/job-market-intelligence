@@ -307,3 +307,39 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           HRGE_MAX_PAGES_PER_RUN: 4
         run: uv run python scripts/run_hrge_scraper.py
+
+  glints:
+    runs-on: ubuntu-latest
+    # Same split as HR.ge: the full ~130k-job corpus enters Neon via a
+    # local backfill + push (push_indeed_to_neon.py --source-code glints),
+    # and CI's job is catching whatever posted since the last run.
+    # GLINTS_MAX_JOBS_PER_RUN = 400 unique job pages, discovered from
+    # the sitemap index round-robin across country families (id/sourced/
+    # vn/sg/my — each family's sitemap #1 is its newest), so every
+    # country's fresh postings are covered, not just Indonesia's. Pages
+    # are 300-500 KB each with a 0.15s politeness delay: ~400 fetches is
+    # ~4-8 min plus install; 30 minutes bounds a cold-cache crawl with
+    # real margin. Raise with the posting rate if a family's newest
+    # sitemap ever holds >400 fresh jobs between runs.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run Glints scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GLINTS_MAX_JOBS_PER_RUN: 400
+        run: uv run python scripts/run_glints_scraper.py

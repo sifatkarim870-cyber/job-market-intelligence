@@ -35,6 +35,7 @@ from job_market_intel.db.config import KNOWN_ENV_VARS as DB_KNOWN_ENV_VARS
 from job_market_intel.normalization.translation import TranslationSettings
 from job_market_intel.scheduler.config import SchedulerSettings
 from job_market_intel.scrapers.emploitic.config import EmploiticSettings
+from job_market_intel.scrapers.glints.config import GlintsSettings
 from job_market_intel.scrapers.indeed.config import IndeedSettings
 from job_market_intel.scrapers.job51.config import Job51Settings
 from job_market_intel.scrapers.jobam.config import JobAmSettings
@@ -42,6 +43,7 @@ from job_market_intel.scrapers.myjob.config import MyJobSettings
 from job_market_intel.scrapers.reed.config import ReedSettings
 from job_market_intel.scrapers.remoteok.config import RemoteOKSettings
 from job_market_intel.validation.emploitic_validator import EmploiticValidationSettings
+from job_market_intel.validation.glints_validator import GlintsValidationSettings
 from job_market_intel.validation.indeed_validator import IndeedValidationSettings
 from job_market_intel.validation.job51_validator import Job51ValidationSettings
 from job_market_intel.validation.jobam_validator import JobAmValidationSettings
@@ -211,6 +213,18 @@ def test_every_jobam_validation_settings_var_is_documented() -> None:
 def test_every_job51_settings_var_is_documented() -> None:
     missing = _pydantic_settings_env_vars(Job51Settings) - _documented_vars()
     assert not missing, f"Job51Settings reads {sorted(missing)}, undocumented in .env.example."
+
+
+def test_every_glints_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(GlintsSettings) - _documented_vars()
+    assert not missing, f"GlintsSettings reads {sorted(missing)}, undocumented in .env.example."
+
+
+def test_every_glints_validation_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(GlintsValidationSettings) - _documented_vars()
+    assert not missing, (
+        f"GlintsValidationSettings reads {sorted(missing)}, undocumented in .env.example."
+    )
 
 
 def test_every_job51_validation_settings_var_is_documented() -> None:
