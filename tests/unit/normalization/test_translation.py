@@ -96,6 +96,16 @@ def test_lookup_is_case_insensitive() -> None:
     assert resolve_flores_code("En") is None
 
 
+def test_langdetect_quirky_codes_from_production_are_mapped() -> None:
+    """Observed in the first real local run: langdetect emits 'tl' (not
+    'fil') for Tagalog and 'af' for Afrikaans -- both previously fell
+    through to record-only. Pin them so the map can't silently regress."""
+    assert resolve_flores_code("tl") == "tgl_Latn"
+    assert resolve_flores_code("fil") == "tgl_Latn"
+    assert resolve_flores_code("af") == "afr_Latn"
+    assert resolve_flores_code("bs") == "bos_Latn"
+
+
 def test_unmapped_language_resolves_to_none_without_crashing() -> None:
     """An unmapped language is recorded (language_code set, no
     translation) -- never force-guessed through a wrong NLLB source."""

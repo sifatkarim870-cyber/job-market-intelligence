@@ -186,6 +186,20 @@ _ISO639_1_TO_FLORES: dict[str, str | None] = {
     "hr": "hrv_Latn",
     "sl": "slv_Latn",
     "fil": "tgl_Latn",
+    "tl": "tgl_Latn",  # Tagalog -- langdetect emits 'tl', not 'fil' (observed in production run)
+    "af": "afr_Latn",  # Afrikaans (observed in production run)
+    "bs": "bos_Latn",  # Bosnian
+    "so": "som_Latn",  # Somali
+    "cy": "cym_Latn",  # Welsh
+    "ga": "gle_Latn",  # Irish
+    "mt": "mlt_Latn",  # Maltese
+    "lb": "ltz_Latn",  # Luxembourgish
+    "co": "cos_Latn",  # Corsican
+    "fy": "fry_Latn",  # Western Frisian
+    "su": "sun_Latn",  # Sundanese
+    "ha": "hau_Latn",  # Hausa
+    "yo": "yor_Latn",  # Yoruba
+    "ig": "ibo_Latn",  # Igbo
     "sw": "swh_Latn",
     "km": "khm_Khmr",
     "lo": "lao_Laoo",
