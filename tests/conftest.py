@@ -27,11 +27,13 @@ than pytest injecting a single fixed object.
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 
 from job_market_intel.cleaning.common import CleanedJob
+from job_market_intel.scrapers.hrge.models import RawHRGeJob
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
 from job_market_intel.scrapers.remotive.models import RawRemotiveJob
 from job_market_intel.scrapers.weworkremotely.models import RawWWRJob
@@ -177,5 +179,48 @@ def make_raw_remotive_job() -> Callable[..., RawRemotiveJob]:
         }
         defaults.update(overrides)
         return RawRemotiveJob.model_validate(defaults)
+
+    return _make
+
+
+@pytest.fixture()
+def make_raw_hrge_job() -> Callable[..., RawHRGeJob]:
+    """Factory fixture: build a minimally-valid ``RawHRGeJob``, any field overridable.
+
+    Defaults are a faithful snapshot of what HR.ge returned for announcement
+    496982 with ``Accept-Language: en`` during scoping (2026-10-07): English
+    title and taxonomy, a Georgian description body, undisclosed salary
+    (``showSalary: false``), and the slug-less canonical URL — so a
+    "healthy job" needs zero overrides, same convention as the other
+    factories above.
+    """
+
+    def _make(**overrides: Any) -> RawHRGeJob:
+        defaults: dict[str, Any] = {
+            "source_job_id": "496982",
+            "job_title": "Online Game Host",
+            "company_name": "AMBER STUDIOS",
+            "company_logo_url": None,
+            "category_raw": "Casino / Gambling",
+            "industry_raw": "Recreation & Travel",
+            "seniority_raw": "Mid-Level",
+            "contract_type_raw": "Fixed-term contract",
+            "work_schedule_raw": "Full-time",
+            "work_form_raw": "On site",
+            "location_raw": "Tbilisi",
+            "salary_from_raw": None,
+            "salary_to_raw": None,
+            "show_salary": False,
+            "hide_salary": None,
+            "is_work_from_home": False,
+            "tags": ["Casino / Gambling", "Recreation & Travel"],
+            "description_raw": "<div>ჩვენ ვეძებთ პოზიტიურ თანამშრომლებს</div>",
+            "original_url": "https://www.hr.ge/announcement/496982",
+            "posting_date": datetime(2026, 10, 6, 17, 17, 3, tzinfo=UTC),
+            "closing_date": None,
+            "raw_payload": {},
+        }
+        defaults.update(overrides)
+        return RawHRGeJob.model_validate(defaults)
 
     return _make

@@ -273,3 +273,37 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REED_API_KEY: ${{ secrets.REED_API_KEY }}
         run: uv run python scripts/run_reed_scraper.py
+
+  hrge:
+    runs-on: ubuntu-latest
+    # 20 minutes for a bounded daily window, NOT a full re-crawl: the
+    # full ~3,600-job corpus enters Neon via a local backfill + push
+    # (push_indeed_to_neon.py --source-code hrge), and CI's job is
+    # catching whatever posted since the last run. HRGE_MAX_PAGES_PER_RUN
+    # = 4 pages x 100 = the 400 newest jobs; the site reports ~263
+    # postings/day, so 400 clears a 12-hour cycle with real margin, and
+    # fetching 400 details (~2-4 min with connection reuse) + mostly
+    # hash-unchanged persistence stays well inside the cap. If the daily
+    # posting rate ever exceeds ~800, raise this to 5 with the timeout.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run HR.ge scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          HRGE_MAX_PAGES_PER_RUN: 4
+        run: uv run python scripts/run_hrge_scraper.py
