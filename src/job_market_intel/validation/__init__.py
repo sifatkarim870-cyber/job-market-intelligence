@@ -26,6 +26,7 @@ from .glints_validator import GlintsBatchValidator, GlintsValidationSettings
 from .hrge_validator import HRGeBatchValidator, HRGeValidationSettings
 from .job51_validator import Job51BatchValidator, Job51ValidationSettings
 from .jobam_validator import JobAmBatchValidator, JobAmValidationSettings
+from .jobinja_validator import JobinjaBatchValidator, JobinjaValidationSettings
 from .myjob_validator import MyJobBatchValidator, MyJobValidationSettings
 from .reed_validator import ReedBatchValidator, ReedValidationSettings
 from .remoteok_validator import RemoteOKBatchValidator, RemoteOKValidationSettings
@@ -45,6 +46,8 @@ __all__ = [
     "GlintsValidationSettings",
     "JobAmBatchValidator",
     "JobAmValidationSettings",
+    "JobinjaBatchValidator",
+    "JobinjaValidationSettings",
     "Job51BatchValidator",
     "Job51ValidationSettings",
     "MyJobBatchValidator",

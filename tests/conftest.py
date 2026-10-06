@@ -35,6 +35,7 @@ import pytest
 from job_market_intel.cleaning.common import CleanedJob
 from job_market_intel.scrapers.glints.models import RawGlintsJob
 from job_market_intel.scrapers.hrge.models import RawHRGeJob
+from job_market_intel.scrapers.jobinja.models import RawJobinjaJob
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
 from job_market_intel.scrapers.remotive.models import RawRemotiveJob
 from job_market_intel.scrapers.weworkremotely.models import RawWWRJob
@@ -276,5 +277,74 @@ def make_raw_glints_job() -> Callable[..., RawGlintsJob]:
         }
         defaults.update(overrides)
         return RawGlintsJob.model_validate(defaults)
+
+    return _make
+
+
+@pytest.fixture()
+def make_raw_jobinja_job() -> Callable[..., RawJobinjaJob]:
+    """Factory fixture: build a minimally-valid ``RawJobinjaJob``, any field overridable.
+
+    Defaults are a faithful snapshot of what Jobinja returned for job
+    1118910 ("کارشناس فروش بین المللی", Maron System, Tehran) during the
+    live smoke (2026-10-07): FULL_TIME, IRT 45,000,000 monthly with the
+    visible "از ۴۵,۰۰۰,۰۰۰ تومان" (from-45M) disclosure text, real
+    skill chips, category chip, IR country, TELECOMMUTE — so a "healthy
+    job" needs zero overrides, same convention as the other factories
+    above.
+    """
+
+    def _make(**overrides: Any) -> RawJobinjaJob:
+        defaults: dict[str, Any] = {
+            "source_job_id": "1118910",
+            "job_title": "کارشناس فروش بین المللی",
+            "company_name": "توسعه نرم افزار مارون | Maron System",
+            "company_logo_url": (
+                "https://thumb2.jobinjacdn.com/VVDDoDUyXHmU8e51D5PaI661NlY="
+                "/fit-in/200x200/filters:strip_exif():fill(transparent)"
+                ":quality(100)/https://mstorage2.jobinjacdn.com/other/files/"
+                "uploads/images/c525b2ce-d365-4813-b957-c586a72f1c20/main.png"
+            ),
+            "description_html": (
+                '<div dir="rtl">ما به دنبال فردی با مهارت های '
+                "<strong>کارشناس فروش، نتیجه‌گرا، پیگیر و مسلط به زبان "
+                "انگلیسی و عربی</strong> هستیم.</div>"
+            ),
+            "posting_date": datetime(2026, 10, 6, tzinfo=UTC),
+            "closing_date": None,
+            "employment_type_raw": "FULL_TIME",
+            "base_salary_value": 45000000,
+            "salary_currency": "IRT",
+            "salary_unit": "MONTH",
+            "location_spans": ["تهران ، تهران"],
+            "salary_text_spans": ["از ۴۵,۰۰۰,۰۰۰ تومان"],
+            "skills_spans": ["فروش بین المللی", "فروش B2B", "اصول و فنون مذاکره"],
+            "category_spans": ["فروش و بازاریابی"],
+            "country_code": "IR",
+            "is_telecommute": True,
+            "original_url": (
+                "https://jobinja.ir/companies/maron-system/jobs/tuti/"
+                "%D8%A7%D8%B3%D8%AA%D8%AE%D8%AF%D8%A7%D9%85-%DA%A9%D8%A7%D8%B1"
+                "%D8%B4%D9%86%D8%A7%D8%B3-%D9%81%D8%B1%D9%88%D8%B4-%D8%A8%DB%8C"
+                "%D9%86-%D8%A7%D9%84%D9%85%D9%84%D9%84%DB%8C-%D8%AF%D8%B1-"
+                "%D8%AA%D9%88%D8%B3%D8%B9%D9%87-%D9%86%D8%B1%D9%85-%D8%A7%D9"
+                "%81%D8%B2%D8%A7%D8%B1-%D9%85%D8%A7%D8%B1%D9%88%D9%86"
+            ),
+            "raw_payload": {
+                "ld": {"@type": "JobPosting", "identifier": {"value": "1118910"}},
+                "sections": {
+                    "دسته‌بندی شغلی": ["فروش و بازاریابی"],
+                    "موقعیت مکانی": ["تهران ، تهران"],
+                    "حقوق": ["از ۴۵,۰۰۰,۰۰۰ تومان"],
+                    "مهارت‌های مورد نیاز": [
+                        "فروش بین المللی",
+                        "فروش B2B",
+                        "اصول و فنون مذاکره",
+                    ],
+                },
+            },
+        }
+        defaults.update(overrides)
+        return RawJobinjaJob.model_validate(defaults)
 
     return _make

@@ -39,6 +39,7 @@ from job_market_intel.scrapers.glints.config import GlintsSettings
 from job_market_intel.scrapers.indeed.config import IndeedSettings
 from job_market_intel.scrapers.job51.config import Job51Settings
 from job_market_intel.scrapers.jobam.config import JobAmSettings
+from job_market_intel.scrapers.jobinja.config import JobinjaSettings
 from job_market_intel.scrapers.myjob.config import MyJobSettings
 from job_market_intel.scrapers.reed.config import ReedSettings
 from job_market_intel.scrapers.remoteok.config import RemoteOKSettings
@@ -47,6 +48,7 @@ from job_market_intel.validation.glints_validator import GlintsValidationSetting
 from job_market_intel.validation.indeed_validator import IndeedValidationSettings
 from job_market_intel.validation.job51_validator import Job51ValidationSettings
 from job_market_intel.validation.jobam_validator import JobAmValidationSettings
+from job_market_intel.validation.jobinja_validator import JobinjaValidationSettings
 from job_market_intel.validation.myjob_validator import MyJobValidationSettings
 from job_market_intel.validation.reed_validator import ReedValidationSettings
 from job_market_intel.validation.remoteok_validator import RemoteOKValidationSettings
@@ -224,6 +226,18 @@ def test_every_glints_validation_settings_var_is_documented() -> None:
     missing = _pydantic_settings_env_vars(GlintsValidationSettings) - _documented_vars()
     assert not missing, (
         f"GlintsValidationSettings reads {sorted(missing)}, undocumented in .env.example."
+    )
+
+
+def test_every_jobinja_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(JobinjaSettings) - _documented_vars()
+    assert not missing, f"JobinjaSettings reads {sorted(missing)}, undocumented in .env.example."
+
+
+def test_every_jobinja_validation_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(JobinjaValidationSettings) - _documented_vars()
+    assert not missing, (
+        f"JobinjaValidationSettings reads {sorted(missing)}, undocumented in .env.example."
     )
 
 
