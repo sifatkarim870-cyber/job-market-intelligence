@@ -184,8 +184,21 @@ class GlintsClient:
         """
         return url.replace("/opportunities/s/", "/opportunities/jobs/")
 
-    def _select_job_urls(self) -> list[tuple[str, str]]:
+    def _select_job_urls(
+        self, exclude_ids: set[str] | None = None
+    ) -> list[tuple[str, str]]:
         """Round-robin the families until ``max_jobs_per_run`` unique jobs.
+
+        Args:
+            exclude_ids: uuids the database already has (the pipeline
+                passes ``repository.get_all_source_job_ids`` here — see
+                that method's docstring). Excluded jobs cost nothing:
+                they are dropped at sitemap-parse time, so a capped run
+                fetches only *unseen* jobs — newest arrivals first
+                (families are newest-first), then deeper into the
+                corpus as known coverage grows. ``None``/empty means
+                "select the newest window" (fresh scrape, ``--no-db``
+                runs).
 
         Returns:
             Pairs of (uuid, canonical sitemap URL). The canonical URL is
@@ -195,6 +208,7 @@ class GlintsClient:
             locale), the local-locale URL wins.
         """
         families = self._fetch_job_sitemap_families()
+        excluded = exclude_ids or set()
         limit = self._settings.max_jobs_per_run
         selected: dict[str, str] = {}
         cursors = {name: 0 for name in families}
@@ -216,7 +230,7 @@ class GlintsClient:
                     urls[cursor], what=f"sitemap {name} #{cursor + 1}"
                 )):
                     uuid = self._job_uuid(job_url)
-                    if uuid is None:
+                    if uuid is None or uuid in excluded:
                         continue
                     existing = selected.get(uuid)
                     if existing is None:
@@ -229,10 +243,12 @@ class GlintsClient:
                 break
 
         logger.info(
-            "Glints discovery selected {} unique jobs (window {} from {} families).",
+            "Glints discovery selected {} unique jobs (window {} from {} "
+            "families, {} known excluded).",
             len(selected),
             limit,
             len(families),
+            len(excluded),
         )
         return list(selected.items())
 
@@ -290,8 +306,15 @@ class GlintsClient:
         return None
 
     # -- public entry point --------------------------------------------
-    def fetch_raw_jobs(self) -> list[dict]:
+    def fetch_raw_jobs(
+        self, *, exclude_ids: set[str] | None = None
+    ) -> list[dict]:
         """Discover and fetch up to ``max_jobs_per_run`` job pages.
+
+        Args:
+            exclude_ids: uuids to skip entirely (already in the
+                database) — see ``_select_job_urls``. ``None`` selects
+                the newest window.
 
         Returns:
             Raw job dictionaries in Glints' own field naming, each with
@@ -302,8 +325,18 @@ class GlintsClient:
             GlintsResponseError: If discovery or every page yielded no
                 usable job records.
         """
-        selected = self._select_job_urls()
+        selected = self._select_job_urls(exclude_ids=exclude_ids)
         if not selected:
+            if exclude_ids:
+                # Skip-known drained every family without finding an
+                # unseen uuid: the corpus is fully covered. That is a
+                # successful no-op, not a discovery failure.
+                logger.info(
+                    "Glints discovery found no unseen jobs ({} known excluded); "
+                    "corpus fully covered this run.",
+                    len(exclude_ids),
+                )
+                return []
             raise GlintsResponseError(
                 "Glints sitemap discovery returned zero job URLs. The index "
                 "format may have changed, or the site may be unreachable."

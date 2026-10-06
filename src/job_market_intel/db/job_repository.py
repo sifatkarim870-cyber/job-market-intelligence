@@ -269,6 +269,33 @@ class JobRepository(AbstractRepository[Any]):
         )
         return {row[0] for row in result}
 
+    def get_all_source_job_ids(self, session: Session, source_id: int) -> set[str]:
+        """Every ``source_job_id`` already stored for this source.
+
+        Added for the Glints scraper (``scrapers/glints/pipeline.py``),
+        which has the same "a capped run must still make progress"
+        problem Reed solves in ``get_existing_source_job_ids`` — but
+        from the other side. Reed's scarcity is per-record Details API
+        calls against a daily ceiling, so it must ask *after* choosing
+        a window: "of these candidates, which exist?". Glints'
+        discovery is a handful of cheap sitemap XML GETs
+        (``scrapers/glints/client.py``), so the pipeline loads the
+        whole known set up front and passes it into URL selection as an
+        exclusion: the capped run then fetches only jobs the database
+        has not seen — newest arrivals first, then deeper into the
+        corpus — instead of re-downloading the same newest window every
+        run (which content-hash dedup would then silently skip).
+
+        Returns an empty set (never ``None``) when the source has no
+        rows yet; a lookup failure is the pipeline's concern, not
+        this method's.
+        """
+        result = session.execute(
+            text("SELECT source_job_id FROM core.jobs WHERE source_id = :source_id"),
+            {"source_id": source_id},
+        )
+        return {row[0] for row in result}
+
     def get_currency_id_by_code(self, session: Session, iso_code: str) -> int | None:
         """Look up currency_id for an ISO 4217 code (e.g. 'USD', 'GBP') in ref.currencies.
 

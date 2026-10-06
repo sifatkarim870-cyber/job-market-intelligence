@@ -71,21 +71,53 @@ class GlintsPipeline:
     def run(
         self, *, store_db: bool = True, session_override: Any | None = None
     ) -> GlintsPipelineRunResult:
-        """Run the Glints pipeline end-to-end."""
+        """Run the Glints pipeline end-to-end.
+
+        When storing, the run first loads the source's already-stored
+        ``source_job_ids`` and passes them to the client as an
+        exclusion (see ``JobRepository.get_all_source_job_ids``), so a
+        capped window fetches only *unseen* jobs — newest arrivals
+        first, then deeper into the corpus — instead of re-fetching the
+        same newest slice every run. If that lookup fails, the run
+        proceeds without the exclusion (today's plain-newest-window
+        behavior) rather than skipping the scrape: a database problem
+        should surface at persistence, not silently suppress fetching.
+
+        A run where everything is already known fetches zero jobs. That
+        is a successful no-op, not a validation failure: there is no
+        batch to validate or clean, so the result reports an empty
+        passing batch, and (when storing) an honest zero-jobs scraping
+        session is still recorded.
+        """
         logger.info("Starting Glints automated pipeline run (store_db={}).", store_db)
 
-        raw_jobs = self.client.fetch_raw_jobs()
-        parsed_jobs = self.parser.parse_jobs(raw_jobs)
-        validation_report = self.validator.validate(raw_jobs, parsed_jobs)
-        cleaned_jobs = self.cleaner.clean_jobs(parsed_jobs)
+        exclude_ids = self._load_known_ids(session_override) if store_db else None
+        raw_jobs = self.client.fetch_raw_jobs(exclude_ids=exclude_ids)
 
-        result = GlintsPipelineRunResult(
-            raw_count=len(raw_jobs),
-            parsed_count=len(parsed_jobs),
-            validation_passed=validation_report.passed,
-            cleaned_count=len(cleaned_jobs),
-            issues=validation_report.issues,
-        )
+        if raw_jobs:
+            parsed_jobs = self.parser.parse_jobs(raw_jobs)
+            validation_report = self.validator.validate(raw_jobs, parsed_jobs)
+            cleaned_jobs = self.cleaner.clean_jobs(parsed_jobs)
+            result = GlintsPipelineRunResult(
+                raw_count=len(raw_jobs),
+                parsed_count=len(parsed_jobs),
+                validation_passed=validation_report.passed,
+                cleaned_count=len(cleaned_jobs),
+                issues=validation_report.issues,
+            )
+        else:
+            logger.info(
+                "No unseen Glints jobs this run ({} known excluded); nothing to do.",
+                len(exclude_ids or ()),
+            )
+            cleaned_jobs = []
+            result = GlintsPipelineRunResult(
+                raw_count=0,
+                parsed_count=0,
+                validation_passed=True,
+                cleaned_count=0,
+                issues=[],
+            )
 
         if not store_db:
             logger.info("Pipeline dry-run completed (store_db=False).")
@@ -101,6 +133,31 @@ class GlintsPipeline:
                 logger.error("Failed to connect or persist to PostgreSQL database: {}", exc)
 
         return result
+
+    def _load_known_ids(self, session_override: Any | None) -> set[str] | None:
+        """Already-stored glints uuids for skip-known selection.
+
+        Returns ``None`` (no exclusion — plain newest window) when the
+        lookup cannot run, so a database outage degrades to the old
+        fetch behavior and still fails visibly at persistence, instead
+        of turning into "no scrape at all".
+        """
+        try:
+            if session_override is not None:
+                return self._known_ids_in(session_override)
+            with get_session() as session:
+                return self._known_ids_in(session)
+        except Exception as exc:  # noqa: BLE001 — degradation, not silence
+            logger.warning(
+                "Could not load known Glints source_job_ids; proceeding "
+                "without skip-known exclusion: {}",
+                exc,
+            )
+            return None
+
+    def _known_ids_in(self, session: Any) -> set[str]:
+        source_id = self.repository.get_source_id_by_code(session, "glints")
+        return self.repository.get_all_source_job_ids(session, source_id)
 
     def _persist_with_session(
         self,
