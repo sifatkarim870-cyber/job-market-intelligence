@@ -317,11 +317,15 @@ jobs:
     # the sitemap index round-robin across country families (id/sourced/
     # vn/sg/my — each family's sitemap #1 is its newest), so every
     # country's fresh postings are covered, not just Indonesia's. Pages
-    # are 300-500 KB each with a 0.15s politeness delay: ~400 fetches is
-    # ~4-8 min plus install; 30 minutes bounds a cold-cache crawl with
-    # real margin. Raise with the posting rate if a family's newest
-    # sitemap ever holds >400 fresh jobs between runs.
-    timeout-minutes: 30
+    # are 300-500 KB each with a 0.15s politeness delay. Measured on the
+    # first CI run (37537783092, 2026-10-07): ~9 min fetch + ~17 min
+    # persistence (400 cold INSERTs over the WAN to Neon, each job a
+    # savepoint with company/location lookups) = ~26 min total — the
+    # persistence leg is the dominant cost and was not in the original
+    # 30-minute budget, so 45 gives it real margin. Raise with the
+    # posting rate if a family's newest sitemap ever holds >400 fresh
+    # jobs between runs.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 

@@ -1,11 +1,11 @@
-"""Unit tests for job_market_intel.cleaning.glints_cleaner.
+﻿"""Unit tests for job_market_intel.cleaning.glints_cleaner.
 
 Pins the Glints-specific decisions: Draft.js JSON descriptions become
 plain text (with an HTML fallback for shape drift), salary disclosure
 follows ``shouldShowSalary``, currency/pay-period always resolve to the
 market's real values (the two ``CleanedJob`` fields are required), the
 ``type`` enum maps honestly to ``employment_type_code``, and tags land
-as lowercased de-duplicated skills — on top of the four-signal quality
+as lowercased de-duplicated skills â€” on top of the four-signal quality
 score every cleaner shares.
 """
 
@@ -74,7 +74,7 @@ class TestSalaryHandling:
         assert cleaned.currency_iso_code == "VND"
 
     def test_currency_falls_back_to_url_country(self, make_raw_glints_job) -> None:
-        # Sourced fallbacks can omit CountryCode — the canonical URL
+        # Sourced fallbacks can omit CountryCode â€” the canonical URL
         # still carries the country segment.
         cleaned = _clean(
             make_raw_glints_job(
@@ -85,13 +85,39 @@ class TestSalaryHandling:
         )
         assert cleaned.currency_iso_code == "SGD"
 
-    def test_yearly_mode_maps_to_annually(self, make_raw_glints_job) -> None:
+    def test_yearly_mode_maps_to_yearly(self, make_raw_glints_job) -> None:
+        # 'yearly', not 'annually': ck_job_salaries_pay_period allows
+        # only ('hourly','daily','weekly','monthly','yearly') â€” the
+        # old 'annually' mapping failed inserts on the first CI run.
         cleaned = _clean(make_raw_glints_job(salary_mode="YEAR"))
-        assert cleaned.pay_period == "annually"
+        assert cleaned.pay_period == "yearly"
 
     def test_missing_mode_defaults_to_monthly(self, make_raw_glints_job) -> None:
         cleaned = _clean(make_raw_glints_job(salary_mode=None))
         assert cleaned.pay_period == "monthly"
+
+    def test_zero_bound_means_unstated_not_zero(self, make_raw_glints_job) -> None:
+        # Live-observed Glints shape (CI run 37537783092): posters
+        # leave the unset bound at 0 â€” minAmount=5000, maxAmount=0.
+        # Storing 0 as max would violate ck_job_salaries_range.
+        cleaned = _clean(make_raw_glints_job(salary_from_raw=5000, salary_to_raw=0))
+        assert cleaned.salary_min == 5000
+        assert cleaned.salary_max is None
+        assert cleaned.salary_disclosed is True
+
+    def test_both_bounds_zero_is_undisclosed(self, make_raw_glints_job) -> None:
+        cleaned = _clean(make_raw_glints_job(salary_from_raw=0, salary_to_raw=0))
+        assert cleaned.salary_min is None
+        assert cleaned.salary_max is None
+        assert cleaned.salary_disclosed is False
+
+    def test_reversed_range_is_swapped_not_dropped(self, make_raw_glints_job) -> None:
+        # min > max with both > 0 is a poster/site data error; keep the
+        # numbers (swapped) rather than throwing the salary away.
+        cleaned = _clean(make_raw_glints_job(salary_from_raw=9000, salary_to_raw=6000))
+        assert cleaned.salary_min == 6000
+        assert cleaned.salary_max == 9000
+        assert cleaned.salary_disclosed is True
 
 
 class TestEmploymentMapping:

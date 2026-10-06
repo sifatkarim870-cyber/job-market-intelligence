@@ -54,10 +54,14 @@ _EMPLOYMENT_MAP = {
     "apprenticeship": "apprenticeship",
 }
 
-#: Glints' ``salaryMode`` -> CleanedJob.pay_period.
+#: Glints' ``salaryMode`` -> CleanedJob.pay_period. The targets are the
+#: canonical ``ck_job_salaries_pay_period`` enum
+#: ('hourly','daily','weekly','monthly','yearly') — note ``yearly``,
+#: not "annually" (mapping YEAR→annually produced CheckViolations on
+#: the first CI run, 2026-10-07).
 _PAY_PERIOD_MAP = {
     "MONTH": "monthly",
-    "YEAR": "annually",
+    "YEAR": "yearly",
     "WEEK": "weekly",
     "DAY": "daily",
     "HOUR": "hourly",
@@ -172,6 +176,29 @@ class GlintsCleaner:
             salary_min, salary_max = None, None
         else:
             salary_min, salary_max = raw_job.salary_from_raw, raw_job.salary_to_raw
+            # Glints posters leave an unset bound at 0 (observed live:
+            # minAmount=5000 with maxAmount=0, CI run 37537783092) — 0
+            # means "no bound stated", not "zero", and storing it as-is
+            # trips ck_job_salaries_range (max < min). A pair with both
+            # bounds > 0 but reversed comes back too occasionally; swap
+            # it (the site's data error) rather than drop the salary.
+            if salary_min is not None and salary_min <= 0:
+                salary_min = None
+            if salary_max is not None and salary_max <= 0:
+                salary_max = None
+            if (
+                salary_min is not None
+                and salary_max is not None
+                and salary_min > salary_max
+            ):
+                logger.warning(
+                    "Glints job {}: reversed salary range (min={}, max={}); "
+                    "swapping to satisfy ck_job_salaries_range.",
+                    raw_job.source_job_id,
+                    salary_min,
+                    salary_max,
+                )
+                salary_min, salary_max = salary_max, salary_min
         salary_disclosed = salary_min is not None or salary_max is not None
 
         country = (raw_job.country_code or "").upper()
