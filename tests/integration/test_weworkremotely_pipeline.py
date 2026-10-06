@@ -17,7 +17,7 @@ tests/unit/db/test_job_repository.py.
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -198,10 +198,17 @@ class TestClosingDateRoundTrip:
         source_id = repo.get_source_id_by_code(db_session, "weworkremotely")
         session_id = repo.create_scraping_session(db_session, source_id)
 
+        # Relative, not hardcoded: posting_date is datetime.now(UTC), and
+        # ck_jobs_closing_after_posting (canonical schema) rejects
+        # closing_date < posting_date. A fixed date here became invalid
+        # the moment it fell into the past (the original 2026-10-01
+        # stopped satisfying the constraint on 2026-10-03).
+        initial_closing = datetime.now(UTC) + timedelta(days=7)
+        extended_closing = datetime.now(UTC) + timedelta(days=30)
         job = _wwr_style_job(
             make_cleaned_job,
             source_job_id="acme-corp-990006",
-            closing_date=datetime(2026, 10, 1, tzinfo=UTC),
+            closing_date=initial_closing,
         )
         status_1 = repo.save_cleaned_job(
             db_session, job, source_id=source_id, session_id=session_id
@@ -211,7 +218,7 @@ class TestClosingDateRoundTrip:
         # Same job, only closing_date extended -- everything hashed stays
         # identical, so this must land on the "unchanged" branch, but
         # closing_date must still be refreshed in the database.
-        job.closing_date = datetime(2026, 11, 15, tzinfo=UTC)
+        job.closing_date = extended_closing
         status_2 = repo.save_cleaned_job(
             db_session, job, source_id=source_id, session_id=session_id
         )
@@ -220,7 +227,7 @@ class TestClosingDateRoundTrip:
         row = db_session.execute(
             text("SELECT closing_date FROM core.jobs WHERE source_job_id = 'acme-corp-990006'")
         ).first()
-        assert row.closing_date == datetime(2026, 11, 15, tzinfo=UTC).date()
+        assert row.closing_date == extended_closing.date()
 
 
 class TestWWRPipelineIntegration:

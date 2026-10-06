@@ -53,11 +53,21 @@ def _insert_skill(
     category_id: int,
     aliases: list[str] | None = None,
 ) -> int:
+    # Upsert, not plain INSERT: the live vocabulary may already contain
+    # this skill (the local/CI ref.skills ships real seeded rows like
+    # 'Python'/'PostgreSQL'), where a bare INSERT dies on
+    # uq_skills_normalized_name. DO UPDATE returns the existing row's id,
+    # so the assertions below hold either way; the category/alias
+    # overwrite is reverted by the per-test rollback (see conftest.py).
     skill_id = session.execute(
         text(
             "INSERT INTO ref.skills "
             "(skill_name, normalized_skill_name, skill_category_id, aliases) "
             "VALUES (:skill_name, :normalized_skill_name, :category_id, :aliases) "
+            "ON CONFLICT (normalized_skill_name) "
+            "DO UPDATE SET skill_name = EXCLUDED.skill_name, "
+            "skill_category_id = EXCLUDED.skill_category_id, "
+            "aliases = EXCLUDED.aliases "
             "RETURNING skill_id"
         ),
         {
