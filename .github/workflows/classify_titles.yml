@@ -33,6 +33,15 @@ on:
     types: [completed]
   workflow_dispatch: {}   # lets you trigger a classification run manually, independent of a scrape
 
+# Serialize classification runs. Two batches running at once both take
+# row locks on the same title rows and deadlock (observed 2026-10-06:
+# a manual dispatch overlapped the workflow_run-triggered run and
+# psycopg raised DeadlockDetected, failing the victim run). Queuing
+# instead of cancelling keeps both batches -- they just take turns.
+concurrency:
+  group: classify-titles-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   classify:
     runs-on: ubuntu-latest
