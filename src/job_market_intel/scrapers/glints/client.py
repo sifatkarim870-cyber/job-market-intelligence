@@ -282,9 +282,30 @@ class GlintsClient:
         ``id == uuid`` guard against the geo-redirect serving something
         unexpected), then falls back to the canonical ``/s/`` page's
         ``sourcedJob``. Returns ``None`` if neither yields the expected
-        job — a stale sitemap entry (expired/removed job) costs one
-            page, not the run.
+        job — or if the page answers with a permanent client error
+        (404/410 Gone: a sitemap entry can outlive its job; observed
+        live 2026-10-07 when a backfill run aborted on
+        ``2d4a02f3-…`` → HTTP 410). Either way a stale sitemap entry
+        costs one page, not the run. Transient exhaustion still raises —
+        that is a site-wide problem, not a dead link, and the
+        zero-records guard in ``fetch_raw_jobs`` keeps a fully-blocked
+        site failing loudly.
         """
+        try:
+            return self._fetch_job_record(uuid, canonical_url)
+        except GlintsFetchError as exc:
+            if isinstance(exc.__cause__, PermanentHTTPError):
+                logger.warning(
+                    "Skipping Glints job {}: {} (permanent HTTP error; "
+                    "stale sitemap entry costs one page, not the run).",
+                    uuid,
+                    exc,
+                )
+                return None
+            raise
+
+    def _fetch_job_record(self, uuid: str, canonical_url: str) -> dict | None:
+        """The fetch/extract core of ``_fetch_job`` (see it for semantics)."""
         normalized = self._normalize_job_url(canonical_url)
         html = self._request_text(normalized, what=f"job {uuid}")
         record = self._extract_record(html)

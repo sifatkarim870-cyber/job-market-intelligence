@@ -14,9 +14,10 @@ from typing import Any
 
 import pytest
 
+from job_market_intel.common.http_client import PermanentHTTPError, TransientHTTPError
 from job_market_intel.scrapers.glints.client import GlintsClient
 from job_market_intel.scrapers.glints.config import GlintsSettings
-from job_market_intel.scrapers.glints.exceptions import GlintsResponseError
+from job_market_intel.scrapers.glints.exceptions import GlintsFetchError, GlintsResponseError
 
 UUID_A = "11111111-1111-4111-8111-111111111111"
 UUID_B = "22222222-2222-4222-8222-222222222222"
@@ -135,3 +136,78 @@ class TestFetchRawJobsContract:
 
         with pytest.raises(GlintsResponseError):
             dry_client.fetch_raw_jobs()
+
+
+def _raise_from(cause: Exception):
+    """A ``_request_text`` stand-in failing exactly like the real one.
+
+    The real client raises ``GlintsFetchError`` *from* the shared
+    http_client error, so ``__cause__`` carries the permanent/transient
+    distinction the skip logic keys on.
+    """
+
+    def _do(url: str, *, what: str) -> str:
+        raise GlintsFetchError(f"request failed ({what}): {cause}") from cause
+
+    return _do
+
+
+class TestDeadPageHandling:
+    """A stale sitemap entry costs one page, not the run.
+
+    Regression for the live backfill failure (2026-10-07): job
+    ``2d4a02f3-…`` answered HTTP 410 Gone, ``_fetch_job`` let the
+    ``PermanentHTTPError``-chained ``GlintsFetchError`` escape, and the
+    whole 1000-job run aborted at fetch 650/1000 — repeatedly, since
+    the never-persisted job is re-selected by skip-known every run.
+    """
+
+    @pytest.fixture
+    def client(self) -> GlintsClient:
+        return GlintsClient(
+            settings=GlintsSettings(max_jobs_per_run=10, fetch_delay_seconds=0)
+        )
+
+    def test_permanent_http_error_skips_the_job(
+        self,
+        client: GlintsClient,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(
+            client, "_request_text", _raise_from(PermanentHTTPError("HTTP 410"))
+        )
+
+        assert client._fetch_job(UUID_A, f"https://glints.com/id/jobs/{UUID_A}") is None
+
+    def test_transient_exhaustion_still_raises(
+        self,
+        client: GlintsClient,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # A dead link is page-local; retry exhaustion means the *site*
+        # is unreachable — that must still fail the run.
+        monkeypatch.setattr(
+            client, "_request_text", _raise_from(TransientHTTPError("HTTP 503"))
+        )
+
+        with pytest.raises(GlintsFetchError):
+            client._fetch_job(UUID_A, f"https://glints.com/id/jobs/{UUID_A}")
+
+    def test_run_of_all_dead_pages_fails_loudly(
+        self,
+        client: GlintsClient,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Fully-blocked site (every page 4xx): skips happen per job,
+        # but zero records total is still a failure, not a silent no-op.
+        monkeypatch.setattr(
+            client,
+            "_select_job_urls",
+            lambda **kwargs: [(UUID_A, f"https://glints.com/id/jobs/{UUID_A}")],
+        )
+        monkeypatch.setattr(
+            client, "_request_text", _raise_from(PermanentHTTPError("HTTP 403"))
+        )
+
+        with pytest.raises(GlintsResponseError):
+            client.fetch_raw_jobs()
