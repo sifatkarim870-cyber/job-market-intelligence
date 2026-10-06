@@ -24,7 +24,11 @@ from job_market_intel.normalization.translation import (
 
 
 class FakeTranslator:
-    """Stands in for NllbTranslator -- records calls, returns canned text."""
+    """Stands in for NllbTranslator -- records calls, returns ASCII canned text.
+
+    The canned output is deliberately ASCII: the non-English-output gate
+    (``looks_like_non_english_output``) rejects real translations that
+    come back non-Latin, so an echo-style fake would trip it."""
 
     provenance_label = DEFAULT_TRANSLATED_BY
 
@@ -33,7 +37,7 @@ class FakeTranslator:
 
     def translate(self, source_text: str, flores_source_lang: str) -> str:
         self.calls.append((source_text, flores_source_lang))
-        return f"EN[{source_text[:20]}]"
+        return f"EN[{len(source_text)} chars]"
 
 
 # ---------------------------------------------------------------------------
@@ -133,11 +137,102 @@ def test_detects_french() -> None:
 
 def test_short_or_empty_text_is_undecidable() -> None:
     """Under the minimum length we record 'unknown' rather than let a
-    detector guess from a handful of characters."""
+    detector guess from a handful of characters -- unless the script
+    decides it first (see the script-first tests below)."""
     assert detect_language(None) is None
     assert detect_language("") is None
     assert detect_language("   ") is None
     assert detect_language("QA") is None
+
+
+# ---------------------------------------------------------------------------
+# Script-first detection (the production misroute fix)
+# ---------------------------------------------------------------------------
+
+
+def test_armenian_detected_by_script_even_when_langdetect_cannot() -> None:
+    """langdetect has NO Armenian profile -- it reported 'et' (Estonian)
+    for all 172 job.am titles in production. Script detection must win,
+    including below the statistical minimum length."""
+    from job_market_intel.normalization.translation import detect_by_script
+
+    assert detect_by_script("Գրաֆիկ դիզայներ") == "hy"
+    assert detect_language("Գրաֆիկ դիզայներ") == "hy"
+    assert detect_language("Մենեջեր") == "hy"  # 7 chars, under the 10-char gate
+
+
+def test_chinese_detected_by_script_beats_langdetect_noise() -> None:
+    """Observed misroutes: Chinese titles came back ko/no/vi. Script
+    detection pins them to zh regardless of length."""
+    from job_market_intel.normalization.translation import detect_by_script
+
+    assert detect_by_script("跨境电商运营") == "zh"
+    assert detect_language("管道/仪表/电气工程师") == "zh"  # previously 'no'
+    assert detect_language("项目工程师") == "zh"  # previously 'vi'
+
+
+def test_japanese_and_korean_scripts() -> None:
+    from job_market_intel.normalization.translation import detect_by_script
+
+    assert detect_by_script("アシスタント募集") == "ja"
+    assert detect_by_script("ソフトウェアエンジニア") == "ja"
+    assert detect_by_script("백엔드 개발자") == "ko"
+
+
+def test_kana_wins_over_kanji_in_mixed_japanese_text() -> None:
+    """Priority is by RANGE, not by first character: a Japanese title
+    opening with kanji must not be claimed by zh."""
+    from job_market_intel.normalization.translation import detect_by_script
+
+    assert detect_by_script("日本語の先生を募集") == "ja"  # kanji first, kana present
+
+
+def test_korean_with_hanja_stays_korean() -> None:
+    from job_market_intel.normalization.translation import detect_by_script
+
+    # Hangul before Han in range order -> ko wins even with hanja present.
+    assert detect_by_script("서비스 엔지니어 경력") == "ko"
+    assert detect_by_script("工場 技術자") == "ko"  # hanja + Hangul
+
+
+def test_georgian_detected_by_script() -> None:
+    from job_market_intel.normalization.translation import detect_by_script
+
+    assert detect_by_script("პროგრამისტი") == "ka"
+
+
+def test_latin_and_cyrillic_text_is_left_to_langdetect() -> None:
+    """Deliberately NOT in the script table: langdetect has working
+    profiles and can distinguish what a bare range cannot."""
+    from job_market_intel.normalization.translation import detect_by_script
+
+    assert detect_by_script("Senior Backend Engineer") is None
+    assert detect_by_script("Менеджер по экспорту") is None
+    assert detect_language("Менеджер по экспорту") == "ru"  # langdetect's job
+
+
+# ---------------------------------------------------------------------------
+# Output quality gate
+# ---------------------------------------------------------------------------
+
+
+def test_output_gate_passes_english_and_mostly_english() -> None:
+    from job_market_intel.normalization.translation import looks_like_non_english_output
+
+    assert looks_like_non_english_output("") is False
+    assert looks_like_non_english_output("12345 !!!") is False
+    assert looks_like_non_english_output("Cross-border e-commerce operations") is False
+    # Accented letters in English output are fine (a few non-ASCII chars).
+    assert looks_like_non_english_output("Développeur backend (CAFE team)") is False
+
+
+def test_output_gate_catches_echoed_non_english() -> None:
+    from job_market_intel.normalization.translation import looks_like_non_english_output
+
+    # NLLB echoing the input when the source token was wrong (observed).
+    assert looks_like_non_english_output("管道/仪表/电气工程师") is True
+    assert looks_like_non_english_output("肉制品加工厂残疾人专项招聘") is True
+    assert looks_like_non_english_output("Աշխղեկ (прораб)") is True
 
 
 def test_detection_is_deterministic_across_calls() -> None:
@@ -297,7 +392,7 @@ def test_process_detection_row_chinese_translates_title_with_provenance() -> Non
     payload = translation.process_detection_row(job, translator)  # type: ignore[arg-type]
 
     assert payload["language_code"] in {"zh", "zh-cn"}
-    assert payload["job_title_en"] == "EN[招聘软件工程师，负责后端开发与系统维护工]"
+    assert payload["job_title_en"] == f"EN[{len(job.job_title)} chars]"
     assert payload["translated_by"] == DEFAULT_TRANSLATED_BY
     # The model was handed the right NLLB source code for Chinese.
     assert translator.calls[0][1] == "zho_Hans"
@@ -341,12 +436,28 @@ def test_process_detection_row_undecidable_becomes_unknown() -> None:
     assert translator.calls == []
 
 
+def test_process_detection_row_rejects_echoed_non_english_output() -> None:
+    """NLLB's echo failure mode must not write the original text into
+    job_title_en -- record detection only, keep the column NULL."""
+
+    class EchoingTranslator:
+        provenance_label = DEFAULT_TRANSLATED_BY
+
+        def translate(self, source_text: str, flores_source_lang: str) -> str:
+            return source_text  # the failure mode: input returned unchanged
+
+    payload = translation.process_detection_row(_job(), EchoingTranslator())  # type: ignore[arg-type]
+    assert payload["language_code"] in {"zh", "zh-cn"}
+    assert payload["job_title_en"] is None
+    assert payload["translated_by"] is None
+
+
 def test_process_description_row_uses_recorded_language() -> None:
     translator = FakeTranslator()
     job = _job(language_code="fr", description_clean="Nous recherchons un developpeur.")
     result = translation.process_description_row(job, translator)  # type: ignore[arg-type]
 
-    assert result == "EN[Nous recherchons un ]"  # FakeTranslator slices to 20 chars
+    assert result == "EN[32 chars]"  # FakeTranslator: ASCII canned output
     assert translator.calls == [("Nous recherchons un developpeur.", "fra_Latn")]
 
 

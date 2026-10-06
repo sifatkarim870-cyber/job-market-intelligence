@@ -73,6 +73,24 @@ Determinism
 input yields the same language decision -- without this, a row could
 flip languages between runs and re-translate forever.
 
+Script first, statistics second
+-------------------------------
+Detection has two authorities, tried in order (``detect_language``):
+
+1. **Script ranges** (``detect_by_script``) for scripts langdetect
+   cannot handle: no Armenian/Georgian/Ethiopic/Myanmar/Khmer/Lao/
+   Sinhala profiles exist at all, and short Han/Hangul/Kana text was
+   observed routing to ko/no/vi (Chinese) and Armenian to et (Estonian)
+   in the first production run. A script match is unambiguous and works
+   even on 3-character titles -- before the minimum-length gate.
+2. **langdetect** for everything else, where its profiles work (Latin,
+   Cyrillic, Arabic, Devanagari, Thai ...).
+
+A translated *output* is additionally sanity-checked
+(``looks_like_non_english_output``): if NLLB echoed the input or
+produced mostly non-ASCII letters, the row records detection only
+rather than pretend English content landed in ``job_title_en``.
+
 Known limitations (deliberate, documented rather than papered over)
 -------------------------------------------------------------------
 * Detection misfires on very short title-only rows are possible
@@ -203,6 +221,7 @@ _ISO639_1_TO_FLORES: dict[str, str | None] = {
     "sw": "swh_Latn",
     "km": "khm_Khmr",
     "lo": "lao_Laoo",
+    "si": "sin_Sinh",
     "my": "mya_Mymr",
     "am": "ethi_Ethi",
     "gu": "guj_Gujr",
@@ -274,12 +293,76 @@ def resolve_flores_code(language_code: str) -> str | None:
     return _ISO639_1_TO_FLORES.get(base)
 
 
+#: Script pre-detection -- codepoint ranges for languages whose script
+#: langdetect either has NO profile (Armenian, Georgian, Ethiopic,
+#: Myanmar, Khmer, Lao, Sinhala) or badly confuses on short text (the
+#: first production run routed Chinese titles to ko/no/vi and Armenian
+#: to et). ORDERED BY PRIORITY so mixed-script texts resolve to the
+#: intended language: kana before Hangul before Han (a Japanese title
+#: with kanji -> ja, a Korean title with hanja -> ko), then the
+#: single-script languages (their scripts never meaningfully co-occur --
+#: mixed Armenian/Cyrillic job.am titles resolve to Armenian, which is
+#: the job's actual language). Latin, Cyrillic, Arabic, Devanagari and
+#: Thai are deliberately ABSENT: langdetect has working profiles for
+#: them and can distinguish what a bare range cannot (Russian vs
+#: Ukrainian, Persian vs Arabic, Hindi vs Nepali).
+#: (Lo, Hi, iso-639-1) -- inclusive codepoint bounds, see PUA note:
+_SCRIPT_CODEPOINT_RANGES: tuple[tuple[int, int, str], ...] = (
+    (0x3040, 0x30FF, "ja"),  # Hiragana + Katakana
+    (0x1100, 0x11FF, "ko"),  # Hangul Jamo
+    (0xAC00, 0xD7AF, "ko"),  # Hangul Syllables
+    (0x3400, 0x4DBF, "zh"),  # CJK Unified Ideographs Ext A
+    (0x4E00, 0x9FFF, "zh"),  # CJK Unified Ideographs
+    (0x0530, 0x058F, "hy"),  # Armenian
+    (0xFB13, 0xFB17, "hy"),  # Armenian ligatures
+    (0x10A0, 0x10FF, "ka"),  # Georgian
+    (0x1C90, 0x1CBF, "ka"),  # Georgian Mtavruli
+    (0x2D00, 0x2D2F, "ka"),  # Georgian Sup
+    (0x1200, 0x137F, "am"),  # Ethiopic
+    (0x1000, 0x109F, "my"),  # Myanmar
+    (0x1780, 0x17FF, "km"),  # Khmer
+    (0x0E80, 0x0EFF, "lo"),  # Lao
+    (0x0D80, 0x0DFF, "si"),  # Sinhala
+)
+
+
+def detect_by_script(text_to_probe: str) -> str | None:
+    """Returns a language code from unambiguous codepoint ranges, else ``None``.
+
+    Runs BEFORE langdetect (see ``detect_language``): a script match is
+    a stronger signal than a probabilistic profile, and it stays
+    reliable even on titles too short for statistical detection --
+    which is exactly where langdetect produced the observed misroutes.
+    Ranges are checked in priority order, so the first *matching
+    range* wins, not the first character seen (that is what makes
+    kana-bearing Japanese beat its own kanji).
+    """
+    for lo, hi, code in _SCRIPT_CODEPOINT_RANGES:
+        if any(lo <= ord(ch) <= hi for ch in text_to_probe):
+            return code
+    return None
+
+
 def detect_language(text_to_probe: str | None) -> str | None:
     """Detects an ISO 639-1 code (lowercased), or ``None`` if undecidable.
 
-    Seed-pinned (see module docstring) so results are deterministic.
+    Two authorities, in order (the "script first" rule):
+
+    1. ``detect_by_script`` -- unambiguous Unicode ranges for scripts
+       langdetect either has no profile for (Armenian, Georgian,
+       Ethiopic, Myanmar, Khmer, Lao, Sinhala) or badly confuses on
+       short text (observed in production: Chinese titles routed to
+       ko/no/vi, Armenian to et). Script matches are reliable even on a
+       3-character title, so they run BEFORE the minimum-length gate.
+    2. langdetect for everything else -- seed-pinned at import so
+       results are deterministic across runs.
     """
-    if not text_to_probe or len(text_to_probe.strip()) < _MIN_DETECTION_CHARS:
+    if not text_to_probe or not text_to_probe.strip():
+        return None
+    scripted = detect_by_script(text_to_probe)
+    if scripted is not None:
+        return scripted
+    if len(text_to_probe.strip()) < _MIN_DETECTION_CHARS:
         return None
     try:
         return detect(text_to_probe).lower()
@@ -507,6 +590,25 @@ def fetch_description_pending(session: Session, limit: int | None = None) -> lis
     ]
 
 
+def looks_like_non_english_output(translated: str) -> bool:
+    """True when a "translation" is mostly non-ASCII letters.
+
+    Catches NLLB's failure mode of echoing the input when the source
+    language token was wrong or the model gave up (observed: a Chinese
+    title routed through a Norwegian source came back identical to the
+    original). Such output must NOT land in ``job_title_en`` -- it would
+    pretend to be English while classification/skills treat it as such.
+    English output can legitimately contain accented letters (cafe ->
+    cafe with an accent, reno, Sao), hence the majority threshold, not
+    "any non-ASCII".
+    """
+    letters = [ch for ch in translated if ch.isalpha()]
+    if not letters:
+        return False
+    non_ascii = sum(1 for ch in letters if ord(ch) > 0x7F)
+    return non_ascii / len(letters) > 0.5
+
+
 def process_detection_row(
     job: TranslationJob,
     translator: NllbTranslator,
@@ -541,6 +643,20 @@ def process_detection_row(
         return {"language_code": detected, "job_title_en": None, "translated_by": None}
 
     translated_title = translator.translate(job.job_title, flores)
+    if looks_like_non_english_output(translated_title):
+        # NLLB echoed (or garbled into non-English) the input -- record
+        # the detection but leave job_title_en NULL so the row keeps its
+        # original text for downstream consumers and gets retried next
+        # run (cheaper than a second in-run attempt, and a later run may
+        # succeed if settings change).
+        logger.warning(
+            "job {}: translation output for {!r} is not English ({!r}) -- "
+            "recording detection only.",
+            job.job_id,
+            job.job_title,
+            translated_title[:60],
+        )
+        return {"language_code": detected, "job_title_en": None, "translated_by": None}
     return {
         "language_code": detected,
         "job_title_en": translated_title,
@@ -586,7 +702,15 @@ def process_description_row(
             translated[:200],
         )
         return None
-    return translator.translate(job.description_clean, flores)
+    description_en = translator.translate(job.description_clean, flores)
+    if looks_like_non_english_output(description_en):
+        logger.warning(
+            "job {}: translated description is not English (starts {!r}) -- skipped.",
+            job.job_id,
+            description_en[:60],
+        )
+        return None
+    return description_en
 
 
 def apply_description_translation(session: Session, job_id: int, description_en: str) -> None:
