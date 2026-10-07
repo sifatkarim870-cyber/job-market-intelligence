@@ -2,10 +2,17 @@ name: Title classification
 
 # Runs after the scraping workflow completes, so it always has newly
 # ingested jobs to process rather than guessing at a schedule offset.
-# workflow_run only fires for workflows on the default branch and only
-# when the triggering run's conclusion is available -- checked below via
-# the `if` condition, so a failed scrape run doesn't trigger a
-# classification run against a possibly-incomplete batch.
+# workflow_run only fires for workflows on the default branch.
+#
+# The `if` below classifies after ANY completed scrape except a
+# skipped one. It used to require conclusion == success, but that
+# starved the chain: with 13 scrape jobs, a single unrelated flake
+# fails the whole run (observed 2026-10-07: GitHub cancelled the hrge
+# job mid-persistence — infra, not code — and this workflow was
+# skipped while jobvision/irantalent rows sat unclassified). The
+# batch is idempotent over whatever rows are pending, so a partial
+# batch is safe to classify; the old guard's benefit never justified
+# losing every chain run to one job's flake.
 #
 # Zero ongoing cost, per the confirmed hard requirement: no API key, no
 # per-request billing. The only "cost" is GitHub Actions' own free
@@ -45,7 +52,7 @@ concurrency:
 jobs:
   classify:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'skipped' }}
     # 60 (raised from 30 on 2026-10-07): the backfill era doubled the
     # pending corpus (jobvision 1,200+ rows, irantalent 400, reed/glints
     # growing every run) — translation alone was 663 titles in ~7.5
