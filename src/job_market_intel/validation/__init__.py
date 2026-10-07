@@ -24,6 +24,7 @@ from .common import BatchValidationReport, validate_batch
 from .emploitic_validator import EmploiticBatchValidator, EmploiticValidationSettings
 from .glints_validator import GlintsBatchValidator, GlintsValidationSettings
 from .hrge_validator import HRGeBatchValidator, HRGeValidationSettings
+from .irantalent_validator import IrantalentBatchValidator, IrantalentValidationSettings
 from .job51_validator import Job51BatchValidator, Job51ValidationSettings
 from .jobam_validator import JobAmBatchValidator, JobAmValidationSettings
 from .jobinja_validator import JobinjaBatchValidator, JobinjaValidationSettings
@@ -49,6 +50,8 @@ __all__ = [
     "JobAmValidationSettings",
     "JobinjaBatchValidator",
     "JobinjaValidationSettings",
+    "IrantalentBatchValidator",
+    "IrantalentValidationSettings",
     "JobvisionBatchValidator",
     "JobvisionValidationSettings",
     "Job51BatchValidator",

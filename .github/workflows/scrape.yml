@@ -415,3 +415,34 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JOBVISION_MAX_JOBS_PER_RUN: 400
         run: uv run python scripts/run_jobvision_scraper.py
+
+  irantalent:
+    runs-on: ubuntu-latest
+    # IranTalent's discovery IS its data source: one open POST search
+    # endpoint returns complete job rows inline (30/page, newest-first
+    # cursor, no auth), so a run is ~14 page POSTs (~1 minute at the
+    # 0.25s politeness delay) plus cold persistence of 400 INSERTs over
+    # the WAN — Glints measured ~17 minutes for that half alone, hence
+    # a 30-minute ceiling (public repo → unlimited minutes anyway).
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run Irantalent scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          IRANTALENT_MAX_JOBS_PER_RUN: 400
+        run: uv run python scripts/run_irantalent_scraper.py

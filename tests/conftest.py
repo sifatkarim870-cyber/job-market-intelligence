@@ -35,6 +35,7 @@ import pytest
 from job_market_intel.cleaning.common import CleanedJob
 from job_market_intel.scrapers.glints.models import RawGlintsJob
 from job_market_intel.scrapers.hrge.models import RawHRGeJob
+from job_market_intel.scrapers.irantalent.models import RawIrantalentJob
 from job_market_intel.scrapers.jobinja.models import RawJobinjaJob
 from job_market_intel.scrapers.jobvision.models import RawJobvisionJob
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
@@ -418,5 +419,73 @@ def make_raw_jobvision_job() -> Callable[..., RawJobvisionJob]:
         }
         defaults.update(overrides)
         return RawJobvisionJob.model_validate(defaults)
+
+    return _make
+
+
+@pytest.fixture()
+def make_raw_irantalent_job() -> Callable[..., RawIrantalentJob]:
+    """Factory fixture: build a minimally-valid ``RawIrantalentJob``, any field overridable.
+
+    Defaults are a faithful snapshot of what IranTalent's open POST
+    ``/position/search`` returned for job 184579 ("Customer Success
+    Specialist", Eways / Iranian Omid Internet Bazaar, Tehran) during
+    the live recon (2026-10-07): ``language=en`` (so the English title
+    is the source-language one), Full Time, salary
+    350,000,000–450,000,000 in **whole Toman** with
+    ``is_show_salary=True`` (the raw source unit — the cleaner does
+    NOT scale, unlike Jobvision's millions), category + industry tags,
+    ``lived_at`` timestamp — so a "healthy job" needs zero overrides,
+    same convention as the other factories above. Undisclosed variants
+    are built by overriding ``salary_min_raw``/``salary_max_raw``/
+    ``salary_show_flag``; Persian-title rows by overriding
+    ``language``/``job_title``.
+    """
+
+    def _make(**overrides: Any) -> RawIrantalentJob:
+        defaults: dict[str, Any] = {
+            "source_job_id": "184579",
+            "job_title": "Customer Success Specialist",
+            "language": "en",
+            "company_name": "ایویز",  # employer.name (display), Persian-first
+            "company_logo_url": (
+                "https://minio1.sc.irtalent.cloud/brand-data/"
+                "brand_data_2972Es2_63578d735ef59.png"
+            ),
+            "description_html": (
+                "Role Overview:<br><br>We are looking for a Customer Success "
+                "Specialist to own onboarding, adoption and renewals for our "
+                "B2B SaaS clients, partnering with product and sales on every "
+                "account milestone."
+            ),
+            "posting_date": datetime(2026, 10, 6, 18, 5, 33, tzinfo=UTC),
+            "closing_date": None,
+            "work_type_en": "Full Time",
+            "salary_min_raw": 350_000_000,
+            "salary_max_raw": 450_000_000,
+            "salary_show_flag": True,
+            "location_text": "تهران",
+            "category_raws": ["Customer Success & Support Operations"],
+            "industry_raws": ["IT, Software and Internet Services"],
+            "original_url": (
+                "https://www.irantalent.com/en/job/"
+                "customer-success-specialist/184579"
+            ),
+            "raw_payload": {
+                "id": 184579,
+                "slug": "customer-success-specialist",
+                "language": "en",
+                "title": "Customer Success Specialist",
+                "title_farsi": "کارشناس تجربه و موفقیت مشتری",
+                "lived_at": "2026-10-06 18:05:33",
+                "salary_from": 350_000_000,
+                "salary_to": 450_000_000,
+                "is_show_salary": True,
+                "employment_type": {"title": "Full Time"},
+                "work_type": "on_site",
+            },
+        }
+        defaults.update(overrides)
+        return RawIrantalentJob.model_validate(defaults)
 
     return _make

@@ -37,6 +37,7 @@ from job_market_intel.scheduler.config import SchedulerSettings
 from job_market_intel.scrapers.emploitic.config import EmploiticSettings
 from job_market_intel.scrapers.glints.config import GlintsSettings
 from job_market_intel.scrapers.indeed.config import IndeedSettings
+from job_market_intel.scrapers.irantalent.config import IrantalentSettings
 from job_market_intel.scrapers.job51.config import Job51Settings
 from job_market_intel.scrapers.jobam.config import JobAmSettings
 from job_market_intel.scrapers.jobinja.config import JobinjaSettings
@@ -47,6 +48,7 @@ from job_market_intel.scrapers.remoteok.config import RemoteOKSettings
 from job_market_intel.validation.emploitic_validator import EmploiticValidationSettings
 from job_market_intel.validation.glints_validator import GlintsValidationSettings
 from job_market_intel.validation.indeed_validator import IndeedValidationSettings
+from job_market_intel.validation.irantalent_validator import IrantalentValidationSettings
 from job_market_intel.validation.job51_validator import Job51ValidationSettings
 from job_market_intel.validation.jobam_validator import JobAmValidationSettings
 from job_market_intel.validation.jobinja_validator import JobinjaValidationSettings
@@ -240,6 +242,18 @@ def test_every_jobinja_validation_settings_var_is_documented() -> None:
     missing = _pydantic_settings_env_vars(JobinjaValidationSettings) - _documented_vars()
     assert not missing, (
         f"JobinjaValidationSettings reads {sorted(missing)}, undocumented in .env.example."
+    )
+
+
+def test_every_irantalent_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(IrantalentSettings) - _documented_vars()
+    assert not missing, f"IrantalentSettings reads {sorted(missing)}, undocumented in .env.example."
+
+
+def test_every_irantalent_validation_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(IrantalentValidationSettings) - _documented_vars()
+    assert not missing, (
+        f"IrantalentValidationSettings reads {sorted(missing)}, undocumented in .env.example."
     )
 
 
