@@ -28,6 +28,7 @@ from .irantalent_validator import IrantalentBatchValidator, IrantalentValidation
 from .job51_validator import Job51BatchValidator, Job51ValidationSettings
 from .jobam_validator import JobAmBatchValidator, JobAmValidationSettings
 from .jobinja_validator import JobinjaBatchValidator, JobinjaValidationSettings
+from .jobmaster_validator import JobmasterBatchValidator, JobmasterValidationSettings
 from .jobvision_validator import JobvisionBatchValidator, JobvisionValidationSettings
 from .myjob_validator import MyJobBatchValidator, MyJobValidationSettings
 from .reed_validator import ReedBatchValidator, ReedValidationSettings
@@ -48,6 +49,8 @@ __all__ = [
     "GlintsValidationSettings",
     "JobAmBatchValidator",
     "JobAmValidationSettings",
+    "JobmasterBatchValidator",
+    "JobmasterValidationSettings",
     "JobinjaBatchValidator",
     "JobinjaValidationSettings",
     "IrantalentBatchValidator",

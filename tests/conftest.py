@@ -36,6 +36,7 @@ from job_market_intel.cleaning.common import CleanedJob
 from job_market_intel.scrapers.glints.models import RawGlintsJob
 from job_market_intel.scrapers.hrge.models import RawHRGeJob
 from job_market_intel.scrapers.irantalent.models import RawIrantalentJob
+from job_market_intel.scrapers.jobmaster.models import RawJobmasterJob
 from job_market_intel.scrapers.jobinja.models import RawJobinjaJob
 from job_market_intel.scrapers.jobvision.models import RawJobvisionJob
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
@@ -487,5 +488,52 @@ def make_raw_irantalent_job() -> Callable[..., RawIrantalentJob]:
         }
         defaults.update(overrides)
         return RawIrantalentJob.model_validate(defaults)
+
+    return _make
+
+
+@pytest.fixture()
+def make_raw_jobmaster_job() -> Callable[..., RawJobmasterJob]:
+    """Factory fixture: build a minimally-valid ``RawJobmasterJob``, any field overridable.
+
+    Defaults are a faithful snapshot of what JobMaster's detail page
+    served for job 9884960 during live recon (2026-10-07, Comblack QA
+    full-time post with no salary disclosed): a "healthy job" needs
+    zero overrides, same convention as the other factories. A salary-
+    undisclosed-or-missing variant is built by clearing ``salary_text``;
+    a salary-disclosed one by overriding it with a range string.
+    """
+
+    def _make(**overrides: Any) -> RawJobmasterJob:
+        defaults: dict[str, Any] = {
+            "source_job_id": "9884960",
+            "job_title": "QA",
+            "company_name": "קומבלק איי.טי. בע״מ",
+            "company_logo_url": None,
+            "description_html": (
+                "חברת Comblack מגייסת בודק/ת תוכנה לחברת תעופה בשפלה!"
+                "<br>זיהוי ותיעוד על באגים ותקלות שוטפות, עבודה עם JIRA."
+            ),
+            "posting_date": datetime(2026, 10, 7, 12, 0, 0, tzinfo=UTC),
+            "closing_date": None,
+            "work_type_label": "משרה מלאה",
+            "salary_text": "לא צוין שכר",
+            "location_text": "איירפורט סיטי",
+            "category_raws": ["מחשבים ותוכנה", "QA"],
+            "original_url": (
+                "https://www.jobmaster.co.il/jobs/checknum.asp?key=9884960"
+            ),
+            "raw_payload": {
+                "title": "QA",
+                "company": "קומבלק איי.טי. בע״מ",
+                "location": "איירפורט סיטי",
+                "job_type": "משרה מלאה",
+                "salary": "לא צוין שכר",
+                "posted_text": "16 דקות",
+                "categories": ["מחשבים ותוכנה", "QA"],
+            },
+        }
+        defaults.update(overrides)
+        return RawJobmasterJob.model_validate(defaults)
 
     return _make

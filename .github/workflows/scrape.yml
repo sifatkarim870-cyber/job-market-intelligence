@@ -53,6 +53,10 @@ on:
         description: "IranTalent rows fetched per run (2000 = full-corpus backfill)"
         required: false
         default: "400"
+      jobmaster_max_jobs:
+        description: "JobMaster detail rows fetched per run"
+        required: false
+        default: "400"
 
 # Added 2026-10-01, from a GitHub Copilot fix proposed on a branch
 # (copilot/fix-reed-job-failure) after the reed job's first-ever run
@@ -472,3 +476,38 @@ jobs:
           # the overlap, so a bigger window is the cursor).
           IRANTALENT_MAX_JOBS_PER_RUN: ${{ inputs.irantalent_max_jobs || '400' }}
         run: uv run python scripts/run_irantalent_scraper.py
+
+  jobmaster:
+    runs-on: ubuntu-latest
+    # JobMaster has no API, no sitemap, no anonymous pagination.
+    # Discovery probes the open filter cells of /jobs/ (43 headcats x
+    # 29 jobtypes, a card page / 10 newest per cell, deepest window is
+    # login-walled) and then fetches matching detail pages through
+    # checknum.asp. A healthy CI run probes ~800 cells (~25 min at the
+    # site's ~1.7s/page TTFB) and persists up to 400 fresh detail rows
+    # (~15 min over the WAN); a full-corpus crawl would need several
+    # cycles, which is fine — scheduled runs every 12h accumulate the
+    # rotating newest-window, uniquely like every other source here but
+    # capped by the site itself. 60-minute ceiling.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run JobMaster scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBMASTER_MAX_JOBS_PER_RUN: ${{ inputs.jobmaster_max_jobs || '400' }}
+        run: uv run python scripts/run_jobmaster_scraper.py

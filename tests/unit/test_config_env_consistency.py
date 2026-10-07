@@ -41,6 +41,7 @@ from job_market_intel.scrapers.irantalent.config import IrantalentSettings
 from job_market_intel.scrapers.job51.config import Job51Settings
 from job_market_intel.scrapers.jobam.config import JobAmSettings
 from job_market_intel.scrapers.jobinja.config import JobinjaSettings
+from job_market_intel.scrapers.jobmaster.config import JobmasterSettings
 from job_market_intel.scrapers.jobvision.config import JobvisionSettings
 from job_market_intel.scrapers.myjob.config import MyJobSettings
 from job_market_intel.scrapers.reed.config import ReedSettings
@@ -52,6 +53,7 @@ from job_market_intel.validation.irantalent_validator import IrantalentValidatio
 from job_market_intel.validation.job51_validator import Job51ValidationSettings
 from job_market_intel.validation.jobam_validator import JobAmValidationSettings
 from job_market_intel.validation.jobinja_validator import JobinjaValidationSettings
+from job_market_intel.validation.jobmaster_validator import JobmasterValidationSettings
 from job_market_intel.validation.jobvision_validator import JobvisionValidationSettings
 from job_market_intel.validation.myjob_validator import MyJobValidationSettings
 from job_market_intel.validation.reed_validator import ReedValidationSettings
@@ -254,6 +256,18 @@ def test_every_irantalent_validation_settings_var_is_documented() -> None:
     missing = _pydantic_settings_env_vars(IrantalentValidationSettings) - _documented_vars()
     assert not missing, (
         f"IrantalentValidationSettings reads {sorted(missing)}, undocumented in .env.example."
+    )
+
+
+def test_every_jobmaster_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(JobmasterSettings) - _documented_vars()
+    assert not missing, f"JobmasterSettings reads {sorted(missing)}, undocumented in .env.example."
+
+
+def test_every_jobmaster_validation_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(JobmasterValidationSettings) - _documented_vars()
+    assert not missing, (
+        f"JobmasterValidationSettings reads {sorted(missing)}, undocumented in .env.example."
     )
 
 
