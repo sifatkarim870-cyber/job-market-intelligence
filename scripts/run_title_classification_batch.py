@@ -40,6 +40,16 @@ from job_market_intel.normalization import (
     fetch_unclassified_jobs,
 )
 
+#: Rows written between commits -- bounds re-work after an interruption
+#: (uncommitted rows are simply retried next run), matching
+#: run_translation_batch.py's title cadence. A CI timeout kills the
+#: process without a clean exit, so without periodic commits a killed
+#: run would throw away every classification since the last
+#: fully-successful one (observed 2026-10-07: the old 30-minute ceiling
+#: killed run 37559141124 mid-batch and the whole in-flight batch was
+#: lost).
+_COMMIT_EVERY = 25
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Title Classification Batch Job (Step 29)")
@@ -81,13 +91,16 @@ def main() -> int:
         jobs = fetch_unclassified_jobs(session)
 
         results = []
-        for job in jobs:
+        for index, job in enumerate(jobs, start=1):
             result = classify_job(job, taxonomy, taxonomy_embeddings, model)
             results.append((job, result))
             if not args.dry_run:
                 apply_classification(
                     session, job, result, classified_by_label=DEFAULT_CLASSIFIED_BY
                 )
+                if index % _COMMIT_EVERY == 0:
+                    session.commit()
+                    logger.info("Title classification: committed after {} rows.", index)
         # Dry-run: nothing was written, so exiting the `with` block
         # cleanly still commits a no-op transaction -- fine, since this
         # loop only reads/computes when --dry-run is set.
@@ -110,8 +123,9 @@ def main() -> int:
     if scored:
         print()
         print(f"Similarity score distribution (of {len(scored)} scored jobs):")
-        print(f"  min={min(scored):.2f}  max={max(scored):.2f}  "
-              f"avg={sum(scored) / len(scored):.2f}")
+        print(
+            f"  min={min(scored):.2f}  max={max(scored):.2f}  avg={sum(scored) / len(scored):.2f}"
+        )
 
     if matched:
         print()
