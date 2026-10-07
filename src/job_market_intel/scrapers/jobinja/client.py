@@ -164,6 +164,12 @@ class JobinjaClient:
                     seen.add(url)
                     selected.append(url)
             page += 1
+            # Pace listing reads like detail fetches: a burst of 20-40
+            # back-to-back listing requests tripped jobinja's WAF into a
+            # 200-status challenge page (observed 2026-10-07, mid-
+            # backfill), which surfaces as zero job links.
+            if settings.fetch_delay_seconds and len(selected) < limit:
+                time.sleep(settings.fetch_delay_seconds)
 
         selected = selected[:limit]
         logger.info(

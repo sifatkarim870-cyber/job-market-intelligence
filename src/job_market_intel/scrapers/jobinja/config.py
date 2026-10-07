@@ -53,7 +53,9 @@ class JobinjaSettings(BaseSettings):
             run. The default of 400 mirrors the other CI windows — CI
             catches whatever posted since the last run; a local
             backfill raises it via ``JOBINGJA_MAX_JOBS_PER_RUN``.
-        fetch_delay_seconds: Politeness pause between detail fetches.
+        fetch_delay_seconds: Politeness pause between listing page
+            reads and between detail fetches (listing pacing too — an
+            unpaced listing burst tripped the site's WAF challenge).
         request_timeout_seconds: Max time to wait for one request.
         max_retry_attempts: Total attempts (including the first) before
             giving up on a transient failure.

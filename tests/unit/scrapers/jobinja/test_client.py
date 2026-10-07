@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import pytest
 
+from job_market_intel.scrapers.jobinja import client as jobinja_client_module
 from job_market_intel.scrapers.jobinja.client import JobinjaClient
 from job_market_intel.scrapers.jobinja.config import JobinjaSettings
 from job_market_intel.scrapers.jobinja.exceptions import JobinjaResponseError
@@ -47,6 +48,55 @@ def client(monkeypatch: pytest.MonkeyPatch) -> JobinjaClient:
     monkeypatch.setattr(client, "_request_text", fake_request)
     client.requested_pages = requested  # type: ignore[attr-defined]
     return client
+
+
+class TestListingPacing:
+    """Listing reads honor ``fetch_delay_seconds`` like detail fetches.
+
+    An unpaced listing burst (20-40 requests back-to-back) tripped
+    jobinja's WAF into a 200-status challenge page on 2026-10-07,
+    surfacing as zero job links — pacing is load-bearing, not just
+    politeness.
+    """
+
+    @staticmethod
+    def _paced_client(
+        monkeypatch: pytest.MonkeyPatch, *, delay: float, window: int
+    ) -> JobinjaClient:
+        client = JobinjaClient(
+            settings=JobinjaSettings(max_jobs_per_run=window, fetch_delay_seconds=delay)
+        )
+        pages = {1: _listing(_URL_A, _URL_B), 2: _listing(_URL_C)}
+
+        def fake_request(url: str, *, what: str) -> str:
+            page = int(url.rsplit("=", 1)[-1])
+            return pages.get(page, "<html><body></body></html>")
+
+        monkeypatch.setattr(client, "_request_text", fake_request)
+        sleeps: list[float] = []
+        monkeypatch.setattr(jobinja_client_module.time, "sleep", sleeps.append)
+        client.sleeps = sleeps  # type: ignore[attr-defined]
+        return client
+
+    def test_listing_reads_are_paced(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        client = self._paced_client(monkeypatch, delay=0.5, window=10)
+        client._select_job_urls()
+        # Pages 1 and 2 both leave the window unfilled -> two pauses;
+        # page 3 is empty (break before the pause).
+        assert client.sleeps == [0.5, 0.5]  # type: ignore[attr-defined]
+
+    def test_zero_delay_never_sleeps(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        client = self._paced_client(monkeypatch, delay=0.0, window=10)
+        client._select_job_urls()
+        assert client.sleeps == []  # type: ignore[attr-defined]
+
+    def test_no_trailing_pause_once_window_fills(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Window 2 fills on page 1: no request follows, so no pause.
+        client = self._paced_client(monkeypatch, delay=0.5, window=2)
+        client._select_job_urls()
+        assert client.sleeps == []  # type: ignore[attr-defined]
 
 
 class TestExtractJobUrls:
