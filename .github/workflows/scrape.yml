@@ -39,7 +39,16 @@ name: Scheduled scraping
 on:
   schedule:
     - cron: "0 */12 * * *"   # every 12 hours, on the hour (00:00 and 12:00 UTC)
-  workflow_dispatch: {}       # lets you trigger any/all jobs manually from the Actions tab
+  workflow_dispatch:          # manual runs from the Actions tab; the optional
+    inputs:                   # inputs let a Jobinja backfill steer the cursor
+      jobinja_start_page:
+        description: "First Jobinja listing page to read (backfill cursor)"
+        required: false
+        default: "1"
+      jobinja_max_jobs:
+        description: "Jobinja rows fetched per run (window size)"
+        required: false
+        default: "400"
 
 # Added 2026-10-01, from a GitHub Copilot fix proposed on a branch
 # (copilot/fix-reed-job-failure) after the reed job's first-ever run
@@ -379,7 +388,12 @@ jobs:
       - name: Run Jobinja scraper
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JOBINGJA_MAX_JOBS_PER_RUN: 400
+          # Scheduled/manual runs without inputs fall back to the
+          # defaults; a backfill dispatch overrides the cursor (the
+          # local IP is behind the reCAPTCHA wall — runner IPs are
+          # not, every CI Jobinja job passes).
+          JOBINGJA_MAX_JOBS_PER_RUN: ${{ inputs.jobinja_max_jobs || '400' }}
+          JOBINGJA_START_PAGE: ${{ inputs.jobinja_start_page || '1' }}
         run: uv run python scripts/run_jobinja_scraper.py
 
   jobvision:
