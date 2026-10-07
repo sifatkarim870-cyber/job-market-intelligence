@@ -46,13 +46,16 @@ jobs:
   classify:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    # 30, not 20: the translation step added 2026-10-05 needs a cache-miss
-    # NLLB download (~2.4GB, first run after a cache key bump) plus
-    # inference over every untranslated non-English title, on top of the
-    # embedding batch the 20 used to cover. Steady-state (cache warm,
-    # small increments) runs well inside this; the ceiling exists for the
-    # cold-start case so a big backfill cannot get killed mid-write.
-    timeout-minutes: 30
+    # 60 (raised from 30 on 2026-10-07): the backfill era doubled the
+    # pending corpus (jobvision 1,200+ rows, irantalent 400, reed/glints
+    # growing every run) — translation alone was 663 titles in ~7.5
+    # minutes and classification then ran 22+ minutes and was killed by
+    # the old 30-minute ceiling mid-batch ("The job has exceeded the
+    # maximum execution time of 30m0s", run 37559141124). The ceiling
+    # still exists for the cold-start case (cache-miss NLLB download
+    # ~2.4GB) so a big backfill cannot get killed mid-write; public repo
+    # → unlimited minutes anyway.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
