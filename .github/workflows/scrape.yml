@@ -49,6 +49,10 @@ on:
         description: "Jobinja rows fetched per run (window size)"
         required: false
         default: "400"
+      irantalent_max_jobs:
+        description: "IranTalent rows fetched per run (2000 = full-corpus backfill)"
+        required: false
+        default: "400"
 
 # Added 2026-10-01, from a GitHub Copilot fix proposed on a branch
 # (copilot/fix-reed-job-failure) after the reed job's first-ever run
@@ -437,8 +441,12 @@ jobs:
     # cursor, no auth), so a run is ~14 page POSTs (~1 minute at the
     # 0.25s politeness delay) plus cold persistence of 400 INSERTs over
     # the WAN — Glints measured ~17 minutes for that half alone, hence
-    # a 30-minute ceiling (public repo → unlimited minutes anyway).
-    timeout-minutes: 30
+    # a 30-minute ceiling for scheduled runs. 90 (raised from 30 on
+    # 2026-10-07): the one-shot full-corpus backfill dispatch
+    # (irantalent_max_jobs=2000) must persist 1,472 new rows at the
+    # same ~2.7s/row WAN rate ≈ 66+ minutes; scheduled runs still
+    # finish in ~20. Public repo → unlimited minutes anyway.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -458,5 +466,9 @@ jobs:
       - name: Run Irantalent scraper
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          IRANTALENT_MAX_JOBS_PER_RUN: 400
+          # Scheduled/manual runs without inputs stay at 400; a
+          # full-corpus backfill dispatch overrides the window (the
+          # client always reads from page 1, content-hash dedup absorbs
+          # the overlap, so a bigger window is the cursor).
+          IRANTALENT_MAX_JOBS_PER_RUN: ${{ inputs.irantalent_max_jobs || '400' }}
         run: uv run python scripts/run_irantalent_scraper.py
