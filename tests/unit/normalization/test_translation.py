@@ -78,6 +78,7 @@ def test_known_upcoming_sources_map_to_flores_codes() -> None:
         "zh-cn": "zho_Hans",
         "zh-tw": "zho_Hant",
         "fa": "pes_Arab",  # Jobinja / IranTalent / Jobvision
+        "he": "heb_Hebr",  # JobMaster -- was a nonexistent 'heb_Arab' until 2026-10-07
         "ko": "kor_Hang",  # JobKorea
         "uk": "ukr_Cyrl",  # Work.ua
         "es": "spa_Latn",  # Tecoloco x4

@@ -191,7 +191,7 @@ _ISO639_1_TO_FLORES: dict[str, str | None] = {
     "ta": "tam_Taml",
     "te": "tel_Telu",
     "ur": "urd_Arab",
-    "he": "heb_Arab",
+    "he": "heb_Hebr",  # Hebrew -- was 'heb_Arab' (no such FLORES code) until JobMaster (IL) made Hebrew live
     "ka": "kat_Geor",
     "az": "aze_Latn",
     "uz": "uzb_Latn",
