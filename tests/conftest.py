@@ -36,6 +36,7 @@ from job_market_intel.cleaning.common import CleanedJob
 from job_market_intel.scrapers.glints.models import RawGlintsJob
 from job_market_intel.scrapers.hrge.models import RawHRGeJob
 from job_market_intel.scrapers.jobinja.models import RawJobinjaJob
+from job_market_intel.scrapers.jobvision.models import RawJobvisionJob
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
 from job_market_intel.scrapers.remotive.models import RawRemotiveJob
 from job_market_intel.scrapers.weworkremotely.models import RawWWRJob
@@ -346,5 +347,76 @@ def make_raw_jobinja_job() -> Callable[..., RawJobinjaJob]:
         }
         defaults.update(overrides)
         return RawJobinjaJob.model_validate(defaults)
+
+    return _make
+
+
+@pytest.fixture()
+def make_raw_jobvision_job() -> Callable[..., RawJobvisionJob]:
+    """Factory fixture: build a minimally-valid ``RawJobvisionJob``, any field overridable.
+
+    Defaults are a faithful snapshot of what Jobvision's ``JobPost/Detail``
+    API returned for job 1550047 ("کارمند اداری - خانم", مجموعه چاپ
+    سجادی, گرمدره/البرز) during the live smoke (2026-10-07): Full Time,
+    salary 26–30 **million Toman** (the raw source unit — the cleaner
+    scales ×1,000,000), categories + Word/Excel software tags, Persian
+    slug URL — so a "healthy job" needs zero overrides, same convention
+    as the other factories above. Undisclosed variants are built by
+    overriding ``salary_min_raw``/``salary_max_raw``/``salary_title_fa``
+    to ``None``.
+    """
+
+    def _make(**overrides: Any) -> RawJobvisionJob:
+        defaults: dict[str, Any] = {
+            "source_job_id": "1550047",
+            "job_title": "کارمند اداری - خانم",
+            "company_name": "مجموعه چاپ سجادی",
+            "company_logo_url": (
+                "https://fileapi.jobvision.ir/api/v1.0/files/getimage"
+                "?fileid=26838168&width=80&height=80"
+            ),
+            "description_html": (
+                '<div dir="rtl"><ul><li>مسئولیت امور اداری و پشتیبانی '
+                "بخش فروش</li><li>تایپ و تنظیم اسناد و مکاتبات</li></ul></div>"
+            ),
+            "posting_date": datetime(2026, 10, 3, 15, 6, 50, tzinfo=UTC),
+            "closing_date": datetime(2026, 12, 2, tzinfo=UTC),
+            "work_type_en": "Full Time",
+            "is_internship": False,
+            "salary_min_raw": 26,
+            "salary_max_raw": 30,
+            "salary_title_fa": "26 - 30 میلیون تومان",
+            "location_parts": ["گرمدره", "البرز"],
+            "country_fa": "ایران",
+            "category_raws": [
+                "مسئول دفتر / کارمند اداری و ثبت اطلاعات / تایپیست"
+            ],
+            "software_names": ["Microsoft Word", "Microsoft Excel"],
+            "language_names": [],
+            "industry_raws": ["تولیدی / صنعتی"],
+            "skills_raws": [],
+            "link_out_address": None,
+            "original_url": (
+                "https://jobvision.ir/jobs/1550047/"
+                "%D8%A7%D8%B3%D8%AA%D8%AE%D8%AF%D8%A7%D9%85-%DA%A9%D8%A7"
+                "%D8%B1%D9%85%D9%86%D8%AF-%D8%A7%D8%AF%D8%A7%D8%B1%DB%8C"
+                "---%D8%AE%D8%A7%D9%86%D9%85"
+            ),
+            "raw_payload": {
+                "id": 1550047,
+                "title": "کارمند اداری - خانم",
+                "salary": {
+                    "min": 26,
+                    "max": 30,
+                    "titleFa": "26 - 30 میلیون تومان",
+                    "titleEn": "26 - 30 Million Tomans",
+                },
+                "workType": {"titleEn": "Full Time"},
+                "isInternship": False,
+                "isExpired": False,
+            },
+        }
+        defaults.update(overrides)
+        return RawJobvisionJob.model_validate(defaults)
 
     return _make

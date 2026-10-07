@@ -40,6 +40,7 @@ from job_market_intel.scrapers.indeed.config import IndeedSettings
 from job_market_intel.scrapers.job51.config import Job51Settings
 from job_market_intel.scrapers.jobam.config import JobAmSettings
 from job_market_intel.scrapers.jobinja.config import JobinjaSettings
+from job_market_intel.scrapers.jobvision.config import JobvisionSettings
 from job_market_intel.scrapers.myjob.config import MyJobSettings
 from job_market_intel.scrapers.reed.config import ReedSettings
 from job_market_intel.scrapers.remoteok.config import RemoteOKSettings
@@ -49,6 +50,7 @@ from job_market_intel.validation.indeed_validator import IndeedValidationSetting
 from job_market_intel.validation.job51_validator import Job51ValidationSettings
 from job_market_intel.validation.jobam_validator import JobAmValidationSettings
 from job_market_intel.validation.jobinja_validator import JobinjaValidationSettings
+from job_market_intel.validation.jobvision_validator import JobvisionValidationSettings
 from job_market_intel.validation.myjob_validator import MyJobValidationSettings
 from job_market_intel.validation.reed_validator import ReedValidationSettings
 from job_market_intel.validation.remoteok_validator import RemoteOKValidationSettings
@@ -238,6 +240,18 @@ def test_every_jobinja_validation_settings_var_is_documented() -> None:
     missing = _pydantic_settings_env_vars(JobinjaValidationSettings) - _documented_vars()
     assert not missing, (
         f"JobinjaValidationSettings reads {sorted(missing)}, undocumented in .env.example."
+    )
+
+
+def test_every_jobvision_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(JobvisionSettings) - _documented_vars()
+    assert not missing, f"JobvisionSettings reads {sorted(missing)}, undocumented in .env.example."
+
+
+def test_every_jobvision_validation_settings_var_is_documented() -> None:
+    missing = _pydantic_settings_env_vars(JobvisionValidationSettings) - _documented_vars()
+    assert not missing, (
+        f"JobvisionValidationSettings reads {sorted(missing)}, undocumented in .env.example."
     )
 
 

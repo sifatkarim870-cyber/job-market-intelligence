@@ -381,3 +381,37 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JOBINGJA_MAX_JOBS_PER_RUN: 400
         run: uv run python scripts/run_jobinja_scraper.py
+
+  jobvision:
+    runs-on: ubuntu-latest
+    # Jobvision discovery downloads one 27 MB sitemap (~60k job URLs,
+    # unsorted → skip-known exclusion at selection) then fetches 400
+    # records from the public JobPost/Detail JSON API (~8 KB, no auth)
+    # at a 0.15s politeness delay — fetch is ~10 minutes worst case
+    # (the sitemap alone was observed at 5 minutes from a slow route).
+    # The cost that matters is the first run's cold persistence: ~400
+    # INSERTs over the WAN with a savepoint each took Glints ~17 of its
+    # 30 total minutes, hence the same 45-minute ceiling (public repo →
+    # unlimited minutes anyway).
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Run Jobvision scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBVISION_MAX_JOBS_PER_RUN: 400
+        run: uv run python scripts/run_jobvision_scraper.py
