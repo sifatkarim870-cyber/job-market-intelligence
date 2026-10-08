@@ -57,6 +57,14 @@ on:
         description: "JobMaster detail rows fetched per run"
         required: false
         default: "400"
+      only:
+        description: >-
+          Comma-separated job names to run (blank = all jobs). The Jobinja
+          cursor loop dispatches with only=jobinja so it stops re-running the
+          other sources every ~40 min; glints in particular started throttling
+          us (read timeouts -> 45 min job timeout) when hit that often.
+        required: false
+        default: ""
 
 # Added 2026-10-01, from a GitHub Copilot fix proposed on a branch
 # (copilot/fix-reed-job-failure) after the reed job's first-ever run
@@ -71,6 +79,7 @@ permissions:
 
 jobs:
   remoteok:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'remoteok') }
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -95,6 +104,7 @@ jobs:
         run: uv run python scripts/run_remoteok_scraper.py
 
   emploitic:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'emploitic') }
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -119,6 +129,7 @@ jobs:
         run: uv run python scripts/run_emploitic_scraper.py
 
   myjob:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'myjob') }
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -143,6 +154,7 @@ jobs:
         run: uv run python scripts/run_myjob_scraper.py
 
   jobam:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'jobam') }
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -167,6 +179,7 @@ jobs:
         run: uv run python scripts/run_jobam_scraper.py
 
   job51:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'job51') }
     runs-on: ubuntu-latest
     # 20, not the boilerplate 15: 51job's first-ever CI run (2026-10-05,
     # session 376) took 14m19s total — the fetch itself was 11s, but
@@ -199,6 +212,7 @@ jobs:
         run: uv run python scripts/run_job51_scraper.py
 
   weworkremotely:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'weworkremotely') }
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -223,6 +237,7 @@ jobs:
         run: uv run python scripts/run_weworkremotely_scraper.py
 
   remotive:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'remotive') }
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -247,6 +262,7 @@ jobs:
         run: uv run python scripts/run_remotive_scraper.py
 
   reed:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'reed') }
     # NOTE (2026-10-01): a hashFiles()-based guard was here briefly,
     # adapted from an unmerged, never-actually-run Copilot branch
     # (copilot/fix-reed-job-failure), meant to skip this job cleanly if
@@ -292,6 +308,7 @@ jobs:
         run: uv run python scripts/run_reed_scraper.py
 
   hrge:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'hrge') }
     runs-on: ubuntu-latest
     # 20 minutes for a bounded daily window, NOT a full re-crawl: the
     # full ~3,600-job corpus enters Neon via a local backfill + push
@@ -326,6 +343,7 @@ jobs:
         run: uv run python scripts/run_hrge_scraper.py
 
   glints:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'glints') }
     runs-on: ubuntu-latest
     # Same split as HR.ge: the full ~130k-job corpus enters Neon via a
     # local backfill + push (push_indeed_to_neon.py --source-code glints),
@@ -342,7 +360,10 @@ jobs:
     # 30-minute budget, so 45 gives it real margin. Raise with the
     # posting rate if a family's newest sitemap ever holds >400 fresh
     # jobs between runs.
-    timeout-minutes: 45
+    # Raised 45 -> 90 on 2026-10-09: when Glints throttles us (Read
+    # timed out on glints.com) the retry storm burns the whole budget
+    # and the job is cancelled before its INSERTs finish.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -366,6 +387,7 @@ jobs:
         run: uv run python scripts/run_glints_scraper.py
 
   jobinja:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'jobinja') }
     runs-on: ubuntu-latest
     # Jobinja (jobinja.ir — Iran) has no JSON API and no sitemaps;
     # discovery is listing pagination (/jobs?page=N, 20 jobs/page,
@@ -405,6 +427,7 @@ jobs:
         run: uv run python scripts/run_jobinja_scraper.py
 
   jobvision:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'jobvision') }
     runs-on: ubuntu-latest
     # Jobvision discovery downloads one 27 MB sitemap (~60k job URLs,
     # unsorted → skip-known exclusion at selection) then fetches 400
@@ -439,6 +462,7 @@ jobs:
         run: uv run python scripts/run_jobvision_scraper.py
 
   irantalent:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'irantalent') }
     runs-on: ubuntu-latest
     # IranTalent's discovery IS its data source: one open POST search
     # endpoint returns complete job rows inline (30/page, newest-first
@@ -478,6 +502,7 @@ jobs:
         run: uv run python scripts/run_irantalent_scraper.py
 
   jobmaster:
+    if: ${{ inputs.only == '' || contains(inputs.only, 'jobmaster') }
     runs-on: ubuntu-latest
     # JobMaster has no API, no sitemap, no anonymous pagination.
     # Discovery probes the open filter cells of /jobs/ (43 headcats x
