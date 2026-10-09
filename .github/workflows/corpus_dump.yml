@@ -61,7 +61,15 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update -qq
           sudo apt-get install -y -qq "postgresql-client-18"
+          # PGDG installs under /usr/lib/postgresql/<major>/bin but does NOT
+          # repoint the /usr/bin alternatives, so `pg_restore` on PATH was
+          # still the older build and refused the archive it had just written
+          # ("unsupported version (1.16) in file header"). Putting the
+          # versioned directory first makes pg_dump and pg_restore the same
+          # major, which is the pair that actually works.
+          echo "PATH=/usr/lib/postgresql/18/bin:$PATH" >> "$GITHUB_PATH"
           pg_dump --version
+          pg_restore --version
 
       - name: Install dependencies
         run: uv sync --extra dev --extra test
