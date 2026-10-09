@@ -150,6 +150,15 @@
       "notes": "offres-d-emploi listing + detail pages"
     },
     {
+      "code": "greenhouse",
+      "group": "api",
+      "script": "scripts/run_greenhouse_scraper.py",
+      "timeout": 20,
+      "max_env": "GREENHOUSE_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "boards-api.greenhouse.io/v1/boards/{slug}/jobs - an ATS, not a board, so one generic scraper covers many companies via GREENHOUSE_COMPANY_SLUGS; full description HTML, no key"
+    },
+    {
       "code": "indeed",
       "group": "browser",
       "script": "scripts/run_indeed_scraper.py",

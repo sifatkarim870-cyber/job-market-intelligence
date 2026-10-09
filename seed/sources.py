@@ -71,6 +71,20 @@ _SOURCES = [
         False,
         False,
     ),
+    # Greenhouse is an ATS rather than a board, so source_type is
+    # "company_career_page" -- that is exactly what it is. trust_score is 0.85
+    # (not the 0.75 given to aggregator boards): postings are employer-authored
+    # and served from the company's own Greenhouse instance, so the content is
+    # first-party and complete, including the full description HTML.
+    (
+        "greenhouse",
+        "Greenhouse Boards",
+        "company_career_page",
+        "https://boards-api.greenhouse.io",
+        0.85,
+        True,
+        False,
+    ),
 ]
 
 
