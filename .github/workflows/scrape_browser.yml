@@ -15,11 +15,11 @@
 name: Scrape (browser)
 
 on:
-  # MIGRATION: disabled until a browser source is enabled in config/sources.json
-  # and this workflow has been proven -- see the note in scrape_api.yml.
-  # schedule:
-  #   # Once a day, well away from the API (:07) and HTML (:23) slots.
-  #   - cron: "41 5 * * *"
+  schedule:
+    # Once a day, well away from the API (:07) and HTML (:23) slots. Inert until
+    # a source is enabled in config/sources.json -- the matrix is then empty and
+    # the scrape job is skipped.
+    - cron: "41 5 * * *"
   workflow_dispatch:
     inputs:
       only:

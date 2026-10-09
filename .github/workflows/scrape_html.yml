@@ -9,13 +9,10 @@
 name: Scrape (HTML)
 
 on:
-  # MIGRATION: disabled until proven -- see the note in scrape_api.yml. scrape.yml
-  # is still on the top-of-hour slot; leaving both live would double-scrape.
-  # schedule:
-  #   # Every 12 hours, offset from the API group (:07) and from scrape.yml's
-  #   # top-of-hour slot, so the 20-concurrent pool is never contended and no
-  #   # single site sees two passes close together.
-  #   - cron: "23 */12 * * *"
+  schedule:
+    # Every 12 hours, offset from the API group (:07) so the 20-concurrent pool
+    # is never contended and no single site sees two passes close together.
+    - cron: "23 */12 * * *"
   workflow_dispatch:
     inputs:
       only:

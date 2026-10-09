@@ -37,8 +37,14 @@ name: Scheduled scraping
 # Actions before this job can succeed.
 
 on:
-  schedule:
-    - cron: "0 */12 * * *"   # every 12 hours, on the hour (00:00 and 12:00 UTC)
+  # SUPERSEDED 2026-10-09 by scrape_api.yml / scrape_html.yml / scrape_browser.yml,
+  # which build their matrix from config/sources.json and stagger their crons so
+  # the 20-concurrent pool is never contended. Running this file on a schedule as
+  # well would scrape every source twice per cycle -- which is what pushed Glints
+  # into throttling us. Kept as workflow_dispatch-only so it stays a one-command
+  # rollback and a place to compare behaviour.
+  # schedule:
+  #   - cron: "0 */12 * * *"   # every 12 hours, on the hour (00:00 and 12:00 UTC)
   workflow_dispatch:          # manual runs from the Actions tab; the optional
     inputs:                   # inputs let a Jobinja backfill steer the cursor
       jobinja_start_page:

@@ -22,14 +22,12 @@
 name: Scrape (API)
 
 on:
-  # MIGRATION: the schedule is intentionally disabled until these three grouped
-  # workflows have been proven with a workflow_dispatch, because scrape.yml is
-  # still live -- running both would scrape every source twice per cycle and
-  # re-trigger the Glints throttling this grouping was meant to prevent.
-  # schedule:
-  #   # Every 6 hours: these are the cheapest sources (single JSON/RSS requests)
-  #   # and they feed translation, so freshness matters more here than anywhere.
-  #   - cron: "7 */6 * * *"
+  schedule:
+    # Every 6 hours: these are the cheapest sources (single JSON/RSS requests)
+    # and they feed translation, so freshness matters more here than anywhere.
+    # Staggered from the HTML group (:23) and the browser group (05:41) so the
+    # 20-concurrent pool is never contended and no site sees two passes together.
+    - cron: "7 */6 * * *"
   workflow_dispatch:
     inputs:
       only:
