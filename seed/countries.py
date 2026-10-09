@@ -60,6 +60,15 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # "unmatched" location (is_global_remote=true) — see seed/cities.py's
     # Armenian entries for the city half of the same fix.
     ("AM", "ARM", "Armenia", "Asia", "AMD"),
+    # Iran was missing, and jobvision (60,982 rows, 58% of the corpus) plus
+    # jobinja (16,529) are both Iranian -- every one of their postings fell
+    # through to the "unresolved -> remote_global" fallback purely because the
+    # country had no row to match. No currency is assigned: IRR is not freely
+    # convertible and the seed has no IRR row, so NULL is the honest value.
+    ("IR", "IRN", "Iran", "Asia", None),
+    # Mauritius backs app.myjob.mu (source code "myjob", 410 rows), which had
+    # the same fallback problem.
+    ("MU", "MUS", "Mauritius", "Africa", "MUR"),
     ("AU", "AUS", "Australia", "Oceania", "AUD"),
     ("NZ", "NZL", "New Zealand", "Oceania", "NZD"),
     ("ZA", "ZAF", "South Africa", "Africa", "ZAR"),

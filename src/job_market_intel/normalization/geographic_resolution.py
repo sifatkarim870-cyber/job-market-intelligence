@@ -452,9 +452,21 @@ def _match_segment(session: Session, segment: str) -> _SegmentMatch:
     return _SegmentMatch(level=_MatchLevel.UNMATCHED)
 
 
-def resolve_location_text(session: Session, raw_text: str) -> ResolvedLocation:
+def resolve_location_text(
+    session: Session,
+    raw_text: str,
+    *,
+    default_country_iso2: str | None = None,
+) -> ResolvedLocation:
     """Resolves a raw ``CleanedJob.location_cleaned`` string to a
     city/region/country + remote_work_type combination.
+
+    ``default_country_iso2`` is the ISO 3166-1 alpha-2 code for a
+    single-country job board (jobvision -> IR, jobinja -> IR, reed -> GB).
+    It is used ONLY when no segment matches and the text does not assert a
+    worldwide opening, in which case "this country's board told us nothing we
+    could parse" beats "open to the whole world" -- the latter is a real
+    claim about the job, not a statement about our parser.
 
     See the module docstring's "Matching strategy" and "Global vs.
     unmatched fallback" sections for the full rationale. Pure resolution
@@ -516,6 +528,26 @@ def resolve_location_text(session: Session, raw_text: str) -> ResolvedLocation:
             is_global_remote=True,
             match_method="global_assertion",
         )
+    # Nothing matched and the posting carries no "worldwide" assertion either.
+    # If the source is a single-country board, that country is a far better
+    # answer than "remote global": jobvision's 390 aliases are all Persian city
+    # names ("تهران, تهران", "کرج, البرز") that no English-only seed can match,
+    # so 60,982 Iranian jobs were landing in the global-remote bucket purely
+    # because the script is unreadable to it.
+    if default_country_iso2:
+        fallback_country_id = session.execute(
+            text("SELECT country_id FROM ref.countries WHERE iso_code_2 = :iso"),
+            {"iso": default_country_iso2.upper()},
+        ).scalar()
+        if fallback_country_id is not None:
+            return ResolvedLocation(
+                city_id=None,
+                region_id=None,
+                country_id=int(fallback_country_id),
+                remote_work_type_code="remote_country",
+                is_global_remote=False,
+                match_method="source_default_country",
+            )
     return ResolvedLocation(
         city_id=None,
         region_id=None,
@@ -606,6 +638,45 @@ def get_or_create_location(
     return int(new_id)
 
 
+#: ISO 3166-1 alpha-2 country for each SINGLE-COUNTRY job board. Used only as
+#: a last resort, when a posting's location text matches nothing and does not
+#: assert worldwide -- see resolve_location_text's docstring.
+#:
+#: Without this, a board that only lists jobs in one country still produces
+#: "remote global" rows, because a national board's city names are often in a
+#: script the seed cannot read (jobvision/jobinja are entirely Persian). That
+#: is not a harmless default: is_global_remote=True is a factual claim that a
+#: job is open to everyone, and 101,471 jobs carried it.
+#:
+#: Deliberately absent: glints (its sitemap walks many country families, so
+#: there is no single home country) and every remote-first board
+#: (remoteok, remotive, weworkremotely), where a genuine worldwide claim is
+#: the correct answer.
+SOURCE_HOME_COUNTRY: dict[str, str] = {
+    "jobvision": "IR",
+    "jobinja": "IR",
+    "irantalent": "IR",
+    "reed": "GB",
+    "51job": "CN",
+    "hrge": "GE",
+    "myjob": "MU",
+    "emploitic": "FR",
+    "jobam": "AM",
+    "jobmaster": "IL",
+}
+
+
+def source_home_country(session: Session, source_id: int | None) -> str | None:
+    """Look up a source's home country, or ``None`` for multi-country/global boards."""
+    if source_id is None:
+        return None
+    code = session.execute(
+        text("SELECT source_code FROM ref.sources WHERE source_id = :sid"),
+        {"sid": source_id},
+    ).scalar()
+    return SOURCE_HOME_COUNTRY.get(str(code)) if code else None
+
+
 def resolve_and_cache_location(
     session: Session,
     raw_location_text: str | None,
@@ -644,7 +715,9 @@ def resolve_and_cache_location(
     if cached is not None:
         return int(cached)
 
-    resolved = resolve_location_text(session, cleaned)
+    resolved = resolve_location_text(
+        session, cleaned, default_country_iso2=source_home_country(session, source_id)
+    )
     remote_work_type_id = _get_remote_work_type_id(session, resolved.remote_work_type_code)
     location_id = get_or_create_location(
         session,

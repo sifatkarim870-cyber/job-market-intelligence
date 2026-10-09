@@ -383,7 +383,7 @@ class TestResolveAndCacheLocation:
         sql = " ".join(str(session.execute.call_args.args[0]).split())
         assert sql.startswith("SELECT location_id FROM core.location_aliases")
 
-    def test_cache_miss_resolves_and_writes_alias_row(self) -> None:
+    def test_cache_miss_resolves_and_writes_alias_row(self) -> None:  # noqa: C901 - fake DB router
         session = MagicMock()
         calls: list[str] = []
 
@@ -398,6 +398,12 @@ class TestResolveAndCacheLocation:
                 return _rows_result([])
             if "FROM ref.countries" in sql:
                 return _scalar_result(None)  # unmatched -> fallback global
+            if "FROM ref.sources" in sql:
+                # resolve_and_cache_location looks the source's home country up
+                # before falling back. "remoteok" is deliberately NOT in
+                # SOURCE_HOME_COUNTRY, so this test keeps exercising the
+                # unmatched -> remote_global path unchanged.
+                return _scalar_result("remoteok")
             if "FROM ref.remote_work_types" in sql:
                 return _scalar_result(9)
             if sql.startswith("SELECT location_id FROM ref.locations"):
@@ -414,6 +420,63 @@ class TestResolveAndCacheLocation:
 
         assert location_id == 500
         assert any(sql.startswith("INSERT INTO core.location_aliases") for sql in calls)
+
+    def test_unresolvable_city_on_single_country_board_uses_source_country(self):  # noqa: C901
+        """A national board's unparseable city must not become "worldwide".
+
+        jobvision's 390 aliases are all Persian ("تهران, تهران"), which the
+        English-only seed cannot match. Before SOURCE_HOME_COUNTRY existed,
+        all 60,982 of its jobs resolved to remote_global with
+        is_global_remote=True -- a factual claim that the job is open to
+        everyone, made purely because the parser could not read the script.
+        """
+        session = MagicMock()
+        calls: list[str] = []
+        params_seen: list[dict] = []
+
+        def _execute(stmt, params=None):  # noqa: C901 - a fake DB router
+            sql = " ".join(str(stmt).split())
+            calls.append(sql)
+            if isinstance(params, dict):
+                params_seen.append(dict(params))
+            if sql.startswith("SELECT location_id FROM core.location_aliases"):
+                return _scalar_result(None)
+            if "FROM ref.sources" in sql:
+                return _scalar_result("jobvision")
+            if "FROM ref.cities" in sql:
+                return _rows_result([])
+            if "FROM ref.regions" in sql:
+                return _rows_result([])
+            if "FROM ref.countries" in sql:
+                # Distinguish the two country queries. source_home_country
+                # filters with "iso_code_2 = :iso"; _match_country matches
+                # country_name OR iso_code_2 OR iso_code_3 against a single
+                # :code value. "Narnia" must match no country by name, so only
+                # the home-country lookup may return a row here.
+                if ":iso" in sql:
+                    return _scalar_result(706)  # Iran
+                return _scalar_result(None)
+            if "FROM ref.remote_work_types" in sql:
+                return _scalar_result(3)  # remote_country
+            if sql.startswith("SELECT location_id FROM ref.locations"):
+                return _scalar_result(None)
+            if sql.startswith("INSERT INTO ref.locations"):
+                return _scalar_result(777)
+            if sql.startswith("INSERT INTO core.location_aliases"):
+                return MagicMock()
+            raise AssertionError(f"unexpected SQL: {sql}")
+
+        session.execute.side_effect = _execute
+
+        location_id = resolve_and_cache_location(session, "Narnia", source_id=2)
+
+        assert location_id == 777
+        # The INSERT uses bind params, so assert on the bound values: the
+        # country must be Iran's id and the row must NOT claim global remote.
+        insert_params = next(p for p in params_seen if "is_global_remote" in p)
+        assert insert_params["country_id"] == 706
+        assert insert_params["is_global_remote"] is False
+        assert insert_params["remote_work_type_id"] == 3  # remote_country
 
 
 @pytest.mark.parametrize(
