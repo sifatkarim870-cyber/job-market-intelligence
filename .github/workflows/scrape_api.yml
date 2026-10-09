@@ -1,0 +1,113 @@
+# Scrapers grouped by HOW THEY FETCH, not by brand.
+#
+# One workflow per acquisition technique, each with its own cron slot and its own
+# per-source timeout, all driven from config/sources.json. Three reasons:
+#
+#  1. Adding a source becomes one line in config/sources.json instead of a
+#     40-line job block here. That is what makes "hundreds of scrapers" tractable.
+#  2. The crons are staggered, so the 20-concurrent-job pool is never contended:
+#     cheap API sources run often, polite-limited HTML sources run on their own
+#     schedule (Glints throttles us when hit too often), browser sources get their
+#     own slot because they need minutes just to start Chrome.
+#  3. A technique change (e.g. a site growing a JSON API) means moving one line
+#     between groups, not rewriting a workflow.
+#
+# The matrix is built at run time by the `prepare` job with jq, so this file
+# stays three workflows instead of fifteen.
+#
+# fail-fast is OFF on purpose: one dead source must not cancel the other eight.
+# scrape.yml is superseded by these three; it is kept in the repo only until the
+# grouped runs have proven themselves.
+
+name: Scrape (API)
+
+on:
+  # MIGRATION: the schedule is intentionally disabled until these three grouped
+  # workflows have been proven with a workflow_dispatch, because scrape.yml is
+  # still live -- running both would scrape every source twice per cycle and
+  # re-trigger the Glints throttling this grouping was meant to prevent.
+  # schedule:
+  #   # Every 6 hours: these are the cheapest sources (single JSON/RSS requests)
+  #   # and they feed translation, so freshness matters more here than anywhere.
+  #   - cron: "7 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Source code to run (blank = every enabled source in this group)"
+        required: false
+        default: ""
+      max_jobs:
+        description: "Override the per-run row cap for every source in this run (blank = code defaults)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: build
+        name: Build the matrix from config/sources.json
+        env:
+          GROUP: api
+          ONLY: ${{ inputs.only }}
+        run: |
+          set -euo pipefail
+          matrix=$(jq -c --arg g "$GROUP" --arg only "$ONLY" '
+            { include: [ .sources[]
+                         | select(.group == $g and .enabled)
+                         | select($only == "" or .code == $only)
+                         | { code, script, timeout, max_env } ] }' config/sources.json)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "$matrix" | jq -r '.include[] | "  \(.code)  timeout=\(.timeout)min  \(.script)"'
+
+  scrape:
+    needs: prepare
+    if: needs.prepare.outputs.matrix != '{"include":[]}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Apply the row-cap override
+        # Each scraper reads its own env var (registry `max_env`); GitHub cannot
+        # build env maps from matrix data, so write NAME=VALUE into $GITHUB_ENV.
+        if: inputs.max_jobs != ''
+        env:
+          MAX_ENV: ${{ matrix.max_env }}
+          MAX_JOBS: ${{ inputs.max_jobs }}
+        run: |
+          if [ -z "$MAX_ENV" ]; then
+            echo "${{ matrix.code }} has no row cap; ignoring max_jobs"
+          else
+            echo "$MAX_ENV=$MAX_JOBS" >> "$GITHUB_ENV"
+            echo "row cap: $MAX_ENV=$MAX_JOBS"
+          fi
+
+      - name: Run ${{ matrix.code }} scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python ${{ matrix.script }}

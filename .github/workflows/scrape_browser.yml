@@ -1,0 +1,112 @@
+# Scrapers grouped by HOW THEY FETCH, not by brand. See scrape_api.yml for the
+# full rationale; this is the browser group (a real Chrome via seleniumbase UC).
+#
+# Deliberately EMPTY by default: config/sources.json has no enabled browser
+# source, so this workflow's matrix is {"include":[]} and it exits immediately.
+# It exists so that when a site genuinely needs a browser, switching it on is a
+# one-word edit in the registry rather than writing a workflow from scratch.
+#
+# If you enable a source here, also expect to need:
+#   * browser setup on the runner (chrome + driver, or a setup-chrome action),
+#     because ubuntu-latest ships no Chrome for scripted use;
+#   * caching of that browser, or every job pays the install cost;
+#   * a generous timeout -- Chrome startup alone is 20-60 s, and UC mode more.
+
+name: Scrape (browser)
+
+on:
+  # MIGRATION: disabled until a browser source is enabled in config/sources.json
+  # and this workflow has been proven -- see the note in scrape_api.yml.
+  # schedule:
+  #   # Once a day, well away from the API (:07) and HTML (:23) slots.
+  #   - cron: "41 5 * * *"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Source code to run (blank = every enabled source in this group)"
+        required: false
+        default: ""
+      max_jobs:
+        description: "Override the per-run row cap for every source in this run (blank = code defaults)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: build
+        name: Build the matrix from config/sources.json
+        env:
+          GROUP: browser
+          ONLY: ${{ inputs.only }}
+        run: |
+          set -euo pipefail
+          matrix=$(jq -c --arg g "$GROUP" --arg only "$ONLY" '
+            { include: [ .sources[]
+                         | select(.group == $g and .enabled)
+                         | select($only == "" or .code == $only)
+                         | { code, script, timeout, max_env } ] }' config/sources.json)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          if [ "$(jq '.include | length' <<< "$matrix")" = "0" ]; then
+            echo "no enabled browser sources -- set \"enabled\": true in config/sources.json to use this workflow"
+          else
+            echo "$matrix" | jq -r '.include[] | "  \(.code)  timeout=\(.timeout)min  \(.script)"'
+          fi
+
+  scrape:
+    needs: prepare
+    if: needs.prepare.outputs.matrix != '{"include":[]}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Set up Chrome
+        # Needed only once a browser source is enabled: the scraper expects a
+        # Chrome binary plus a driver that seleniumbase can launch in UC mode.
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Apply the row-cap override
+        if: inputs.max_jobs != ''
+        env:
+          MAX_ENV: ${{ matrix.max_env }}
+          MAX_JOBS: ${{ inputs.max_jobs }}
+        run: |
+          if [ -z "$MAX_ENV" ]; then
+            echo "${{ matrix.code }} has no row cap; ignoring max_jobs"
+          else
+            echo "$MAX_ENV=$MAX_JOBS" >> "$GITHUB_ENV"
+            echo "row cap: $MAX_ENV=$MAX_JOBS"
+          fi
+
+      - name: Run ${{ matrix.code }} scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python ${{ matrix.script }}

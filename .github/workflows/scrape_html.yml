@@ -1,0 +1,98 @@
+# Scrapers grouped by HOW THEY FETCH, not by brand. See scrape_api.yml for the
+# full rationale; this is the HTML group (markup parsed from real pages).
+#
+# HTML sources are the polite-limited ones: they fetch many pages, each a
+# few hundred KB, with a mandatory delay. That is why this group gets its own
+# cron slot rather than sharing the 6-hourly API slot -- and why Glints, which
+# throttles us when hit too often, sits here and not there.
+
+name: Scrape (HTML)
+
+on:
+  # MIGRATION: disabled until proven -- see the note in scrape_api.yml. scrape.yml
+  # is still on the top-of-hour slot; leaving both live would double-scrape.
+  # schedule:
+  #   # Every 12 hours, offset from the API group (:07) and from scrape.yml's
+  #   # top-of-hour slot, so the 20-concurrent pool is never contended and no
+  #   # single site sees two passes close together.
+  #   - cron: "23 */12 * * *"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Source code to run (blank = every enabled source in this group)"
+        required: false
+        default: ""
+      max_jobs:
+        description: "Override the per-run row cap for every source in this run (blank = code defaults)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: build
+        name: Build the matrix from config/sources.json
+        env:
+          GROUP: html
+          ONLY: ${{ inputs.only }}
+        run: |
+          set -euo pipefail
+          matrix=$(jq -c --arg g "$GROUP" --arg only "$ONLY" '
+            { include: [ .sources[]
+                         | select(.group == $g and .enabled)
+                         | select($only == "" or .code == $only)
+                         | { code, script, timeout, max_env } ] }' config/sources.json)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "$matrix" | jq -r '.include[] | "  \(.code)  timeout=\(.timeout)min  \(.script)"'
+
+  scrape:
+    needs: prepare
+    if: needs.prepare.outputs.matrix != '{"include":[]}'
+    runs-on: ubuntu-latest
+    # Ceiling for the whole matrix; each source's own cap comes from the registry.
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Apply the row-cap override
+        if: inputs.max_jobs != ''
+        env:
+          MAX_ENV: ${{ matrix.max_env }}
+          MAX_JOBS: ${{ inputs.max_jobs }}
+        run: |
+          if [ -z "$MAX_ENV" ]; then
+            echo "${{ matrix.code }} has no row cap; ignoring max_jobs"
+          else
+            echo "$MAX_ENV=$MAX_JOBS" >> "$GITHUB_ENV"
+            echo "row cap: $MAX_ENV=$MAX_JOBS"
+          fi
+
+      - name: Run ${{ matrix.code }} scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python ${{ matrix.script }}

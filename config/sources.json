@@ -1,0 +1,162 @@
+{
+  "_comment": [
+    "Single registry for every scraper. The three grouped workflows",
+    "(scrape_api.yml / scrape_html.yml / scrape_browser.yml) build their GitHub",
+    "Actions matrix from this file, so adding a source is ONE line here instead of",
+    "a 40-line job block in scrape.yml.",
+    "",
+    "group: how the data is fetched -- api (JSON/REST/XML endpoints), html (markup",
+    "parsed from pages), browser (a real Chrome via seleniumbase/undetected).",
+    "Grouping matters because each technique wants a different timeout and a",
+    "different cron slot: API sources are cheap and can run often, HTML sources are",
+    "polite-limited by page fetches, browser sources need minutes of startup.",
+    "",
+    "timeout: per-job timeout-minutes, lifted from scrape.yml where the job",
+    "persisted hundreds of rows over the WAN (see the glints comment there).",
+    "",
+    "max_env: the env var that caps rows in one run (each scraper's Settings has its",
+    "own env prefix). Leave null when the source has no cap. Only used when a",
+    "workflow_dispatch input supplies max_jobs -- normal scheduled runs use the",
+    "code defaults.",
+    "",
+    "enabled: false keeps a source out of the matrix until it is deliberately",
+    "switched on (Indeed is here because it drives a real Chrome and gets blocked)."
+  ],
+  "sources": [
+    {
+      "code": "remoteok",
+      "group": "api",
+      "script": "scripts/run_remoteok_scraper.py",
+      "timeout": 15,
+      "max_env": null,
+      "enabled": true,
+      "notes": "remoteok.com/api - single JSON page, whole corpus in one request"
+    },
+    {
+      "code": "remotive",
+      "group": "api",
+      "script": "scripts/run_remotive_scraper.py",
+      "timeout": 15,
+      "max_env": null,
+      "enabled": true,
+      "notes": "remotive.com/api/remote-jobs"
+    },
+    {
+      "code": "reed",
+      "group": "api",
+      "script": "scripts/run_reed_scraper.py",
+      "timeout": 20,
+      "max_env": "REED_MAX_JOBS_PROCESSED_PER_RUN",
+      "enabled": true,
+      "notes": "reed.co.uk/api/1.0 - paginated search plus per-job detail calls"
+    },
+    {
+      "code": "job51",
+      "group": "api",
+      "script": "scripts/run_job51_scraper.py",
+      "timeout": 20,
+      "max_env": "JOB51_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "cupid.51job.com search API, 100 jobs per page"
+    },
+    {
+      "code": "myjob",
+      "group": "api",
+      "script": "scripts/run_myjob_scraper.py",
+      "timeout": 15,
+      "max_env": null,
+      "enabled": true,
+      "notes": "app.myjob.mu/api/job-board/jobs (Mauritius)"
+    },
+    {
+      "code": "jobam",
+      "group": "api",
+      "script": "scripts/run_jobam_scraper.py",
+      "timeout": 15,
+      "max_env": "JOBAM_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "job.am/api/jobs - Armenia"
+    },
+    {
+      "code": "irantalent",
+      "group": "api",
+      "script": "scripts/run_irantalent_scraper.py",
+      "timeout": 90,
+      "max_env": "IRANTALENT_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "api.irantalent.com position search; the slowest write because each row is its own WAN insert"
+    },
+    {
+      "code": "jobvision",
+      "group": "api",
+      "script": "scripts/run_jobvision_scraper.py",
+      "timeout": 45,
+      "max_env": "JOBVISION_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "sitemap for discovery (XML) + candidateapi for detail JSON - Iran"
+    },
+    {
+      "code": "weworkremotely",
+      "group": "api",
+      "script": "scripts/run_weworkremotely_scraper.py",
+      "timeout": 15,
+      "max_env": null,
+      "enabled": true,
+      "notes": "RSS feed, not HTML - cheapest source we have"
+    },
+    {
+      "code": "glints",
+      "group": "html",
+      "script": "scripts/run_glints_scraper.py",
+      "timeout": 90,
+      "max_env": "GLINTS_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "sitemap_index round-robin over country families, then 300-500 KB HTML pages; throttles us if hit too often"
+    },
+    {
+      "code": "jobinja",
+      "group": "html",
+      "script": "scripts/run_jobinja_scraper.py",
+      "timeout": 45,
+      "max_env": "JOBINJA_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "listing pages + detail pages; backfill through page 840 completed 2026-10-09"
+    },
+    {
+      "code": "jobmaster",
+      "group": "html",
+      "script": "scripts/run_jobmaster_scraper.py",
+      "timeout": 60,
+      "max_env": "JOBMASTER_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "facet API for discovery, checknum.asp HTML for details - Israel"
+    },
+    {
+      "code": "hrge",
+      "group": "html",
+      "script": "scripts/run_hrge_scraper.py",
+      "timeout": 20,
+      "max_env": null,
+      "enabled": true,
+      "notes": "public-portal API lists ids, announcement pages carry the detail - Georgia"
+    },
+    {
+      "code": "emploitic",
+      "group": "html",
+      "script": "scripts/run_emploitic_scraper.py",
+      "timeout": 15,
+      "max_env": null,
+      "enabled": true,
+      "notes": "offres-d-emploi listing + detail pages"
+    },
+    {
+      "code": "indeed",
+      "group": "browser",
+      "script": "scripts/run_indeed_scraper.py",
+      "timeout": 90,
+      "max_env": null,
+      "enabled": false,
+      "notes": "real Chrome via seleniumbase UC mode; needs browser setup on the runner and is the most blockable source, so it stays opt-in"
+    }
+  ]
+}
