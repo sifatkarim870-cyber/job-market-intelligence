@@ -28,12 +28,21 @@ dependencies = [
     # scrapers/jobam/client.py -- other sources keep ``requests``.
     "curl-cffi>=0.7.0",
     "ftfy>=6.3.1",
+    # Corpus shard export (corpus/shard_export.py): Parquet is the storage
+    # format for the analysis-ready corpus on Hugging Face, and huggingface_hub
+    # pushes it there after each scrape. Declared in the main dependency set on
+    # purpose -- the export is the last step of every CI scrape job, so it must
+    # be present in a plain `uv sync`, not only under a dev/analytics extra.
+    "huggingface-hub>=0.34",
     "langdetect>=1.0.9",
     "loguru>=0.7.3",
     # Environment/config loading with real validation, type coercion, and
     # clear error messages — exactly what the Step 3 base config loader
     # needs, without hand-rolling env parsing.
     "passlib[bcrypt]>=1.7.4",
+    # Parquet writer/reader for the Hugging Face corpus shards. See the
+    # huggingface-hub note above for why this is a core dependency.
+    "pyarrow>=15.0",
     "psycopg[binary]>=3.1,<4.0",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",

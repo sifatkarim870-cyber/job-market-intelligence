@@ -7,27 +7,32 @@ backfill:
     python scripts/export_corpus_shards.py --all
     python scripts/export_corpus_shards.py --source glints --since 2026-10-01T00:00:00Z
     python scripts/export_corpus_shards.py --all --dry-run
+    python scripts/export_corpus_shards.py --source glints --strict
 
-Never fails the caller: Hugging Face problems are reported and the exit code
-stays 0, because a corpus export must not turn a successful scrape red.
+Fails OPEN by default: Hugging Face problems are reported and the exit code
+stays 0, because a corpus export must not turn a successful scrape red. Pass
+``--strict`` for a non-zero exit when debugging locally.
+
+That promise has to cover import errors too. The first CI run failed with
+``ModuleNotFoundError: No module named 'pyarrow'`` and exited 1 -- the failure
+happened while importing this script, long before export_source's try/except
+could see it. So the heavy imports are deferred into _main(), and the outermost
+handler below turns anything that still escapes into a logged warning.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-
-from loguru import logger
-from sqlalchemy import text
-
-from job_market_intel.common.config import get_settings
-from job_market_intel.common.logger import configure_logging
-from job_market_intel.corpus import CorpusSettings, export_source, fetch_rows
-from job_market_intel.db.engine import get_engine
-from job_market_intel.db.session import get_session
+import sys
+import traceback
 
 
 def _all_sources() -> list[str]:
+    from sqlalchemy import text
+
+    from job_market_intel.db.session import get_session
+
     session = get_session()
     try:
         rows = session.execute(text("SELECT source_code FROM ref.sources ORDER BY 1")).all()
@@ -36,7 +41,14 @@ def _all_sources() -> list[str]:
         session.close()
 
 
-def main() -> int:
+def _main() -> int:
+    from loguru import logger
+
+    from job_market_intel.common.config import get_settings
+    from job_market_intel.common.logger import configure_logging
+    from job_market_intel.corpus import CorpusSettings, export_source, fetch_rows
+    from job_market_intel.db.engine import get_engine
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", help="source_code to export (e.g. glints)")
     parser.add_argument("--all", action="store_true", help="export every source in ref.sources")
@@ -44,6 +56,11 @@ def main() -> int:
     parser.add_argument("--repo", help="override CORPUS_HF_REPO")
     parser.add_argument("--max-rows", type=int, help="override CORPUS_MAX_ROWS_PER_SHARD")
     parser.add_argument("--dry-run", action="store_true", help="print counts, upload nothing")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="exit non-zero on failure instead of failing open (default: fail open)",
+    )
     args = parser.parse_args()
 
     if not args.source and not args.all:
@@ -94,7 +111,20 @@ def main() -> int:
         )
     )
     logger.info("corpus export finished")
-    return 0
+    return 1 if args.strict and any(s.get("error") for s in summaries) else 0
+
+
+def main() -> int:
+    """Outermost guard so an import or config error also fails open."""
+    strict = "--strict" in sys.argv[1:]
+    try:
+        return _main()
+    except SystemExit:
+        raise
+    except BaseException as exc:  # noqa: BLE001 - see module docstring
+        traceback.print_exc()
+        print(f"\ncorpus export failed and was swallowed (fail-open): {exc}", file=sys.stderr)
+        return 1 if strict else 0
 
 
 if __name__ == "__main__":
