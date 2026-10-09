@@ -63,12 +63,14 @@ jobs:
 
       - name: Dump the database
         env:
-          PGPASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          # The password is parsed out of DATABASE_URL below. There is no
+          # separate DATABASE_PASSWORD secret -- referencing one made
+          # PGPASSWORD arrive empty and pg_dump fail to authenticate.
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           set -euo pipefail
           # The Neon DSN is a SQLAlchemy URL; pg_dump needs libpq's own form.
           dsn="${DATABASE_URL#postgresql+psycopg://}"
-          dsn="${dsn/postgresql+psycopg:/postgresql:}"
           creds="${dsn%@*}"
           hostpart="${dsn#*@}"
           host="${hostpart%%/*}"

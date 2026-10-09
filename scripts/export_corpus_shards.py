@@ -29,16 +29,17 @@ import traceback
 
 
 def _all_sources() -> list[str]:
+    # get_session() is a @contextmanager wrapping a session. Calling execute()
+    # on it directly raises AttributeError('_GeneratorContextManager' object has
+    # no attribute 'execute') -- which is exactly what the first CI run did,
+    # because --all is the only path that touches this function.
     from sqlalchemy import text
 
     from job_market_intel.db.session import get_session
 
-    session = get_session()
-    try:
+    with get_session() as session:
         rows = session.execute(text("SELECT source_code FROM ref.sources ORDER BY 1")).all()
         return [r[0] for r in rows]
-    finally:
-        session.close()
 
 
 def _main() -> int:
