@@ -85,6 +85,18 @@ _SOURCES = [
         True,
         False,
     ),
+    # Arbeitnow is a German board with a public, key-less JSON API that returns
+    # the whole active listing in one response. Europe-focused, which balances
+    # the US/UK-heavy sources already present.
+    (
+        "arbeitnow",
+        "Arbeitnow",
+        "job_board",
+        "https://www.arbeitnow.com",
+        0.80,
+        True,
+        False,
+    ),
 ]
 
 
