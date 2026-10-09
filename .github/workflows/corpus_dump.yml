@@ -1,0 +1,117 @@
+name: Corpus dumps
+
+# Publishes a complete, restorable copy of the Neon database to Hugging Face
+# every day, so the laptop's own sync job has something current to pull.
+#
+# Why a dump and not just shards: the Parquet corpus is the *queryable* copy
+# (one flat analysis-ready row per posting, 692 B/row). A pg_dump is the
+# *complete* copy -- every table, index and sequence, including the ones Parquet
+# has no equivalent for: salary.salary_history, bridge.*, audit.*, ops.*. Both
+# are needed; neither substitutes for the other.
+#
+# ubuntu-latest ships postgresql-client, so no install step. zstd compression
+# takes the ~509 MiB database to ~62 MiB and a full run takes about 100 s.
+#
+# The dumps are uploaded under the repo's own versioning, so yesterday's copy
+# stays restorable while today's replaces it.
+
+on:
+  schedule:
+    # 04:10 UTC -- after the HTML scraper group (23 past the hour) and well
+    # clear of the API group's 4x-daily runs (:07).
+    - cron: "10 4 * * *"
+  workflow_dispatch:
+    inputs:
+      max_jobs:
+        description: "Also export pending corpus shards first (rows scraped since the last export)"
+        required: false
+        default: "20000"
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra test
+
+      - name: Export any rows scraped since the last shard export
+        # Ordering matters: dump the shards first so the dump contains the
+        # description_en values for rows exported earlier, keeping the two
+        # copies consistent within a run.
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          CORPUS_HF_REPO: ${{ vars.CORPUS_HF_REPO }}
+          CORPUS_MAX_ROWS_PER_SHARD: ${{ inputs.max_jobs }}
+        run: uv run python scripts/export_corpus_shards.py --all
+
+      - name: Dump the database
+        env:
+          PGPASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # The Neon DSN is a SQLAlchemy URL; pg_dump needs libpq's own form.
+          dsn="${DATABASE_URL#postgresql+psycopg://}"
+          dsn="${dsn/postgresql+psycopg:/postgresql:}"
+          creds="${dsn%@*}"
+          hostpart="${dsn#*@}"
+          host="${hostpart%%/*}"
+          db="${hostpart#*/}"
+          db="${db%%\?*}"
+          user="${creds%%:*}"
+          export PGPASSWORD="${creds#*:}"
+          export PGSSLMODE=require
+          pg_dump -h "$host" -U "$user" -d "$db" -Fc -Z6 -f neon_full.dump
+          ls -l neon_full.dump
+          # sha256 is written next to the archive so a restore can be verified
+          # without downloading it twice.
+          sha256sum neon_full.dump | tee neon_full.dump.sha256
+
+      - name: Upload the dump
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_REPO_ID: ${{ vars.CORPUS_HF_REPO }}
+        run: |
+          set -euo pipefail
+          pip install --quiet huggingface_hub
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          repo = os.environ["HF_REPO_ID"]
+          for name in ("neon_full.dump", "neon_full.dump.sha256"):
+              api.upload_file(
+                  path_or_fileobj=name,
+                  path_in_repo=f"dumps/{name}",
+                  repo_id=repo,
+                  repo_type="dataset",
+              )
+              print("uploaded dumps/" + name)
+          PY
+
+      - name: Record what was published
+        if: always()
+        run: |
+          {
+            echo "## Corpus dump $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo
+            echo "- neon_full.dump: $(du -h neon_full.dump | cut -f1)"
+            echo "- sha256: $(cut -d' ' -f1 neon_full.dump.sha256 2>/dev/null || echo 'n/a')"
+          } >> "$GITHUB_STEP_SUMMARY"
