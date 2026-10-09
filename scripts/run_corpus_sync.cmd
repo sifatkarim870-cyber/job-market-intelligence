@@ -17,4 +17,15 @@ set "DEST=D:\Research_Project\JobMarketAnalysisPlatform\DataBase\corpus_backup"
 if not exist "%DEST%\logs" mkdir "%DEST%\logs"
 
 "%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\sync_corpus_from_hf.py" --dest "%DEST%" --max-age-hours 20 >> "%DEST%\logs\sync.log" 2>&1
-exit /b %ERRORLEVEL%
+set "PULL_RC=%ERRORLEVEL%"
+
+REM Push local -> HF. The requirement is that local and HF always agree, and a
+REM pull-only sync cannot deliver that: any correction made on this laptop (a
+REM re-resolved location, a merged row, an applied translation) would sit here
+REM while HF kept serving the old values. That is exactly how 87,486 rows kept
+REM a stale location on HF. Failures are logged but do not fail the task, so a
+REM transient Hub outage cannot stop the pull half from having run.
+"%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\export_corpus_to_hf.py" >> "%DEST%\logs\sync.log" 2>&1
+if errorlevel 1 echo [run_corpus_sync] export to HF FAILED, see sync.log
+
+exit /b %PULL_RC%
