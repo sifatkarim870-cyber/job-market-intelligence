@@ -31,6 +31,7 @@ from pathlib import Path
 
 import job_market_intel.db.config as db_config_module
 from job_market_intel.common.config import Settings
+from job_market_intel.corpus import CorpusSettings
 from job_market_intel.db.config import KNOWN_ENV_VARS as DB_KNOWN_ENV_VARS
 from job_market_intel.normalization.translation import TranslationSettings
 from job_market_intel.scheduler.config import SchedulerSettings
@@ -143,6 +144,16 @@ def test_every_db_config_var_is_documented() -> None:
         "does not mention them. Add a documented (or commented) entry. "
         "This is exactly the class of bug DB_MAX_OVERFLOW vs. "
         "DB_POOL_MAX_OVERFLOW was — see db.config's module docstring."
+    )
+
+
+def test_every_corpus_settings_var_is_documented() -> None:
+    """CorpusSettings (CORPUS_*) drives the Hugging Face shard export."""
+    missing = _pydantic_settings_env_vars(CorpusSettings) - _documented_vars()
+    assert not missing, (
+        f"CorpusSettings reads {sorted(missing)}, undocumented in .env.example. "
+        "The HF token especially must be discoverable there -- see the "
+        "corpus block in .env.example for the CI-secret/local-file options."
     )
 
 

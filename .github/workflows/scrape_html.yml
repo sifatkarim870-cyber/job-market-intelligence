@@ -93,3 +93,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: uv run python ${{ matrix.script }}
+
+      - name: Export new rows to a Hugging Face shard
+        # See scrape_api.yml for why this exists and why it cannot fail the run.
+        if: success()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          CORPUS_HF_REPO: ${{ vars.CORPUS_HF_REPO }}
+        run: uv run python scripts/export_corpus_shards.py --source ${{ matrix.code }}
