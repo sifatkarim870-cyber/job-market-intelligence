@@ -47,6 +47,22 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install a pg_dump that matches the server
+        # Neon runs PostgreSQL 18. ubuntu-latest ships an older postgresql-client,
+        # and pg_dump refuses outright ("aborting because of server version
+        # mismatch") rather than downgrading -- so the client has to be pinned to
+        # the server's major version from the PGDG apt repository.
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq "postgresql-client-18"
+          pg_dump --version
+
       - name: Install dependencies
         run: uv sync --extra dev --extra test
 
@@ -81,6 +97,10 @@ jobs:
           export PGSSLMODE=require
           pg_dump -h "$host" -U "$user" -d "$db" -Fc -Z6 -f neon_full.dump
           ls -l neon_full.dump
+          # Cheap proof the archive is actually restorable, not just present:
+          # list its table-of-contents without a database to restore into.
+          pg_restore --list neon_full.dump | tail -n 1
+          pg_restore --list neon_full.dump | grep -c 'TABLE DATA' || true
           # sha256 is written next to the archive so a restore can be verified
           # without downloading it twice.
           sha256sum neon_full.dump | tee neon_full.dump.sha256
