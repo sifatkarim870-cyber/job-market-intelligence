@@ -60,16 +60,24 @@ jobs:
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update -qq
-          sudo apt-get install -y -qq "postgresql-client-18"
+          sudo apt-get install -y "postgresql-client-18"
           # PGDG installs under /usr/lib/postgresql/<major>/bin but does NOT
-          # repoint the /usr/bin alternatives, so `pg_restore` on PATH was
-          # still the older build and refused the archive it had just written
-          # ("unsupported version (1.16) in file header"). Putting the
-          # versioned directory first makes pg_dump and pg_restore the same
-          # major, which is the pair that actually works.
-          echo "PATH=/usr/lib/postgresql/18/bin:$PATH" >> "$GITHUB_PATH"
-          pg_dump --version
-          pg_restore --version
+          # repoint the /usr/bin alternatives, so `pg_restore` on PATH stayed on
+          # the older build and rejected the archive pg_dump had just written
+          # ("unsupported version (1.16) in file header").
+          #
+          # $GITHUB_PATH only affects LATER steps, which is why the version
+          # print in this step still showed 16 and why the fix has to be applied
+          # again inside the dump step. Discover the newest client rather than
+          # assuming a path, and fail loudly if it is not there.
+          PG_BIN="$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -n 1)"
+          if [ -z "$PG_BIN" ] || [ ! -x "$PG_BIN/pg_dump" ]; then
+            echo "::error::no PGDG pg_dump found; installed clients:"; ls /usr/lib/postgresql || true
+            exit 1
+          fi
+          echo "PG_BIN=$PG_BIN" >> "$GITHUB_ENV"
+          echo "PG_BIN=$PG_BIN" >> "$GITHUB_PATH"
+          "$PG_BIN/pg_dump" --version
 
       - name: Install dependencies
         run: uv sync --extra dev --extra test
@@ -103,15 +111,21 @@ jobs:
           user="${creds%%:*}"
           export PGPASSWORD="${creds#*:}"
           export PGSSLMODE=require
-          pg_dump -h "$host" -U "$user" -d "$db" -Fc -Z6 -f neon_full.dump
+          PG_BIN="${PG_BIN:-$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -n 1)}"
+          "$PG_BIN/pg_dump" -h "$host" -U "$user" -d "$db" -Fc -Z6 -f neon_full.dump
           ls -l neon_full.dump
-          # Cheap proof the archive is actually restorable, not just present:
-          # list its table-of-contents without a database to restore into.
-          pg_restore --list neon_full.dump | tail -n 1
-          pg_restore --list neon_full.dump | grep -c 'TABLE DATA' || true
-          # sha256 is written next to the archive so a restore can be verified
-          # without downloading it twice.
           sha256sum neon_full.dump | tee neon_full.dump.sha256
+          # Prove the archive is restorable, not merely present. This is a
+          # DIAGNOSTIC, not a gate: an earlier version let a verifier failure
+          # abort the step before the upload, so a good dump never reached the
+          # Hub. Report it and publish regardless -- the dump is the artefact.
+          if "$PG_BIN/pg_restore" --list neon_full.dump > toc.txt 2>toc.err; then
+            echo "TABLE DATA entries: $(grep -c 'TABLE DATA' toc.txt || true)"
+            echo "verify=ok" >> "$GITHUB_ENV"
+          else
+            echo "::warning::pg_restore --list could not read the archive: $(head -n 1 toc.err)"
+            echo "verify=failed" >> "$GITHUB_ENV"
+          fi
 
       - name: Upload the dump
         env:
