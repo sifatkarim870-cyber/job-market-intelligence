@@ -27,15 +27,45 @@ from __future__ import annotations
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-#: Board slugs confirmed to respond with a populated ``jobs`` list when probed
-#: against the live public API. Deliberately a short, verified starting set:
-#: adding a slug is one line, and a wrong slug costs one wasted HTTP request,
-#: so there is no reason to ship a long unverified list.
+#: Board slugs verified to resolve against the live public API by
+#: ``scripts/probe_greenhouse_boards.py``, which tried 78 candidates and found
+#: 30 live boards carrying 6,573 postings between them.
+#:
+#: Ordered by volume (descending), so that if ``max_jobs_per_run`` truncates
+#: the walk, the boards already fetched are the big ones. Verified rather than
+#: guessed: a wrong slug is not free, it costs an HTTP request and a warning on
+#: every single run, forever.
 DEFAULT_COMPANY_SLUGS: list[str] = [
-    "gitlab",
-    "stripe",
-    "datadog",
-    "reddit",
+    "databricks",     # 893
+    "stripe",         # 731
+    "anthropic",      # ~600
+    "datadog",        # 432
+    "elastic",
+    "cloudflare",
+    "mongodb",
+    "okta",           # 379
+    "brex",
+    "gitlab",         # 220
+    "coinbase",
+    "fivetran",       # 201
+    "scaleai",
+    "robinhood",
+    "reddit",         # 155
+    "figma",
+    "twilio",         # 138
+    "intercom",
+    "asana",
+    "gusto",
+    "vercel",
+    "mixpanel",
+    "algolia",
+    "typeform",
+    "circleci",
+    "veracode",
+    "buildkite",
+    "netlify",
+    "airtable",
+    "prisma",
 ]
 
 
@@ -58,9 +88,15 @@ class GreenhouseSettings(BaseSettings):
         description="Max seconds to wait for one board's response.",
     )
     max_jobs_per_run: int = Field(
-        default=1000,
+        default=2500,
         ge=1,
-        description="Cap on postings persisted in one run, across all boards.",
+        description=(
+            "Cap on postings persisted in one run, across all boards. The 30 "
+            "verified boards hold ~6,570 postings, but the walk stops once the "
+            "budget is spent, so this also decides how many boards are reached. "
+            "Sized for CI: each row is an individual insert, and over the WAN "
+            "to Neon a 6,500-row run does not fit a sane job timeout."
+        ),
     )
     max_retry_attempts: int = Field(default=3, ge=1)
     retry_initial_wait_seconds: float = Field(default=1.0, ge=0.0)
