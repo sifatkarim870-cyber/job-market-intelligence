@@ -191,7 +191,8 @@ _ISO639_1_TO_FLORES: dict[str, str | None] = {
     "ta": "tam_Taml",
     "te": "tel_Telu",
     "ur": "urd_Arab",
-    "he": "heb_Hebr",  # Hebrew -- was 'heb_Arab' (no such FLORES code) until JobMaster (IL) made Hebrew live
+    # Hebrew was 'heb_Arab' (no such FLORES code) until JobMaster (IL) made Hebrew live
+    "he": "heb_Hebr",
     "ka": "kat_Geor",
     "az": "aze_Latn",
     "uz": "uzb_Latn",
@@ -518,6 +519,81 @@ class NllbTranslator:
             if decoded:
                 translations.append(decoded)
         return " ".join(translations)
+
+    def translate_batch(
+        self,
+        texts: list[str],
+        flores_source_lang: str,
+        *,
+        batch_size: int = 8,
+    ) -> list[str]:
+        """Translates a list of texts to English, batched by chunks.
+
+        Every input text is internally split into 800-char chunks (same
+        policy as :meth:`translate`); the chunk strings are then fed to
+        the tokenizer/model in groups of ``batch_size`` so a single
+        ``generate`` call services several chunks. That is the big
+        per-row-overhead saving on CPU: a row that splits into k chunks
+        becomes k chunks of throughput for one process instead of one
+        process call per row.
+
+        The per-row semantics are preserved: rows whose ``max_new_tokens``
+        cap's endpoints get copied over one by one; NF strip on newlines
+        is not done here, only chunk-joining at the end. Empty/blank
+        rows yield `""`.
+        """
+        if not texts:
+            return []
+        self._ensure_loaded()
+        import torch
+
+        per_text_chunks: list[list[str]] = []
+        flat_chunks: list[str] = []
+        for text_value in texts:
+            if not text_value or not text_value.strip():
+                chunks: list[str] = []
+            else:
+                chunks = list(
+                    split_into_chunks(text_value, self._settings.max_chars_per_chunk)
+                )
+            per_text_chunks.append(chunks)
+            flat_chunks.extend(chunks)
+
+        if not flat_chunks:
+            return [""] * len(texts)
+
+        decoded_chunks: list[str] = []
+        tokenizer = self._tokenizer
+        tokenizer.src_lang = flores_source_lang
+        for start in range(0, len(flat_chunks), batch_size):
+            group = flat_chunks[start : start + batch_size]
+            encoded = tokenizer(
+                group,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=512,
+            )
+            with torch.no_grad():
+                generated = self._model.generate(
+                    **encoded,
+                    forced_bos_token_id=self._target_id,
+                    num_beams=self._settings.num_beams,
+                    max_new_tokens=self._settings.max_new_tokens,
+                )
+            decoded_chunks.extend(
+                d.strip() for d in tokenizer.batch_decode(generated, skip_special_tokens=True)
+            )
+
+        out: list[str] = []
+        cursor = 0
+        for chunks in per_text_chunks:
+            if not chunks:
+                out.append("")
+            else:
+                out.append(" ".join(d for d in decoded_chunks[cursor : cursor + len(chunks)] if d))
+            cursor += len(chunks)
+        return out
 
 
 @dataclass(frozen=True)

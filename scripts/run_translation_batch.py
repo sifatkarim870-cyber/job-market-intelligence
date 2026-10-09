@@ -41,6 +41,7 @@ from job_market_intel.normalization.translation import (
     detect_language,
     fetch_description_pending,
     fetch_detection_pending,
+    looks_like_non_english_output,
     process_description_row,
     process_detection_row,
     resolve_flores_code,
@@ -50,6 +51,9 @@ from job_market_intel.normalization.translation import (
 #: (uncommitted rows are simply retried next run).
 _COMMIT_EVERY_TITLES = 25
 _COMMIT_EVERY_DESCRIPTIONS = 5
+
+#: Descriptions translated together in one batched generate call.
+_DESC_BATCH_JOBS = 8
 
 #: How many real translations a --dry-run previews (keeps dry runs fast:
 #: detection is cheap, model inference is not).
@@ -116,26 +120,78 @@ def _run_description_pass(
     counts: Counter = Counter()
     samples = 0
 
-    for index, job in enumerate(pending, start=1):
-        if dry_run and samples >= _DRY_RUN_DESC_SAMPLES:
-            counts["description_pass_rows"] = len(pending)
-            counts["descriptions_skipped_dry_run_cap"] = len(pending) - index + 1
-            return counts
+    if dry_run:
+        # Same preview-one-row-at-a-time path as before: a handful of
+        # samples is kept deliberately small, so there is no win from
+        # batching here and keeping the old code is safer.
+        for index, job in enumerate(pending, start=1):
+            if samples >= _DRY_RUN_DESC_SAMPLES:
+                counts["description_pass_rows"] = len(pending)
+                counts["descriptions_skipped_dry_run_cap"] = len(pending) - index + 1
+                return counts
 
-        description_en = process_description_row(job, translator, dry_run=dry_run)
-        if description_en:
-            apply_description_translation(session, job.job_id, description_en)
-            counts["descriptions_translated"] += 1
-            if index % _COMMIT_EVERY_DESCRIPTIONS == 0:
-                session.commit()
-                logger.info("Description pass: committed after {} rows.", index)
-        elif dry_run:
+            description_en = process_description_row(job, translator, dry_run=dry_run)
+            if description_en:
+                counts["descriptions_translated"] += 1
             samples += 1
+        counts["description_pass_rows"] = len(pending)
+        return counts
 
-    if pending and not dry_run:
-        session.commit()
+    # Non-dry-run: batch rows by source language, then run chunks through
+    # ``translate_batch`` -- the batched path that cuts per-row Python +
+    # GPU-warmup overhead on CPU.
+    buckets: dict[str, list] = {}
+    for job in pending:
+        if not job.description_clean:
+            continue
+        flores = resolve_flores_code(job.language_code or "")
+        if flores is None:
+            continue
+        buckets.setdefault(flores, []).append(job)
+
+    _translate_description_buckets(session, translator, buckets, counts, dry_run=False)
     counts["description_pass_rows"] = len(pending)
     return counts
+
+
+def _translate_description_buckets(
+    session,
+    translator: NllbTranslator,
+    buckets: dict[str, list],
+    counts: Counter,
+    *,
+    dry_run: bool = False,
+) -> int:
+    """Translate description_clean for the row buckets one slice at a time.
+
+    Every bucket carries rows for one source FLORES language so they can
+    share the tokenizer's ``src_lang`` for the slice. Rows with an empty
+    description or an unknown FLORES code were already dropped before
+    bucketing by the caller.
+    """
+    rows_processed = 0
+    for _flores, jobs in buckets.items():
+        for start in range(0, len(jobs), _DESC_BATCH_JOBS):
+            slab = jobs[start : start + _DESC_BATCH_JOBS]
+            texts = [job.description_clean or "" for job in slab]
+            outputs = translator.translate_batch(texts, _flores, batch_size=_DESC_BATCH_JOBS)
+            for job, en in zip(slab, outputs, strict=True):
+                rows_processed += 1
+                if not en or looks_like_non_english_output(en):
+                    logger.warning(
+                        "job {}: translated description is not English (starts {!r}) -- skipped.",
+                        job.job_id,
+                        (en or "")[:60],
+                    )
+                    continue
+                apply_description_translation(session, job.job_id, en)
+                counts["descriptions_translated"] += 1
+                if rows_processed % _COMMIT_EVERY_DESCRIPTIONS == 0:
+                    session.commit()
+                    logger.info("Description pass: committed after {} rows.", rows_processed)
+        if not dry_run:
+            session.commit()
+    return rows_processed
 
 
 def main() -> int:
