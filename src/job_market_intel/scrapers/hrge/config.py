@@ -77,7 +77,24 @@ class HRGeSettings(BaseSettings):
     api_base_url: str = "https://api.p.hr.ge/public-portal/tenant/1/api/v3/"
     web_base_url: str = "https://www.hr.ge"
     page_size: int = Field(default=100, ge=1, le=100)
-    max_pages_per_run: int = Field(default=40, ge=1)
+    # Rows per run, and therefore the real budget.
+    #
+    # Measured on 2026-10-10 over the CI WAN to Neon: ~1.2 s per detail request
+    # plus ~2.04 s per persisted row, so ~3.24 s/row end to end. At that rate the
+    # board's 3,560 live postings need about 121 minutes, which no step timeout
+    # holds -- not 20 min, and not the workflow's 45.
+    #
+    # This was the third distinct limit to be discovered on the same run, which
+    # is worth stating plainly: a detail-phase deadline was added, then
+    # batched commits, and both were correct and neither was sufficient, because
+    # the board is simply larger than the step. 7 pages = 700 rows ≈ 38 min.
+    #
+    # Pages are walked NEWEST-FIRST, so a truncated run always covers the newest
+    # postings, which are the only ones that change. The local laptop already
+    # holds the full 3,628-row corpus; CI only needs to track turnover, and
+    # twice a day at 700 rows is far more than that. A local full backfill
+    # restores the old behaviour with HRGE_MAX_PAGES_PER_RUN=40.
+    max_pages_per_run: int = Field(default=7, ge=1)
     max_details_per_run: int = Field(
         default=900,
         ge=0,
@@ -96,7 +113,7 @@ class HRGeSettings(BaseSettings):
         ),
     )
     detail_budget_seconds: float = Field(
-        default=600.0,
+        default=420.0,
         ge=0.0,
         description=(
             "WALL-CLOCK budget for the detail phase, and the real limit on one CI "

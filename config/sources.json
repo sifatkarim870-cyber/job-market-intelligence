@@ -135,10 +135,10 @@
       "code": "hrge",
       "group": "html",
       "script": "scripts/run_hrge_scraper.py",
-      "timeout": 20,
+      "timeout": 45,
       "max_env": null,
       "enabled": true,
-      "notes": "public-portal API lists ids, announcement pages carry the detail - Georgia"
+      "notes": "public-portal API lists ids (newest first), one detail request per posting. timeout raised 20 -> 45 and max_pages_per_run cut 40 -> 7: measured ~1.2s per detail plus ~2.04s per persisted row over the CI WAN, so the board full 3,560 postings needed ~121 min. 700 rows fits ~38 min. Local full backfill: HRGE_MAX_PAGES_PER_RUN=40 HRGE_MAX_DETAILS_PER_RUN=0."
     },
     {
       "code": "emploitic",
