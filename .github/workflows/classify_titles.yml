@@ -36,7 +36,20 @@ name: Title classification
 
 on:
   workflow_run:
-    workflows: ["Scheduled scraping"]
+    # Chain to the LIVE scrape workflows, by their exact `name:` values.
+    #
+    # This listed only ["Scheduled scraping"], which is scrape.yml -- the
+    # superseded single-workflow version whose cron was commented out on
+    # 2026-10-09 when scraping was split into three grouped workflows. It
+    # therefore only ever fired on a manual dispatch of that obsolete file, and
+    # the last one was 2026-10-09T06:50Z. Nothing has classified a title since:
+    # 112,484 of 112,484 rows still have title_classification_status IS NULL
+    # and only 218 carry a normalized_title_id. That is the "titles are not
+    # classified correctly" symptom, and it was a dead trigger, not a model.
+    #
+    # Matching is exact and case-sensitive, so these three strings must stay in
+    # sync with the `name:` of each scrape workflow.
+    workflows: ["Scrape (API)", "Scrape (HTML)", "Scrape (browser)"]
     types: [completed]
   workflow_dispatch: {}   # lets you trigger a classification run manually, independent of a scrape
 
