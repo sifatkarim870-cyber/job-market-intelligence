@@ -51,13 +51,13 @@
       "notes": "reed.co.uk/api/1.0 - paginated search plus per-job detail calls"
     },
     {
-      "code": "job51",
+      "code": "51job",
       "group": "api",
       "script": "scripts/run_job51_scraper.py",
       "timeout": 20,
       "max_env": "JOB51_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "cupid.51job.com search API, 100 jobs per page"
+      "notes": "cupid.51job.com search API, 100 jobs per page. code MUST match ref.sources.source_code ('51job', the site's own brand), because export_corpus_shards.py --source filters on it and shares nothing with the Python package name 'job51'. With code='job51' the scraper inserted 23 rows and the exporter then uploaded 0 shards."
     },
     {
       "code": "myjob",

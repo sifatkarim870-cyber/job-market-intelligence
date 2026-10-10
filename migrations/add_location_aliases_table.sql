@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS core.location_aliases (
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT uq_location_aliases_raw_source UNIQUE (raw_location_text, source_id),
     CONSTRAINT ck_location_aliases_match_method CHECK (match_method IN
-        ('city_exact', 'region_exact', 'country_exact', 'global_assertion', 'fallback_unmatched'))
+        ('city_exact', 'region_exact', 'country_exact', 'global_assertion',
+         'fallback_unmatched', 'source_default_country'))
 );
 
 COMMENT ON TABLE core.location_aliases IS
