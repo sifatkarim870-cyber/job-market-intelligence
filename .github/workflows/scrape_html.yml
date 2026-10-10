@@ -90,6 +90,18 @@ jobs:
           fi
 
       - name: Run ${{ matrix.code }} scraper
+        # Per-source cap from config/sources.json.
+        #
+        # This was the whole point of the `timeout` column, and it was never
+        # wired up: the matrix carried `timeout`, the prepare job printed it,
+        # and then every job got the flat job-level 90-minute ceiling instead.
+        # Glints (declared 90) therefore ran until the job ceiling killed it at
+        # exactly 1h30m, which is why the scheduled Scrape (HTML) runs at
+        # 2026-10-09T18:24Z and 2026-10-10T06:00Z were both cancelled after
+        # 1h30m37s rather than finishing. Step-level timeout-minutes supports a
+        # matrix expression, so the registry value is applied here and the
+        # job-level value stays a backstop.
+        timeout-minutes: ${{ matrix.timeout }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: uv run python ${{ matrix.script }}

@@ -106,8 +106,21 @@ jobs:
           fi
 
       - name: Run ${{ matrix.code }} scraper
+        # Per-source cap from config/sources.json. See scrape_html.yml for why
+        # this was previously declared and never applied.
+        timeout-minutes: ${{ matrix.timeout }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Reed's ReedSettings.api_key is a required field with no default, so
+          # without this the run dies on
+          #   ValidationError: api_key  Field required
+          # The REED_API_KEY secret has existed in the repo since 2026-09-29 but
+          # was never passed to the step, so EVERY scheduled Scrape (API) run
+          # has failed on reed: 2026-10-09T23:08Z (28s) and 2026-10-10T05:32Z
+          # (18m58s). Harmless to the other sources (each reads its own
+          # REED_-prefixed vars and ignores the rest), and fail-fast:false
+          # already keeps one dead source from cancelling the others.
+          REED_API_KEY: ${{ secrets.REED_API_KEY }}
         run: uv run python ${{ matrix.script }}
 
       - name: Export new rows to a Hugging Face shard
