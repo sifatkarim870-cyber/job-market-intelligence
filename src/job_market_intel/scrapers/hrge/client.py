@@ -274,41 +274,74 @@ class HRGeClient:
         for entry in listed:
             unique.setdefault(str(entry.get("announcementId")), entry)
 
-        # Bound the detail phase to a budget the CI step can actually hold.
+        # Bound the detail phase, by WALL CLOCK rather than by row count.
         #
         # The list phase is fast -- 3,560 announcement ids enumerated in 36
         # seconds -- but the detail phase is one HTTP request PER JOB with a
-        # politeness delay between each. At the board's 3,560 live postings that
-        # is several times the 20-minute step timeout, and because this loop used
-        # to log nothing at all, the run looked identical to a hang: the last
-        # line was "listed so far: 3560" and then 19 minutes of silence before
-        # "timed out after 20 minutes".
+        # politeness delay between each, so it is the whole cost of a run. It
+        # used to log nothing at all, so a timeout, a WAF challenge and a hang
+        # were indistinguishable: the last line was "listed so far: 3560" and
+        # then 19 minutes of silence before "timed out after 20 minutes".
         #
-        # max_details_per_run is the real budget for one CI pass. hrge runs
-        # every 12 hours, so 900/run is 1,800 details/day against a board whose
-        # postings turn over far slower than that, and the newest ids -- which
-        # arrive first, since pages are fetched newest-first -- are the ones
-        # that get the details.
+        # A count budget was tried first and was the wrong instrument. 900
+        # details measured 1.18 s each in CI, four times the 0.32 s assumed, so
+        # the phase alone consumed 17m45s of the 20-minute step and the run was
+        # killed before it had persisted anything. Latency to a Georgian API
+        # varies far more than any constant picked here, so the budget is a
+        # deadline: the loop stops when the clock says so, and every posting
+        # below that point still comes back with its list data.
+        #
+        # Pages are walked newest-first, so a truncated phase always covers the
+        # newest postings, which are the only ones that change.
         total = len(unique)
-        budget = min(total, settings.max_details_per_run)
+        unique_list_only = list(unique.values())
         started = time.monotonic()
-        if budget < total:
-            logger.info(
-                "HR.ge: {} unique postings but only fetching details for the "
-                "newest {} this run (max_details_per_run).",
-                total,
-                budget,
-            )
+        # A non-positive budget means "no deadline", not "deadline is now" --
+        # otherwise adding 0 to the start time truncates the phase at its first
+        # request and no deadline can ever be disabled.
+        deadline = (
+            started + settings.detail_budget_seconds
+            if settings.detail_budget_seconds > 0
+            else None
+        )
+        max_details = min(total, settings.max_details_per_run)
+
+        logger.info(
+            "HR.ge: {} unique postings; fetching details for the newest {} "
+            "within a {:.0f}s budget.",
+            total,
+            max_details,
+            settings.detail_budget_seconds,
+        )
 
         enriched: list[dict] = []
+        fetched = 0
+        stop_reason: str | None = None
         for index, entry in enumerate(unique.values()):
-            if index >= budget:
-                # No detail for this one; the list entry still carries
-                # title/company/location/dates.
-                enriched.append(entry)
-                continue
+            if index >= max_details:
+                stop_reason = f"max_details_per_run={settings.max_details_per_run}"
+                # Truncated rows still keep their list data -- a missing detail
+                # costs the description and taxonomy, not title, company,
+                # location and dates.
+                enriched.extend(unique_list_only[index:])
+                break
+            # Checked before each request, not after: confirming a slow one is
+            # too late, and the deadline has to survive the politeness sleep.
+            if deadline is not None and time.monotonic() >= deadline:
+                stop_reason = f"detail_budget_seconds={settings.detail_budget_seconds:g}"
+                logger.info(
+                    "HR.ge detail budget of {:.0f}s reached at {} postings; the "
+                    "remaining {} keep list data only.",
+                    settings.detail_budget_seconds,
+                    fetched,
+                    total - index,
+                )
+                enriched.extend(unique_list_only[index:])
+                break
+
             enriched.append(self._merge_detail(entry))
-            if settings.detail_fetch_delay_seconds and index + 1 < budget:
+            fetched += 1
+            if settings.detail_fetch_delay_seconds and index + 1 < max_details:
                 time.sleep(settings.detail_fetch_delay_seconds)
             # Progress, because this phase is minutes long and its absence is
             # what made the first diagnosis take this long.
@@ -316,14 +349,15 @@ class HRGeClient:
                 logger.info(
                     "HR.ge detail fetch {}/{} ({:.0f}s elapsed).",
                     index + 1,
-                    budget,
+                    max_details,
                     time.monotonic() - started,
                 )
 
         logger.info(
-            "Fetched {} HR.ge job records ({} unique, details merged for {}).",
+            "Fetched {} HR.ge job records ({} unique, details merged for {}; {}).",
             len(enriched),
             total,
-            min(total, budget),
+            fetched,
+            f"stopped at {stop_reason}" if stop_reason else "truncated by nothing",
         )
         return enriched

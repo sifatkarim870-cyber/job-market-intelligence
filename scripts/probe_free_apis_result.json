@@ -1,0 +1,358 @@
+[
+  {
+    "label": "arbeitnow",
+    "url": "https://www.arbeitnow.com/api/job-board-api",
+    "ms": 1454,
+    "n": 325,
+    "fields": [
+      "company_name",
+      "created_at",
+      "description",
+      "job_types",
+      "location",
+      "remote",
+      "slug",
+      "tags",
+      "title",
+      "url"
+    ],
+    "ok": true
+  },
+  {
+    "label": "himalayas",
+    "url": "https://himalayas.app/jobs/api?limit=3",
+    "ms": 942,
+    "n": 3,
+    "fields": [
+      "applicationLink",
+      "categories",
+      "companyLogo",
+      "companyName",
+      "companySlug",
+      "currency",
+      "description",
+      "employmentType",
+      "excerpt",
+      "expiryDate",
+      "guid",
+      "locationRestrictions",
+      "maxSalary",
+      "minSalary",
+      "parentCategories",
+      "pubDate",
+      "salaryPeriod",
+      "seniority",
+      "timezoneRestrictions",
+      "title"
+    ],
+    "ok": true
+  },
+  {
+    "label": "jobicy",
+    "url": "https://jobicy.com/api/v2/remote-jobs?count=3",
+    "ms": 1301,
+    "n": 3,
+    "fields": [
+      "companyLogo",
+      "companyName",
+      "id",
+      "jobDescription",
+      "jobExcerpt",
+      "jobGeo",
+      "jobIndustry",
+      "jobLevel",
+      "jobSlug",
+      "jobTitle",
+      "jobType",
+      "pubDate",
+      "url"
+    ],
+    "ok": true
+  },
+  {
+    "label": "themuse",
+    "url": "https://www.themuse.com/api/public/jobs?page=1",
+    "ms": 1632,
+    "n": 20,
+    "fields": [
+      "categories",
+      "company",
+      "contents",
+      "id",
+      "levels",
+      "locations",
+      "model_type",
+      "name",
+      "publication_date",
+      "refs",
+      "short_name",
+      "tags",
+      "type"
+    ],
+    "ok": true
+  },
+  {
+    "label": "remotive",
+    "url": "https://remotive.com/api/remote-jobs?limit=3",
+    "ms": 618,
+    "n": 17,
+    "fields": [
+      "candidate_required_location",
+      "category",
+      "company_logo",
+      "company_logo_url",
+      "company_name",
+      "description",
+      "id",
+      "job_type",
+      "publication_date",
+      "salary",
+      "tags",
+      "title",
+      "url"
+    ],
+    "ok": true
+  },
+  {
+    "label": "remoteok",
+    "url": "https://remoteok.com/api",
+    "ms": 2946,
+    "n": 100,
+    "fields": [
+      "last_updated",
+      "legal"
+    ],
+    "ok": true
+  },
+  {
+    "label": "nofluffjobs",
+    "url": "https://nofluffjobs.com/api/search/posting?criteria=&page=1&sortBy=published&orderBy=DESC",
+    "ok": false,
+    "err": "HTTP https://nofluffjobs.com/api/search/posting?criteria=&page=1&sortBy=published&orderBy=DESC returned client"
+  },
+  {
+    "label": "justjoin",
+    "url": "https://justjoin.it/api/offers",
+    "ok": false,
+    "err": "HTTP https://justjoin.it/api/offers returned client error status 404: ''"
+  },
+  {
+    "label": "djinni",
+    "url": "https://djinni.co/api/v2/user-posts?no_auth=true&type=all&limit=3",
+    "ok": false,
+    "err": "HTTP https://djinni.co/api/v2/user-posts?no_auth=true&type=all&limit=3 returned a 2xx response that was not va"
+  },
+  {
+    "label": "remotive_rss",
+    "url": "https://remotive.com/api/remote-jobs?limit=3",
+    "ms": 492,
+    "n": 17,
+    "fields": [
+      "candidate_required_location",
+      "category",
+      "company_logo",
+      "company_logo_url",
+      "company_name",
+      "description",
+      "id",
+      "job_type",
+      "publication_date",
+      "salary",
+      "tags",
+      "title",
+      "url"
+    ],
+    "ok": true
+  },
+  {
+    "label": "greenhouse_gitlab",
+    "url": "https://boards-api.greenhouse.io/v1/boards/gitlab/jobs",
+    "ms": 1612,
+    "n": 218,
+    "fields": [
+      "absolute_url",
+      "application_deadline",
+      "company_name",
+      "data_compliance",
+      "first_published",
+      "id",
+      "internal_job_id",
+      "language",
+      "location",
+      "metadata",
+      "requisition_id",
+      "title",
+      "updated_at"
+    ],
+    "ok": true
+  },
+  {
+    "label": "greenhouse_stripe",
+    "url": "https://boards-api.greenhouse.io/v1/boards/stripe/jobs",
+    "ms": 676,
+    "n": 731,
+    "fields": [
+      "absolute_url",
+      "application_deadline",
+      "company_name",
+      "data_compliance",
+      "education",
+      "first_published",
+      "id",
+      "internal_job_id",
+      "language",
+      "location",
+      "metadata",
+      "requisition_id",
+      "title",
+      "updated_at"
+    ],
+    "ok": true
+  },
+  {
+    "label": "greenhouse_datadog",
+    "url": "https://boards-api.greenhouse.io/v1/boards/datadog/jobs",
+    "ms": 1088,
+    "n": 432,
+    "fields": [
+      "absolute_url",
+      "application_deadline",
+      "company_name",
+      "data_compliance",
+      "first_published",
+      "id",
+      "internal_job_id",
+      "language",
+      "location",
+      "metadata",
+      "requisition_id",
+      "title",
+      "updated_at"
+    ],
+    "ok": true
+  },
+  {
+    "label": "greenhouse_reddit",
+    "url": "https://boards-api.greenhouse.io/v1/boards/reddit/jobs",
+    "ms": 757,
+    "n": 155,
+    "fields": [
+      "absolute_url",
+      "application_deadline",
+      "company_name",
+      "data_compliance",
+      "first_published",
+      "id",
+      "internal_job_id",
+      "language",
+      "location",
+      "metadata",
+      "requisition_id",
+      "title",
+      "updated_at"
+    ],
+    "ok": true
+  },
+  {
+    "label": "lever_netflix",
+    "url": "https://api.lever.co/v0/postings/netflix?mode=json",
+    "ok": false,
+    "err": "HTTP https://api.lever.co/v0/postings/netflix?mode=json returned client error status 404: '{\"ok\":false,\"error\""
+  },
+  {
+    "label": "lever_shopify",
+    "url": "https://api.lever.co/v0/postings/shopify?mode=json",
+    "ok": false,
+    "err": "HTTP https://api.lever.co/v0/postings/shopify?mode=json returned client error status 404: '{\"ok\":false,\"error\""
+  },
+  {
+    "label": "lever_plaid",
+    "url": "https://api.lever.co/v0/postings/plaid?mode=json",
+    "ok": false,
+    "err": "HTTP https://api.lever.co/v0/postings/plaid?mode=json returned client error status 404: '{\"ok\":false,\"error\":\""
+  },
+  {
+    "label": "ashby_railway",
+    "url": "https://api.ashbyhq.com/posting-api/job-board/railway",
+    "ms": 848,
+    "n": 8,
+    "fields": [
+      "address",
+      "applyUrl",
+      "department",
+      "descriptionHtml",
+      "descriptionPlain",
+      "employmentType",
+      "id",
+      "isListed",
+      "isRemote",
+      "jobUrl",
+      "location",
+      "publishedAt",
+      "secondaryLocations",
+      "team",
+      "title",
+      "workplaceType"
+    ],
+    "ok": true
+  },
+  {
+    "label": "workable_elcom",
+    "url": "https://apply.workable.com/api/v1/widget/accounts/elcom?details=true",
+    "ms": 704,
+    "n": 0,
+    "fields": null,
+    "ok": false
+  },
+  {
+    "label": "smartrecruiters_bosch",
+    "url": "https://api.smartrecruiters.com/v1/companies/BoschGroup/postings?limit=3",
+    "ms": 1755,
+    "n": 3,
+    "fields": [
+      "company",
+      "customField",
+      "defaultJobAd",
+      "department",
+      "experienceLevel",
+      "function",
+      "id",
+      "industry",
+      "jobAdId",
+      "language",
+      "location",
+      "name",
+      "ref",
+      "refNumber",
+      "releasedDate",
+      "typeOfEmployment",
+      "uuid",
+      "visibility"
+    ],
+    "ok": true
+  },
+  {
+    "label": "recruitee_ing",
+    "url": "https://ing.recruitee.com/api/offers/",
+    "ok": false,
+    "err": "HTTP https://ing.recruitee.com/api/offers/ returned client error status 404: '{\"error\":\"Not Found\"}'"
+  },
+  {
+    "label": "breezy_linear",
+    "url": "https://breezy.hr/json/linear",
+    "ok": false,
+    "err": "HTTP https://breezy.hr/json/linear returned client error status 403: '<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML "
+  },
+  {
+    "label": "teamtailor_deel",
+    "url": "https://api.teamtailor.com/jobs/deel?version=v2",
+    "ok": false,
+    "err": "HTTP https://api.teamtailor.com/jobs/deel?version=v2 returned client error status 404: ''"
+  },
+  {
+    "label": "jobstreet_au",
+    "url": "https://jobstreet.com.au/api/challenge-search",
+    "ok": false,
+    "err": "TransientHTTPError: Network error while requesting https://jobstreet.com.au/api/challenge-search: HTTPSConnect"
+  }
+]

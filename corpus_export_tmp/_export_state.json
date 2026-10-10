@@ -1,0 +1,10 @@
+{
+  "remoteok": {
+    "last_bytes": 815646,
+    "last_export_at": "2026-10-09T07:42:24.305556+00:00",
+    "last_path": "shards/source=remoteok/dt=2026-10-09/part-20261009T074219Z.parquet",
+    "last_rows": 461,
+    "oldest_first_scraped_in_shard": "2026-10-08 18:45:03.033291+00:00",
+    "watermark": "2026-10-09T07:42:24.305523+00:00"
+  }
+}

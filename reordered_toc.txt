@@ -1,0 +1,126 @@
+;
+; Archive created at 2026-09-07 16:28:46
+;     dbname: job_market_intelligence
+;     TOC Entries: 115
+;     Compression: gzip
+;     Dump Version: 1.16-0
+;     Format: CUSTOM
+;     Integer: 4 bytes
+;     Offset: 8 bytes
+;     Dumped from database version: 18.4
+;     Dumped by pg_dump version: 18.4
+;
+;
+; Selected TOC Entries:
+;
+8223; 0 17655 TABLE DATA core companies postgres
+8225; 0 17693 TABLE DATA core company_aliases postgres
+8316; 0 23391 TABLE DATA ops scraping_sessions postgres
+8227; 0 17817 TABLE DATA core jobs_2024_08 postgres
+8228; 0 17883 TABLE DATA core jobs_2024_09 postgres
+8229; 0 17949 TABLE DATA core jobs_2024_10 postgres
+8230; 0 18015 TABLE DATA core jobs_2024_11 postgres
+8231; 0 18081 TABLE DATA core jobs_2024_12 postgres
+8232; 0 18147 TABLE DATA core jobs_2025_01 postgres
+8233; 0 18213 TABLE DATA core jobs_2025_02 postgres
+8234; 0 18279 TABLE DATA core jobs_2025_03 postgres
+8235; 0 18345 TABLE DATA core jobs_2025_04 postgres
+8236; 0 18411 TABLE DATA core jobs_2025_05 postgres
+8237; 0 18477 TABLE DATA core jobs_2025_06 postgres
+8238; 0 18543 TABLE DATA core jobs_2025_07 postgres
+8239; 0 18609 TABLE DATA core jobs_2025_08 postgres
+8240; 0 18675 TABLE DATA core jobs_2025_09 postgres
+8241; 0 18741 TABLE DATA core jobs_2025_10 postgres
+8242; 0 18807 TABLE DATA core jobs_2025_11 postgres
+8243; 0 18873 TABLE DATA core jobs_2025_12 postgres
+8244; 0 18939 TABLE DATA core jobs_2026_01 postgres
+8245; 0 19005 TABLE DATA core jobs_2026_02 postgres
+8246; 0 19071 TABLE DATA core jobs_2026_03 postgres
+8247; 0 19137 TABLE DATA core jobs_2026_04 postgres
+8248; 0 19203 TABLE DATA core jobs_2026_05 postgres
+8249; 0 19269 TABLE DATA core jobs_2026_06 postgres
+8250; 0 19335 TABLE DATA core jobs_2026_07 postgres
+8251; 0 19401 TABLE DATA core jobs_2026_08 postgres
+8252; 0 19467 TABLE DATA core jobs_2026_09 postgres
+8253; 0 19533 TABLE DATA core jobs_2026_10 postgres
+8254; 0 19599 TABLE DATA core jobs_2026_11 postgres
+8255; 0 19665 TABLE DATA core jobs_2026_12 postgres
+8256; 0 19731 TABLE DATA core jobs_2027_01 postgres
+8257; 0 19797 TABLE DATA core jobs_2027_02 postgres
+8258; 0 19863 TABLE DATA core jobs_2027_03 postgres
+8259; 0 19929 TABLE DATA core jobs_2027_04 postgres
+8260; 0 19995 TABLE DATA core jobs_2027_05 postgres
+8261; 0 20061 TABLE DATA core jobs_2027_06 postgres
+8262; 0 20127 TABLE DATA core jobs_2027_07 postgres
+8263; 0 20193 TABLE DATA core jobs_2027_08 postgres
+8264; 0 20259 TABLE DATA core jobs_2027_09 postgres
+8265; 0 20325 TABLE DATA core jobs_2027_10 postgres
+8266; 0 20391 TABLE DATA core jobs_2027_11 postgres
+8267; 0 20457 TABLE DATA core jobs_2027_12 postgres
+8268; 0 20523 TABLE DATA core jobs_2028_01 postgres
+8269; 0 20589 TABLE DATA core jobs_2028_02 postgres
+8270; 0 20655 TABLE DATA core jobs_2028_03 postgres
+8271; 0 20721 TABLE DATA core jobs_2028_04 postgres
+8272; 0 20787 TABLE DATA core jobs_2028_05 postgres
+8273; 0 20853 TABLE DATA core jobs_2028_06 postgres
+8274; 0 20919 TABLE DATA core jobs_2028_07 postgres
+8275; 0 20985 TABLE DATA core jobs_2028_08 postgres
+8276; 0 21051 TABLE DATA core jobs_2028_09 postgres
+8277; 0 21117 TABLE DATA core jobs_2028_10 postgres
+8278; 0 21183 TABLE DATA core jobs_2028_11 postgres
+8279; 0 21249 TABLE DATA core jobs_2028_12 postgres
+8280; 0 21315 TABLE DATA core jobs_2029_01 postgres
+8281; 0 21381 TABLE DATA core jobs_2029_02 postgres
+8282; 0 21447 TABLE DATA core jobs_2029_03 postgres
+8283; 0 21513 TABLE DATA core jobs_2029_04 postgres
+8284; 0 21579 TABLE DATA core jobs_2029_05 postgres
+8285; 0 21645 TABLE DATA core jobs_2029_06 postgres
+8286; 0 21711 TABLE DATA core jobs_2029_07 postgres
+8287; 0 21777 TABLE DATA core jobs_default postgres
+8308; 0 22929 TABLE DATA bridge company_industries postgres
+8305; 0 22321 TABLE DATA bridge job_benefits postgres
+8307; 0 22726 TABLE DATA bridge job_categories_map postgres
+8306; 0 22522 TABLE DATA bridge job_languages postgres
+8304; 0 22115 TABLE DATA bridge job_skills postgres
+8288; 0 21843 TABLE DATA core job_descriptions_p0 postgres
+8289; 0 21860 TABLE DATA core job_descriptions_p1 postgres
+8298; 0 22013 TABLE DATA core job_descriptions_p10 postgres
+8299; 0 22030 TABLE DATA core job_descriptions_p11 postgres
+8300; 0 22047 TABLE DATA core job_descriptions_p12 postgres
+8301; 0 22064 TABLE DATA core job_descriptions_p13 postgres
+8302; 0 22081 TABLE DATA core job_descriptions_p14 postgres
+8303; 0 22098 TABLE DATA core job_descriptions_p15 postgres
+8290; 0 21877 TABLE DATA core job_descriptions_p2 postgres
+8291; 0 21894 TABLE DATA core job_descriptions_p3 postgres
+8292; 0 21911 TABLE DATA core job_descriptions_p4 postgres
+8293; 0 21928 TABLE DATA core job_descriptions_p5 postgres
+8294; 0 21945 TABLE DATA core job_descriptions_p6 postgres
+8295; 0 21962 TABLE DATA core job_descriptions_p7 postgres
+8296; 0 21979 TABLE DATA core job_descriptions_p8 postgres
+8297; 0 21996 TABLE DATA core job_descriptions_p9 postgres
+8312; 0 22967 TABLE DATA salary job_salaries postgres
+8314; 0 23184 TABLE DATA salary salary_history postgres
+8339; 0 0 SEQUENCE SET audit change_log_change_log_id_seq postgres
+8340; 0 0 SEQUENCE SET audit deleted_records_deleted_id_seq postgres
+8341; 0 0 SEQUENCE SET audit job_field_changes_change_id_seq postgres
+8342; 0 0 SEQUENCE SET audit job_status_history_history_id_seq postgres
+8343; 0 0 SEQUENCE SET core companies_company_id_seq postgres
+8344; 0 0 SEQUENCE SET core company_aliases_alias_id_seq postgres
+8345; 0 0 SEQUENCE SET core jobs_job_id_seq postgres
+8346; 0 0 SEQUENCE SET core location_aliases_location_alias_id_seq postgres
+8347; 0 0 SEQUENCE SET ops failed_scrapes_failed_scrape_id_seq postgres
+8348; 0 0 SEQUENCE SET ops scraper_logs_log_id_seq postgres
+8349; 0 0 SEQUENCE SET ops scraping_sessions_session_id_seq postgres
+8350; 0 0 SEQUENCE SET ops source_statistics_stat_id_seq postgres
+8351; 0 0 SEQUENCE SET salary currency_exchange_rates_exchange_rate_id_seq postgres
+8352; 0 0 SEQUENCE SET salary job_salaries_job_salary_id_seq postgres
+8353; 0 0 SEQUENCE SET salary salary_history_salary_history_id_seq postgres
+8326; 0 23874 TABLE DATA audit job_field_changes postgres
+8324; 0 23665 TABLE DATA audit job_status_history postgres
+8320; 0 23620 TABLE DATA ops failed_scrapes postgres
+8318; 0 23600 TABLE DATA ops scraper_logs postgres
+8322; 0 23648 TABLE DATA ops source_statistics postgres
+8310; 0 22949 TABLE DATA salary currency_exchange_rates postgres
+8330; 0 24090 TABLE DATA audit change_log postgres
+8328; 0 24076 TABLE DATA audit deleted_records postgres
+8332; 0 65719 TABLE DATA core location_aliases postgres

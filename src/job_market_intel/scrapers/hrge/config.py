@@ -82,17 +82,34 @@ class HRGeSettings(BaseSettings):
         default=900,
         ge=0,
         description=(
-            "Cap on detail-page requests per run, and therefore the real cost of "
-            "one CI pass. The list phase is cheap -- 3,560 ids in 36 seconds -- "
-            "but the detail phase is one HTTP request PER POSTING plus a "
-            "politeness delay, so a full pass over the 3,560 live postings takes "
-            "far longer than the 20-minute CI step and was killed mid-loop with "
-            "no progress output at all. "
-            "900 fits the budget with headroom, and since pages are fetched "
-            "newest-first the budget always covers the newest postings, which are "
-            "the ones that change. At the 12-hour cron that is 1,800 "
-            "details/day. Raise it for a local full backfill, or set 0 to take "
-            "the list entry only."
+            "HARD cap on detail-page requests per run. "
+            "The list phase is cheap -- 3,560 ids in 36 seconds -- but the "
+            "detail phase is one HTTP request PER POSTING plus a politeness "
+            "delay, so a full pass over the 3,560 live postings takes far "
+            "longer than the 20-minute CI step and used to be killed mid-loop "
+            "with no progress output at all. "
+            "900 leaves room for the rest of the run at the latency measured on "
+            "2026-10-10 (1.18 s per detail); the same run showed 900 details "
+            "alone consume 17m45s, which is why detail_budget_seconds is the "
+            "control that actually matters and this is only a backstop. "
+            "Set 0 for list-only."
+        ),
+    )
+    detail_budget_seconds: float = Field(
+        default=600.0,
+        ge=0.0,
+        description=(
+            "WALL-CLOCK budget for the detail phase, and the real limit on one CI "
+            "pass. A count budget was tried first and was the wrong instrument: "
+            "900 details measured 1.18 s each against a Georgian API, four times "
+            "the rate assumed, so the phase alone consumed 17m45s of a 20-minute "
+            "step and the run was killed before persisting anything. Network "
+            "latency varies far more than any constant picked here, so the loop "
+            "stops when the clock says so and every posting past that point keeps "
+            "its list data -- title, company, location and dates -- missing only "
+            "the description and taxonomy. 600s leaves half of a 20-minute step "
+            "for cleaning, validation and persistence. Raise it for a local "
+            "full-import backfill, or set 0.0 to disable the deadline."
         ),
     )
     announcement_type_id: int = Field(default=1, ge=1)
