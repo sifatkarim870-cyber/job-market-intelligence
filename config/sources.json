@@ -159,6 +159,15 @@
       "notes": "boards-api.greenhouse.io/v1/boards/{slug}/jobs - an ATS, not a board, so one generic scraper covers many companies via GREENHOUSE_COMPANY_SLUGS; full description HTML, no key"
     },
     {
+      "code": "arbeitnow",
+      "group": "api",
+      "script": "scripts/run_arbeitnow_scraper.py",
+      "timeout": 15,
+      "max_env": null,
+      "enabled": true,
+      "notes": "www.arbeitnow.com/api/job-board-api - whole active listing in one response, no pagination, no key; Europe-focused (DE/AT/CH/NL/UK), which balances the US/UK-heavy sources. Added 2026-10-10."
+    },
+    {
       "code": "indeed",
       "group": "browser",
       "script": "scripts/run_indeed_scraper.py",

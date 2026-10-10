@@ -36,6 +36,12 @@ from job_market_intel.validation.greenhouse_validator import (
 # circular import. Same reason the other pipelines use TYPE_CHECKING blocks.
 GreenhouseCleaner = None
 
+#: Rows per transaction. See the commit in run() for why greenhouse cannot use
+#: one commit for the whole batch. 250 keeps each transaction to roughly 4-11
+#: minutes at the 1.4-2.7 s/row CI throughput, so a 45-minute step timeout
+#: costs at most one batch instead of the entire scrape.
+PERSIST_BATCH_SIZE = 250
+
 if TYPE_CHECKING:
     pass
 
@@ -138,7 +144,21 @@ class GreenhousePipeline:
                     "Run the seed (python -m seed.run_all) before scraping."
                 )
             session_id: int | None = None
-            for job in cleaned:
+            # Commit every PERSIST_BATCH_SIZE rows rather than once at the end.
+            #
+            # Greenhouse is the only scraper that saves row-by-row through
+            # save_cleaned_job instead of the batched save_cleaned_jobs(), which
+            # is what makes it the slowest source against Neon: measured 1.4-2.7
+            # s/row in CI, so the 2,500-row budget needs 60-110 minutes. CI caps
+            # the step at the registry's 45 minutes, so the process was killed
+            # mid-transaction and Postgres rolled the whole thing back --
+            # 2,500 postings fetched, validated at 0.0% skip, and 0 rows
+            # persisted, on every scheduled run.
+            #
+            # Committing periodically makes the run's progress durable, so a
+            # timeout costs one batch instead of the entire scrape. It also
+            # bounds the transaction, which is what was actually killing it.
+            for index, job in enumerate(cleaned, start=1):
                 try:
                     outcome = repo.save_cleaned_job(
                         session, job, source_id=int(source_id), session_id=session_id
@@ -153,6 +173,14 @@ class GreenhousePipeline:
                     result.failed_count += 1
                     logger.warning(
                         "failed to persist Greenhouse job {}: {}", job.source_job_id, exc
+                    )
+                if index % PERSIST_BATCH_SIZE == 0:
+                    session.commit()
+                    logger.info(
+                        "persisted {}/{} Greenhouse jobs ({} inserted so far)",
+                        index,
+                        len(cleaned),
+                        result.inserted_count,
                     )
             session.commit()
 

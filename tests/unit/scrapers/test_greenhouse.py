@@ -228,6 +228,32 @@ def test_html_unescape_is_the_documented_first_step():
     assert "<p>" not in raw
 
 
+class TestPersistenceDurability:
+    """Greenhouse is the one scraper that saves row-by-row, so it is the one
+    whose transaction length decides whether a CI timeout loses everything."""
+
+    def test_batch_size_bounds_the_transaction(self):
+        """Regression: greenhouse committed once after all 2,500 rows. Measured
+        CI throughput is 1.4-2.7 s/row against Neon, so 2,500 rows needs 60-110
+        minutes, the step is capped at the registry's 45, and the process was
+        killed mid-transaction -- Postgres rolled the whole thing back and 2,500
+        validated postings persisted 0 rows, on every scheduled run."""
+        from job_market_intel.scrapers.greenhouse.pipeline import PERSIST_BATCH_SIZE
+
+        assert PERSIST_BATCH_SIZE > 0
+        # Each transaction must be a small fraction of the 45-minute step
+        # budget, or one batch can still blow it and roll back.
+        assert PERSIST_BATCH_SIZE <= 500
+
+    def test_batch_size_is_smaller_than_the_row_budget(self):
+        from job_market_intel.scrapers.greenhouse.config import GreenhouseSettings
+        from job_market_intel.scrapers.greenhouse.pipeline import PERSIST_BATCH_SIZE
+
+        # Otherwise the final partial batch is the only commit and the
+        # intermediate ones never fire.
+        assert PERSIST_BATCH_SIZE < GreenhouseSettings().max_jobs_per_run
+
+
 @pytest.mark.parametrize("slug", ["gitlab", "stripe"])
 def test_board_url_shape(slug: str):
     from job_market_intel.scrapers.greenhouse.client import GreenhouseClient
