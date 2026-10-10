@@ -37,10 +37,11 @@ from job_market_intel.validation.greenhouse_validator import (
 GreenhouseCleaner = None
 
 #: Rows per transaction. See the commit in run() for why greenhouse cannot use
-#: one commit for the whole batch. 250 keeps each transaction to roughly 4-11
-#: minutes at the 1.4-2.7 s/row CI throughput, so a 45-minute step timeout
-#: costs at most one batch instead of the entire scrape.
-PERSIST_BATCH_SIZE = 250
+#: one commit for the whole batch. At the measured 1.98 s/row, 100 rows is
+#: ~3.3 minutes, so a 45-minute step timeout costs at most one batch instead of
+#: the entire scrape. The first version used 250 and lost 80 rows to the kill on
+#: a run that had already committed 1,250.
+PERSIST_BATCH_SIZE = 100
 
 if TYPE_CHECKING:
     pass

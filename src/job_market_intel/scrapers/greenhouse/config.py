@@ -88,14 +88,21 @@ class GreenhouseSettings(BaseSettings):
         description="Max seconds to wait for one board's response.",
     )
     max_jobs_per_run: int = Field(
-        default=2500,
+        default=1000,
         ge=1,
         description=(
             "Cap on postings persisted in one run, across all boards. The 30 "
             "verified boards hold ~6,570 postings, but the walk stops once the "
             "budget is spent, so this also decides how many boards are reached. "
-            "Sized for CI: each row is an individual insert, and over the WAN "
-            "to Neon a 6,500-row run does not fit a sane job timeout."
+            "Sized from measured CI throughput rather than guessed: greenhouse "
+            "saves row-by-row, and commits 250 rows every 7.9-8.9 minutes "
+            "against Neon, i.e. 1.98 s/row. Against the registry's 45-minute "
+            "step timeout that puts the ceiling at ~1,360 rows, so the previous "
+            "default of 2,500 needed 82 minutes and every scheduled run was "
+            "killed at 45 -- committing its first 1,250 rows and discarding the "
+            "rest. 1,000 leaves ~12 minutes of headroom for a slower runner. "
+            "CI runs every 6 hours, so this still clears 4,000 rows/day; raise it "
+            "via GREENHOUSE_MAX_JOBS_PER_RUN for a local full backfill."
         ),
     )
     max_retry_attempts: int = Field(default=3, ge=1)

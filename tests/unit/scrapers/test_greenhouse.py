@@ -232,18 +232,41 @@ class TestPersistenceDurability:
     """Greenhouse is the one scraper that saves row-by-row, so it is the one
     whose transaction length decides whether a CI timeout loses everything."""
 
+    #: Measured in CI on 2026-10-10, commit 310e948: greenhouse committed 250
+    #: rows every 7.9-8.9 minutes against Neon. Slower on a busy or distant
+    #: runner, so the budget check below leaves headroom rather than sitting on
+    #: the measurement.
+    SECONDS_PER_ROW = 1.98
+    STEP_BUDGET_MINUTES = 45  # greenhouse's timeout in config/sources.json
+
     def test_batch_size_bounds_the_transaction(self):
-        """Regression: greenhouse committed once after all 2,500 rows. Measured
-        CI throughput is 1.4-2.7 s/row against Neon, so 2,500 rows needs 60-110
-        minutes, the step is capped at the registry's 45, and the process was
-        killed mid-transaction -- Postgres rolled the whole thing back and 2,500
-        validated postings persisted 0 rows, on every scheduled run."""
+        """Regression: greenhouse committed once after all 2,500 rows. The
+        process was killed mid-transaction, Postgres rolled the whole thing
+        back, and 2,500 validated postings persisted 0 rows."""
         from job_market_intel.scrapers.greenhouse.pipeline import PERSIST_BATCH_SIZE
 
         assert PERSIST_BATCH_SIZE > 0
-        # Each transaction must be a small fraction of the 45-minute step
-        # budget, or one batch can still blow it and roll back.
-        assert PERSIST_BATCH_SIZE <= 500
+        # One transaction must be a small fraction of the step budget, or a
+        # single batch can still blow it.
+        batch_minutes = PERSIST_BATCH_SIZE * self.SECONDS_PER_ROW / 60
+        assert batch_minutes <= self.STEP_BUDGET_MINUTES / 4, (
+            f"a {PERSIST_BATCH_SIZE}-row transaction is {batch_minutes:.1f} min, "
+            f"too long a share of a {self.STEP_BUDGET_MINUTES}-min step"
+        )
+
+    def test_row_budget_fits_inside_the_step_timeout(self):
+        """Regression: the default was 2,500 rows, which at 1.98 s/row is 82
+        minutes against a 45-minute step. Every run was killed at 45, committing
+        its first 1,250 rows and discarding the rest, and the shard step was
+        skipped because the scrape step failed."""
+        from job_market_intel.scrapers.greenhouse.config import GreenhouseSettings
+
+        budget = GreenhouseSettings().max_jobs_per_run
+        minutes = budget * self.SECONDS_PER_ROW / 60
+        assert minutes < self.STEP_BUDGET_MINUTES, (
+            f"max_jobs_per_run={budget} needs {minutes:.0f} min, over the "
+            f"{self.STEP_BUDGET_MINUTES}-min step timeout"
+        )
 
     def test_batch_size_is_smaller_than_the_row_budget(self):
         from job_market_intel.scrapers.greenhouse.config import GreenhouseSettings
