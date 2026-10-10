@@ -196,20 +196,22 @@ class HRGeClient:
             return None
         return announcement
 
-    # -- public entry point --------------------------------------------
-    def fetch_raw_jobs(self) -> list[dict]:
-        """Fetch up to ``max_pages_per_run`` list pages, then enrich.
+    def _merge_detail(self, entry: dict) -> dict:
+        """One list entry plus its detail payload, detail keys winning.
 
-        Returns:
-            A list of raw job dictionaries in HR.ge's own field naming.
-            Each list entry is merged with its detail payload (detail
-            keys win) when ``fetch_details`` is on, so the records carry
-            ``description``/``announcementRequirements``/salary.
-
-        Raises:
-            HRGeFetchError: If a request failed after exhausting retries.
-            HRGeResponseError: If a payload wasn't a usable job list.
+        Returns the entry unchanged when the detail is missing, because the list
+        entry still carries title/company/location/dates on its own.
         """
+        detail = self._fetch_detail(entry.get("announcementId"))
+        if not detail:
+            return entry
+        merged = dict(entry)
+        merged.update({k: v for k, v in detail.items() if v is not None})
+        return merged
+
+    # -- public entry point --------------------------------------------
+    def _fetch_all_pages(self) -> tuple[list[dict], int | None]:
+        """Walk the list pages, newest first, and return them with the total."""
         settings = self._settings
         listed: list[dict] = []
         total: int | None = None
@@ -236,6 +238,24 @@ class HRGeClient:
             if total is not None and len(listed) >= total:
                 break
 
+        return listed, total
+
+    def fetch_raw_jobs(self) -> list[dict]:
+        """Fetch up to ``max_pages_per_run`` list pages, then enrich.
+
+        Returns:
+            A list of raw job dictionaries in HR.ge's own field naming.
+            Each list entry is merged with its detail payload (detail
+            keys win) when ``fetch_details`` is on, so the records carry
+            ``description``/``announcementRequirements``/salary.
+
+        Raises:
+            HRGeFetchError: If a request failed after exhausting retries.
+            HRGeResponseError: If a payload wasn't a usable job list.
+        """
+        settings = self._settings
+        listed, _total = self._fetch_all_pages()
+
         if not listed:
             raise HRGeResponseError(
                 "HR.ge returned zero recognizable job records across all "
@@ -254,21 +274,56 @@ class HRGeClient:
         for entry in listed:
             unique.setdefault(str(entry.get("announcementId")), entry)
 
+        # Bound the detail phase to a budget the CI step can actually hold.
+        #
+        # The list phase is fast -- 3,560 announcement ids enumerated in 36
+        # seconds -- but the detail phase is one HTTP request PER JOB with a
+        # politeness delay between each. At the board's 3,560 live postings that
+        # is several times the 20-minute step timeout, and because this loop used
+        # to log nothing at all, the run looked identical to a hang: the last
+        # line was "listed so far: 3560" and then 19 minutes of silence before
+        # "timed out after 20 minutes".
+        #
+        # max_details_per_run is the real budget for one CI pass. hrge runs
+        # every 12 hours, so 900/run is 1,800 details/day against a board whose
+        # postings turn over far slower than that, and the newest ids -- which
+        # arrive first, since pages are fetched newest-first -- are the ones
+        # that get the details.
+        total = len(unique)
+        budget = min(total, settings.max_details_per_run)
+        started = time.monotonic()
+        if budget < total:
+            logger.info(
+                "HR.ge: {} unique postings but only fetching details for the "
+                "newest {} this run (max_details_per_run).",
+                total,
+                budget,
+            )
+
         enriched: list[dict] = []
         for index, entry in enumerate(unique.values()):
-            detail = self._fetch_detail(entry.get("announcementId"))
-            if detail:
-                merged = dict(entry)
-                merged.update({k: v for k, v in detail.items() if v is not None})
-                enriched.append(merged)
-            else:
+            if index >= budget:
+                # No detail for this one; the list entry still carries
+                # title/company/location/dates.
                 enriched.append(entry)
-            if settings.detail_fetch_delay_seconds and index + 1 < len(unique):
+                continue
+            enriched.append(self._merge_detail(entry))
+            if settings.detail_fetch_delay_seconds and index + 1 < budget:
                 time.sleep(settings.detail_fetch_delay_seconds)
+            # Progress, because this phase is minutes long and its absence is
+            # what made the first diagnosis take this long.
+            if (index + 1) % 100 == 0:
+                logger.info(
+                    "HR.ge detail fetch {}/{} ({:.0f}s elapsed).",
+                    index + 1,
+                    budget,
+                    time.monotonic() - started,
+                )
 
         logger.info(
-            "Fetched {} HR.ge job records ({} unique, details merged).",
+            "Fetched {} HR.ge job records ({} unique, details merged for {}).",
             len(enriched),
-            len(unique),
+            total,
+            min(total, budget),
         )
         return enriched

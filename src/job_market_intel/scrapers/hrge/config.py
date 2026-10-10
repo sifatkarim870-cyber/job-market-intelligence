@@ -78,6 +78,23 @@ class HRGeSettings(BaseSettings):
     web_base_url: str = "https://www.hr.ge"
     page_size: int = Field(default=100, ge=1, le=100)
     max_pages_per_run: int = Field(default=40, ge=1)
+    max_details_per_run: int = Field(
+        default=900,
+        ge=0,
+        description=(
+            "Cap on detail-page requests per run, and therefore the real cost of "
+            "one CI pass. The list phase is cheap -- 3,560 ids in 36 seconds -- "
+            "but the detail phase is one HTTP request PER POSTING plus a "
+            "politeness delay, so a full pass over the 3,560 live postings takes "
+            "far longer than the 20-minute CI step and was killed mid-loop with "
+            "no progress output at all. "
+            "900 fits the budget with headroom, and since pages are fetched "
+            "newest-first the budget always covers the newest postings, which are "
+            "the ones that change. At the 12-hour cron that is 1,800 "
+            "details/day. Raise it for a local full backfill, or set 0 to take "
+            "the list entry only."
+        ),
+    )
     announcement_type_id: int = Field(default=1, ge=1)
     fetch_details: bool = True
     detail_fetch_delay_seconds: float = Field(default=0.1, ge=0.0)
