@@ -17,6 +17,11 @@ from job_market_intel.scrapers.hrge.config import HRGeSettings
 from job_market_intel.scrapers.hrge.parser import HRGeParser
 from job_market_intel.validation import HRGeBatchValidator, HRGeValidationSettings
 
+#: Rows per transaction during persistence. See the commit_every note in
+#: _persist_with_session: ~0.21 s/row observed against Neon, so 100 rows is about
+#: 20 seconds of progress that a step timeout can cost at most.
+PERSIST_BATCH_SIZE = 100
+
 if TYPE_CHECKING:
     from job_market_intel.cleaning.hrge_cleaner import HRGeCleaner
     from job_market_intel.db.job_repository import JobRepository
@@ -115,11 +120,19 @@ class HRGePipeline:
         )
         result.session_id = session_id
 
+        # commit_every bounds what a mid-batch timeout costs. A savepoint (see
+        # save_cleaned_jobs' docstring) is a nested unit of work, not a durable
+        # one, so without commit points one transaction holds for all ~3,560
+        # rows and a 20-minute CI step discards every one -- measured 12.5
+        # minutes of persistence over Neon on 2026-10-10, killed with nothing to
+        # show. 100 is ~20 s of progress at the ~0.21 s/row actually observed, so
+        # a timeout costs at most one short interval.
         counts = self.repository.save_cleaned_jobs(
             session=session,
             jobs=cleaned_jobs,
             source_id=source_id,
             session_id=session_id,
+            commit_every=PERSIST_BATCH_SIZE,
         )
 
         result.inserted_count = counts["inserted"]

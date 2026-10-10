@@ -994,3 +994,89 @@ class TestSaveCleanedJobsSavepointWiring:
         counts = repo.save_cleaned_jobs(session=object(), jobs=jobs, source_id=1, session_id=1)
 
         assert counts == {"inserted": 2, "updated": 0, "unchanged": 0, "failed": 1}
+
+
+class TestSaveCleanedJobsCommitBatching:
+    """Guard for commit_every: a savepoint is nested, not durable, so without
+    commit points a mid-batch timeout rolls back the whole batch.
+
+    Observed on HR.ge 2026-10-10: the fetch phase had already been trimmed to
+    fit a 20-minute CI step, then persistence ran 12.5 minutes over ~3,560 rows
+    against Neon, the step was killed, and Postgres discarded every row.
+    """
+
+    @staticmethod
+    def _repo_with_fake_save(monkeypatch):
+        from job_market_intel.db import job_repository as job_repository_module
+
+        class _FakeTransaction:
+            def __init__(self, session: object) -> None:
+                pass
+
+            def __enter__(self) -> object:
+                return self
+
+            def __exit__(self, *exc_info: object) -> bool:
+                return False
+
+        monkeypatch.setattr(job_repository_module, "transaction", _FakeTransaction)
+
+        repo = JobRepository()
+        monkeypatch.setattr(repo, "save_cleaned_job", lambda **kw: "inserted")
+        return repo
+
+    def test_default_never_commits_mid_batch(self, monkeypatch) -> None:
+        repo = self._repo_with_fake_save(monkeypatch)
+        session = MagicMock()
+        jobs = [MagicMock(source_job_id=f"j{i}") for i in range(10)]
+
+        repo.save_cleaned_jobs(session=session, jobs=jobs, source_id=1)
+
+        session.commit.assert_not_called()
+
+    def test_commits_on_the_interval_only(self, monkeypatch) -> None:
+        repo = self._repo_with_fake_save(monkeypatch)
+        session = MagicMock()
+        jobs = [MagicMock(source_job_id=f"j{i}") for i in range(10)]
+
+        repo.save_cleaned_jobs(
+            session=session, jobs=jobs, source_id=1, commit_every=4
+        )
+
+        # 10 rows / interval 4 = commits at 4 and 8; not at 10, since the
+        # caller's unit-of-work owns the final one.
+        assert session.commit.call_count == 2
+
+    def test_single_batch_smaller_than_interval_does_not_commit(
+        self, monkeypatch
+    ) -> None:
+        repo = self._repo_with_fake_save(monkeypatch)
+        session = MagicMock()
+        jobs = [MagicMock(source_job_id=f"j{i}") for i in range(3)]
+
+        repo.save_cleaned_jobs(
+            session=session, jobs=jobs, source_id=1, commit_every=10
+        )
+
+        session.commit.assert_not_called()
+
+    def test_zero_interval_is_disabled(self, monkeypatch) -> None:
+        repo = self._repo_with_fake_save(monkeypatch)
+        session = MagicMock()
+        jobs = [MagicMock(source_job_id=f"j{i}") for i in range(10)]
+
+        repo.save_cleaned_jobs(session=session, jobs=jobs, source_id=1, commit_every=0)
+
+        session.commit.assert_not_called()
+
+    def test_counts_are_unaffected_by_batching(self, monkeypatch) -> None:
+        """Batching changes when rows become durable, not what is reported."""
+        repo = self._repo_with_fake_save(monkeypatch)
+        session = MagicMock()
+        jobs = [MagicMock(source_job_id=f"j{i}") for i in range(12)]
+
+        counts = repo.save_cleaned_jobs(
+            session=session, jobs=jobs, source_id=1, commit_every=5
+        )
+
+        assert counts == {"inserted": 12, "updated": 0, "unchanged": 0, "failed": 0}

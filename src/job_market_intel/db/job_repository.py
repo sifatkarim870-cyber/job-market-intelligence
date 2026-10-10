@@ -692,6 +692,7 @@ class JobRepository(AbstractRepository[Any]):
         jobs: list[CleanedJob],
         source_id: int,
         session_id: int | None = None,
+        commit_every: int = 0,
     ) -> dict[str, int]:
         """Batch save CleanedJob records.
 
@@ -711,12 +712,22 @@ class JobRepository(AbstractRepository[Any]):
         the rest of the batch, and the session-level bookkeeping, still
         commit normally.
 
+        ``commit_every`` commits every N jobs, which bounds what a
+        mid-batch timeout costs. A savepoint is a nested unit of work,
+        not a durable one, so without commit points a single transaction
+        holds for the whole batch and a CI step timeout discards all of
+        it. Observed on HR.ge on 2026-10-10: the detail phase had been
+        trimmed to fit, then persistence ran 12.5 minutes over ~3,560
+        rows against Neon and the kill rolled back every row. Default 0
+        keeps the caller's unit-of-work in charge and changes nothing for
+        the existing callers.
+
         Returns:
             Dictionary with keys 'inserted', 'updated', 'unchanged', 'failed'.
         """
         counts = {"inserted": 0, "updated": 0, "unchanged": 0, "failed": 0}
 
-        for job in jobs:
+        for index, job in enumerate(jobs, start=1):
             try:
                 with transaction(session):
                     status = self.save_cleaned_job(
@@ -728,6 +739,15 @@ class JobRepository(AbstractRepository[Any]):
                     "Failed to persist job {} (source_id={}): {}", job.source_job_id, source_id, exc
                 )
                 counts["failed"] += 1
+
+            if commit_every and index % commit_every == 0 and index < len(jobs):
+                session.commit()
+                logger.info(
+                    "persisted {}/{} jobs ({} inserted so far).",
+                    index,
+                    len(jobs),
+                    counts["inserted"],
+                )
 
         logger.info(
             "Batch persistence complete: {} inserted, {} updated, {} unchanged, {} failed.",
