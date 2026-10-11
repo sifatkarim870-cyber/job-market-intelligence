@@ -134,17 +134,52 @@ jobs:
           CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
         run: |
           set -euo pipefail
-          DSN="${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
-          dsn="${DSN#postgresql+psycopg://}"
-          creds="${dsn%@*}"
-          hostpart="${dsn#*@}"
-          host="${hostpart%%/*}"
-          db="${hostpart#*/}"
-          db="${db%%\?*}"
-          user="${creds%%:*}"
-          export PGPASSWORD="${creds#*:}"
+          # Parse the DSN with Python rather than shell parameter expansion.
+          #
+          # The shell version did:
+          #     dsn="${DSN#postgresql+psycopg://}"; host="${dsn%%/*}"
+          # which keeps the port glued to the host -- the path split is at the
+          # FIRST '/', and for postgres://user:pass@localhost:5432/db that
+          # first '/' is the one before the database, so host came out as
+          # "localhost:5432" and pg_dump reported
+          #     could not translate host name "localhost:5432" to address
+          # shell has no reliable "rsplit on the last @ before the path", and
+          # that is also needed for a password containing '@'.
+          #
+          # The DSN travels through an environment variable rather than argv: a
+          # heredoc-fed python cannot see the shell's positional parameters, so
+          # sys.argv[1] raised IndexError and every field came out empty -- a
+          # failure that then looks like an authentication problem.
+          JMI_DSN="${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
+          export JMI_DSN
+          eval "$(uv run python - <<'PY'
+          import os
+          import shlex
+          import sys
+          from urllib.parse import unquote, urlsplit
+
+          dsn = os.environ["JMI_DSN"]
+          for prefix in ("postgresql+psycopg://", "postgresql://", "postgres://"):
+              if dsn.startswith(prefix):
+                  dsn = "postgresql://" + dsn[len(prefix):]
+                  break
+          u = urlsplit(dsn)
+          # urlsplit exposes the database as .path (leading '/'), not
+          # .database -- which is a SQLAlchemy-ism, not a stdlib one.
+          db = u.path.lstrip("/")
+          if not u.hostname or not u.username or not db:
+              sys.exit(f"cannot parse DSN: {dsn!r}")
+          print(f"host={shlex.quote(u.hostname)}")
+          print(f"port={shlex.quote(str(u.port or 5432))}")
+          print(f"db={shlex.quote(db)}")
+          print(f"user={shlex.quote(unquote(u.username))}")
+          print(f"PGPASSWORD={shlex.quote(unquote(u.password or ''))}")
+          PY
+          )"
+          export PGPASSWORD
           PG_BIN="${PG_BIN:-$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -n 1)}"
-          "$PG_BIN/pg_dump" -h "$host" -U "$user" -d "$db" -Fc -Z6 -f corpus_full.dump
+          echo "dumping $db at $host:$port as $user"
+          "$PG_BIN/pg_dump" -h "$host" -p "$port" -U "$user" -d "$db" -Fc -Z6 -f corpus_full.dump
           ls -l corpus_full.dump
           sha256sum corpus_full.dump | tee corpus_full.dump.sha256
           # DIAGNOSTIC, not a gate: a verifier failure must not stop the
