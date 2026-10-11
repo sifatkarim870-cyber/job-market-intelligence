@@ -19,6 +19,7 @@ import argparse
 import os
 import pathlib
 import shutil
+import sys
 import tempfile
 from urllib.parse import urlsplit
 
@@ -29,19 +30,38 @@ from sqlalchemy import create_engine, text
 LOCAL_DSN = "postgresql+psycopg://app_user:changeme@localhost:5432/job_market_intelligence"
 REPO = "Shifat2110724169/job-market-intel-corpus"
 STATE_PREFIX = "state/"
-TOKEN = pathlib.Path(
+#: Where the write token is read from when the environment does not supply one.
+#: A hardcoded Windows path here once made every CI job fail on a machine that
+#: has no such path -- see _resolve_token().
+TOKEN_FILE = pathlib.Path(
     r"D:\Research_Project\JobMarketAnalysisPlatform\DataBase\Hugging_Face_token.txt"
-).read_text(encoding="utf-8").strip()
+)
 
 
-def local_token() -> str:
-    return TOKEN
+def _resolve_token() -> str:
+    """HF token from the environment, else the token file.
+
+    HF_TOKEN is present in CI and in local runs that need it, so the file is
+    only a laptop convenience. Reading the file first made the restore script
+    fail on any machine without it -- including every GitHub runner.
+    """
+    import os
+
+    env_token = os.environ.get("HF_TOKEN")
+    if env_token:
+        return env_token
+    if TOKEN_FILE.exists():
+        return TOKEN_FILE.read_text(encoding="utf-8").strip()
+    raise SystemExit(
+        "HF_TOKEN is not set and the token file is missing. "
+        "Set HF_TOKEN, or place one at " + str(TOKEN_FILE)
+    )
 
 
 def download_state(work: pathlib.Path) -> pathlib.Path:
     from huggingface_hub import HfApi
 
-    api = HfApi(token=TOKEN)
+    api = HfApi(token=_resolve_token())
     names = sorted(
         n
         for n in api.list_repo_files(REPO, repo_type="dataset")
@@ -51,7 +71,7 @@ def download_state(work: pathlib.Path) -> pathlib.Path:
     dest.mkdir(parents=True, exist_ok=True)
     for name in names:
         local = api.hf_hub_download(
-            repo_id=REPO, repo_type="dataset", filename=name, token=TOKEN
+            repo_id=REPO, repo_type="dataset", filename=name, token=_resolve_token()
         )
         shutil.copy(local, dest / name[len(STATE_PREFIX) :])
         logger.info("downloaded {}", name[len(STATE_PREFIX) :])
