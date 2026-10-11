@@ -95,11 +95,10 @@ jobs:
       - name: Seed the ephemeral database from the HF state snapshot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
         run: |
           uv run python scripts/restore_state_snapshot.py --source hf \
             --dsn "${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
-        env:
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
 
       - name: Apply the row-cap override
         if: inputs.max_jobs != ''
