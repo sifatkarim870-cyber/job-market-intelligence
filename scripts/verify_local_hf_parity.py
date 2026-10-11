@@ -49,7 +49,15 @@ TOKEN = pathlib.Path(
 #: Data columns compared between the databases and HF. Kept to the ones that
 #: actually drift: a translation applied on the laptop, a re-resolved location, a
 #: merged row. ``source`` is a hive partition, handled separately.
-DATA_COLUMNS = ("source_job_id", "description_en", "country_code", "location_raw")
+#: posting_date is read as the raw column (not the hive partition) because it is
+#: part of the natural key, not just a label.
+DATA_COLUMNS = (
+    "source_job_id",
+    "posting_date",
+    "description_en",
+    "country_code",
+    "location_raw",
+)
 
 
 def neon_dsn() -> str | None:
@@ -76,9 +84,19 @@ def neon_dsn() -> str | None:
 
 
 def _read_sources(dsn: str) -> dict[str, tuple[str, object, object, object]]:
-    """(source, source_job_id) -> the compared columns, for one database."""
+    """(source, source_job_id, posting_date) -> the compared columns.
+
+    ``posting_date`` is part of the key because it is part of the schema's
+    natural key (``uq_jobs_source_natural_key``) and therefore part of the
+    shard's identity. Keying on (source, source_job_id) alone made this script
+    report 113,335 for a 113,373-row database and call the correct HF snapshot
+    "DIVERGED" -- a verifier that flags the fixed thing as the bug. A source
+    that re-lists a posting on a later date is a genuinely distinct row (see
+    export_corpus_to_hf._merge_source).
+    """
     sql = (
         "SELECT s.source_code, j.source_job_id::text AS source_job_id, "
+        "  j.posting_date::text AS posting_date, "
         "  (SELECT d.description_en FROM core.job_descriptions d "
         "    WHERE d.job_id = j.job_id) AS description_en, "
         "  c.iso_code_2 AS country_code, l.raw_location_text AS location_raw "
@@ -92,7 +110,7 @@ def _read_sources(dsn: str) -> dict[str, tuple[str, object, object, object]]:
     engine = create_engine(dsn, connect_args={"connect_timeout": 15})
     with engine.connect() as conn:
         rows = conn.execute(text(sql)).all()
-    return {(r[0], r[1]): r[2:] for r in rows}
+    return {(r[0], r[1], r[2]): r[3:] for r in rows}
 
 
 def read_shard(url: str, shard_path: str) -> dict[str, list]:
@@ -106,6 +124,9 @@ def read_shard(url: str, shard_path: str) -> dict[str, list]:
     response.raise_for_status()
     table = pq.read_table(io.BytesIO(response.content), columns=list(DATA_COLUMNS))
     out = {name: table.column(name).to_pylist() for name in DATA_COLUMNS}
+    # posting_date comes back as a date object from Arrow but the SQL side casts
+    # to text; normalise both to YYYY-MM-DD so the keys can actually match.
+    out["posting_date"] = [str(v)[:10] if v is not None else None for v in out["posting_date"]]
     source = shard_path.split("source=", 1)[1].split("/", 1)[0]
     out["source"] = [source] * table.num_rows
     return out
@@ -116,20 +137,26 @@ def main() -> int:
 
     api = HfApi(token=TOKEN)
     shards = sorted(
-        f for f in api.list_repo_files(REPO, repo_type="dataset") if f.endswith(".parquet")
+        f
+        for f in api.list_repo_files(REPO, repo_type="dataset")
+        # Only the corpus tree. The repo also holds state/reference*.parquet
+        # (the ref.* tables behind the CI seed) and the pg dumps; those have
+        # completely different columns, so feeding them to read_shard raised
+        #   No match for FieldRef.Name(source_job_id) in benefit_id: int64
+        if f.startswith("shards/") and f.endswith(".parquet")
     )
     print(f"{len(shards)} shards on HF")
 
     # Aggregate across shards one file at a time -- see the module docstring on
     # why DuckDB's parallel glob reader over hf:// is not used.
     hf_rows = 0
-    hf: dict[tuple[str, str], tuple] = {}
+    hf: dict[tuple[str, str, str], tuple] = {}
     for shard in shards:
         url = f"https://huggingface.co/datasets/{REPO}/resolve/main/{shard}"
         cols = read_shard(url, shard)
         hf_rows += len(cols["source"])
         for key, values in zip(
-            zip(cols["source"], cols["source_job_id"]),
+            zip(cols["source"], cols["source_job_id"], cols["posting_date"]),
             zip(cols["description_en"], cols["country_code"], cols["location_raw"]),
         ):
             hf[key] = values
@@ -188,7 +215,7 @@ def main() -> int:
         print(f"  in the databases but not on HF     : {len(only_db):,}  <-- re-run export")
 
     top: dict[str, int] = {}
-    for (src, _job_id), values in hf.items():
+    for (_src, _job_id, _posting_date), values in hf.items():
         if values[2]:
             top[values[2]] = top.get(values[2], 0) + 1
     print("\nHF location_raw top values:")
