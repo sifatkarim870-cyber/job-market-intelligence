@@ -76,6 +76,22 @@ jobs:
     # ~2.4GB) so a big backfill cannot get killed mid-write; public repo
     # → unlimited minutes anyway.
     timeout-minutes: 60
+    # Ephemeral database seeded from the HF corpus repo; the hosted Neon quota
+    # is exhausted. See scrape_api.yml for the full reasoning.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: jmi_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -91,6 +107,11 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --extra dev --extra test
+
+      - name: Seed the ephemeral database from the HF state snapshot
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: uv run python scripts/restore_state_snapshot.py --source hf
 
       # Caches the downloaded model across runs -- without this, every
       # run would re-download ~470MB from Hugging Face before doing any
@@ -125,10 +146,10 @@ jobs:
       - name: Translate non-English titles (before classification)
         continue-on-error: true
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
         run: uv run python scripts/run_translation_batch.py --scope titles
 
       - name: Run title classification batch
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
         run: uv run python scripts/run_title_classification_batch.py

@@ -63,11 +63,18 @@ def _quote_identifier(name: str) -> str:
 
 
 def _psql_binary() -> pathlib.Path:
-    program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
-    candidates = sorted(
-        pathlib.Path(program_files, "PostgreSQL").glob("*/bin/psql.exe"), reverse=True
-    )
-    return candidates[0] if candidates else pathlib.Path("psql")
+    """Locate psql. Windows needs the versioned PostgreSQL install; the GitHub
+    ubuntu runner image already ships psql on PATH."""
+    env_override = os.environ.get("PSQL_BIN")
+    if env_override:
+        return pathlib.Path(env_override)
+    if sys.platform == "win32":
+        program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+        candidates = sorted(
+            pathlib.Path(program_files, "PostgreSQL").glob("*/bin/psql.exe"), reverse=True
+        )
+        return candidates[0] if candidates else pathlib.Path("psql")
+    return pathlib.Path("psql")
 
 
 def apply_schema(engine, schema_sql: pathlib.Path) -> None:

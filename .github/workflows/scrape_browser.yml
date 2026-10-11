@@ -70,6 +70,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    # Ephemeral database seeded from the HF corpus repo; the hosted Neon quota is
+    # exhausted. See scrape_api.yml for the full reasoning. This workflow is inert
+    # until a browser source is enabled, so the container is only created when the
+    # matrix is non-empty.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: jmi_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -85,6 +103,11 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --extra dev --extra test
+
+      - name: Seed the ephemeral database from the HF state snapshot
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: uv run python scripts/restore_state_snapshot.py --source hf
 
       - name: Set up Chrome
         # Needed only once a browser source is enabled: the scraper expects a

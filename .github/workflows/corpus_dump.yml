@@ -34,6 +34,23 @@ jobs:
   dump:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Ephemeral database seeded from the HF corpus repo; the hosted Neon quota is
+    # exhausted ("Your account or project has exceeded the quota"). See
+    # scrape_api.yml for the full reasoning.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: jmi_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -82,16 +99,25 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev --extra test
 
+      - name: Seed the ephemeral database from the HF state snapshot
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: uv run python scripts/restore_state_snapshot.py --source hf
+
       - name: Export any rows scraped since the last shard export
         # Ordering matters: dump the shards first so the dump contains the
         # description_en values for rows exported earlier, keeping the two
         # copies consistent within a run.
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           CORPUS_HF_REPO: ${{ vars.CORPUS_HF_REPO }}
-          CORPUS_MAX_ROWS_PER_SHARD: ${{ inputs.max_jobs }}
-        run: uv run python scripts/export_corpus_shards.py --all
+        run: |
+          if [ -n "${{ inputs.max_jobs }}" ]; then
+            echo "CORPUS_MAX_ROWS_PER_SHARD=${{ inputs.max_jobs }}" >> "$GITHUB_ENV"
+            echo "row cap per shard: ${{ inputs.max_jobs }}"
+          fi
+          uv run python scripts/export_corpus_shards.py --all
 
       - name: Dump the database
         env:

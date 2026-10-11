@@ -74,6 +74,31 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    services:
+      # An EPHEMERAL database, seeded from the HF corpus repo.
+      #
+      # The hosted Neon database is gone: its free quota is exhausted ("Your
+      # account or project has exceeded the quota") and every run now dies at
+      # its first write. Supabase's free tier is a drop-in replacement, but it
+      # just moves the same silent failure to another vendor.
+      #
+      # This container is created fresh per job, seeded from `state/` in the
+      # corpus dataset repo (scripts/export_state_snapshot.py publishes it; see
+      # that script for why core.jobs is deliberately NOT seeded), and thrown
+      # away when the job ends. Nothing to exhaust.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: jmi_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -89,6 +114,11 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --extra dev --extra test
+
+      - name: Seed the ephemeral database from the HF state snapshot
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: uv run python scripts/restore_state_snapshot.py --source hf
 
       - name: Apply the row-cap override
         # Each scraper reads its own env var (registry `max_env`); GitHub cannot
@@ -110,7 +140,7 @@ jobs:
         # this was previously declared and never applied.
         timeout-minutes: ${{ matrix.timeout }}
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
           # Reed's ReedSettings.api_key is a required field with no default, so
           # without this the run dies on
           #   ValidationError: api_key  Field required
@@ -132,7 +162,7 @@ jobs:
         # a green scrape red.
         if: success()
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           CORPUS_HF_REPO: ${{ vars.CORPUS_HF_REPO }}
         run: uv run python scripts/export_corpus_shards.py --source ${{ matrix.code }}
