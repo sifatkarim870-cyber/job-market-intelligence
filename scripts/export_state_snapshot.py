@@ -67,19 +67,12 @@ def _dump_schema(work: pathlib.Path) -> pathlib.Path:
     """pg_dump --schema-only of local. Kept in the repo so CI never depends on
     the laptop being reachable."""
     out = work / "schema.sql"
-    program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
-    candidates = sorted(
-        pathlib.Path(program_files, "PostgreSQL").glob("*/bin/pg_dump.exe"), reverse=True
-    )
-    if not candidates:
-        raise SystemExit("pg_dump.exe not found; install PostgreSQL client tools")
+    subprocess = _import_subprocess()
     env = os.environ.copy()
     env["PGPASSWORD"] = "changeme"
-    import subprocess
-
     subprocess.run(
         [
-            str(candidates[0]),
+            str(_pg_dump_binary()),
             "-h", "localhost",
             "-p", "5432",
             "-U", "app_user",
@@ -92,7 +85,53 @@ def _dump_schema(work: pathlib.Path) -> pathlib.Path:
         check=True,
         env=env,
     )
+    _strip_session_settings(out)
     return out
+
+
+#: Session GUCs pg_dump writes as a prelude. `transaction_timeout` only exists
+#: from PostgreSQL 18 on, so a dump taken on 18 makes a 16 (or 17) container
+#: abort with "unrecognized configuration parameter". None of them are schema
+#: state: they are the client session's defaults, and the restored database gets
+#: its own server defaults instead.
+_SESSION_SETTINGS = (
+    "transaction_timeout",
+    "statement_timeout",
+    "lock_timeout",
+    "idle_in_transaction_session_timeout",
+)
+
+
+def _strip_session_settings(path: pathlib.Path) -> int:
+    """Drop the pg_dump session-settings prelude so the file is version-portable."""
+    import re
+
+    pattern = re.compile(
+        r"^\s*SET\s+(" + "|".join(_SESSION_SETTINGS) + r")\s*=\s*[^;]*;\s*$",
+        re.IGNORECASE,
+    )
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    kept = [line for line in lines if not pattern.match(line)]
+    removed = len(lines) - len(kept)
+    if removed:
+        path.write_text("".join(kept), encoding="utf-8")
+    return removed
+
+
+def _import_subprocess():
+    import subprocess
+
+    return subprocess
+
+
+def _pg_dump_binary() -> pathlib.Path:
+    program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+    candidates = sorted(
+        pathlib.Path(program_files, "PostgreSQL").glob("*/bin/pg_dump.exe"), reverse=True
+    )
+    if not candidates:
+        raise SystemExit("pg_dump.exe not found; install PostgreSQL client tools")
+    return candidates[0]
 
 
 def _reference_tables(engine) -> list[tuple[str, str]]:

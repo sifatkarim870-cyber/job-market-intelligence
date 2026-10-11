@@ -39,7 +39,7 @@ jobs:
     # scrape_api.yml for the full reasoning.
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
