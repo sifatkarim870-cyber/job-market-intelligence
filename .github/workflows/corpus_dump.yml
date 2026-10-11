@@ -102,7 +102,7 @@ jobs:
       - name: Seed the ephemeral database from the HF state snapshot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: uv run python scripts/restore_state_snapshot.py --source hf
+        run: uv run python scripts/restore_state_snapshot.py --source hf --dsn postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
 
       - name: Export any rows scraped since the last shard export
         # Ordering matters: dump the shards first so the dump contains the
