@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -225,15 +226,20 @@ SHARD_COLUMNS = [
 ]
 
 
-def to_arrow(rows: list[tuple], origin: str) -> pa.Table:
+def to_arrow(rows: list[tuple], origin: str | Sequence[str]) -> pa.Table:
     """Build one shard table from SHARD_SELECT rows.
 
     ``origin`` records provenance ("neon" for rows scraped by CI, "local" for a
     backfill that only ever existed on a laptop) so a consumer can tell a
-    freshly scraped row from a historical one.
+    freshly scraped row from a historical one. A list assigns one per row, which
+    the merged snapshot needs: it draws from both databases at once, and the
+    laptop and Neon each hold rows the other does not.
     """
     if len(SHARD_COLUMNS) + 1 != len(rows[0]) + 1:  # pragma: no cover - guard
         raise ValueError(f"expected {len(SHARD_COLUMNS)} columns, got {len(rows[0])}")
+    origins = [origin] * len(rows) if isinstance(origin, str) else list(origin)
+    if len(origins) != len(rows):
+        raise ValueError(f"{len(origins)} origins for {len(rows)} rows")
     arrays: dict[str, pa.Array] = {}
     for i, name in enumerate(SHARD_COLUMNS):
         arr = pa.array([r[i] for r in rows])
@@ -243,7 +249,7 @@ def to_arrow(rows: list[tuple], origin: str) -> pa.Table:
             # country_code is absent for some sources).
             arr = pa.array([None] * len(rows), pa.string())
         arrays[name] = arr
-    arrays["origin"] = pa.array([origin] * len(rows), pa.string())
+    arrays["origin"] = pa.array(origins, pa.string())
     return pa.table(arrays)
 
 

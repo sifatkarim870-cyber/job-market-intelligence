@@ -1,9 +1,22 @@
-"""Verify the Hugging Face corpus matches the local Postgres row for row.
+"""Verify the Hugging Face corpus matches the databases it is built from.
 
-Run after scripts/export_corpus_to_hf.py. Compares row count, distinct
-identity, and the columns most likely to drift (translations, location,
-country), because "local and HF must always agree" is only true if it is
-checked rather than assumed.
+Run after scripts/export_corpus_to_hf.py. The corpus is the UNION of local
+Postgres and Neon, so this checks HF against that union, not against local
+alone.
+
+Why not local alone
+-------------------
+It was, for a long time, and that check is what let 5,321 rows be deleted from
+HF while it still passed: the count matched, the columns matched, and the data
+was gone. The exporter read local only, on a documented assumption that local
+was a "strict superset" of Neon -- true once, right after the one-time merge,
+and untrue from the moment CI scraped anything new into Neon, because nothing
+carries Neon rows back to the laptop.
+
+Measured 2026-10-11, neither is a superset:
+
+    local-only: jobvision +46,982   greenhouse +5,325   jobinja +207
+    Neon-only : glints     +3,183    51job     +857     jobmaster +635
 
 Reads with PYARROW, not DuckDB. DuckDB's httpfs extension raised
 UnicodeDecodeError on these same files with a different byte and a different
@@ -18,7 +31,9 @@ Run:  uv run python scripts/verify_local_hf_parity.py
 from __future__ import annotations
 
 import io
+import os
 import pathlib
+import re
 import sys
 
 import pyarrow.parquet as pq
@@ -31,10 +46,53 @@ TOKEN = pathlib.Path(
     r"D:\Research_Project\JobMarketAnalysisPlatform\DataBase\Hugging_Face_token.txt"
 ).read_text(encoding="utf-8").strip()
 
-#: Data columns compared between local and HF -- the ones that actually drift:
-#: a translation applied on the laptop, a re-resolved location, a merged row.
-#: ``source`` and ``dt`` are hive partitions (directory names), handled separately.
+#: Data columns compared between the databases and HF. Kept to the ones that
+#: actually drift: a translation applied on the laptop, a re-resolved location, a
+#: merged row. ``source`` is a hive partition, handled separately.
 DATA_COLUMNS = ("source_job_id", "description_en", "country_code", "location_raw")
+
+
+def neon_dsn() -> str | None:
+    """Neon DSN from .env, or None. Mirrors export_corpus_to_hf.neon_dsn()."""
+    env = pathlib.Path(__file__).resolve().parents[1] / ".env"
+    if not env.exists():
+        return None
+    for line in env.read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^\s*DATABASE_URL\s*=\s*(.+)$", line)
+        if not m:
+            continue
+        url = m.group(1).strip().strip('"').strip("'")
+        # Accept every spelling seen in the wild: the already-normalised
+        # psycopg form from .env itself, plain postgresql:// from psql tooling,
+        # and postgres:// from Heroku-style connection strings.
+        for prefix in ("postgresql+psycopg://", "postgresql://", "postgres://"):
+            if url.startswith(prefix):
+                url = "postgresql+psycopg://" + url[len(prefix) :]
+                break
+        else:
+            return None
+        return None if url == LOCAL_DSN else url
+    return None
+
+
+def _read_sources(dsn: str) -> dict[str, tuple[str, object, object, object]]:
+    """(source, source_job_id) -> the compared columns, for one database."""
+    sql = (
+        "SELECT s.source_code, j.source_job_id::text AS source_job_id, "
+        "  (SELECT d.description_en FROM core.job_descriptions d "
+        "    WHERE d.job_id = j.job_id) AS description_en, "
+        "  c.iso_code_2 AS country_code, l.raw_location_text AS location_raw "
+        "FROM core.jobs j "
+        "JOIN ref.sources s ON s.source_id = j.source_id "
+        "LEFT JOIN ref.locations l ON l.location_id = j.location_id "
+        "LEFT JOIN ref.countries c ON c.country_id = l.country_id"
+    )
+    # Neon is a remote host; a bare connect() has no timeout and can hang for
+    # minutes on a network blip instead of reporting it.
+    engine = create_engine(dsn, connect_args={"connect_timeout": 15})
+    with engine.connect() as conn:
+        rows = conn.execute(text(sql)).all()
+    return {(r[0], r[1]): r[2:] for r in rows}
 
 
 def read_shard(url: str, shard_path: str) -> dict[str, list]:
@@ -48,7 +106,8 @@ def read_shard(url: str, shard_path: str) -> dict[str, list]:
     response.raise_for_status()
     table = pq.read_table(io.BytesIO(response.content), columns=list(DATA_COLUMNS))
     out = {name: table.column(name).to_pylist() for name in DATA_COLUMNS}
-    out["source"] = [shard_path.split("source=", 1)[1].split("/", 1)[0]] * table.num_rows
+    source = shard_path.split("source=", 1)[1].split("/", 1)[0]
+    out["source"] = [source] * table.num_rows
     return out
 
 
@@ -61,63 +120,87 @@ def main() -> int:
     )
     print(f"{len(shards)} shards on HF")
 
-    hf_rows = hf_uniq = hf_desc_en = hf_no_country = 0
-    top_locations: dict[str, int] = {}
+    # Aggregate across shards one file at a time -- see the module docstring on
+    # why DuckDB's parallel glob reader over hf:// is not used.
+    hf_rows = 0
+    hf: dict[tuple[str, str], tuple] = {}
     for shard in shards:
         url = f"https://huggingface.co/datasets/{REPO}/resolve/main/{shard}"
         cols = read_shard(url, shard)
-        n = len(cols["source"])
-        hf_rows += n
-        hf_uniq += len(set(zip(cols["source"], cols["source_job_id"])))
-        hf_desc_en += sum(1 for v in cols["description_en"] if v is not None)
-        hf_no_country += sum(1 for v in cols["country_code"] if v is None)
-        for loc in cols["location_raw"]:
-            if loc is not None:
-                top_locations[loc] = top_locations.get(loc, 0) + 1
-        print(f"  {shard.split('/', 1)[1]:<44}{n:>8,} rows")
+        hf_rows += len(cols["source"])
+        for key, values in zip(
+            zip(cols["source"], cols["source_job_id"]),
+            zip(cols["description_en"], cols["country_code"], cols["location_raw"]),
+        ):
+            hf[key] = values
 
-    eng = create_engine(LOCAL_DSN)
-    with eng.connect() as c:
-        db_rows = c.execute(text("SELECT count(*) FROM core.jobs")).scalar_one()
-        db_uniq = c.execute(
-            text(
-                "SELECT count(*) FROM (SELECT DISTINCT s.source_code, j.source_job_id::text "
-                "FROM core.jobs j JOIN ref.sources s ON s.source_id=j.source_id) t"
-            )
-        ).scalar_one()
-        db_desc_en = c.execute(
-            text("SELECT count(*) FROM core.job_descriptions WHERE description_en IS NOT NULL")
-        ).scalar_one()
-        # HF's country_code comes from the country join, so it is NULL both when
-        # the location row has no country AND when the job has no location row
-        # at all. Compare like with like, or the check reports a phantom
-        # mismatch of exactly that difference.
-        db_no_country = c.execute(
-            text(
-                "SELECT count(*) FROM core.jobs j "
-                "LEFT JOIN ref.locations l ON l.location_id = j.location_id "
-                "WHERE l.country_id IS NULL"
-            )
-        ).scalar_one()
+    local = _read_sources(LOCAL_DSN)
+    union = dict(local)
 
-    print(f"\n{'metric':<28}{'local':>14}{'HF':>14}  match")
-    print("-" * 66)
+    neon: dict = {}
+    dsn = None if os.environ.get("SKIP_NEON") == "1" else neon_dsn()
+    if dsn:
+        try:
+            neon = _read_sources(dsn)
+            union.update(neon)
+            print(f"merged {len(neon):,} Neon rows ({len(union):,} in the union)")
+        except Exception as exc:  # noqa: BLE001
+            print(f"  Neon unreachable ({str(exc)[:80]}); checking local only")
+    else:
+        print("  no Neon DSN; checking local only")
+
+    only_hf = set(hf) - set(union)
+    only_db = set(union) - set(hf)
+
+    print(f"\n{'metric':<30}{'union':>14}{'HF':>14}  match")
+    print("-" * 70)
     ok = True
     for label, a, b in (
-        ("rows", db_rows, hf_rows),
-        ("distinct identities", db_uniq, hf_uniq),
-        ("description_en filled", db_desc_en, hf_desc_en),
-        ("no country (count)", db_no_country, hf_no_country),
+        ("rows", len(union), hf_rows),
+        ("distinct identities", len(union), len(hf)),
     ):
         same = a == b
         ok = ok and same
-        print(f"{label:<28}{a:>14,}{b:>14,}  {'OK' if same else 'MISMATCH'}")
+        print(f"{label:<30}{a:>14,}{b:>14,}  {'OK' if same else 'MISMATCH'}")
 
+    desc_hf = sum(1 for v in hf.values() if v[0])
+    desc_db = sum(1 for v in union.values() if v[0])
+    nocountry_hf = sum(1 for v in hf.values() if v[1] is None)
+    nocountry_db = sum(1 for v in union.values() if v[1] is None)
+
+    for label, a, b in (
+        ("description_en filled", desc_db, desc_hf),
+        ("no country (count)", nocountry_db, nocountry_hf),
+    ):
+        same = a == b
+        ok = ok and same
+        print(f"{label:<30}{a:>14,}{b:>14,}  {'OK' if same else 'MISMATCH'}")
+
+    # Neon-only rows are the interesting number: it is the difference the old
+    # check quietly discarded.
+    neon_only = set(neon) - set(local)
+    if neon or only_hf:
+        print(f"\n  rows only in Neon (correctly on HF): {len(neon_only):,}")
+    if only_hf:
+        print(f"  on HF but in neither database      : {len(only_hf):,}  <-- investigate")
+        ok = False
+    if only_db:
+        print(f"  in the databases but not on HF     : {len(only_db):,}  <-- re-run export")
+
+    top: dict[str, int] = {}
+    for (src, _job_id), values in hf.items():
+        if values[2]:
+            top[values[2]] = top.get(values[2], 0) + 1
     print("\nHF location_raw top values:")
-    for loc, n in sorted(top_locations.items(), key=lambda kv: -kv[1])[:5]:
+    for loc, n in sorted(top.items(), key=lambda kv: -kv[1])[:5]:
         print(f"   {str(loc)[:48]:<48}{n:>9,}")
 
-    print("\nRESULT:", "local and HF agree" if ok else "DIVERGED -- re-run export_corpus_to_hf.py")
+    print(
+        "\nRESULT:",
+        "HF agrees with local + Neon"
+        if ok
+        else "DIVERGED -- re-run export_corpus_to_hf.py",
+    )
     return 0 if ok else 1
 
 
