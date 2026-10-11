@@ -111,7 +111,11 @@ jobs:
       - name: Seed the ephemeral database from the HF state snapshot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: uv run python scripts/restore_state_snapshot.py --source hf --dsn postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
+        run: |
+          uv run python scripts/restore_state_snapshot.py --source hf \
+            --dsn "${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
+        env:
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
 
       # Caches the downloaded model across runs -- without this, every
       # run would re-download ~470MB from Hugging Face before doing any
@@ -146,10 +150,12 @@ jobs:
       - name: Translate non-English titles (before classification)
         continue-on-error: true
         env:
-          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
         run: uv run python scripts/run_translation_batch.py --scope titles
 
       - name: Run title classification batch
         env:
-          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
         run: uv run python scripts/run_title_classification_batch.py

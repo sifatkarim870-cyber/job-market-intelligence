@@ -136,7 +136,7 @@ class GlintsClient:
             raise GlintsFetchError(f"Glints request failed permanently ({what}): {exc}") from exc
 
     # -- discovery -------------------------------------------------------
-    def _fetch_job_sitemap_families(self) -> "OrderedDict[str, list[str]]":
+    def _fetch_job_sitemap_families(self) -> OrderedDict[str, list[str]]:
         """Job sitemaps from the index, grouped by family, index order.
 
         Returns:
@@ -148,7 +148,7 @@ class GlintsClient:
             self._settings.sitemap_index_url, what="sitemap index"
         )
         locs = re.findall(r"<loc>(.*?)</loc>", html)
-        families: "OrderedDict[str, list[str]]" = OrderedDict()
+        families: OrderedDict[str, list[str]] = OrderedDict()
         for loc in locs:
             basename = loc.rsplit("/", 1)[-1]
             if not _JOB_SITEMAP_RE.match(basename):

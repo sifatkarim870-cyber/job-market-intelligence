@@ -286,7 +286,7 @@ class RawJobinjaJob(BaseModel):
             return None
 
     @classmethod
-    def from_page_html(cls, html: str, *, original_url: str) -> "RawJobinjaJob":
+    def from_page_html(cls, html: str, *, original_url: str) -> RawJobinjaJob:
         """Build a validated job from one detail page's raw HTML.
 
         Raises:

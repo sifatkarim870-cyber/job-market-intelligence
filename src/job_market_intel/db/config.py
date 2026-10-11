@@ -55,6 +55,8 @@ except ImportError:
 
 
 KNOWN_ENV_VARS: tuple[str, ...] = (
+    "CI_CONTAINER_DB",
+    "CI_DATABASE_URL",
     "DATABASE_URL",
     "DB_HOST",
     "DB_PORT",
@@ -76,6 +78,13 @@ This is the single source of truth the Step 15 guard test
 ``.env.example`` — add a name here whenever you add a new
 ``_env_int``/``_env_bool``/``os.getenv`` call below, or the guard test
 will not know to check it.
+
+``DATABASE_URL`` and ``CI_DATABASE_URL`` are declared here but are no longer
+read by ``os.getenv`` in THIS module: they are resolved by
+``db.target.resolve_dsn()``, which applies the precedence (hosted database
+first) and percent-encodes the credentials. The names stay on this list because
+they are still part of this module's contract, and ``.env.example`` documents
+them; the guard test compares the declaration against what the package reads.
 """
 
 
@@ -217,8 +226,10 @@ def _build_url_from_parts() -> str | None:
 def get_database_config() -> DatabaseConfig:
     """Builds a validated `DatabaseConfig` from the environment.
 
-    Precedence: `DATABASE_URL` if set, otherwise assembled from
-    `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`.
+    Precedence: `CI_DATABASE_URL` (the hosted database CI writes to), then
+    `DATABASE_URL`, then assembled from `DB_HOST`/`DB_PORT`/`DB_NAME`/
+    `DB_USER`/`DB_PASSWORD`. See `db.target.resolve_dsn` for why the hosted
+    database gets its own variable.
 
     Raises
     ------
@@ -226,7 +237,9 @@ def get_database_config() -> DatabaseConfig:
         If no usable connection information is present, or if a
         pool-tuning environment variable can't be parsed.
     """
-    url = os.getenv("DATABASE_URL") or _build_url_from_parts()
+    from job_market_intel.db.target import resolve_dsn
+
+    url = resolve_dsn() or _build_url_from_parts()
     if not url:
         raise ConfigurationError(
             "No database configuration found. Set DATABASE_URL, or all of "

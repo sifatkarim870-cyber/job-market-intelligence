@@ -26,6 +26,7 @@ steps (API, dashboard, partition maintenance). Only "code reads X" =>
 
 from __future__ import annotations
 
+import importlib
 import re
 from pathlib import Path
 
@@ -72,7 +73,16 @@ _ENV_LINE_RE = re.compile(r"^\s*#?\s*([A-Z][A-Z0-9_]*)=", re.MULTILINE)
 # _env_bool(...), or os.getenv(...) call in db.config's source — i.e. what
 # the module *actually* reads at runtime, independent of whatever
 # KNOWN_ENV_VARS happens to (correctly or incorrectly) claim.
-_DB_CONFIG_CALL_RE = re.compile(r'(?:_env_int|_env_bool|os\.getenv)\(\s*"([A-Z][A-Z0-9_]*)"')
+#: Every call site that reads an environment variable by name.
+#:
+#: ``os.environ.get(...)`` is matched as well as ``os.getenv(...)`` because
+#: ``db/target.py`` uses the former. Leaving it out made the two DSN variables
+#: invisible to this guard, which is the exact failure mode the guard exists to
+#: prevent -- a variable that is read in code but absent from the declared list
+#: (or vice versa) would drift silently.
+_DB_CONFIG_CALL_RE = re.compile(
+    r'(?:_env_int|_env_bool|os\.getenv|os\.environ\.get)\(\s*"([A-Z][A-Z0-9_]*)"'
+)
 
 
 def _documented_vars() -> set[str]:
@@ -101,9 +111,32 @@ def _db_config_source_derived_vars() -> set[str]:
     update the list, exactly the shape of the original DB_MAX_OVERFLOW
     bug one level removed), a test here fails instead of both silently
     agreeing with each other while being wrong.
+
+    ``db/target.py`` is scanned as well. ``DATABASE_URL`` and
+    ``CI_DATABASE_URL`` moved out of ``db/config.py`` when the hosted-database
+    precedence and credential encoding were extracted into ``db.target``;
+    scanning only the original file made this test report the two names as
+    "declared but never read" and fail, which is the test correctly noticing
+    that the reads had moved rather than the declaration being wrong.
     """
-    source = Path(db_config_module.__file__).read_text(encoding="utf-8")
-    return set(_DB_CONFIG_CALL_RE.findall(source))
+    modules = [db_config_module]
+    target = _import_optional("job_market_intel.db.target")
+    if target is not None:
+        modules.append(target)
+
+    found: set[str] = set()
+    for module in modules:
+        source = Path(module.__file__).read_text(encoding="utf-8")
+        found |= set(_DB_CONFIG_CALL_RE.findall(source))
+    return found
+
+
+def _import_optional(name: str):
+    """Import a module, or return None when it is not present."""
+    try:
+        return importlib.import_module(name)
+    except ImportError:  # pragma: no cover - defensive
+        return None
 
 
 def test_env_example_exists() -> None:

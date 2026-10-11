@@ -49,8 +49,8 @@ class JobvisionPipeline:
         client: JobvisionClient | None = None,
         parser: JobvisionParser | None = None,
         validator: JobvisionBatchValidator | None = None,
-        cleaner: "JobvisionCleaner | None" = None,
-        repository: "JobRepository | None" = None,
+        cleaner: JobvisionCleaner | None = None,
+        repository: JobRepository | None = None,
     ) -> None:
         self.settings = settings or JobvisionSettings()
         self.client = client or JobvisionClient(settings=self.settings)

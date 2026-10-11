@@ -1,6 +1,6 @@
 name: Corpus dumps
 
-# Publishes a complete, restorable copy of the Neon database to Hugging Face
+# Publishes a complete, restorable copy of the CI database to Hugging Face
 # every day, so the laptop's own sync job has something current to pull.
 #
 # Why a dump and not just shards: the Parquet corpus is the *queryable* copy
@@ -102,14 +102,19 @@ jobs:
       - name: Seed the ephemeral database from the HF state snapshot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: uv run python scripts/restore_state_snapshot.py --source hf --dsn postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
+        run: |
+          uv run python scripts/restore_state_snapshot.py --source hf \
+            --dsn "${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
+        env:
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
 
       - name: Export any rows scraped since the last shard export
         # Ordering matters: dump the shards first so the dump contains the
         # description_en values for rows exported earlier, keeping the two
         # copies consistent within a run.
         env:
-          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           CORPUS_HF_REPO: ${{ vars.CORPUS_HF_REPO }}
         run: |
@@ -121,14 +126,17 @@ jobs:
 
       - name: Dump the database
         env:
-          # The password is parsed out of DATABASE_URL below. There is no
-          # separate DATABASE_PASSWORD secret -- referencing one made
-          # PGPASSWORD arrive empty and pg_dump fail to authenticate.
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # The DSN the seed step used, so the dump is of the SAME database the
+          # shards came from. This previously read secrets.DATABASE_URL -- Neon
+          # -- while the rest of the job had already been repointed at the
+          # container, so the two halves of this workflow were talking to
+          # different databases and the dump half is the reason Corpus dumps
+          # has been red on every scheduled run.
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
         run: |
           set -euo pipefail
-          # The Neon DSN is a SQLAlchemy URL; pg_dump needs libpq's own form.
-          dsn="${DATABASE_URL#postgresql+psycopg://}"
+          DSN="${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
+          dsn="${DSN#postgresql+psycopg://}"
           creds="${dsn%@*}"
           hostpart="${dsn#*@}"
           host="${hostpart%%/*}"
@@ -136,16 +144,13 @@ jobs:
           db="${db%%\?*}"
           user="${creds%%:*}"
           export PGPASSWORD="${creds#*:}"
-          export PGSSLMODE=require
           PG_BIN="${PG_BIN:-$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -n 1)}"
-          "$PG_BIN/pg_dump" -h "$host" -U "$user" -d "$db" -Fc -Z6 -f neon_full.dump
-          ls -l neon_full.dump
-          sha256sum neon_full.dump | tee neon_full.dump.sha256
-          # Prove the archive is restorable, not merely present. This is a
-          # DIAGNOSTIC, not a gate: an earlier version let a verifier failure
-          # abort the step before the upload, so a good dump never reached the
-          # Hub. Report it and publish regardless -- the dump is the artefact.
-          if "$PG_BIN/pg_restore" --list neon_full.dump > toc.txt 2>toc.err; then
+          "$PG_BIN/pg_dump" -h "$host" -U "$user" -d "$db" -Fc -Z6 -f corpus_full.dump
+          ls -l corpus_full.dump
+          sha256sum corpus_full.dump | tee corpus_full.dump.sha256
+          # DIAGNOSTIC, not a gate: a verifier failure must not stop the
+          # upload, or a good dump never reaches the Hub.
+          if "$PG_BIN/pg_restore" --list corpus_full.dump > toc.txt 2> toc.err; then
             echo "TABLE DATA entries: $(grep -c 'TABLE DATA' toc.txt || true)"
             echo "verify=ok" >> "$GITHUB_ENV"
           else
@@ -166,7 +171,7 @@ jobs:
 
           api = HfApi(token=os.environ["HF_TOKEN"])
           repo = os.environ["HF_REPO_ID"]
-          for name in ("neon_full.dump", "neon_full.dump.sha256"):
+          for name in ("corpus_full.dump", "corpus_full.dump.sha256"):
               api.upload_file(
                   path_or_fileobj=name,
                   path_in_repo=f"dumps/{name}",
@@ -182,6 +187,6 @@ jobs:
           {
             echo "## Corpus dump $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo
-            echo "- neon_full.dump: $(du -h neon_full.dump | cut -f1)"
-            echo "- sha256: $(cut -d' ' -f1 neon_full.dump.sha256 2>/dev/null || echo 'n/a')"
+            echo "- corpus_full.dump: $(du -h corpus_full.dump | cut -f1)"
+            echo "- sha256: $(cut -d' ' -f1 corpus_full.dump.sha256 2>/dev/null || echo 'n/a')"
           } >> "$GITHUB_STEP_SUMMARY"

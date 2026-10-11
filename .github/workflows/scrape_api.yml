@@ -118,7 +118,11 @@ jobs:
       - name: Seed the ephemeral database from the HF state snapshot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: uv run python scripts/restore_state_snapshot.py --source hf --dsn postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
+        run: |
+          uv run python scripts/restore_state_snapshot.py --source hf \
+            --dsn "${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
+        env:
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
 
       - name: Apply the row-cap override
         # Each scraper reads its own env var (registry `max_env`); GitHub cannot
@@ -140,7 +144,8 @@ jobs:
         # this was previously declared and never applied.
         timeout-minutes: ${{ matrix.timeout }}
         env:
-          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
           # Reed's ReedSettings.api_key is a required field with no default, so
           # without this the run dies on
           #   ValidationError: api_key  Field required
@@ -162,7 +167,8 @@ jobs:
         # a green scrape red.
         if: success()
         env:
-          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           CORPUS_HF_REPO: ${{ vars.CORPUS_HF_REPO }}
         run: uv run python scripts/export_corpus_shards.py --source ${{ matrix.code }}

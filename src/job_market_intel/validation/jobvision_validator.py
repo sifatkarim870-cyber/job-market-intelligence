@@ -63,7 +63,7 @@ class JobvisionBatchValidator:
     def validate(
         self,
         raw_jobs: list[dict],
-        parsed_jobs: list["RawJobvisionJob"],
+        parsed_jobs: list[RawJobvisionJob],
     ) -> BatchValidationReport:
         """Evaluate one fetch+parse cycle and produce a validation report."""
         return validate_batch(

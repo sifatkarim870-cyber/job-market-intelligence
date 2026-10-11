@@ -84,10 +84,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from job_market_intel.db.transaction import transaction
 from loguru import logger
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+from job_market_intel.db.transaction import transaction
 
 DEFAULT_CLASSIFIED_BY = "embedding:paraphrase-multilingual-MiniLM-L12-v2:v1"
 DEFAULT_MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"

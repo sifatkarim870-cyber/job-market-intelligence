@@ -204,7 +204,7 @@ class RawJobvisionJob(BaseModel):
         return value
 
     @classmethod
-    def from_payload(cls, payload: object, *, original_url: str) -> "RawJobvisionJob":
+    def from_payload(cls, payload: object, *, original_url: str) -> RawJobvisionJob:
         """Build the model from an API ``data`` dict.
 
         Raises:
