@@ -119,7 +119,20 @@ def resolve_dsn() -> str | None:
     if generic:
         return _encode_credentials(generic)
 
-    if os.environ.get("CI_CONTAINER_DB") == "1":
+    if os.environ.get("CI_CONTAINER_DB") == "1" or _in_ci():
         return CONTAINER_DSN
 
     return None
+
+
+def _in_ci() -> bool:
+    """True when running inside GitHub Actions.
+
+    Every workflow that declares a postgres service container gets one, so
+    this fallback only ever applies where no hosted DSN was supplied AND the
+    job has a container to fall back to. A blank value is treated as absent
+    throughout, because GitHub renders an unset secret as "" rather than
+    leaving the variable unset -- and an empty DSN reaches the driver as a
+    connection attempt against localhost with no database name.
+    """
+    return os.environ.get("GITHUB_ACTIONS") == "true"

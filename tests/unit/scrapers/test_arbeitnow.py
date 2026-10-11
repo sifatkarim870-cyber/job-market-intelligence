@@ -7,8 +7,6 @@ Run with:  uv run python -m pytest tests/unit/scrapers/test_arbeitnow.py
 
 from __future__ import annotations
 
-import html
-
 import pytest
 
 from job_market_intel.cleaning.arbeitnow_cleaner import ArbeitnowCleaner

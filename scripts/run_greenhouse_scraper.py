@@ -57,9 +57,22 @@ def main() -> int:  # noqa: C901 - a flat CLI surface
     args = parser.parse_args()
 
     if args.dsn:
+        # CI_DATABASE_URL, not DATABASE_URL.
+        #
+        # db.target.resolve_dsn() consults CI_DATABASE_URL first precisely so a
+        # scraper never has to repoint the environment, and this used to set
+        # DATABASE_URL instead. That is invisible while the two agree and
+        # actively wrong when they do not: with --dsn absent and an unset
+        # secret, the workflow still exports DATABASE_URL="" (GitHub renders an
+        # unset secret as the empty string), so the resolver fell through to
+        # "no configuration" and the run died with
+        #   No database configuration found.
+        # Overwriting DATABASE_URL here also silently outranked the hosted DSN
+        # whenever the two were configured differently.
+        #
         # Set before anything calls get_database_config(), which reads the
         # environment at call time.
-        os.environ["DATABASE_URL"] = args.dsn
+        os.environ["CI_DATABASE_URL"] = args.dsn
 
     settings = get_settings()
     configure_logging(log_dir="logs", console_level=settings.log_level, file_level="DEBUG")

@@ -102,6 +102,11 @@ def _pydantic_settings_env_vars(settings_cls: type) -> set[str]:
     return {f"{prefix}{field_name}".upper() for field_name in settings_cls.model_fields}
 
 
+#: Variables read by db/target.py that are set by the CI runner rather than
+#: chosen by a human, so documenting them in .env.example would be misleading.
+_RUNNER_SET = {"GITHUB_ACTIONS"}
+
+
 def _db_config_source_derived_vars() -> set[str]:
     """Parses db/config.py's own source and returns every env var name it
     actually reads, by inspecting the real ``_env_int``/``_env_bool``/
@@ -118,6 +123,9 @@ def _db_config_source_derived_vars() -> set[str]:
     scanning only the original file made this test report the two names as
     "declared but never read" and fail, which is the test correctly noticing
     that the reads had moved rather than the declaration being wrong.
+
+    Runner-set variables are excluded: ``GITHUB_ACTIONS`` is read to detect CI
+    but is not a setting anyone configures.
     """
     modules = [db_config_module]
     target = _import_optional("job_market_intel.db.target")
@@ -128,7 +136,7 @@ def _db_config_source_derived_vars() -> set[str]:
     for module in modules:
         source = Path(module.__file__).read_text(encoding="utf-8")
         found |= set(_DB_CONFIG_CALL_RE.findall(source))
-    return found
+    return found - _RUNNER_SET
 
 
 def _import_optional(name: str):

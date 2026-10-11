@@ -49,9 +49,14 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.dsn:
+        # CI_DATABASE_URL, not DATABASE_URL -- see run_greenhouse_scraper.py
+        # for why. The short version: the workflow exports DATABASE_URL="" when
+        # the hosted secret is unset, which shadowed every fallback and killed
+        # the run with "No database configuration found".
+        #
         # Set before anything calls get_database_config(), which reads the
         # environment at call time.
-        os.environ["DATABASE_URL"] = args.dsn
+        os.environ["CI_DATABASE_URL"] = args.dsn
 
     settings = get_settings()
     configure_logging(log_dir="logs", console_level=settings.log_level, file_level="DEBUG")

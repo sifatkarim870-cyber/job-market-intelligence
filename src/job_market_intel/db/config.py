@@ -85,6 +85,10 @@ read by ``os.getenv`` in THIS module: they are resolved by
 first) and percent-encodes the credentials. The names stay on this list because
 they are still part of this module's contract, and ``.env.example`` documents
 them; the guard test compares the declaration against what the package reads.
+
+``GITHUB_ACTIONS`` is read by ``db.target`` but is deliberately NOT listed here.
+It is set by the CI runner, is not a setting anyone chooses, and documenting it
+in ``.env.example`` would suggest it is configurable when it is not.
 """
 
 

@@ -31,7 +31,13 @@ from job_market_intel.db.target import (
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch):
-    for name in ("CI_DATABASE_URL", "DATABASE_URL", "CI_CONTAINER_DB", "JMI_USE_REMOTE_DB"):
+    for name in (
+        "CI_DATABASE_URL",
+        "DATABASE_URL",
+        "CI_CONTAINER_DB",
+        "JMI_USE_REMOTE_DB",
+        "GITHUB_ACTIONS",
+    ):
         monkeypatch.delenv(name, raising=False)
 
 
@@ -48,6 +54,38 @@ class TestPrecedence:
     def test_container_is_the_fallback(self, monkeypatch):
         monkeypatch.setenv("CI_CONTAINER_DB", "1")
         assert resolve_dsn() == CONTAINER_DSN
+
+    def test_empty_secret_does_not_shadow_the_container(self, monkeypatch):
+        """GitHub renders an unset secret as "".
+
+        Every workflow declares DATABASE_URL and CI_DATABASE_URL from
+        secrets.CI_DATABASE_URL unconditionally, so before that secret exists
+        both arrive as the empty string. With only "blank means absent" the
+        resolver found no configuration and two scrapers died with
+
+            No database configuration found. Set DATABASE_URL, or all of ...
+
+        A GitHub Actions job always has the postgres service container, so
+        falling back to it there is correct and keeps CI working before the
+        hosted database is provisioned.
+        """
+        monkeypatch.setenv("GITHUB_ACTIONS", "true")
+        monkeypatch.setenv("DATABASE_URL", "")
+        monkeypatch.setenv("CI_DATABASE_URL", "")
+        assert resolve_dsn() == CONTAINER_DSN
+
+    def test_empty_secret_outside_ci_still_returns_none(self, monkeypatch):
+        """The GitHub fallback must not fire on a laptop with a blank .env."""
+        monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+        monkeypatch.setenv("DATABASE_URL", "")
+        monkeypatch.setenv("CI_DATABASE_URL", "")
+        assert resolve_dsn() is None
+
+    def test_a_real_hosted_secret_still_wins_over_the_container(self, monkeypatch):
+        monkeypatch.setenv("GITHUB_ACTIONS", "true")
+        monkeypatch.setenv("DATABASE_URL", "")
+        monkeypatch.setenv("CI_DATABASE_URL", "postgresql+psycopg://u:p@hosted:5432/jmi")
+        assert "hosted:5432/jmi" in resolve_dsn()
 
     def test_nothing_configured_returns_none_not_a_silent_local(self, monkeypatch):
         """None lets db.config fall back to DB_* parts.
