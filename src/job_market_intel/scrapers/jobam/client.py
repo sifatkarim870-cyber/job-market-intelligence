@@ -112,7 +112,22 @@ class JobAmClient:
                     impersonate=self._settings.impersonate,
                     timeout=self._settings.request_timeout_seconds,
                 )
-            except curl_exceptions.RequestsError as exc:
+            except (curl_exceptions.RequestException, curl_exceptions.CurlError) as exc:
+                # Both base classes are caught, and neither name is
+                # "RequestsError" -- that name does not exist in curl_cffi.
+                # The except clause raised
+                #   AttributeError: module 'curl_cffi.requests.exceptions'
+                #   has no attribute 'RequestsError'
+                # from inside itself, replacing the intended
+                # TransientHTTPError with an unhandled AttributeError. Observed
+                # on 2026-10-11 when jobam.us timed out after 20s
+                # (curl error 28), so one slow response ended the run instead
+                # of being retried.
+                #
+                # Both are needed because neither subsumes the other:
+                #   Timeout MRO: Timeout -> RequestException -> CurlError -> OSError
+                # so Timeout is caught by either, but a bare CurlError is not a
+                # RequestException.
                 raise TransientHTTPError(f"transport failure talking to {url}: {exc}") from exc
             if response.status_code >= 500:
                 raise TransientHTTPError(
