@@ -19,6 +19,17 @@ if not exist "%DEST%\logs" mkdir "%DEST%\logs"
 "%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\sync_corpus_from_hf.py" --dest "%DEST%" --max-age-hours 20 >> "%DEST%\logs\sync.log" 2>&1
 set "PULL_RC=%ERRORLEVEL%"
 
+REM Fold CI's shards back into local BEFORE pushing. Order is load-bearing.
+REM CI scrapes into an ephemeral container whose core.jobs starts empty, so its
+REM rows exist only as HF shards. export_corpus_to_hf.py rebuilds shards/ from
+REM local alone and DELETES every shard it did not just write, so an unmerged CI
+REM row is destroyed by the very push meant to publish it. That is not
+REM hypothetical: 10 of the 17 ledger paths were 404 before the merge existed.
+REM Failing this step is still worth pushing for -- the merge only ever adds
+REM rows -- so the failure is recorded and the push continues.
+"%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\merge_incoming_shards.py" >> "%DEST%\logs\sync.log" 2>&1
+if errorlevel 1 echo [run_corpus_sync] merge_incoming_shards FAILED, see sync.log
+
 REM Push local -> HF. The requirement is that local and HF always agree, and a
 REM pull-only sync cannot deliver that: any correction made on this laptop (a
 REM re-resolved location, a merged row, an applied translation) would sit here

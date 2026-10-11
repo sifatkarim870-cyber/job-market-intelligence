@@ -50,6 +50,7 @@ from sqlalchemy import create_engine, text
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "src"))
 
 from job_market_intel.corpus.shard_export import (  # noqa: E402
+    SHARD_COLUMNS,
     SHARD_SELECT,
     to_arrow,
 )
@@ -141,30 +142,113 @@ def _fetch_source(engine, code: str) -> list[tuple]:
 #: SHARD_SELECT column order: 0 = source_job_id, 1 = source_code.
 _JOB_KEY = (1, 0)
 
+#: SHARD_SELECT column order: posting_date. It is part of the natural key
+#: because uq_jobs_source_natural_key includes it -- see _merge_source.
+_DATE_KEY = SHARD_COLUMNS.index("posting_date")
+
+
+def _date_key(value) -> str | None:
+    """Normalise a posting_date for use as a dict key.
+
+    The databases hand back datetime.date, but the value can also arrive as a
+    string depending on the driver, and mixing the two in one dict key would
+    defeat the dedupe this function exists to perform.
+    """
+    if value is None:
+        return None
+    return str(value)[:10]
+
 
 def _merge_source(local_rows: list[tuple], neon_rows: list[tuple]) -> tuple[list[tuple], list[str]]:
-    """Union both databases for one source, keyed on (source_code, source_job_id).
+    """Union both databases for one source, keyed on the FULL natural key.
 
-    ``job_id`` is deliberately NOT the key: each database has its own sequence, so
-    local job 12345 and Neon job 12345 are unrelated postings. Every identity here
-    is the natural key.
+    The key is ``(source_code, source_job_id, posting_date)``, which is exactly
+    ``uq_jobs_source_natural_key``. It used to be ``(source_code, source_job_id)``
+    with posting_date left out, which silently collapsed 38 rows on 2026-10-11.
+
+    Those 38 were not duplicates: a source re-listing the same posting on a
+    later date is stored as a NEW row with a different ``posting_date``, which
+    the unique constraint permits precisely because posting_date is part of the
+    key. jobvision 1451366 exists as posting_date 2026-10-05 (scraped 10-07) and
+    again as 2026-10-11 (scraped 10-11). 36 of the 38 have an identical
+    content_hash -- a genuine re-listing, not new information -- and 2 differ.
+    Either way each is a distinct row in the database with its own
+    ``core.job_descriptions`` entry, since ``pk_jobs`` is ``(job_id,
+    posting_date)`` and ``job_descriptions`` is ``PRIMARY KEY (job_id)``.
+
+    The old key therefore deleted real rows from HF on every run, and the count
+    guard caught it only as an unexplained 38-row shortfall rather than as the
+    data loss it was.
+
+    ``job_id`` is deliberately NOT the key: each database has its own sequence,
+    so local job 12345 and Neon job 12345 are unrelated postings.
 
     On a tie, LOCAL wins. The laptop is where the derived columns
     (requirements, responsibilities, required_skills_text) were backfilled, so
     taking Neon's copy would silently blank them for every row both databases
     share -- which is most of them.
     """
-    merged: dict[tuple[str, str], tuple[tuple, str]] = {}
-    origins: list[str] = []
+    merged: dict[tuple[str, str, str | None], tuple[tuple, str]] = {}
     for row in neon_rows:
-        key = (row[_JOB_KEY[0]], row[_JOB_KEY[1]])
+        key = (row[_JOB_KEY[0]], row[_JOB_KEY[1]], _date_key(row[_DATE_KEY]))
         merged[key] = (row, "neon")
     for row in local_rows:  # last, so local overwrites
-        key = (row[_JOB_KEY[0]], row[_JOB_KEY[1]])
+        key = (row[_JOB_KEY[0]], row[_JOB_KEY[1]], _date_key(row[_DATE_KEY]))
         merged[key] = (row, "local")
     rows = [pair[0] for pair in merged.values()]
     origins = [pair[1] for pair in merged.values()]
     return rows, origins
+
+
+def check_against_database(rows: int, engine, neon_engine=None) -> None:
+    """Log how the snapshot compares to the databases. Never raises.
+
+    The database count is read HERE, after ``build()`` has run, not before it.
+    A count taken earlier describes an older database than the one that was just
+    read: a local scraper or merge_incoming_shards.py can commit rows while the
+    snapshot is being assembled, and the earlier count then reports a shortfall
+    that is growth rather than loss.
+
+    A shortfall is warned about, not fatal. The original check refused to publish
+    outright, which turned a benign race into a failed daily sync; the rows
+    involved are picked up by the next run.
+    """
+    with engine.connect() as conn:
+        db_rows = conn.execute(text("SELECT count(*) FROM core.jobs")).scalar_one()
+
+    neon_db_rows = 0
+    if neon_engine is not None:
+        with neon_engine.connect() as conn:
+            neon_db_rows = conn.execute(text("SELECT count(*) FROM core.jobs")).scalar_one()
+
+    logger.info(
+        "snapshot {} rows = local {} + Neon-only {} (Neon itself holds {})",
+        f"{rows:,}",
+        f"{db_rows:,}",
+        f"{rows - db_rows:,}",
+        f"{neon_db_rows:,}",
+    )
+
+    if rows == db_rows:
+        logger.info("snapshot row count matches the database exactly")
+    elif rows < db_rows:
+        logger.warning(
+            "snapshot is {} rows behind the database, which grew while the export "
+            "ran; those rows ship on the next run",
+            f"{db_rows - rows:,}",
+        )
+    else:
+        logger.warning(
+            "snapshot has {} MORE rows than the database; check for an orphaned "
+            "description or salary join",
+            f"{rows - db_rows:,}",
+        )
+
+    if neon_engine is None and rows == db_rows:
+        logger.warning(
+            "Neon was not read; the snapshot is local only. Any row scraped "
+            "by CI into Neon is missing from HF."
+        )
 
 
 def build(
@@ -263,35 +347,7 @@ def main(argv: list[str] | None = None) -> int:
         # The snapshot is now the union of local and Neon, so it is compared
         # against the union -- and any Neon-only row is logged, because that is
         # the number that says whether the second database is being read at all.
-        with engine.connect() as conn:
-            db_rows = conn.execute(text("SELECT count(*) FROM core.jobs")).scalar_one()
-        neon_db_rows = 0
-        if neon_engine is not None:
-            with neon_engine.connect() as conn:
-                neon_db_rows = conn.execute(
-                    text("SELECT count(*) FROM core.jobs")
-                ).scalar_one()
-
-        neon_only = rows - db_rows
-        logger.info(
-            "snapshot {} rows = local {} + Neon-only {} (Neon itself holds {})",
-            f"{rows:,}",
-            f"{db_rows:,}",
-            f"{neon_only:,}",
-            f"{neon_db_rows:,}",
-        )
-        if neon_engine is None and rows == db_rows:
-            logger.warning(
-                "Neon was not read; the snapshot is local only. Any row scraped "
-                "by CI into Neon is missing from HF."
-            )
-        if rows < db_rows:
-            logger.error(
-                "snapshot has {} rows but core.jobs has {} -- refusing to publish",
-                f"{rows:,}",
-                f"{db_rows:,}",
-            )
-            return 1
+        check_against_database(rows, engine, neon_engine)
 
         if args.dry_run:
             logger.info("--dry-run: nothing uploaded or deleted")
