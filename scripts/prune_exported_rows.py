@@ -8,11 +8,15 @@ inserts roughly 6,400 rows a day across four scheduled runs, so an unpruned
 CI database grows by ~28.8 MB/day.
 
 That number decides which free tier this project can use. The identity slice
-(``core.jobs`` + ``ref`` + ``salary``) measures 251 MB, leaving ~249 MB of
-headroom inside Supabase's 500 MB cap -- about eight days. Oracle's Always
-Free 200 GB block volume needs no pruning to fit, but an unbounded database is
-still an operational liability on any provider, and on a small one it is the
-difference between working and hitting the same wall Neon hit.
+(``core.jobs`` + ``ref`` + ``salary``) measures 251 MB, which leaves headroom
+inside Neon's Free-plan 1 GB per project -- but only if this script runs. CI's
+own seed loads just 2.6 MB of ``ref.*`` plus the growing ``core.jobs``, and at
+28.8 MB/day an unpruned database reaches 1 GB in about three weeks.
+
+That is why the hosted database is a fresh Neon project rather than a switch
+away from Neon: Neon Free needs no card, allows 100 projects, and meters
+compute per project, so the exhausted project was a spent allowance rather
+than a dead provider. See docs/ci_database.md for the full comparison.
 
 The rule for what is safe to delete
 -----------------------------------

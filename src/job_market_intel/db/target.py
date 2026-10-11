@@ -4,23 +4,29 @@ Precedence
 ----------
 1. ``CI_DATABASE_URL`` -- the persistent, hosted database. This is the variable
    every workflow passes, so switching providers is a one-secret change and
-   never a code change.
+   never a code change. See ``docs/ci_database.md`` for the current target and
+   the sizing arithmetic.
 2. ``DATABASE_URL`` -- whatever the caller already set.
-3. The local PostgreSQL on this machine.
+3. The ephemeral CI service container, inside GitHub Actions.
+4. None, so ``db.config`` can fall back to the ``DB_*`` component parts.
 
 Why a resolver at all
 ---------------------
-The DSN used to be hardcoded to ``secrets.DATABASE_URL``, which pointed at
-Neon. When Neon's quota was exhausted every workflow died at its first write
-with "Your account or project has exceeded the quota" -- an error that names no
-provider and no remedy, in a workflow whose name says nothing about databases.
+The DSN used to be hardcoded to ``secrets.DATABASE_URL``, which pointed at a
+Neon project whose quota was exhausted. Every workflow then died at its first
+write with "Your account or project has exceeded the quota" -- an error that
+names no provider and no remedy, in a workflow whose name says nothing about
+databases.
 
 Routing every job through one resolver means the next provider change is a
 secret edit, and a failure names the variable that was wrong.
 
-See scripts/provision_ci_database.sh for why the target is an Oracle Always
-Free VM rather than another managed free tier: the corpus is 1,325 MB and every
-managed free tier stops at 500 MB - 1 GB.
+Note that the exhausted Neon project is NOT evidence that Neon is unusable.
+Neon Free requires no card, allows 100 projects, and meters compute PER
+PROJECT -- so a new project in the same account starts with a fresh allowance.
+The alternative considered in detail (an Oracle Always Free VM, 200 GB, no
+card needed for the database itself but one required at signup) is documented
+in ``scripts/provision_ci_database.sh``.
 """
 
 from __future__ import annotations

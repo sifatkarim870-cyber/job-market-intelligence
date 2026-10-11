@@ -1,5 +1,31 @@
 #!/usr/bin/env bash
-# Provision a PostgreSQL database on an Oracle Cloud Always Free VM.
+# Provision the CI database on a self-hosted Postgres VM.
+#
+# ---------------------------------------------------------------------------
+# CURRENT TARGET: a new Neon project on the existing free account.
+#
+# This script is NOT the path in use. Neon Free requires no credit card, and
+# its quotas are PER PROJECT, not per account:
+#
+#     "Compute quotas are measured per project, so 100 projects each get
+#      their own 100 CU-hour bucket."
+#
+# The project's quota is exhausted; a NEW project in the same free account
+# starts with a fresh 100 CU-hours and, since 2026-10-02, 1 GB of storage.
+# Neon raised the Free plan from 0.5 GB to 1 GB per project and existing
+# projects picked it up automatically.
+#
+# To provision it: create a project in the Neon console, then
+#
+#   gh secret set CI_DATABASE_URL --body '<its pooled connection string>'
+#
+# No card, no script, no VM. See docs/ci_database.md.
+#
+# ---------------------------------------------------------------------------
+# What this script is kept for: self-hosting, when the managed tiers are all
+# too small. Oracle Cloud Always Free was the intended target for it, because
+# it is the only free offer with real headroom, but it REQUIRES A CREDIT CARD
+# at signup -- which is why it is not the recommendation.
 #
 # Why Oracle and not a managed free tier
 # --------------------------------------
@@ -14,15 +40,16 @@
 #                   pauses after a week of inactivity. This is the same wall
 #                   Neon hit; it would fail again in about 8 days.
 #   Aiven Free      1 GB, one service -- powered off when unused.
-#   Neon Free       500 MB -- already exhausted.
+#   Neon Free       1 GB per PROJECT, but 100 CU-hours per project and the
+#                   old project's allowance is spent.
 #   Render Free     1 GB -- expires after 30 days.
 #   Koyeb Free      1 GB -- sleeps after 5 minutes idle.
 #
 # Oracle Always Free gives a real VM with 200 GB of block volume: 150x the
 # corpus, and no inactivity pause, because there is no managed-scheduler to
 # pause it. It is self-hosted, so the operator cost -- a restart after an OS
-# update, a pg_dump into Hugging Face -- is real, and this script plus
-# scripts/restore_state_snapshot.py is that cost.
+# update, a pg_dump into Hugging Face -- is real, and this script is that
+# cost.
 #
 # Known risks, stated rather than discovered later:
 #   * Oracle halved the Always Free allowance in June 2026 (4 -> 2 OCPU,
@@ -33,7 +60,8 @@
 #   * "Out of host capacity" is common in popular regions at signup. Pick a
 #     quieter region; the home region cannot be changed later.
 #   * A credit card is required to sign up. Nothing is charged while usage
-#     stays inside the Always Free allowance.
+#     stays inside the Always Free allowance. THIS IS WHY IT IS NOT THE
+#     DEFAULT PATH.
 #
 # What this script does, in order:
 #   1. install PostgreSQL 18
@@ -46,7 +74,7 @@
 # which is the same code path CI already uses to seed its container, so the
 # target database is built from exactly the snapshot that is proven to work.
 #
-# Usage (run on the Oracle VM, as a user with sudo):
+# Usage (run on the VM, as a user with sudo):
 #   bash scripts/provision_ci_database.sh
 #   bash scripts/provision_ci_database.sh --password 'a-strong-password'
 
