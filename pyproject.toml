@@ -139,6 +139,14 @@ select = [
 ]
 ignore = []
 
+[tool.ruff.lint.per-file-ignores]
+  # F811: a pytest fixture is imported once at module level and then referenced
+  # as a test parameter. Pyflakes reads the parameter as "redefining" the
+  # import. This is the standard pytest layout, not a shadowing bug.
+  # E402: a few tests must exec a script under test before importing fixtures
+  # that depend on the sys.path setup that call performs.
+  "tests/**/test_*.py" = ["F811", "E402"]
+
 [tool.ruff.format]
 quote-style = "double"
 
