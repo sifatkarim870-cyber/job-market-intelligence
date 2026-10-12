@@ -1,0 +1,167 @@
+"""Repoint the scheduled Kaggle kernel from Neon to Hugging Face.
+
+Why
+---
+``mskarim870/nllb-translate`` is the kernel carrying the schedule. It reads
+rows from Neon with psycopg2 and bulk-writes ``description_en`` back, and it
+has died on every run since Neon's free quota was exhausted:
+
+    OperationalError: connection to server at
+    "ep-damp-band-b35ije4h.c-4.ap-southeast-1.aws.neon.tech" (52.76.212.156),
+    port 5432 failed: ERROR:  Your account or project has exceeded the quota.
+
+It fails in ~16 seconds, which is why each notification arrives almost
+immediately after the schedule fires.
+
+``mskarim870/jmi-translate-hf`` already solves this: it reads the public
+corpus shards over ``hf://`` with DuckDB, translates on 2x Tesla T4, and
+uploads the overlay additively. Its last run was COMPLETE.
+
+What this does
+--------------
+Copies that notebook onto the SCHEDULED kernel's identity, so the existing
+schedule keeps working without anyone re-pointing it in the UI:
+
+* notebook code taken verbatim from jmi-translate-hf;
+* ``id`` kept as ``mskarim870/nllb-translate`` -- this is what makes push
+  update the scheduled kernel rather than create a third one;
+* ``dataset_sources`` kept as ``jmi-translate-creds`` (the one already attached
+  to this kernel) rather than switched to the HF kernel's own creds dataset,
+  because the HF code no longer reads an attached dataset at all -- it finds
+  the write token as a kernel SECRET (``find_token`` scans /kaggle for a
+  ``hf_`` prefixed file). Keeping the existing source is the smaller change;
+  the secret must be present on this kernel or the run fails at upload.
+
+After pushing, verify the run:
+    kaggle kernels status mskarim870/nllb-translate
+    kaggle kernels logs    mskarim870/nllb-translate
+
+Safety
+------
+* The previous notebook is saved to a .bak file before anything is overwritten.
+* Nothing is pushed unless --push is given; the default is a dry run.
+* The corpus is only ever read, never rewritten -- the overlay is additive,
+  which is the property that makes the immutable-shard design safe.
+
+Usage:
+    python scripts/port_kaggle_kernel_to_hf.py
+    python scripts/port_kaggle_kernel_to_hf.py --push
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import pathlib
+import shutil
+import subprocess
+import sys
+import tempfile
+
+SOURCE_KERNEL = "mskarim870/jmi-translate-hf"
+TARGET_KERNEL = "mskarim870/nllb-translate"
+
+#: Attached to the target kernel today. The HF code does not read it (the token
+#: comes from a kernel secret), but changing it is not part of this fix.
+KEEP_DATASET_SOURCE = "mskarim870/jmi-translate-creds"
+
+
+def kaggle(*args: str) -> subprocess.CompletedProcess:
+    """Run the Kaggle CLI, returning the completed process."""
+    return subprocess.run(
+        [sys.executable, "-m", "kaggle", *args],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+
+
+def pull(kernel: str, dest: pathlib.Path, metadata: bool = True) -> pathlib.Path:
+    """Download a kernel's notebook and metadata into ``dest``."""
+    args = ["kernels", "pull", kernel, "-p", str(dest)]
+    if metadata:
+        args.append("-m")
+    result = kaggle(*args)
+    if result.returncode != 0:
+        raise SystemExit(f"pull failed for {kernel}: {result.stderr.strip()[:300]}")
+    notebooks = list(dest.glob("*.ipynb"))
+    if not notebooks:
+        raise SystemExit(f"no notebook found for {kernel}")
+    return notebooks[0]
+
+
+def build(target_meta: dict, source_nb: pathlib.Path) -> tuple[pathlib.Path, dict]:
+    """Write the ported notebook + metadata into a temp dir. Returns (nb, meta)."""
+    work = pathlib.Path(tempfile.mkdtemp(prefix="jmi_kernel_"))
+    meta = dict(target_meta)
+    meta["id"] = TARGET_KERNEL
+    # The kernel slug must match the title, lowercased and dashed. Both
+    # kernels already satisfy this, but it is asserted because a mismatch makes
+    # push create a NEW kernel instead of updating the scheduled one.
+    slug = TARGET_KERNEL.split("/", 1)[1]
+    meta["title"] = slug
+    meta["code_file"] = f"{slug}.ipynb"
+    meta["dataset_sources"] = [KEEP_DATASET_SOURCE]
+
+    nb_out = work / meta["code_file"]
+    shutil.copyfile(source_nb, nb_out)
+    meta_out = work / "kernel-metadata.json"
+    meta_out.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    return work, meta
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--push", action="store_true", help="actually upload (default: dry run)")
+    ap.add_argument(
+        "--timeout", type=int, default=3600, help="max run seconds passed to push"
+    )
+    args = ap.parse_args(argv)
+
+    work = pathlib.Path(tempfile.mkdtemp(prefix="jmi_target_"))
+    print(f"1. pulling the scheduled kernel ({TARGET_KERNEL})")
+    pull(TARGET_KERNEL, work)
+    target_nb = list(work.glob("*.ipynb"))[0]
+    target_meta = json.loads(
+        (work / "kernel-metadata.json").read_text(encoding="utf-8")
+    )
+    print(f"   current notebook: {target_nb.name} ({target_nb.stat().st_size:,} bytes)")
+
+    # Back up before overwriting anything.
+    backup = target_nb.with_suffix(".ipynb.bak")
+    shutil.copyfile(target_nb, backup)
+    print(f"   backup saved     : {backup.name}")
+
+    src_work = pathlib.Path(tempfile.mkdtemp(prefix="jmi_source_"))
+    print(f"2. pulling the working kernel ({SOURCE_KERNEL})")
+    source_nb = pull(SOURCE_KERNEL, src_work)
+
+    out, meta = build(target_meta, source_nb)
+    print("\n3. ported metadata")
+    for key in ("id", "title", "code_file", "enable_gpu", "machine_shape",
+                "enable_internet", "dataset_sources"):
+        print(f"   {key:<18} {meta.get(key)}")
+
+    src_code = source_nb.read_text(encoding="utf-8")
+    assert "NEON_DATABASE_URL" not in src_code, "source still references Neon"
+    print("   verified: no NEON_DATABASE_URL in the ported notebook")
+
+    if not args.push:
+        print("\n--dry run (default): nothing uploaded.")
+        print(f"   would push to   : {meta['id']}")
+        print(f"   staged in       : {out}")
+        return 0
+
+    print("\n4. pushing (this UPLOADS AND RUNS the kernel)")
+    result = kaggle("kernels", "push", "-p", str(out), "-t", str(args.timeout))
+    print(f"   exit={result.returncode}")
+    for stream in (result.stdout, result.stderr):
+        for line in stream.splitlines():
+            if line.strip():
+                print(f"   {line.strip()}")
+    return 0 if result.returncode == 0 else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

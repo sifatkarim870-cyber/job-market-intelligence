@@ -30,21 +30,7 @@ REM rows -- so the failure is recorded and the push continues.
 "%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\merge_incoming_shards.py" >> "%DEST%\logs\sync.log" 2>&1
 if errorlevel 1 echo [run_corpus_sync] merge_incoming_shards FAILED, see sync.log
 
-REM Publish the translation worklist BEFORE pushing, so the Kaggle kernel
-REM always has the newest non-English rows queued.
-REM
-REM Translation runs along two paths: titles are translated on CPU in
-REM classify_titles.yml, and descriptions by a Kaggle GPU kernel that reads
-REM translations/worklist.parquet from the overlay repo and writes its results
-REM back. Nothing used to push NEW rows to the kernel, so the overlay stopped
-REM being regenerated and every new non-English description was invisible to
-REM the translator -- the corpus drifted toward untranslated.
-REM
-REM Failing this must not fail the sync: the worklist is an optimisation of
-REM when the corpus is already translated (the normal case), and refusing to
-REM publish the corpus because of it would be a far worse outcome.
-"%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\export_translation_worklist.py" >> "%DEST%\logs\sync.log" 2>&1
-if errorlevel 1 echo [run_corpus_sync] export_translation_worklist FAILED, see sync.log
+
 
 REM Push local -> HF. The requirement is that local and HF always agree, and a
 REM pull-only sync cannot deliver that: any correction made on this laptop (a
