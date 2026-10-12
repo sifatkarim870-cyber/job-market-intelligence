@@ -175,6 +175,33 @@
       "max_env": null,
       "enabled": false,
       "notes": "real Chrome via seleniumbase UC mode; needs browser setup on the runner and is the most blockable source, so it stays opt-in"
+    },
+    {
+      "code": "himalayas",
+      "group": "api",
+      "script": "scripts/run_himalayas_scraper.py",
+      "timeout": 20,
+      "max_env": "HIMALAYAS_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "himalayas.app/jobs/api - free key-free JSON API; remote-job aggregator spanning many employers rather than one country's board, and one of the few free feeds reporting salary bounds, salary period, seniority and categories. OFFSET pagination (page is ignored); the API caps limit at 20. Category-focused to technical roles. Added 2026-10-12."
+    },
+    {
+      "code": "jobicy",
+      "group": "api",
+      "script": "scripts/run_jobicy_scraper.py",
+      "timeout": 20,
+      "max_env": "JOBICY_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "jobicy.com/api/v2/remote-jobs - free key-free JSON API; remote jobs with geo, industry, seniority level and contract type. No pagination (page is rejected with HTTP 400), so a run is one request filtered by tag/geo. Added 2026-10-12."
+    },
+    {
+      "code": "themuse",
+      "group": "api",
+      "script": "scripts/run_themuse_scraper.py",
+      "timeout": 25,
+      "max_env": "THEMUSE_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "themuse.com/api/public/jobs - free key-free JSON API; ~20,000 pages of company-authored postings, so the largest untapped source measured. Rich company objects, levels, categories and locations. Page-based pagination. Added 2026-10-12."
     }
   ]
 }
