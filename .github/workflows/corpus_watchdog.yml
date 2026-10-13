@@ -1,0 +1,78 @@
+name: Corpus watchdog
+
+# Watches the published Hugging Face corpus for the failure modes that nothing
+# else reports.
+#
+# Why this is scheduled rather than part of the quality gate: it needs the
+# network and reads ~60 MB of Parquet footers, and it is checking the *world*
+# (what CI published, what the laptop published) rather than the code. It is
+# also read-only and needs no database -- deliberately, because
+# verify_local_hf_parity.py can never run here: the laptop is the database of
+# record and a GitHub runner cannot reach it.
+#
+# The load-bearing check is the duplicate ratio. CI publishes incremental
+# shards named for their timestamp while the laptop's nightly full export
+# writes part-0.parquet covering everything; between a CI publish and the next
+# merge both are live and the rows they share appear twice. That window is
+# expected and lasts most of a day. But if the nightly merge stops running --
+# and the laptop is an unmonitored single point of failure -- the ratio climbs
+# without bound, and this is the only thing in the system that would notice.
+# Measured baseline: 1.7% (2,062 of 119,343 rows on 2026-10-13).
+
+on:
+  schedule:
+    # 06:17 UTC daily. Off the hour on purpose: GitHub queues scheduled
+    # workflows and the top of the hour is the worst slot.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  corpus:
+    name: HF corpus self-consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: uv sync --extra test
+
+      # Read-only on a public repo, so this works with no token at all.
+      # HF_TOKEN is passed when present so a private mirror also works.
+      - name: Verify published corpus
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: uv run python scripts/verify_hf_corpus.py
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Corpus watchdog"
+            echo ""
+            echo '```'
+            uv run python scripts/verify_hf_corpus.py || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # A failed check here is information, not a broken build: the corpus being
+      # inconsistent does not mean the code is wrong, and blocking anything on
+      # it would train everyone to ignore red. The notification is the point,
+      # and it is an Actions-native error annotation rather than a third-party
+      # marketplace action -- one less external dependency on a job whose entire
+      # job is to be dependable when things go wrong.
+      - name: Annotate failure
+        if: failure()
+        run: |
+          echo "::error title=HF corpus inconsistent::Possible causes, in the order worth checking. (1) The laptop's nightly merge has stopped -- check run_corpus_sync.cmd and corpus_backup/logs/sync.log; nothing else in the system detects this. (2) A source scraped but never published its shard. (3) The state/ seed snapshot is stale, so every CI scrape is silently running against wrong reference data. (4) A shard was written with a column list that does not match the exporter. Run 'uv run python scripts/verify_hf_corpus.py' locally for the detail."
