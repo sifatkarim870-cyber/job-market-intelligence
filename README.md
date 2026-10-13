@@ -1,172 +1,214 @@
 # Job Market Intelligence Platform
 
 An explainable-AI job market intelligence platform: a multi-source,
-entity-resolved, time-varying dataset of job postings, built for
-reproducible research, forecasting, and dashboarding.
+entity-resolved, time-varying dataset of job postings, built for reproducible
+research, forecasting, and dashboarding.
 
-**Status:** Foundation stage. The database schema is designed and deployed
-(see `job_market_intelligence_db_design.md` / `job_market_intelligence_schema.sql`
-in project docs). This repository currently contains project scaffolding
-only — no scrapers, database access code, or business logic yet.
-
----
-
-## Project Overview
-
-The platform ingests job postings from multiple sources (RemoteOK, Indeed,
-LinkedIn, Glassdoor, We Work Remotely, government portals, company career
-pages), cleans and normalizes them (companies, skills, locations, salaries,
-titles), and exposes the result through an API, dashboard, and
-research-grade dataset exports — all backed by a PostgreSQL warehouse
-designed for 100M+ postings.
-
-This repo currently implements: **Step 3 — Configure the Development
-Environment**. It provides the folder structure, environment/config
-handling, tooling, and utility scripts every later step builds on top of.
+**Status:** the data layer is built and running. 20 scrapers, a deployed
+PostgreSQL warehouse, a full normalization/entity-resolution pipeline, and a
+published analysis-ready corpus. The model/serving layer (API, forecasting,
+XAI) has not been started — see *Roadmap*.
 
 ---
 
-## Directory Structure
+## What this produces
+
+A research-grade corpus of ~116,000 job postings across 19 job boards, with
+every posting normalized to a canonical entity (company, location, salary,
+skills, occupation) and translated into English. It is published as
+denormalized Parquet shards on Hugging Face at ~692 bytes/row and as full
+`pg_dump` archives.
+
+## Architecture in one picture
+
+```
+GitHub Actions (cron)                 Kaggle GPU        Laptop (nightly 03:20)
+─────────────────────                 ──────────        ─────────────────────
+scrape_api   (14 src, 6h)  ─┐
+scrape_html  (5 src, 12h)  ─┤
+scrape_browser (Indeed, off)┘
+                          ▼
+  ephemeral Postgres ──► Parse→Validate→Clean→Store ──► HF shards ─┐
+  (destroyed each run)                                              │
+                                                                    ▼
+  LOCAL POSTGRES ◄── merge ◄── run_corpus_sync.cmd ◄── pull ◄── HF ◄┘
+   (system of record)  └──► export full snapshot ──► HF
+
+  Kaggle: nllb on shards ──► translations overlay dataset ──► apply to local
+```
+
+**Why the database lives on a laptop.** Neon Free refuses writes past 1 GB, and
+the corpus grows ~29 MB/day. Rather than buy capacity, the system is split by
+write pattern: Postgres keeps the small, indexed relational slice; Parquet
+shards carry the analysis-ready rows at 7x lower storage. CI therefore scrapes
+into a **throwaway container** seeded from a Hugging Face reference snapshot,
+publishes shards, and destroys the container — losing a CI database costs
+nothing. The laptop's Postgres is the system of record; HF is the transport.
+
+**Merge before export, always.** `export_corpus_to_hf.py` rebuilds `shards/`
+from the database of record and deletes anything it did not just write, so an
+unmerged CI row is destroyed by the very push meant to publish it.
+`run_corpus_sync.cmd` enforces pull → merge → export in that order.
+
+## The identity rule
+
+Every join, merge, dedupe and upsert keys on the **natural key**
+`(source_code, source_job_id)` — never `job_id`. `job_id` is a per-database
+identity sequence, so local job 12345 and Neon job 12345 are unrelated
+postings. Keying on `job_id` silently deleted 38 real rows from the published
+corpus before it was caught.
+
+## Per-source pipeline
+
+Every scraper follows the same six stages, all under
+`src/job_market_intel/scrapers/<source>/`:
+
+| Stage | File | Role |
+|---|---|---|
+| Fetch | `client.py` | HTTP/browser retrieval, retry/backoff, rate limiting |
+| Parse | `parser.py` | raw payload → Pydantic models |
+| Validate | `validation/<src>_validator.py` | batch sanity gates (min records, max skip rate) |
+| Clean | `cleaning/<src>_cleaner.py` | HTML strip, encoding fixes, salary/location extraction → `CleanedJob` |
+| Store | `db/job_repository.py` | upsert with SHA-256 change detection |
+| Resolve | `normalization/*` | company, geo, salary — inline at insert |
+
+`CleanedJob` is the source-agnostic contract all 19 payloads funnel into, which
+is why adding a source is mechanical rather than architectural.
+
+**Three fetch patterns.** API (14 sources, JSON over HTTP); HTML (5, requests +
+BeautifulSoup); browser (Indeed, seleniumbase undetected-Chrome — currently
+disabled, as shared CI runner IPs get blocked).
+
+## The database
+
+`SQL_Code/job_market_intelligence_schema.sql` — 47 tables across 9 schemas.
+
+`core` (jobs partitioned monthly by `posting_date`, descriptions, companies,
+aliases) · `ref` (17 lookup tables) · `bridge` (job↔skills/benefits/languages) ·
+`salary` (current + append-only history + FX rates) · `ops` (sessions, logs,
+failures, query queues) · `audit` (append-only status and field-change history)
+· `analytics` (facts, daily skill demand, active-jobs view) · `auth` ·
+`system`.
+
+Design decisions and their rationale are in
+`DesignPrompt/job_market_intelligence_db_design.md`.
+
+Access is centralised in `db/`: nothing outside that package may call
+`create_engine()` or open a raw connection. See `docs/DATABASE_INTERFACE.md`.
+
+## Normalization — the research value
+
+All six stages are conservative by design: they **propose**, a human approves.
+Nothing auto-merges entities or invents taxonomy terms.
+
+| Stage | Strategy |
+|---|---|
+| Dedup | title+company+date-window cross-source match → `is_duplicate_of` |
+| Company resolution | pg_trgm similarity → alias candidates for `review_company_aliases.py` |
+| Skill extraction | keyword scan against the curated 434-skill vocabulary |
+| Salary standardization | pay period × currency → USD annual |
+| Geographic resolution | split `"Berlin, Germany · Remote"` → resolved `ref.locations` |
+| Title classification | local embeddings → 2,046-title taxonomy, plus a `excluded_non_job` deny-list |
+
+Translation is local (NLLB-200): titles on CPU in CI, descriptions on Kaggle
+GPU, published as an additive overlay. No hosted LLM API, so no per-row cost.
+
+Provenance is recorded on every derived row (`confidence_score`, `extracted_by`,
+`classified_by`, `translated_by`) — that is what makes the dataset defensible in
+an explainability audit.
+
+## Layout
 
 ```
 job-market-intel/
-├── src/job_market_intel/     # Application source (installable package)
-│   ├── common/                # Cross-cutting utilities; base config loader lives here
-│   ├── db/                    # DB layer (SQLAlchemy engine/session, pooling) — Step 4
-│   ├── scrapers/               # Base scraper framework + per-source scrapers — Step 5+
-│   ├── cleaning/                # Standardization pipeline (text, dates, salary, etc.) — Step 8
-│   ├── validation/               # Record validation before insert — Step 7
-│   ├── normalization/             # Entity resolution: companies, skills, geo, dedup — Step 10b+
-│   ├── analytics/                  # EDA + analytics-schema query helpers — Step 28
-│   ├── api/                         # FastAPI REST layer + auth wiring — Step 34
-│   ├── dashboard/                    # Streamlit/Dash app — Step 29
-│   ├── ml/                            # Forecasting models — future phase
-│   └── xai/                            # Explainability / provenance reporting — future phase
-├── tests/
-│   ├── unit/                  # Fast, isolated tests (no DB/network)
-│   ├── integration/           # Multi-component tests (e.g. scraper -> test DB)
-│   └── fixtures/              # Shared test fixtures/sample payloads
-├── scripts/                   # One-off dev utilities (bootstrap, env verification)
-├── logs/                      # Log output, split by subsystem (git-ignored contents)
-│   ├── scrapers/  ├── database/  ├── api/  ├── scheduler/  └── system/
-├── seed/                      # Idempotent reference-data seed scripts — Step 4.5
-├── docs/                      # Architecture docs, design doc, schema, diagrams
-├── .env.example                # Documented environment variable template
-├── .gitignore
-├── .pre-commit-config.yaml
-├── pyproject.toml              # Project metadata + dependency groups
-└── README.md
+├── src/job_market_intel/     # installable package
+│   ├── common/               # config, logging, HTTP, retry
+│   ├── db/                   # engine/session/transaction/repositories
+│   ├── scrapers/<source>/    # 20 scrapers, 7 files each
+│   ├── cleaning/             # per-source cleaners + shared text utils
+│   ├── validation/           # per-source validators
+│   ├── normalization/        # entity resolution + extraction
+│   ├── corpus/               # Parquet shard export to Hugging Face
+│   ├── scheduler/            # APScheduler orchestration
+│   └── analytics/ api/ dashboard/ ml/ xai/    # not yet implemented
+├── tests/                    # unit/ + integration/ + workflow/
+├── scripts/                  # dev + batch + corpus-sync tooling
+├── seed/                     # 17 idempotent reference-data seeders
+├── migrations/               # 13 applied schema migrations
+├── analysis/                 # step30 EDA, step31 Streamlit dashboard
+├── diagnostics/              # read-only scoping queries (gitignored)
+├── docs/                     # interface guide, CI/DB runbook
+└── config/sources.json       # THE source registry — CI builds its matrix from this
 ```
 
-**Why this shape:** each `src/job_market_intel/*` package maps to exactly
-one responsibility from the project's build phases. A scraper never
-imports from `api/`; `analytics/` never writes to the database directly
-(it reads from the `analytics` schema populated by scheduled jobs). This
-keeps modules independently testable and lets multiple developers work in
-different packages without stepping on each other.
+## Setup
 
----
-
-## Installation
-
-### 1. Prerequisites
-
-- Python **3.11+**
-- [`uv`](https://docs.astral.sh/uv/) (see rationale below) — the bootstrap
-  script will offer to install it for you if missing.
-- A running PostgreSQL instance with the `job_market_intelligence`
-  database already created (Steps 1–2; not part of this repo's setup).
-
-### 2. One-command setup
+Requires Python 3.11+ and [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
-./scripts/bootstrap.sh
-```
-
-This creates the virtual environment, installs dependencies, copies
-`.env.example` to `.env`, installs pre-commit hooks, and runs environment
-verification.
-
-### 3. Manual setup (equivalent, step by step)
-
-```bash
-# Install uv (skip if already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Create the virtual environment and install dependencies
 uv venv
 uv sync --extra dev --extra test
-
-# Configure environment variables
-cp .env.example .env
-# then edit .env with real DATABASE_URL, etc.
-
-# Verify everything is wired correctly
+cp .env.example .env          # then fill in DATABASE_URL, REED_API_KEY, HF token
 uv run python scripts/verify_env.py
 ```
 
----
+PostgreSQL 16+ must be running with the schema applied
+(`SQL_Code/job_market_intelligence_schema.sql`) and reference data seeded
+(`python -m seed.run_all`).
 
-## Environment Setup
-
-All configuration is driven by environment variables, loaded from a local
-`.env` file (never committed — see `.gitignore`) or real environment
-variables in deployment.
-
-See `.env.example` for the full, documented list. At this stage only the
-following are required:
-
-| Variable | Purpose |
-|---|---|
-| `APP_ENV` | `development` \| `staging` \| `production` |
-| `LOG_LEVEL` | Root logging verbosity |
-| `DATABASE_URL` | Full PostgreSQL DSN |
-| `DB_POOL_SIZE` / `DB_POOL_MAX_OVERFLOW` | Base connection pool sizing (tuned further in Step 4) |
-
-Everything else in `.env.example` is a placeholder for **future** steps
-and is not yet consumed by any code.
-
----
-
-## First Run
+## Daily commands
 
 ```bash
-uv run python scripts/verify_env.py
+# the single most useful command — must print "HF agrees"
+uv run python scripts/verify_local_hf_parity.py
+
+# full nightly cycle: pull -> merge -> export
+scripts/run_corpus_sync.cmd
+
+# health
+uv run python scripts/check_sources_registry.py    # "registry consistent"
+uv run pytest tests -q --no-cov
+uv run ruff check . && uv run ruff format .
 ```
 
-Expected output: every check passes (`[OK]`), including "Base
-configuration loads and validates." If it fails, the error message names
-the missing/invalid setting directly.
+## Adding a source
 
-There is no application to "run" yet beyond this — Step 4 introduces the
-first real functionality (the database interface).
+1. Create `src/job_market_intel/scrapers/<name>/` (client, config, models,
+   parser, pipeline, exceptions).
+2. Add `cleaning/<name>_cleaner.py` and `validation/<name>_validator.py`.
+3. Add a line to `config/sources.json` — `code` **must** equal
+   `ref.sources.source_code`, because the corpus exporter filters on it.
+4. `uv run python scripts/register_source.py <name>` — registers locally *and*
+   on HF; the HF copy is required or CI cannot run the source.
+5. `scripts/run_<name>_scraper.py`, then the test suite.
 
----
+`tests/README.md` has the long form. `scripts/check_sources_registry.py`
+catches the classic failure — built, seeded, working locally, but on no cron.
 
-## Development Guidelines
+## Secrets
 
-- **Formatting/linting:** `uv run ruff check .` and `uv run ruff format .`
-  (also run automatically via pre-commit).
-- **Type checking:** `uv run mypy src`.
-- **Tests:** `uv run pytest` (test suite itself is built out in Step 14.5;
-  the harness — `pytest` + `pytest-cov` + `tests/` layout — is available
-  now).
-- **Commits:** install hooks once via `uv run pre-commit install`
-  (already done by `bootstrap.sh`); hooks run ruff, mypy, and basic
-  hygiene checks before every commit.
-- **Branching:** see *Git Configuration* in the architecture notes —
-  short-lived `feature/<name>` branches off `main`, merged via PR.
-- **Secrets:** never commit `.env` or real credentials. Only
-  `.env.example` (placeholders) is tracked.
-- **New modules:** add code to the package matching its responsibility
-  (see Directory Structure above); don't create new top-level packages
-  without updating this README.
+Never commit `.env` or credentials. Needed at runtime: `DATABASE_URL`
+(and `LOCAL_DATABASE_URL` / `NEON_DATABASE_URL` where applicable),
+`REED_API_KEY`, `INDEED_PROXY_*`, and a Hugging Face **write** token — supply it
+via `HF_TOKEN` in CI, or `CORPUS_HF_TOKEN` / `CORPUS_HF_TOKEN_FILE` locally.
 
----
+> **Rotating the HF token requires four coordinated updates**: the local
+> `Hugging_Face_token.txt`, the `HF_TOKEN` GitHub secret, the Kaggle creds
+> dataset, and any local `.env`. Miss the GitHub one and every workflow 401s
+> while still reporting success, because the shard exporter is deliberately
+> fail-open. Rotate them all, then verify with a real run.
 
 ## Roadmap
 
-See the project workflow document for the full build plan (Steps 1–36
-across 8 phases: Foundation, Scraping Framework, Automation, Source
-Expansion, Data Quality, Analytics, Production Readiness, Documentation).
-This repository will grow in place as each step lands.
+Data layer complete. Not yet started:
+
+- **API** (FastAPI read layer over the warehouse)
+- **Forecasting / ML** (`ml/` is an empty package)
+- **Explainability reporting** (`xai/` is an empty package)
+- **CI quality gate** — pre-commit runs locally, but there is no workflow that
+  runs lint/tests or the parity check on push. This is the highest-value
+  remaining piece: a bad merge key or broken publish path is currently found
+  by a human weeks later.
+- **Source coverage** — 11 of 325 probed job-board targets are built; all 11
+  came from the free-API tier. The 134 HTML-tier and 101 browser-tier targets
+  are untouched. See `job_sites_by_country_SCRAPEABILITY.xlsx`.
