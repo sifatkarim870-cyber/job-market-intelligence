@@ -82,9 +82,7 @@ def persisted(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
     ) -> None:
         # Like the real one, it claims a session id for the run.
         result.session_id = 7
-        calls.append(
-            {"cleaned_jobs": cleaned_jobs, "raw_count": raw_count, "result": result}
-        )
+        calls.append({"cleaned_jobs": cleaned_jobs, "raw_count": raw_count, "result": result})
 
     monkeypatch.setattr(JobvisionPipeline, "_persist_with_session", fake_persist)
     monkeypatch.setattr(pipeline_module, "get_session", _fake_session)
@@ -100,9 +98,7 @@ def _pipeline(
     return JobvisionPipeline(
         client=client,
         repository=repository if repository is not None else FakeRepository(),
-        validation_settings=JobvisionValidationSettings(
-            min_expected_jobs=min_expected_jobs
-        ),
+        validation_settings=JobvisionValidationSettings(min_expected_jobs=min_expected_jobs),
     )
 
 
@@ -118,9 +114,7 @@ class TestSkipKnownWiring:
         assert result.session_id is None
         assert persisted == []  # store_db=False: nothing persisted
 
-    def test_db_run_passes_known_ids_as_exclusion(
-        self, persisted: list[dict[str, Any]]
-    ) -> None:
+    def test_db_run_passes_known_ids_as_exclusion(self, persisted: list[dict[str, Any]]) -> None:
         client = FakeClient()
         pipeline = _pipeline(client, FakeRepository(ids={KNOWN_ID}))
 

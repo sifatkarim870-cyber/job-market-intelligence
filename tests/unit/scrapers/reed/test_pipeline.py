@@ -331,9 +331,7 @@ class TestQueueSourcedRuns:
         mock_queue.mark_query_result.assert_not_called()
 
     def test_explicit_search_queries_bypass_the_queue(self) -> None:
-        pipeline, _, _ = _build_pipeline(
-            search_results_by_query={"data scientist": [_search(1)]}
-        )
+        pipeline, _, _ = _build_pipeline(search_results_by_query={"data scientist": [_search(1)]})
         pipeline.queue_repository = MagicMock()
         pipeline.run(store_db=True, session_override=MagicMock())
         pipeline.queue_repository.claim_next_queries.assert_not_called()

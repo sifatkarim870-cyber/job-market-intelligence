@@ -31,10 +31,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "src"))
 
 LOCAL_DSN = "postgresql+psycopg://app_user:changeme@localhost:5432/job_market_intelligence"
 REPO = "Shifat2110724169/job-market-intel-corpus"
-HF_TOKEN_FILE = (
-    pathlib.Path(
-        r"D:\Research_Project\JobMarketAnalysisPlatform\DataBase\Hugging_Face_token.txt"
-    )
+HF_TOKEN_FILE = pathlib.Path(
+    r"D:\Research_Project\JobMarketAnalysisPlatform\DataBase\Hugging_Face_token.txt"
 )
 
 

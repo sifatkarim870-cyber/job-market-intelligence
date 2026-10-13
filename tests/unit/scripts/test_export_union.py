@@ -137,9 +137,7 @@ class TestNeonDsnResolution:
 
     def test_quotes_are_stripped(self, tmp_path, monkeypatch):
         env = tmp_path / ".env"
-        env.write_text(
-            'DATABASE_URL="postgres://u:p@db.example.com/x"\n', encoding="utf-8"
-        )
+        env.write_text('DATABASE_URL="postgres://u:p@db.example.com/x"\n', encoding="utf-8")
         monkeypatch.setattr(exporter, "ENV_PATH", env)
         assert exporter.neon_dsn() == "postgresql+psycopg://u:p@db.example.com/x"
 

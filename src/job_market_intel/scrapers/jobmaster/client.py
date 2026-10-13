@@ -210,11 +210,7 @@ class JobmasterClient:
                 _visit(self, census, f"/jobs/?headcatnum={num}", f"headcat {num} general")
 
         # Phase 2 — employment-type descent (FT chips dominate the corpus).
-        pairs = (
-            (head.get("num"), typ.get("num"))
-            for head in heads
-            for typ in types
-        )
+        pairs = ((head.get("num"), typ.get("num")) for head in heads for typ in types)
         for num, tnum in pairs:
             if census.probes >= cap:
                 break

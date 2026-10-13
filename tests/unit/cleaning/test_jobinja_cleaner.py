@@ -92,9 +92,7 @@ class TestSalaryDisclosure:
         assert cleaned.salary_max is None
 
     def test_section_missing_falls_back_to_json_ld(self) -> None:
-        cleaned = JobinjaCleaner().clean_job(
-            _raw(salary_text_spans=[], base_salary_value=40000000)
-        )
+        cleaned = JobinjaCleaner().clean_job(_raw(salary_text_spans=[], base_salary_value=40000000))
         assert cleaned.salary_min == 40000000
         assert cleaned.salary_max is None
         assert cleaned.salary_disclosed is True

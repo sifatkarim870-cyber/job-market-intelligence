@@ -194,7 +194,12 @@ class RawGlintsJob(BaseModel):
         return []
 
     @classmethod
-    def from_page_payload(cls, data: dict, *, original_url: str) -> RawGlintsJob:
+    def from_page_payload(  # noqa: C901 - one branch per field shape the payload uses
+        cls,
+        data: dict,
+        *,
+        original_url: str,
+    ) -> RawGlintsJob:
         """Build a validated job from a page's embedded record.
 
         Accepts both observed payload shapes: the full

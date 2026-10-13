@@ -172,9 +172,7 @@ def _token() -> str:
     )
     if default_file.exists():
         return default_file.read_text(encoding="utf-8").strip()
-    raise SystemExit(
-        "no HF token: set HF_TOKEN, or CORPUS_HF_TOKEN, or CORPUS_HF_TOKEN_FILE"
-    )
+    raise SystemExit("no HF token: set HF_TOKEN, or CORPUS_HF_TOKEN, or CORPUS_HF_TOKEN_FILE")
 
 
 def read_ledger(api, repo_id: str) -> dict:
@@ -213,10 +211,7 @@ def label_maps(engine) -> dict[str, dict[str, int]]:
     with engine.connect() as conn:
         for column, (table, id_col, val_col, _) in _LABEL_LOOKUPS.items():
             rows = conn.execute(
-                text(
-                    f"SELECT {val_col}::text, {id_col} FROM {table} "
-                    f"WHERE {val_col} IS NOT NULL"
-                )
+                text(f"SELECT {val_col}::text, {id_col} FROM {table} WHERE {val_col} IS NOT NULL")
             ).all()
             maps[column] = {r[0]: r[1] for r in rows}
         maps["source_code"] = dict(
@@ -451,8 +446,7 @@ def main(argv: list[str] | None = None) -> int:
         "--remerge",
         action="store_true",
         help=(
-            "re-fold shards already recorded in public.ci_merged_shards "
-            "(ON CONFLICT keeps it safe)"
+            "re-fold shards already recorded in public.ci_merged_shards (ON CONFLICT keeps it safe)"
         ),
     )
     ap.add_argument("--source", help="merge one source_code only")

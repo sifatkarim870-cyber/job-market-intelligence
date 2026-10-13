@@ -1,4 +1,4 @@
-﻿"""Unit tests for job_market_intel.cleaning.glints_cleaner.
+"""Unit tests for job_market_intel.cleaning.glints_cleaner.
 
 Pins the Glints-specific decisions: Draft.js JSON descriptions become
 plain text (with an HTML fallback for shape drift), salary disclosure
@@ -140,9 +140,7 @@ class TestEmploymentMapping:
         )
 
     def test_unknown_type_is_none_not_a_guess(self, make_raw_glints_job) -> None:
-        assert (
-            _clean(make_raw_glints_job(contract_type_raw="MYSTERY")).employment_type_code is None
-        )
+        assert _clean(make_raw_glints_job(contract_type_raw="MYSTERY")).employment_type_code is None
 
     def test_missing_type_is_none(self, make_raw_glints_job) -> None:
         assert _clean(make_raw_glints_job(contract_type_raw=None)).employment_type_code is None
@@ -165,10 +163,14 @@ class TestTagsAndUrls:
 class TestQualityScore:
     def test_all_four_signals(self, make_raw_glints_job) -> None:
         cleaned = _clean(
-            make_raw_glints_job(description_raw=json.dumps({
-                "blocks": [{"text": " ".join(["word"] * 30)}],
-                "entityMap": {},
-            }))
+            make_raw_glints_job(
+                description_raw=json.dumps(
+                    {
+                        "blocks": [{"text": " ".join(["word"] * 30)}],
+                        "entityMap": {},
+                    }
+                )
+            )
         )
         assert cleaned.data_quality_score == 1.0
 
@@ -186,9 +188,13 @@ class TestQualityScore:
     def test_half_signals(self, make_raw_glints_job) -> None:
         # salary + location yes; skills yes; description too short (<20 words).
         cleaned = _clean(
-            make_raw_glints_job(description_raw=json.dumps({
-                "blocks": [{"text": "short but real description text"}],
-                "entityMap": {},
-            }))
+            make_raw_glints_job(
+                description_raw=json.dumps(
+                    {
+                        "blocks": [{"text": "short but real description text"}],
+                        "entityMap": {},
+                    }
+                )
+            )
         )
         assert cleaned.data_quality_score == 0.75

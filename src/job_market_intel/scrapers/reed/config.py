@@ -81,7 +81,7 @@ deliberately conservative for the same reason ``max_jobs_processed_per_run``
 is: 5 claimed queries x up to 10 Search pages each is up to 50 additional
 Search-endpoint requests per run on top of whatever Details calls follow,
 and there is still no confirmed daily ceiling to plan against.
-    """
+"""
 
 from __future__ import annotations
 

@@ -27,18 +27,14 @@ class TestSettings:
 
 class TestValidate:
     def test_healthy_batch_passes(self, make_raw_hrge_job) -> None:
-        validator = HRGeBatchValidator(
-            settings=HRGeValidationSettings(min_expected_jobs=2)
-        )
+        validator = HRGeBatchValidator(settings=HRGeValidationSettings(min_expected_jobs=2))
         parsed = [make_raw_hrge_job(), make_raw_hrge_job(source_job_id="2")]
         report = validator.validate([{}, {}], parsed)
         assert report.passed is True
         assert report.issues == []
 
     def test_below_minimum_fails(self, make_raw_hrge_job) -> None:
-        validator = HRGeBatchValidator(
-            settings=HRGeValidationSettings(min_expected_jobs=10)
-        )
+        validator = HRGeBatchValidator(settings=HRGeValidationSettings(min_expected_jobs=10))
         parsed = [make_raw_hrge_job(), make_raw_hrge_job(source_job_id="2")]
         report = validator.validate([{}, {}], parsed)
         assert report.passed is False

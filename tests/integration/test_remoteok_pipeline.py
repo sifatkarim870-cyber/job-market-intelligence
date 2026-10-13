@@ -580,13 +580,17 @@ class TestSaveCleanedJobsBatchIsolation:
         # The two good jobs must actually be persisted, not just counted
         # as "inserted" in Python while the real transaction discarded
         # them -- this is precisely what went wrong in production.
-        rows = db_session.execute(
-            text(
-                "SELECT source_job_id FROM core.jobs "
-                "WHERE source_job_id IN ('991001', '991002', '991003') "
-                "ORDER BY source_job_id"
+        rows = (
+            db_session.execute(
+                text(
+                    "SELECT source_job_id FROM core.jobs "
+                    "WHERE source_job_id IN ('991001', '991002', '991003') "
+                    "ORDER BY source_job_id"
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         assert rows == ["991001", "991003"]
 
         # The batch-level bookkeeping (the row this exact incident wiped

@@ -34,9 +34,7 @@ class ThemusePipelineRunResult(BaseModel):
 
     raw_count: int = Field(..., description="Total raw records fetched.")
     parsed_count: int = Field(..., description="Records that passed model validation.")
-    stale_count: int = Field(
-        default=0, description="Records dropped as older than max_age_days."
-    )
+    stale_count: int = Field(default=0, description="Records dropped as older than max_age_days.")
     validation_passed: bool = Field(..., description="Whether batch validation passed.")
     cleaned_count: int = Field(..., description="Jobs cleaned and normalized.")
     inserted_count: int = Field(0, description="New jobs inserted.")
@@ -88,9 +86,7 @@ class ThemusePipeline:
 
         fresh = self.parser.drop_stale(parsed_jobs, self.settings.max_age_days)
 
-        validation_report = self.validator.validate(
-            [j.raw_payload for j in fresh], fresh
-        )
+        validation_report = self.validator.validate([j.raw_payload for j in fresh], fresh)
 
         cleaned_jobs = self.cleaner.clean_jobs(fresh)
 

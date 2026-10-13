@@ -8,6 +8,7 @@ regardless of is_active so:
   (c) enabling a new source in production is a one-row UPDATE, not a
       schema or seed-code change.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Connection
@@ -117,7 +118,10 @@ def seed_sources(conn: Connection) -> SeedResult:
     # update_cols excludes is_active on purpose: once ops flips a source
     # live in prod, re-running the seed must never silently deactivate it.
     return upsert_many(
-        conn, schema="ref", table_name="sources", rows=rows,
+        conn,
+        schema="ref",
+        table_name="sources",
+        rows=rows,
         conflict_cols=("source_code",),
         update_cols=["source_name", "source_type", "base_url", "trust_score", "requires_auth"],
     )

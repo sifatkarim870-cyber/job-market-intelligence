@@ -37,7 +37,7 @@ def porter():
 
 
 #: The source kernel's token lookup: the file scan that cannot work.
-SOURCE = '''import pathlib
+SOURCE = """import pathlib
 
 
 def log(msg):
@@ -67,10 +67,10 @@ def upload_overlay(con, rows):
 
 def main():
     return upload_overlay(None, [])
-'''
+"""
 
 #: The scheduled kernel's working lookup, plus the constant it iterates.
-TARGET = '''from __future__ import annotations
+TARGET = """from __future__ import annotations
 
 import pathlib
 
@@ -107,15 +107,13 @@ def upload_overlay(con, rows):
 
 def main():
     return upload_overlay(None, [])
-'''
+"""
 
 
 def test_code_of_reads_cells_not_json(porter, tmp_path: Path) -> None:
     """A notebook's JSON contains no find_token; only its code does."""
     nb = {
-        "cells": [
-            {"cell_type": "code", "source": ["def find_token():\n", "    return 1\n"]}
-        ],
+        "cells": [{"cell_type": "code", "source": ["def find_token():\n", "    return 1\n"]}],
         "nbformat": 4,
         "nbformat_minor": 5,
     }

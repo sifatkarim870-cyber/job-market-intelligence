@@ -17,8 +17,7 @@ from pydantic import ValidationError
 from job_market_intel.scrapers.glints.models import RawGlintsJob
 
 _CANONICAL_URL = (
-    "https://glints.com/id/opportunities/jobs/penjaga-rumah/"
-    "94d7e90f-f53b-4718-8601-ff4e7d623725"
+    "https://glints.com/id/opportunities/jobs/penjaga-rumah/94d7e90f-f53b-4718-8601-ff4e7d623725"
 )
 
 

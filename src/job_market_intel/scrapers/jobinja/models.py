@@ -62,14 +62,12 @@ _TAG_STRIP_RE = re.compile(r"<[^>]+>")
 #: captured the language chips as "skills". The div accepts extra
 #: classes around ``tags`` but still requires the token.
 _SECTION_RE = re.compile(
-    r'<h4[^>]*>((?:(?!<h4).)*)</h4>\s*'
+    r"<h4[^>]*>((?:(?!<h4).)*)</h4>\s*"
     r'<div[^>]*class="[^"]*\btags\b[^"]*"[^>]*>(.*?)</div>',
     re.S,
 )
 _SPAN_RE = re.compile(r"<span[^>]*>(.*?)</span>", re.S)
-_LDJSON_RE = re.compile(
-    r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', re.S
-)
+_LDJSON_RE = re.compile(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', re.S)
 
 
 def _parse_iso_date(value: object) -> datetime | None:

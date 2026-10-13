@@ -45,11 +45,15 @@ class TestClaimNextQueries:
 
         assert claimed == [
             ClaimedQuery(
-                query_id=1, query_text="software engineer", location_text="Remote",
+                query_id=1,
+                query_text="software engineer",
+                location_text="Remote",
                 last_page_reached=0,
             ),
             ClaimedQuery(
-                query_id=2, query_text="data analyst", location_text="Germany",
+                query_id=2,
+                query_text="data analyst",
+                location_text="Germany",
                 last_page_reached=0,
             ),
         ]

@@ -206,9 +206,7 @@ class TestSessionLifecycle:
 
 
 class TestTransactionSavepoints:
-    def test_savepoint_rolls_back_independently_of_outer_transaction(
-        self, sqlite_engine
-    ):
+    def test_savepoint_rolls_back_independently_of_outer_transaction(self, sqlite_engine):
         with get_session() as session:
             session.execute(text("CREATE TABLE t4 (id INTEGER PRIMARY KEY)"))
             session.execute(text("INSERT INTO t4 (id) VALUES (1)"))

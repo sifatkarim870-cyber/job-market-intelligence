@@ -161,8 +161,7 @@ class RawJob51Job(BaseModel):
         parsed = _parse_posted_at(value)
         if parsed is None:
             raise ValueError(
-                f"issueDateString missing or unparseable ({value!r}) — no "
-                "verifiable posting date"
+                f"issueDateString missing or unparseable ({value!r}) — no verifiable posting date"
             )
         return parsed
 

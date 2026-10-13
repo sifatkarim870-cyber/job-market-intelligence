@@ -113,9 +113,7 @@ def replace_function(source: str, name: str, new_text: str) -> str:
     """
     lines = source.splitlines(keepends=True)
     tree = ast.parse(source)
-    target = next(
-        n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name
-    )
+    target = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name)
     head = "".join(lines[: target.lineno - 1])
     tail = "".join(lines[target.end_lineno :])
     patched = head + new_text.rstrip("\n") + "\n\n" + tail
@@ -129,9 +127,7 @@ def function_text(source: str, name: str) -> str | None:
         tree = ast.parse(source)
     except SyntaxError:
         return None
-    target = next(
-        (n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name), None
-    )
+    target = next((n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name), None)
     if target is None:
         return None
     lines = source.splitlines(keepends=True)
@@ -164,9 +160,7 @@ def carry_token_lookup(ported: str, target_src: str) -> tuple[str, list[str]]:
         return ported, ["target has no find_token; source copy kept as-is"]
 
     if "UserSecretsClient" not in target_fn:
-        return ported, [
-            "target find_token is not the UserSecretsClient version; left alone"
-        ]
+        return ported, ["target find_token is not the UserSecretsClient version; left alone"]
 
     ported_fn = function_text(ported, "find_token")
     if ported_fn == target_fn:
@@ -178,9 +172,7 @@ def carry_token_lookup(ported: str, target_src: str) -> tuple[str, list[str]]:
     # The constant is a separate module-level statement, not part of the
     # function, so it has to be moved explicitly or find_token raises NameError.
     if "CANDIDATE_LABELS" in target_fn and "CANDIDATE_LABELS = " not in ported:
-        for const in re.findall(
-            r"(?m)^CANDIDATE_LABELS = .*$", target_src
-        ):
+        for const in re.findall(r"(?m)^CANDIDATE_LABELS = .*$", target_src):
             ported = ported.replace("def find_token", f"{const}\n\n\ndef find_token", 1)
             notes.append("restored the CANDIDATE_LABELS constant")
             break
@@ -228,9 +220,7 @@ def verify_ported(source: str) -> None:
         if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
     }
     literals = {
-        n.value
-        for n in ast.walk(tree)
-        if isinstance(n, ast.Constant) and isinstance(n.value, str)
+        n.value for n in ast.walk(tree) if isinstance(n, ast.Constant) and isinstance(n.value, str)
     }
     if "download_repo_file" in calls:
         raise SystemExit(
@@ -256,18 +246,14 @@ def verify_ported(source: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--push", action="store_true", help="actually upload (default: dry run)")
-    ap.add_argument(
-        "--timeout", type=int, default=3600, help="max run seconds passed to push"
-    )
+    ap.add_argument("--timeout", type=int, default=3600, help="max run seconds passed to push")
     args = ap.parse_args(argv)
 
     work = pathlib.Path(tempfile.mkdtemp(prefix="jmi_target_"))
     print(f"1. pulling the scheduled kernel ({TARGET_KERNEL})")
     pull(TARGET_KERNEL, work)
     target_nb = list(work.glob("*.ipynb"))[0]
-    target_meta = json.loads(
-        (work / "kernel-metadata.json").read_text(encoding="utf-8")
-    )
+    target_meta = json.loads((work / "kernel-metadata.json").read_text(encoding="utf-8"))
     print(f"   current notebook: {target_nb.name} ({target_nb.stat().st_size:,} bytes)")
 
     # Back up before overwriting anything.
@@ -281,8 +267,15 @@ def main(argv: list[str] | None = None) -> int:
 
     out, meta = build(target_meta, source_nb)
     print("\n3. ported metadata")
-    for key in ("id", "title", "code_file", "enable_gpu", "machine_shape",
-                "enable_internet", "dataset_sources"):
+    for key in (
+        "id",
+        "title",
+        "code_file",
+        "enable_gpu",
+        "machine_shape",
+        "enable_internet",
+        "dataset_sources",
+    ):
         print(f"   {key:<18} {meta.get(key)}")
 
     # Preserve the scheduled kernel's working token lookup across the copy.

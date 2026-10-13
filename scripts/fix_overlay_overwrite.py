@@ -216,10 +216,10 @@ HEAD = "def upload_overlay("
 #: referenced it without ever defining it, costing a full seven-minute run that
 #: ended on its final line with "name 'CANDIDATE_LABELS' is not defined".
 #: Re-inserted by patch() when a previous bad patch deleted it.
-LABELS_CONST = '''#: Secret labels tried in order by find_token.
+LABELS_CONST = """#: Secret labels tried in order by find_token.
 CANDIDATE_LABELS = ("hf_token.txt", "hf_token", "HUGGING_FACE_TOKEN", "huggingface_token")
 
-'''
+"""
 
 
 def kaggle(*args: str) -> subprocess.CompletedProcess:
@@ -309,9 +309,7 @@ def patch(nb_path: pathlib.Path) -> bool:
         lines = source.splitlines(keepends=True)
         tree = ast.parse(source)
         target = next(
-            n
-            for n in tree.body
-            if isinstance(n, ast.FunctionDef) and n.name == "upload_overlay"
+            n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "upload_overlay"
         )
         # end_lineno is 1-based and inclusive; convert to a 0-based slice.
         head = "".join(lines[: target.lineno - 1])

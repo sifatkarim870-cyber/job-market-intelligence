@@ -114,9 +114,7 @@ class GlintsClient:
             if response.status_code in _RETRYABLE_STATUS:
                 raise TransientHTTPError(f"HTTP {response.status_code}")
             if response.status_code >= 400:
-                raise PermanentHTTPError(
-                    f"HTTP {response.status_code}: {response.text[:200]}"
-                )
+                raise PermanentHTTPError(f"HTTP {response.status_code}: {response.text[:200]}")
             return response.text
 
         try:
@@ -144,9 +142,7 @@ class GlintsClient:
             URLs newest-first (the index itself is ordered newest-first
             within each family — confirmed by sampling).
         """
-        html = self._request_text(
-            self._settings.sitemap_index_url, what="sitemap index"
-        )
+        html = self._request_text(self._settings.sitemap_index_url, what="sitemap index")
         locs = re.findall(r"<loc>(.*?)</loc>", html)
         families: OrderedDict[str, list[str]] = OrderedDict()
         for loc in locs:
@@ -184,7 +180,7 @@ class GlintsClient:
         """
         return url.replace("/opportunities/s/", "/opportunities/jobs/")
 
-    def _select_job_urls(
+    def _select_job_urls(  # noqa: C901 - one branch per sitemap shape Glints emits
         self, exclude_ids: set[str] | None = None
     ) -> list[tuple[str, str]]:
         """Round-robin the families until ``max_jobs_per_run`` unique jobs.
@@ -226,9 +222,10 @@ class GlintsClient:
                     continue
                 cursors[name] = cursor + 1
                 progressed = True
-                for job_url in re.findall(r"<loc>(.*?)</loc>", self._request_text(
-                    urls[cursor], what=f"sitemap {name} #{cursor + 1}"
-                )):
+                for job_url in re.findall(
+                    r"<loc>(.*?)</loc>",
+                    self._request_text(urls[cursor], what=f"sitemap {name} #{cursor + 1}"),
+                ):
                     uuid = self._job_uuid(job_url)
                     if uuid is None or uuid in excluded:
                         continue
@@ -327,9 +324,7 @@ class GlintsClient:
         return None
 
     # -- public entry point --------------------------------------------
-    def fetch_raw_jobs(
-        self, *, exclude_ids: set[str] | None = None
-    ) -> list[dict]:
+    def fetch_raw_jobs(self, *, exclude_ids: set[str] | None = None) -> list[dict]:
         """Discover and fetch up to ``max_jobs_per_run`` job pages.
 
         Args:

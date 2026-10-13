@@ -59,7 +59,8 @@ class EmploiticClient:
             )
         except TransientHTTPError as exc:
             raise EmploiticFetchError(
-                f"Could not reach Emploitic after {self._settings.max_retry_attempts} attempts: {exc}"
+                "Could not reach Emploitic after "
+                f"{self._settings.max_retry_attempts} attempts: {exc}"
             ) from exc
         except PermanentHTTPError as exc:
             raise EmploiticFetchError(f"Emploitic request failed permanently: {exc}") from exc
@@ -81,8 +82,7 @@ class EmploiticClient:
             search_result = payload["props"]["pageProps"]["searchResult"]
         except (KeyError, TypeError) as exc:
             raise EmploiticResponseError(
-                f"Emploitic page {page}'s JSON did not contain "
-                f"props.pageProps.searchResult: {exc}"
+                f"Emploitic page {page}'s JSON did not contain props.pageProps.searchResult: {exc}"
             ) from exc
         if not isinstance(search_result, dict) or not isinstance(search_result.get("data"), list):
             raise EmploiticResponseError(

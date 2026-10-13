@@ -102,12 +102,8 @@ class TestProxyConfiguration:
         args = _chrome_argv(options)
         assert not any(a.startswith("--proxy-server") for a in args)
 
-    def test_proxy_server_becomes_a_chrome_flag(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        options = _open_session_options(
-            monkeypatch, proxy_server="http://proxy.example:8080"
-        )
+    def test_proxy_server_becomes_a_chrome_flag(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        options = _open_session_options(monkeypatch, proxy_server="http://proxy.example:8080")
         IndeedClient(
             settings=IndeedSettings(
                 headless=True, uc_enabled=False, proxy_server="http://proxy.example:8080"
@@ -146,9 +142,7 @@ class TestProxyConfiguration:
         # And exactly one extension was supplied to carry the credentials.
         assert len(added_extensions) == 1
 
-    def test_half_configured_credentials_are_ignored(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_half_configured_credentials_are_ignored(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A username with no password is far more likely to be a
         half-finished setup than a proxy that wants a blank password, and a
         blank password surfaces as an opaque 407.

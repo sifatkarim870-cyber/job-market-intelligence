@@ -59,13 +59,9 @@ class TestEnvOverrides:
         assert settings.max_jobs_per_run == 7
         assert settings.fetch_delay_seconds == pytest.approx(0.5)
 
-    def test_sitemap_and_api_urls_are_overridable(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_sitemap_and_api_urls_are_overridable(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("JOBVISION_SITEMAP_URL", "https://example.invalid/jobs.xml")
-        monkeypatch.setenv(
-            "JOBVISION_DETAIL_API_URL", "https://example.invalid/api/JobPost/Detail"
-        )
+        monkeypatch.setenv("JOBVISION_DETAIL_API_URL", "https://example.invalid/api/JobPost/Detail")
         settings = JobvisionSettings()
         assert settings.sitemap_url == "https://example.invalid/jobs.xml"
         assert settings.detail_api_url == "https://example.invalid/api/JobPost/Detail"

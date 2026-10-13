@@ -86,9 +86,7 @@ class JobicyPipeline:
         # The baseline for the skip rate is the unfiltered PARSED set. Passing
         # the pre-filter list as "raw" made every intentionally-filtered posting
         # look like a parse failure and reported FAILED on a healthy run.
-        validation_report = self.validator.validate(
-            [j.raw_payload for j in focused], focused
-        )
+        validation_report = self.validator.validate([j.raw_payload for j in focused], focused)
 
         cleaned_jobs = self.cleaner.clean_jobs(focused)
 

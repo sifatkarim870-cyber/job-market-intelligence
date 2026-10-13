@@ -36,20 +36,24 @@ class TestParseJobs:
         ]
 
     def test_malformed_record_is_skipped_not_raised(self) -> None:
-        jobs = GlintsParser().parse_jobs([
-            _entry(),
-            _entry(title=""),  # fails min_length -> ValidationError -> skipped
-            _entry(id="33333333-3333-3333-3333-333333333333"),
-        ])
+        jobs = GlintsParser().parse_jobs(
+            [
+                _entry(),
+                _entry(title=""),  # fails min_length -> ValidationError -> skipped
+                _entry(id="33333333-3333-3333-3333-333333333333"),
+            ]
+        )
         assert len(jobs) == 2
 
     def test_record_without_original_url_is_skipped(self) -> None:
         # original_url is injected by the client; an empty one means the
         # payload lost its canonical URL and the record is unusable.
-        jobs = GlintsParser().parse_jobs([
-            _entry(),
-            {"id": "44444444-4444-4444-4444-444444444444", "title": "No URL"},
-        ])
+        jobs = GlintsParser().parse_jobs(
+            [
+                _entry(),
+                {"id": "44444444-4444-4444-4444-444444444444", "title": "No URL"},
+            ]
+        )
         assert len(jobs) == 1
 
     def test_non_job_record_is_skipped(self) -> None:

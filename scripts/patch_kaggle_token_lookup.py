@@ -48,7 +48,7 @@ import tempfile
 KERNEL = "mskarim870/nllb-translate"
 
 #: The exact function being replaced, as it appears in the notebook source.
-OLD = '''def find_token():
+OLD = """def find_token():
     for p in pathlib.Path("/kaggle").rglob("*.txt"):
         try:
             t = p.read_text().strip()
@@ -56,9 +56,9 @@ OLD = '''def find_token():
             continue
         if t.startswith("hf_") and len(t) > 20:
             return t
-    raise SystemExit("no HF token found -- attach it as a kernel secret")'''
+    raise SystemExit("no HF token found -- attach it as a kernel secret")"""
 
-NEW = '''def find_token():
+NEW = """def find_token():
     # Scan by CONTENT, never by file extension. Kaggle mounts a secret at
     # /kaggle/secrets/<label>, so a secret labelled "hf_token" has NO .txt
     # suffix and an rglob("*.txt") cannot match it -- the kernel then runs to
@@ -76,7 +76,7 @@ NEW = '''def find_token():
     raise SystemExit(
         "no HF token found. Attach it as a Kaggle secret (Add-ons -> Secrets) "
         "and tick the read checkbox."
-    )'''
+    )"""
 
 
 def kaggle(*args: str) -> subprocess.CompletedProcess:

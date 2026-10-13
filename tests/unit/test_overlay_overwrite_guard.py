@@ -131,9 +131,10 @@ def test_partition_key_is_the_natural_key() -> None:
     """Never ``job_id``: it is a per-database sequence, not portable."""
     source = upload_overlay_source()
     assert "PARTITION BY source_code, source_job_id" in source
-    assert not re.search(r"PARTITION BY\s+(\w*job_id\b)?\s*job_id", source.replace(
-        "PARTITION BY source_code, source_job_id", ""
-    ))
+    assert not re.search(
+        r"PARTITION BY\s+(\w*job_id\b)?\s*job_id",
+        source.replace("PARTITION BY source_code, source_job_id", ""),
+    )
 
 
 @pytest.mark.parametrize(

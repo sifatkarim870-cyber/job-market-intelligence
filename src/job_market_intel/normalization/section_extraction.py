@@ -771,9 +771,7 @@ def find_headings(text: str) -> list[Heading]:
             found.append((orig_start, orig_end, _FOLDED_KINDS[match.group(1)]))
 
     # Merge the pattern-matched boilerplate headings before resolving overlaps.
-    found.extend(
-        (heading.start, heading.end, heading.kind) for heading in _extra_headings(text)
-    )
+    found.extend((heading.start, heading.end, heading.kind) for heading in _extra_headings(text))
 
     return [
         Heading(kind=kind, start=start, end=end, text=text[start:end])

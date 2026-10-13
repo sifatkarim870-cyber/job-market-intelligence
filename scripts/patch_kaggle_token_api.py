@@ -57,7 +57,7 @@ CANDIDATE_LABELS = (
 
 OLD_HEAD = "def find_token():"
 
-NEW = '''def find_token():
+NEW = """def find_token():
     # Ask Kaggle for the secret by NAME first. Secrets are served through
     # UserSecretsClient, NOT mounted as readable files under /kaggle, so the
     # old rglob("*.txt") scan found nothing even with the secret correctly
@@ -94,7 +94,7 @@ NEW = '''def find_token():
         "no HF token found. Tried UserSecretsClient labels "
         f"{CANDIDATE_LABELS} and a /kaggle file scan. Attach the token as a "
         "Kaggle secret and tick its read checkbox."
-    )'''
+    )"""
 
 
 def kaggle(*args: str) -> subprocess.CompletedProcess:

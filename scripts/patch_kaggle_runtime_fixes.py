@@ -57,7 +57,7 @@ import tempfile
 
 KERNEL = "mskarim870/nllb-translate"
 
-CONSTANT = '''#: Secret labels tried in order by find_token. Only one is correct on a given
+CONSTANT = """#: Secret labels tried in order by find_token. Only one is correct on a given
 #: kernel and the label was chosen by hand, so all plausible spellings are
 #: attempted. Defined HERE rather than in the script that injects find_token,
 #: because the kernel runs standalone: referencing this name without defining
@@ -65,7 +65,7 @@ CONSTANT = '''#: Secret labels tried in order by find_token. Only one is correct
 #: "name 'CANDIDATE_LABELS' is not defined" on its final line.
 CANDIDATE_LABELS = ("hf_token.txt", "hf_token", "HUGGING_FACE_TOKEN", "huggingface_token")
 
-'''
+"""
 
 ANCHOR = "def find_token():"
 

@@ -51,9 +51,7 @@ class JobicySettings(BaseSettings):
     #: The API caps this silently at 200 -- count=500 also returns 200 -- so
     #: asking for more does not error, it just does not deliver, and a run
     #: summary claiming 500 fetched would be a lie.
-    page_size: int = Field(
-        default=100, ge=1, le=200, description="Records requested per call."
-    )
+    page_size: int = Field(default=100, ge=1, le=200, description="Records requested per call.")
     #: Optional narrowings. Empty means "the whole feed", which is the default
     #: and is only about 200 records -- small, so widening is not the goal.
     tags: list[str] = Field(
@@ -76,9 +74,7 @@ class JobicySettings(BaseSettings):
     max_jobs_per_run: int = Field(
         default=200, ge=1, description="Hard ceiling on postings persisted."
     )
-    request_timeout_seconds: float = Field(
-        default=25.0, gt=0, description="Per-request timeout."
-    )
+    request_timeout_seconds: float = Field(default=25.0, gt=0, description="Per-request timeout.")
     max_retries: int = Field(default=3, ge=0, description="Attempts per request.")
     retry_backoff_seconds: float = Field(
         default=1.5, gt=0, description="Base delay for exponential backoff."

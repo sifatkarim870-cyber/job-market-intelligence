@@ -36,8 +36,8 @@ from job_market_intel.cleaning.common import CleanedJob
 from job_market_intel.scrapers.glints.models import RawGlintsJob
 from job_market_intel.scrapers.hrge.models import RawHRGeJob
 from job_market_intel.scrapers.irantalent.models import RawIrantalentJob
-from job_market_intel.scrapers.jobmaster.models import RawJobmasterJob
 from job_market_intel.scrapers.jobinja.models import RawJobinjaJob
+from job_market_intel.scrapers.jobmaster.models import RawJobmasterJob
 from job_market_intel.scrapers.jobvision.models import RawJobvisionJob
 from job_market_intel.scrapers.remoteok.models import RawRemoteOKJob
 from job_market_intel.scrapers.remotive.models import RawRemotiveJob
@@ -390,9 +390,7 @@ def make_raw_jobvision_job() -> Callable[..., RawJobvisionJob]:
             "salary_title_fa": "26 - 30 میلیون تومان",
             "location_parts": ["گرمدره", "البرز"],
             "country_fa": "ایران",
-            "category_raws": [
-                "مسئول دفتر / کارمند اداری و ثبت اطلاعات / تایپیست"
-            ],
+            "category_raws": ["مسئول دفتر / کارمند اداری و ثبت اطلاعات / تایپیست"],
             "software_names": ["Microsoft Word", "Microsoft Excel"],
             "language_names": [],
             "industry_raws": ["تولیدی / صنعتی"],
@@ -450,8 +448,7 @@ def make_raw_irantalent_job() -> Callable[..., RawIrantalentJob]:
             "language": "en",
             "company_name": "ایویز",  # employer.name (display), Persian-first
             "company_logo_url": (
-                "https://minio1.sc.irtalent.cloud/brand-data/"
-                "brand_data_2972Es2_63578d735ef59.png"
+                "https://minio1.sc.irtalent.cloud/brand-data/brand_data_2972Es2_63578d735ef59.png"
             ),
             "description_html": (
                 "Role Overview:<br><br>We are looking for a Customer Success "
@@ -469,8 +466,7 @@ def make_raw_irantalent_job() -> Callable[..., RawIrantalentJob]:
             "category_raws": ["Customer Success & Support Operations"],
             "industry_raws": ["IT, Software and Internet Services"],
             "original_url": (
-                "https://www.irantalent.com/en/job/"
-                "customer-success-specialist/184579"
+                "https://www.irantalent.com/en/job/customer-success-specialist/184579"
             ),
             "raw_payload": {
                 "id": 184579,
@@ -520,9 +516,7 @@ def make_raw_jobmaster_job() -> Callable[..., RawJobmasterJob]:
             "salary_text": "לא צוין שכר",
             "location_text": "איירפורט סיטי",
             "category_raws": ["מחשבים ותוכנה", "QA"],
-            "original_url": (
-                "https://www.jobmaster.co.il/jobs/checknum.asp?key=9884960"
-            ),
+            "original_url": ("https://www.jobmaster.co.il/jobs/checknum.asp?key=9884960"),
             "raw_payload": {
                 "title": "QA",
                 "company": "קומבלק איי.טי. בע״מ",

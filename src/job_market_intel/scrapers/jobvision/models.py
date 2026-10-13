@@ -70,9 +70,7 @@ def _localized(value: object) -> str | None:
     """``{titleFa, titleEn}`` (or ``{title}``) → the Persian string first."""
     if not isinstance(value, dict):
         return _text(value)
-    return _text(value.get("titleFa")) or _text(value.get("title")) or _text(
-        value.get("titleEn")
-    )
+    return _text(value.get("titleFa")) or _text(value.get("title")) or _text(value.get("titleEn"))
 
 
 def _iso_date(value: object) -> datetime | None:
@@ -239,8 +237,16 @@ class RawJobvisionJob(BaseModel):
         expire = expire if isinstance(expire, dict) else {}
 
         city = _localized(location.get("city")) if isinstance(location.get("city"), dict) else None
-        province = _localized(location.get("province")) if isinstance(location.get("province"), dict) else None
-        country = _localized(location.get("country")) if isinstance(location.get("country"), dict) else None
+        province = (
+            _localized(location.get("province"))
+            if isinstance(location.get("province"), dict)
+            else None
+        )
+        country = (
+            _localized(location.get("country"))
+            if isinstance(location.get("country"), dict)
+            else None
+        )
 
         work_type = payload.get("workType")
         work_type = work_type if isinstance(work_type, dict) else {}

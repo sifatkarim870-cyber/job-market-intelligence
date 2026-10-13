@@ -322,9 +322,7 @@ def classify_job(
         )
 
     combined_text = build_embedding_text(job.job_title, job.description_clean)
-    combined_index, combined_score = _best_taxonomy_match(
-        combined_text, taxonomy_embeddings, model
-    )
+    combined_index, combined_score = _best_taxonomy_match(combined_text, taxonomy_embeddings, model)
 
     if combined_score >= MATCH_SIMILARITY_THRESHOLD:
         return ClassificationResult(

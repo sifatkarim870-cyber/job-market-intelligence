@@ -946,9 +946,7 @@ class TestSaveCleanedJobsSavepointWiring:
         monkeypatch.setattr(repo, "save_cleaned_job", lambda **kwargs: "inserted")
 
         jobs = [MagicMock(source_job_id=f"j{i}") for i in range(3)]
-        counts = repo.save_cleaned_jobs(
-            session=fake_session, jobs=jobs, source_id=1, session_id=1
-        )
+        counts = repo.save_cleaned_jobs(session=fake_session, jobs=jobs, source_id=1, session_id=1)
 
         assert counts["inserted"] == 3
         # One savepoint per job, each opened on the shared session -- not
@@ -1039,24 +1037,18 @@ class TestSaveCleanedJobsCommitBatching:
         session = MagicMock()
         jobs = [MagicMock(source_job_id=f"j{i}") for i in range(10)]
 
-        repo.save_cleaned_jobs(
-            session=session, jobs=jobs, source_id=1, commit_every=4
-        )
+        repo.save_cleaned_jobs(session=session, jobs=jobs, source_id=1, commit_every=4)
 
         # 10 rows / interval 4 = commits at 4 and 8; not at 10, since the
         # caller's unit-of-work owns the final one.
         assert session.commit.call_count == 2
 
-    def test_single_batch_smaller_than_interval_does_not_commit(
-        self, monkeypatch
-    ) -> None:
+    def test_single_batch_smaller_than_interval_does_not_commit(self, monkeypatch) -> None:
         repo = self._repo_with_fake_save(monkeypatch)
         session = MagicMock()
         jobs = [MagicMock(source_job_id=f"j{i}") for i in range(3)]
 
-        repo.save_cleaned_jobs(
-            session=session, jobs=jobs, source_id=1, commit_every=10
-        )
+        repo.save_cleaned_jobs(session=session, jobs=jobs, source_id=1, commit_every=10)
 
         session.commit.assert_not_called()
 
@@ -1075,8 +1067,6 @@ class TestSaveCleanedJobsCommitBatching:
         session = MagicMock()
         jobs = [MagicMock(source_job_id=f"j{i}") for i in range(12)]
 
-        counts = repo.save_cleaned_jobs(
-            session=session, jobs=jobs, source_id=1, commit_every=5
-        )
+        counts = repo.save_cleaned_jobs(session=session, jobs=jobs, source_id=1, commit_every=5)
 
         assert counts == {"inserted": 12, "updated": 0, "unchanged": 0, "failed": 0}

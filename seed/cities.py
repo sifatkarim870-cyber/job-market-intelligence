@@ -4,6 +4,7 @@ country's major tech/business hubs (sufficient for the first scraper's
 location-resolution needs). `region_id` is resolved by (country_iso, region_name)
 where applicable; left NULL for city-only countries like Singapore.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Connection, text
@@ -114,9 +115,7 @@ def seed_cities(conn: Connection) -> SeedResult:
         conn, schema="ref", table_name="countries", key_col="iso_code_2", id_col="country_id"
     )
     region_rows = conn.execute(
-        __import__("sqlalchemy").text(
-            "SELECT country_id, region_name, region_id FROM ref.regions"
-        )
+        __import__("sqlalchemy").text("SELECT country_id, region_name, region_id FROM ref.regions")
     ).all()
     region_ids = {(r.country_id, r.region_name): r.region_id for r in region_rows}
 

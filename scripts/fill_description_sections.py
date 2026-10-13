@@ -151,9 +151,13 @@ def select_candidate_ids(session, *, overwrite: bool, limit: int | None) -> list
         where = "WHERE description_clean IS NOT NULL AND " + " AND ".join(
             f"({c} IS NULL OR btrim({c}) = '')" for c in COLUMNS
         )
-    rows = session.execute(
-        text(f"SELECT job_id FROM core.job_descriptions {where} ORDER BY job_id")  # noqa: S608
-    ).scalars().all()
+    rows = (
+        session.execute(
+            text(f"SELECT job_id FROM core.job_descriptions {where} ORDER BY job_id")  # noqa: S608
+        )
+        .scalars()
+        .all()
+    )
     return list(rows[:limit]) if limit else list(rows)
 
 
@@ -273,8 +277,7 @@ def main() -> int:
             ids = select_candidate_ids(session, overwrite=args.overwrite, limit=args.limit or 1000)
             rows = session.execute(
                 text(
-                    "SELECT description_clean FROM core.job_descriptions "
-                    "WHERE job_id = ANY(:ids)"
+                    "SELECT description_clean FROM core.job_descriptions WHERE job_id = ANY(:ids)"
                 ),
                 {"ids": ids},
             ).all()

@@ -121,9 +121,7 @@ class TestGreenhouseCleaner:
 
     def test_vague_remote_location_falls_back_to_office(self):
         """'Remote' alone resolves to nothing; offices usually carry the country."""
-        payload = _payload(
-            location={"name": "Remote"}, offices=[{"id": 2, "name": "Netherlands"}]
-        )
+        payload = _payload(location={"name": "Remote"}, offices=[{"id": 2, "name": "Netherlands"}])
         cleaned = GreenhouseCleaner().clean_job(RawGreenhouseJob.model_validate(payload))
         assert cleaned.location_cleaned == "Netherlands"
 

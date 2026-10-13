@@ -122,10 +122,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {label:5} {rev or 'HEAD':12} {pathlib.Path(path).stat().st_size:>12,}b")
 
     con = duckdb.connect()
-    older_rows, = con.execute(
+    (older_rows,) = con.execute(
         f"SELECT count(*) FROM read_parquet('{paths['older'].as_posix()}')"
     ).fetchone()
-    head_rows, = con.execute(
+    (head_rows,) = con.execute(
         f"SELECT count(*) FROM read_parquet('{paths['head'].as_posix()}')"
     ).fetchone()
 
@@ -140,13 +140,13 @@ def main(argv: list[str] | None = None) -> int:
         head=paths["head"].as_posix(),
     )
     con.execute(f"COPY ({sql}) TO '{out.as_posix()}' (FORMAT PARQUET)")
-    merged, = con.execute(f"SELECT count(*) FROM '{out.as_posix()}'").fetchone()
+    (merged,) = con.execute(f"SELECT count(*) FROM '{out.as_posix()}'").fetchone()
 
     # The invariant that must hold: one output row per distinct natural key
     # across BOTH inputs. Checking `merged >= max(inputs)` is not enough --
     # a merge that silently returns only HEAD satisfies it exactly -- so the
     # expected count is computed from the inputs and compared for equality.
-    expected, = con.execute(f"""
+    (expected,) = con.execute(f"""
         SELECT count(*) FROM (
             SELECT source_code, source_job_id FROM '{paths["older"].as_posix()}'
             UNION
@@ -154,9 +154,8 @@ def main(argv: list[str] | None = None) -> int:
         )
     """).fetchone()
 
-    dupes, = con.execute(
-        f"SELECT count(*) - count(DISTINCT (source_code, source_job_id)) "
-        f"FROM '{out.as_posix()}'"
+    (dupes,) = con.execute(
+        f"SELECT count(*) - count(DISTINCT (source_code, source_job_id)) FROM '{out.as_posix()}'"
     ).fetchone()
     print(f"  merged={merged:,}   expected={expected:,}   duplicate keys={dupes}")
 

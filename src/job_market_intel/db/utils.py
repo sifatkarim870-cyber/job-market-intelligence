@@ -45,9 +45,7 @@ def test_connection() -> bool:
             conn.execute(text("SELECT 1"))
         return True
     except SQLAlchemyError as err:
-        raise DatabaseConnectionError(
-            f"Could not connect to the database: {err}"
-        ) from err
+        raise DatabaseConnectionError(f"Could not connect to the database: {err}") from err
 
 
 def health_check() -> dict[str, Any]:

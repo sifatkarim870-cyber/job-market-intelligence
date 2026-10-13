@@ -96,15 +96,11 @@ class TestJobicyModels:
         assert job.posting_date.tzinfo is not None
 
     def test_industry_filter_drops_non_technical(self):
-        jobs = JobicyParser().parse_jobs(
-            [_jobicy_record(jobIndustry=["Healthcare"])]
-        )
+        jobs = JobicyParser().parse_jobs([_jobicy_record(jobIndustry=["Healthcare"])])
         assert JobicyParser.filter_focus(jobs, ["software"]) == []
 
     def test_industry_filter_matches_compound_labels(self):
-        jobs = JobicyParser().parse_jobs(
-            [_jobicy_record(jobIndustry=["Data Science & Analytics"])]
-        )
+        jobs = JobicyParser().parse_jobs([_jobicy_record(jobIndustry=["Data Science & Analytics"])])
         assert len(JobicyParser.filter_focus(jobs, ["data science"])) == 1
 
 

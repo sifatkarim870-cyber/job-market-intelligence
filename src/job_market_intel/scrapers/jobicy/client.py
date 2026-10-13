@@ -1,4 +1,4 @@
-﻿"""HTTP client for the Jobicy remote-jobs API.
+"""HTTP client for the Jobicy remote-jobs API.
 
 No pagination exists here, so this client does not pretend otherwise: one run
 issues at most ``max_requests_per_run`` calls, each a distinct tag/geo query,

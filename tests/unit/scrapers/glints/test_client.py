@@ -67,9 +67,7 @@ class TestSelectJobUrls:
         # A appears twice in the sitemap (local + /en/); the local wins.
         assert selected[UUID_A] == f"https://glints.com/id/jobs/{UUID_A}"
 
-    def test_known_uuids_are_excluded_and_walk_continues_deeper(
-        self, client: GlintsClient
-    ) -> None:
+    def test_known_uuids_are_excluded_and_walk_continues_deeper(self, client: GlintsClient) -> None:
         selected = dict(client._select_job_urls(exclude_ids={UUID_A, UUID_B}))
 
         # A and B dropped at sitemap-parse time; the walk continues into
@@ -77,9 +75,7 @@ class TestSelectJobUrls:
         assert set(selected) == {UUID_C}
         assert selected[UUID_C] == f"https://glints.com/id/jobs/{UUID_C}"
 
-    def test_excluding_everything_returns_empty_not_an_error(
-        self, client: GlintsClient
-    ) -> None:
+    def test_excluding_everything_returns_empty_not_an_error(self, client: GlintsClient) -> None:
         assert client._select_job_urls(exclude_ids={UUID_A, UUID_B, UUID_C}) == []
 
 
@@ -117,9 +113,7 @@ class TestFetchRawJobsContract:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         # Corpus fully covered: no unseen jobs — a successful no-op.
-        monkeypatch.setattr(
-            dry_client, "_select_job_urls", lambda **kwargs: []
-        )
+        monkeypatch.setattr(dry_client, "_select_job_urls", lambda **kwargs: [])
 
         assert dry_client.fetch_raw_jobs(exclude_ids={UUID_A}) == []
 
@@ -130,9 +124,7 @@ class TestFetchRawJobsContract:
     ) -> None:
         # No exclusion means a fresh scrape; an empty result there is a
         # broken index / unreachable site, not "nothing new".
-        monkeypatch.setattr(
-            dry_client, "_select_job_urls", lambda **kwargs: []
-        )
+        monkeypatch.setattr(dry_client, "_select_job_urls", lambda **kwargs: [])
 
         with pytest.raises(GlintsResponseError):
             dry_client.fetch_raw_jobs()
@@ -164,18 +156,14 @@ class TestDeadPageHandling:
 
     @pytest.fixture
     def client(self) -> GlintsClient:
-        return GlintsClient(
-            settings=GlintsSettings(max_jobs_per_run=10, fetch_delay_seconds=0)
-        )
+        return GlintsClient(settings=GlintsSettings(max_jobs_per_run=10, fetch_delay_seconds=0))
 
     def test_permanent_http_error_skips_the_job(
         self,
         client: GlintsClient,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr(
-            client, "_request_text", _raise_from(PermanentHTTPError("HTTP 410"))
-        )
+        monkeypatch.setattr(client, "_request_text", _raise_from(PermanentHTTPError("HTTP 410")))
 
         assert client._fetch_job(UUID_A, f"https://glints.com/id/jobs/{UUID_A}") is None
 
@@ -186,9 +174,7 @@ class TestDeadPageHandling:
     ) -> None:
         # A dead link is page-local; retry exhaustion means the *site*
         # is unreachable — that must still fail the run.
-        monkeypatch.setattr(
-            client, "_request_text", _raise_from(TransientHTTPError("HTTP 503"))
-        )
+        monkeypatch.setattr(client, "_request_text", _raise_from(TransientHTTPError("HTTP 503")))
 
         with pytest.raises(GlintsFetchError):
             client._fetch_job(UUID_A, f"https://glints.com/id/jobs/{UUID_A}")
@@ -205,9 +191,7 @@ class TestDeadPageHandling:
             "_select_job_urls",
             lambda **kwargs: [(UUID_A, f"https://glints.com/id/jobs/{UUID_A}")],
         )
-        monkeypatch.setattr(
-            client, "_request_text", _raise_from(PermanentHTTPError("HTTP 403"))
-        )
+        monkeypatch.setattr(client, "_request_text", _raise_from(PermanentHTTPError("HTTP 403")))
 
         with pytest.raises(GlintsResponseError):
             client.fetch_raw_jobs()

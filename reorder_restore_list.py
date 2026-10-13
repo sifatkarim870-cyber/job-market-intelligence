@@ -28,6 +28,7 @@ USAGE
 -----
     python reorder_restore_list.py toc.txt reordered_toc.txt
 """
+
 from __future__ import annotations
 
 import re
@@ -43,8 +44,8 @@ PRIORITY_RULES: list[tuple[str, int]] = [
     ("companies", 10),
     ("company_aliases", 11),
     ("scraping_sessions", 12),
-    ("jobs_", 20),        # every jobs_YYYY_MM partition, and jobs_default
-    ("jobs", 20),         # in case a build ever restores via the parent name directly
+    ("jobs_", 20),  # every jobs_YYYY_MM partition, and jobs_default
+    ("jobs", 20),  # in case a build ever restores via the parent name directly
     ("job_descriptions", 30),
     ("job_salaries", 30),
     ("salary_history", 30),

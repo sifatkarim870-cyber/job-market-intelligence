@@ -40,9 +40,7 @@ class TestSalaryScaling:
         assert cleaned.salary_max == 30_000_000
         assert cleaned.salary_disclosed is True
 
-    def test_currency_and_period_from_market_evidence(
-        self, make_raw_jobvision_job
-    ) -> None:
+    def test_currency_and_period_from_market_evidence(self, make_raw_jobvision_job) -> None:
         cleaned = _clean(make_raw_jobvision_job())
         # titleFa carries تومان → IRT; Iranian ads quote monthly.
         assert cleaned.currency_iso_code == "IRT"
@@ -52,9 +50,7 @@ class TestSalaryScaling:
         self, make_raw_jobvision_job
     ) -> None:
         cleaned = _clean(
-            make_raw_jobvision_job(
-                salary_min_raw=None, salary_max_raw=None, salary_title_fa=None
-            )
+            make_raw_jobvision_job(salary_min_raw=None, salary_max_raw=None, salary_title_fa=None)
         )
         assert cleaned.salary_min is None
         assert cleaned.salary_max is None
@@ -70,16 +66,12 @@ class TestSalaryScaling:
         assert cleaned.salary_disclosed is True
 
     def test_both_bounds_zero_is_undisclosed(self, make_raw_jobvision_job) -> None:
-        cleaned = _clean(
-            make_raw_jobvision_job(salary_min_raw=0, salary_max_raw=0)
-        )
+        cleaned = _clean(make_raw_jobvision_job(salary_min_raw=0, salary_max_raw=0))
         assert cleaned.salary_min is None
         assert cleaned.salary_max is None
         assert cleaned.salary_disclosed is False
 
-    def test_reversed_range_is_swapped_not_dropped(
-        self, make_raw_jobvision_job
-    ) -> None:
+    def test_reversed_range_is_swapped_not_dropped(self, make_raw_jobvision_job) -> None:
         cleaned = _clean(make_raw_jobvision_job(salary_min_raw=40, salary_max_raw=30))
         assert cleaned.salary_min == 30_000_000
         assert cleaned.salary_max == 40_000_000
@@ -90,9 +82,7 @@ class TestSalaryScaling:
     ) -> None:
         # Never observed live (site is Iran-only); the fallback exists
         # so unexpected payload drift degrades instead of crashing.
-        cleaned = _clean(
-            make_raw_jobvision_job(salary_title_fa=None, country_fa="کانادا")
-        )
+        cleaned = _clean(make_raw_jobvision_job(salary_title_fa=None, country_fa="کانادا"))
         assert cleaned.currency_iso_code == "USD"
 
 
@@ -109,9 +99,7 @@ class TestEmploymentMapping:
             == "part_time"
         )
 
-    def test_hybrid_has_no_ref_code_so_is_none(
-        self, make_raw_jobvision_job
-    ) -> None:
+    def test_hybrid_has_no_ref_code_so_is_none(self, make_raw_jobvision_job) -> None:
         # "Full Time Or Part Time" (2/25 sampled): the ref enum has no
         # hybrid code and guessing full_time would be a lie.
         assert (
@@ -121,30 +109,20 @@ class TestEmploymentMapping:
             is None
         )
 
-    def test_internship_flag_overrides_work_type(
-        self, make_raw_jobvision_job
-    ) -> None:
+    def test_internship_flag_overrides_work_type(self, make_raw_jobvision_job) -> None:
         assert (
-            _clean(make_raw_jobvision_job(is_internship=True)).employment_type_code
-            == "internship"
+            _clean(make_raw_jobvision_job(is_internship=True)).employment_type_code == "internship"
         )
 
     def test_missing_work_type_is_none(self, make_raw_jobvision_job) -> None:
         assert _clean(make_raw_jobvision_job(work_type_en=None)).employment_type_code is None
 
-    def test_unknown_work_type_is_none_not_a_guess(
-        self, make_raw_jobvision_job
-    ) -> None:
-        assert (
-            _clean(make_raw_jobvision_job(work_type_en="MYSTERY")).employment_type_code
-            is None
-        )
+    def test_unknown_work_type_is_none_not_a_guess(self, make_raw_jobvision_job) -> None:
+        assert _clean(make_raw_jobvision_job(work_type_en="MYSTERY")).employment_type_code is None
 
 
 class TestTagsLocationAndUrls:
-    def test_five_sources_merge_lowercased_deduplicated(
-        self, make_raw_jobvision_job
-    ) -> None:
+    def test_five_sources_merge_lowercased_deduplicated(self, make_raw_jobvision_job) -> None:
         cleaned = _clean(
             make_raw_jobvision_job(
                 category_raws=["فروش و بازاریابی"],
@@ -169,9 +147,7 @@ class TestTagsLocationAndUrls:
         assert _clean(make_raw_jobvision_job(location_parts=[])).location_cleaned is None
 
     def test_external_apply_url_preferred(self, make_raw_jobvision_job) -> None:
-        cleaned = _clean(
-            make_raw_jobvision_job(link_out_address="https://apply.example.com/x")
-        )
+        cleaned = _clean(make_raw_jobvision_job(link_out_address="https://apply.example.com/x"))
         assert cleaned.apply_url == "https://apply.example.com/x"
 
     def test_apply_url_falls_back_to_sitemap_url(self, make_raw_jobvision_job) -> None:
@@ -182,9 +158,7 @@ class TestTagsLocationAndUrls:
         logo = make_raw_jobvision_job().company_logo_url
         assert _clean(make_raw_jobvision_job()).company_logo_url == logo
 
-    def test_job_title_and_company_survive_cleaning(
-        self, make_raw_jobvision_job
-    ) -> None:
+    def test_job_title_and_company_survive_cleaning(self, make_raw_jobvision_job) -> None:
         cleaned = _clean(make_raw_jobvision_job())
         assert cleaned.job_title == "کارمند اداری - خانم"
         assert cleaned.company_name == "مجموعه چاپ سجادی"
@@ -196,14 +170,9 @@ class TestQualityScore:
         # short (<20 words) — so 0.75.
         assert _clean(make_raw_jobvision_job()).data_quality_score == 0.75
 
-    def test_long_description_completes_the_score(
-        self, make_raw_jobvision_job
-    ) -> None:
+    def test_long_description_completes_the_score(self, make_raw_jobvision_job) -> None:
         long_desc = "<p>" + " ".join(["word"] * 30) + "</p>"
-        assert (
-            _clean(make_raw_jobvision_job(description_html=long_desc)).data_quality_score
-            == 1.0
-        )
+        assert _clean(make_raw_jobvision_job(description_html=long_desc)).data_quality_score == 1.0
 
     def test_no_signals(self, make_raw_jobvision_job) -> None:
         cleaned = _clean(

@@ -81,6 +81,4 @@ def transaction(session: Session) -> Generator[Session, None, None]:
         with begin():
             yield session
     except SQLAlchemyError as err:
-        raise TransactionError(
-            f"Transaction block failed and was rolled back: {err}"
-        ) from err
+        raise TransactionError(f"Transaction block failed and was rolled back: {err}") from err

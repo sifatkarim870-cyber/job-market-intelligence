@@ -126,9 +126,7 @@ def _normalize_salary(
     high = raw.maxSalary
 
     if low is not None and high is not None and low > high:
-        logger.debug(
-            "Himalayas salary bounds reversed ({} > {}); swapping", low, high
-        )
+        logger.debug("Himalayas salary bounds reversed ({} > {}); swapping", low, high)
         low, high = high, low
 
     def as_int(value: float | None) -> int | None:
@@ -165,15 +163,11 @@ class HimalayasCleaner:
             except Exception as exc:  # noqa: BLE001
                 # One bad record must not end the run; the other postings in
                 # the batch are still worth having.
-                logger.error(
-                    "Failed to clean Himalayas job {}: {}", raw.guid[:80], exc
-                )
+                logger.error("Failed to clean Himalayas job {}: {}", raw.guid[:80], exc)
         return cleaned
 
     def clean_job(self, raw: RawHimalayasJob) -> CleanedJob:
-        description_clean = clean_html_text(raw.description) or clean_plain_text(
-            raw.excerpt
-        )
+        description_clean = clean_html_text(raw.description) or clean_plain_text(raw.excerpt)
         word_count = len(description_clean.split()) if description_clean else 0
 
         salary_min, salary_max, salary_disclosed = _normalize_salary(raw)

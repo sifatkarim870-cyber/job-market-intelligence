@@ -122,9 +122,7 @@ class HimalayasClient:
                 if response.status_code == 200:
                     return response
                 if response.status_code == 429 or response.status_code >= 500:
-                    last = HimalayasError(
-                        f"HTTP {response.status_code} from Himalayas"
-                    )
+                    last = HimalayasError(f"HTTP {response.status_code} from Himalayas")
                     logger.warning(
                         "Himalayas HTTP {} (attempt {}/{})",
                         response.status_code,

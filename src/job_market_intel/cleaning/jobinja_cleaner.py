@@ -163,9 +163,7 @@ def _parse_salary_text(text: str) -> tuple[int | None, int | None]:
         if marker in translated:
             scale = factor
             break
-    numbers = [
-        int(match.replace(",", "")) * scale for match in _NUMBER_RE.findall(translated)
-    ]
+    numbers = [int(match.replace(",", "")) * scale for match in _NUMBER_RE.findall(translated)]
     numbers = [n for n in numbers if n > 0]
     if len(numbers) >= 2:
         low, high = min(numbers), max(numbers)

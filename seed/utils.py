@@ -1,4 +1,5 @@
 """Small shared utilities: logging setup and secure password hashing."""
+
 from __future__ import annotations
 
 import logging

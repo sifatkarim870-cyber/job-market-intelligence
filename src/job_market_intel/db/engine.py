@@ -91,9 +91,7 @@ def get_engine(config: DatabaseConfig | None = None) -> Engine:
                 connect_args={"application_name": cfg.application_name},
             )
         except ArgumentError as err:
-            raise ConfigurationError(
-                f"Invalid database configuration: {err}"
-            ) from err
+            raise ConfigurationError(f"Invalid database configuration: {err}") from err
 
         return _engine
 

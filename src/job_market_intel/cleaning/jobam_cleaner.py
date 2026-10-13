@@ -45,7 +45,9 @@ def _map_employment_type(employment_type_raw: str | None) -> str | None:
     """
     if not employment_type_raw:
         return None
-    segments = [segment.strip().lower().replace("-", " ") for segment in employment_type_raw.split(",")]
+    segments = [
+        segment.strip().lower().replace("-", " ") for segment in employment_type_raw.split(",")
+    ]
     for segment in segments:
         mapped = _EMPLOYMENT_SEGMENT_MAP.get(segment)
         if mapped:

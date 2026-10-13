@@ -77,9 +77,7 @@ def patched_network(settings: HRGeSettings | None = None, **stub_kwargs):
 
     def fake_list_page(self, start: int) -> tuple[list[dict], int | None]:
         counts["list"] += 1
-        items = [
-            {"announcementId": start + i, "name": f"J{start + i}"} for i in range(PER_PAGE)
-        ]
+        items = [{"announcementId": start + i, "name": f"J{start + i}"} for i in range(PER_PAGE)]
         return items, TOTAL
 
     def fake_detail(self, announcement_id: object) -> dict | None:
@@ -102,9 +100,7 @@ def patched_network(settings: HRGeSettings | None = None, **stub_kwargs):
         client_module.logger = original_logger
 
 
-def run(
-    settings: HRGeSettings, **stub_kwargs
-) -> tuple[list[dict], dict[str, int], list[str]]:
+def run(settings: HRGeSettings, **stub_kwargs) -> tuple[list[dict], dict[str, int], list[str]]:
     """One run against the patched network; returns (jobs, counts, log messages)."""
     with patched_network(settings, **stub_kwargs) as (client, counts, messages):
         jobs = client.fetch_raw_jobs()
@@ -113,9 +109,7 @@ def run(
 
 def test_count_budget_caps_requests_and_returns_every_id():
     """1,000 ids listed, but only `max_details_per_run` get a detail request."""
-    jobs, counts, _ = run(
-        HRGeSettings(max_pages_per_run=PAGES, max_details_per_run=10)
-    )
+    jobs, counts, _ = run(HRGeSettings(max_pages_per_run=PAGES, max_details_per_run=10))
 
     # Every id is returned: a skipped detail costs the description, not the row.
     assert len(jobs) == TOTAL
@@ -124,9 +118,7 @@ def test_count_budget_caps_requests_and_returns_every_id():
 
 
 def test_rows_past_the_budget_still_carry_their_list_data():
-    jobs, counts, _ = run(
-        HRGeSettings(max_pages_per_run=PAGES, max_details_per_run=1)
-    )
+    jobs, counts, _ = run(HRGeSettings(max_pages_per_run=PAGES, max_details_per_run=1))
 
     assert len(jobs) == TOTAL
     enriched = [j for j in jobs if "description" in j]
@@ -138,9 +130,7 @@ def test_rows_past_the_budget_still_carry_their_list_data():
 
 
 def test_budget_of_zero_means_list_only():
-    jobs, counts, _ = run(
-        HRGeSettings(max_pages_per_run=PAGES, max_details_per_run=0)
-    )
+    jobs, counts, _ = run(HRGeSettings(max_pages_per_run=PAGES, max_details_per_run=0))
 
     assert len(jobs) == TOTAL
     assert counts["detail"] == 0
@@ -230,7 +220,6 @@ def test_detail_fetch_is_de_duplicated_per_id():
             ],
             3,
         )
-
 
     original_list = HRGeClient._fetch_list_page
     original_detail = HRGeClient._fetch_detail

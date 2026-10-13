@@ -109,9 +109,7 @@ class HRGeClient:
             if response.status_code in _RETRYABLE_STATUS:
                 raise TransientHTTPError(f"HTTP {response.status_code}")
             if response.status_code >= 400:
-                raise PermanentHTTPError(
-                    f"HTTP {response.status_code}: {response.text[:200]}"
-                )
+                raise PermanentHTTPError(f"HTTP {response.status_code}: {response.text[:200]}")
             try:
                 return response.json()
             except ValueError as exc:
@@ -300,9 +298,7 @@ class HRGeClient:
         # otherwise adding 0 to the start time truncates the phase at its first
         # request and no deadline can ever be disabled.
         deadline = (
-            started + settings.detail_budget_seconds
-            if settings.detail_budget_seconds > 0
-            else None
+            started + settings.detail_budget_seconds if settings.detail_budget_seconds > 0 else None
         )
         max_details = min(total, settings.max_details_per_run)
 

@@ -118,9 +118,7 @@ class TestFetchSearchPageResponseValidation:
         assert results == [JOB_A, JOB_B]
         assert total == 2
 
-    def test_non_dict_response_raises_response_error(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_non_dict_response_raises_response_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(
             "job_market_intel.scrapers.reed.client.fetch_json", lambda *a, **k: [1, 2, 3]
         )
@@ -182,9 +180,7 @@ class TestFetchSearchResultsPagination:
 
         assert results == [JOB_A]
 
-    def test_respects_max_search_pages_per_query_cap(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_respects_max_search_pages_per_query_cap(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # totalResults claims far more than the cap allows fetching.
         monkeypatch.setattr(
             "job_market_intel.scrapers.reed.client.fetch_json",

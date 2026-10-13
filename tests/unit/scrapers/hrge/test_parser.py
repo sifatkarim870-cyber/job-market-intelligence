@@ -22,11 +22,13 @@ class TestParseJobs:
         assert [j.source_job_id for j in jobs] == ["1", "2"]
 
     def test_malformed_record_is_skipped_not_raised(self) -> None:
-        jobs = HRGeParser().parse_jobs([
-            _entry(),
-            _entry(title=""),  # fails min_length -> ValidationError -> skipped
-            _entry(announcementId=3),
-        ])
+        jobs = HRGeParser().parse_jobs(
+            [
+                _entry(),
+                _entry(title=""),  # fails min_length -> ValidationError -> skipped
+                _entry(announcementId=3),
+            ]
+        )
         assert [j.source_job_id for j in jobs] == ["1", "3"]
 
     def test_non_dict_record_is_skipped(self) -> None:

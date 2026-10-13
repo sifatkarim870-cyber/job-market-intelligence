@@ -4,6 +4,7 @@ major remote-hiring market plus regional coverage across all continents.
 `default_currency_id` is resolved from the currencies just seeded via
 base.get_id_map — this module MUST run after currencies.py.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Connection

@@ -163,6 +163,7 @@ schemas), e.g.:
 from sqlalchemy.orm import Mapped, mapped_column
 from db.base import Base
 
+
 class Skill(Base):
     __tablename__ = "skills"
     __table_args__ = {"schema": "ref"}

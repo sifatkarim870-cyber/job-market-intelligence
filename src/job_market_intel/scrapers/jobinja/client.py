@@ -97,9 +97,7 @@ class JobinjaClient:
             if response.status_code in _RETRYABLE_STATUS:
                 raise TransientHTTPError(f"HTTP {response.status_code}")
             if response.status_code >= 400:
-                raise PermanentHTTPError(
-                    f"HTTP {response.status_code}: {response.text[:200]}"
-                )
+                raise PermanentHTTPError(f"HTTP {response.status_code}: {response.text[:200]}")
             return response.text
 
         try:

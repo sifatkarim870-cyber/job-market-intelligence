@@ -57,9 +57,7 @@ class TestSettingsFromEnv:
         monkeypatch.setenv("LOG_LEVEL", "debug")
         assert Settings().log_level == "DEBUG"
 
-    @pytest.mark.parametrize(
-        "level", ["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-    )
+    @pytest.mark.parametrize("level", ["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
     def test_every_valid_log_level_accepted(self, monkeypatch, level):
         monkeypatch.setenv("LOG_LEVEL", level)
         assert Settings().log_level == level

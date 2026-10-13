@@ -34,9 +34,7 @@ class TestParseJobs:
     def test_missing_url_is_skipped(self) -> None:
         # original_url non-empty is required: the canonical URL is what
         # we store and re-visit; a record without it is unusable.
-        jobs = JobvisionParser().parse_jobs(
-            [{"url": "", "payload": {"id": 1, "title": "x"}}]
-        )
+        jobs = JobvisionParser().parse_jobs([{"url": "", "payload": {"id": 1, "title": "x"}}])
         assert jobs == []
 
     def test_identityless_payload_is_skipped(self) -> None:

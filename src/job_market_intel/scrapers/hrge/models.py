@@ -191,9 +191,9 @@ class RawHRGeJob(BaseModel):
 
         addresses = entry.get("addresses") or entry.get("locations") or []
         if isinstance(addresses, list):
-            location = ", ".join(
-                a.strip() for a in addresses if isinstance(a, str) and a.strip()
-            ) or None
+            location = (
+                ", ".join(a.strip() for a in addresses if isinstance(a, str) and a.strip()) or None
+            )
         elif isinstance(addresses, str) and addresses.strip():
             location = addresses.strip()
         else:

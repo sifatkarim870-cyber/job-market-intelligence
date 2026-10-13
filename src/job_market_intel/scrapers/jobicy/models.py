@@ -19,9 +19,7 @@ class RawJobicyJob(BaseModel):
         default=None, description="Normalised region, e.g. 'USA' or 'Europe'."
     )
     jobIndustry: list[str] = Field(default_factory=list, description="Industry tags.")
-    jobType: list[str] = Field(
-        default_factory=list, description="e.g. ['Full-Time']."
-    )
+    jobType: list[str] = Field(default_factory=list, description="e.g. ['Full-Time'].")
     jobLevel: str | None = Field(default=None, description="Seniority label.")
     jobDescription: str | None = Field(default=None, description="HTML description.")
     jobExcerpt: str | None = Field(default=None, description="Plain-text summary.")

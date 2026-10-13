@@ -221,10 +221,7 @@ def _build_url_from_parts() -> str | None:
     if not (host and name and user):
         return None
 
-    return (
-        f"postgresql+psycopg://{quote_plus(user)}:{quote_plus(password)}"
-        f"@{host}:{port}/{name}"
-    )
+    return f"postgresql+psycopg://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{name}"
 
 
 def get_database_config() -> DatabaseConfig:

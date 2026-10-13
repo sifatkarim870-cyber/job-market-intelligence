@@ -82,9 +82,7 @@ class AbstractRepository(ABC, Generic[T]):
         raise NotImplementedError
 
     @abstractmethod
-    def get_all(
-        self, session: Session, *, limit: int = 100, offset: int = 0
-    ) -> list[T]:
+    def get_all(self, session: Session, *, limit: int = 100, offset: int = 0) -> list[T]:
         """Returns a page of entities.
 
         `limit`/`offset` are required (with sane defaults) rather than
