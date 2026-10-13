@@ -97,3 +97,50 @@ def test_settings_default_repo_and_prefix() -> None:
     assert settings.hf_repo.startswith("Shifat2110724169/")
     assert settings.model_config["env_prefix"] == "CORPUS_"
     assert settings.max_rows_per_shard >= 100
+
+
+# ---------------------------------------------------------------------------
+# is_global_remote
+#
+# Added because `country_code IS NULL` conflated two unrelated things, and a
+# consumer could not tell them apart without the database:
+#
+#   is_global_remote = TRUE  genuinely worldwide-remote; country-less is the
+#                           CORRECT answer (15,316 rows at 2026-10-13)
+#   is_global_remote IS NULL no ref.locations row at all; never resolved
+#                           (3,903 rows)
+#
+# Without the flag, "WHERE country_code IS NULL" silently dropped 19,219 rows
+# -- 13% of the corpus -- into one indistinguishable bucket.
+# ---------------------------------------------------------------------------
+
+
+def test_is_global_remote_is_exported() -> None:
+    """The flag must be present, and must come from the locations join."""
+    assert "is_global_remote" in SHARD_COLUMNS
+    assert "l.is_global_remote" in SHARD_SELECT
+    assert "AS is_global_remote" in SHARD_SELECT
+
+
+def test_is_global_remote_sits_next_to_location_raw() -> None:
+    """Placement is deliberate, not incidental.
+
+    They answer the same question about the same pair of rows, so they are
+    adjacent in the list rather than separated by unrelated columns.
+    """
+    cols = SHARD_COLUMNS
+    assert cols.index("location_raw") + 1 == cols.index("is_global_remote")
+    assert cols.index("is_global_remote") + 1 == cols.index("country_code")
+
+
+def test_is_global_remote_trips_the_all_null_column_guard() -> None:
+    """A source where nothing resolved leaves the column all-NULL.
+
+    That is exactly the case the string-typing guard in to_arrow exists for:
+    Arrow would otherwise infer the unusable "null" type and a later cast on
+    the union of shards would fail.
+    """
+    table = to_arrow([_row(), _row()], origin="local")
+    col = table.column("is_global_remote")
+    assert col.null_count == 2
+    assert col.type in (pa.bool_(), pa.string())

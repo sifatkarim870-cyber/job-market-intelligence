@@ -134,6 +134,17 @@ SELECT j.source_job_id::text                 AS source_job_id,
        j.is_duplicate_of::text                AS is_duplicate_of,
        j.data_quality_score::float8           AS data_quality_score,
        l.raw_location_text                    AS location_raw,
+       -- Why this exists: country_code IS NULL used to mean two entirely
+       -- different things, and a consumer could not tell them apart.
+       --   is_global_remote = TRUE  -> genuinely worldwide-remote (15,316 rows
+       --                                at 2026-10-13); a country-less posting
+       --                                is the correct answer, not a gap.
+       --   is_global_remote IS NULL -> no ref.locations row at all (3,903
+       --                                rows); the posting was never resolved.
+       -- Exposing the flag turns "WHERE country_code IS NULL" from a query
+       -- that silently drops 13% of the corpus into one that can separate
+       -- "remote everywhere" from "we failed to resolve this".
+       l.is_global_remote                     AS is_global_remote,
        c.iso_code_2                           AS country_code,
        c.country_name,
        et.label                               AS employment_type,
@@ -201,6 +212,7 @@ SHARD_COLUMNS = [
     "is_duplicate_of",
     "data_quality_score",
     "location_raw",
+    "is_global_remote",
     "country_code",
     "country_name",
     "employment_type",
