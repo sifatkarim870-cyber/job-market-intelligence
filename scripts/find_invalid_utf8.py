@@ -23,8 +23,8 @@ from __future__ import annotations
 
 import sys
 
-from sqlalchemy import create_engine, text
 from loguru import logger
+from sqlalchemy import create_engine, text
 
 LOCAL_DSN = "postgresql+psycopg://app_user:changeme@localhost:5432/job_market_intelligence"
 
@@ -63,7 +63,7 @@ def main() -> int:
     engine = create_engine(LOCAL_DSN)
     total_bad = 0
     with engine.connect() as conn:
-        for table, column, label in TARGETS:
+        for table, column, _label in TARGETS:
             try:
                 rows = conn.execute(
                     text(f"SELECT 1 FROM {table} LIMIT 0")  # noqa: S608 - table/column are literals
@@ -72,8 +72,10 @@ def main() -> int:
                 logger.warning("skipping {}.{}: {}", table, column, exc)
                 continue
 
-            pk_col = "job_id" if table.startswith("core.job") else (
-                "source_id" if table == "ref.sources" else "education_level_id"
+            pk_col = (
+                "job_id"
+                if table.startswith("core.job")
+                else ("source_id" if table == "ref.sources" else "education_level_id")
             )
             try:
                 rows = conn.execute(
@@ -88,7 +90,10 @@ def main() -> int:
                 total_bad += len(bad)
                 logger.error(
                     "{}.{}: {} of {} rows contain invalid UTF-8",
-                    table, column, len(bad), len(rows),
+                    table,
+                    column,
+                    len(bad),
+                    len(rows),
                 )
                 for pk, val in bad[:3]:
                     print(f"     {table}.{column} id={pk}")

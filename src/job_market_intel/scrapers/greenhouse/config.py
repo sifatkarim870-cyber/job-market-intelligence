@@ -36,23 +36,23 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 #: guessed: a wrong slug is not free, it costs an HTTP request and a warning on
 #: every single run, forever.
 DEFAULT_COMPANY_SLUGS: list[str] = [
-    "databricks",     # 893
-    "stripe",         # 731
-    "anthropic",      # ~600
-    "datadog",        # 432
+    "databricks",  # 893
+    "stripe",  # 731
+    "anthropic",  # ~600
+    "datadog",  # 432
     "elastic",
     "cloudflare",
     "mongodb",
-    "okta",           # 379
+    "okta",  # 379
     "brex",
-    "gitlab",         # 220
+    "gitlab",  # 220
     "coinbase",
-    "fivetran",       # 201
+    "fivetran",  # 201
     "scaleai",
     "robinhood",
-    "reddit",         # 155
+    "reddit",  # 155
     "figma",
-    "twilio",         # 138
+    "twilio",  # 138
     "intercom",
     "asana",
     "gusto",

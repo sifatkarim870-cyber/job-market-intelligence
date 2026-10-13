@@ -29,9 +29,7 @@ class HimalayasParser:
                 logger.warning("Himalayas record {} is not an object; skipping", index)
                 continue
             try:
-                parsed.append(
-                    RawHimalayasJob.model_validate({**raw, "raw_payload": raw})
-                )
+                parsed.append(RawHimalayasJob.model_validate({**raw, "raw_payload": raw}))
             except ValidationError as exc:
                 skipped += 1
                 logger.warning(
@@ -61,9 +59,7 @@ class HimalayasParser:
 
         kept: list[RawHimalayasJob] = []
         for job in jobs:
-            haystack = " ".join(
-                [*job.parentCategories, *job.categories, job.title or ""]
-            ).lower()
+            haystack = " ".join([*job.parentCategories, *job.categories, job.title or ""]).lower()
             if any(term in haystack for term in wanted):
                 kept.append(job)
 

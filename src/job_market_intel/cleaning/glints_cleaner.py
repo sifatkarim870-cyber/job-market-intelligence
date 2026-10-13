@@ -186,11 +186,7 @@ class GlintsCleaner:
                 salary_min = None
             if salary_max is not None and salary_max <= 0:
                 salary_max = None
-            if (
-                salary_min is not None
-                and salary_max is not None
-                and salary_min > salary_max
-            ):
+            if salary_min is not None and salary_max is not None and salary_min > salary_max:
                 logger.warning(
                     "Glints job {}: reversed salary range (min={}, max={}); "
                     "swapping to satisfy ck_job_salaries_range.",
@@ -208,14 +204,10 @@ class GlintsCleaner:
             match = _URL_COUNTRY_RE.match(raw_job.original_url)
             country = match.group(1).upper() if match else ""
         currency = (
-            (raw_job.salary_currency or "").upper()
-            or _COUNTRY_CURRENCY_MAP.get(country)
-            or "USD"
+            (raw_job.salary_currency or "").upper() or _COUNTRY_CURRENCY_MAP.get(country) or "USD"
         )
 
-        pay_period = _PAY_PERIOD_MAP.get(
-            (raw_job.salary_mode or "").strip().upper(), "monthly"
-        )
+        pay_period = _PAY_PERIOD_MAP.get((raw_job.salary_mode or "").strip().upper(), "monthly")
 
         return CleanedJob(
             source_job_id=raw_job.source_job_id,

@@ -84,9 +84,7 @@ class JobvisionSettings(BaseSettings):
 
     web_base_url: str = "https://jobvision.ir"
     sitemap_url: str = "https://jobvision.ir/sitemap/jobposts.xml"
-    detail_api_url: str = (
-        "https://candidateapi.jobvision.ir/api/v1/JobPost/Detail"
-    )
+    detail_api_url: str = "https://candidateapi.jobvision.ir/api/v1/JobPost/Detail"
     max_jobs_per_run: int = Field(default=400, ge=1)
     fetch_delay_seconds: float = Field(default=0.15, ge=0.0)
     request_timeout_seconds: float = 90.0

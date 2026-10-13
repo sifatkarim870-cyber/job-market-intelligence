@@ -151,11 +151,7 @@ class JobvisionCleaner:
         salary_max = _bound_to_toman(raw_job.salary_max_raw)
         # Reversed bounds come back occasionally (site data error);
         # swap rather than drop — same rule Glints' cleaner applies.
-        if (
-            salary_min is not None
-            and salary_max is not None
-            and salary_min > salary_max
-        ):
+        if salary_min is not None and salary_max is not None and salary_min > salary_max:
             logger.warning(
                 "Jobvision job {}: reversed salary range (min={}, max={}); "
                 "swapping to satisfy ck_job_salaries_range.",
@@ -177,8 +173,7 @@ class JobvisionCleaner:
             # unexpected payload degrades to the documented fallback
             # plus a visible warning instead of a crash.
             logger.warning(
-                "Jobvision job {}: no Toman evidence and country {!r}; "
-                "currency falls back to USD.",
+                "Jobvision job {}: no Toman evidence and country {!r}; currency falls back to USD.",
                 raw_job.source_job_id,
                 country,
             )
@@ -212,9 +207,7 @@ class JobvisionCleaner:
             # quote monthly figures by convention (documented default,
             # same as Jobinja's cleaner).
             pay_period="monthly",
-            employment_type_code=_map_employment_type(
-                raw_job.work_type_en, raw_job.is_internship
-            ),
+            employment_type_code=_map_employment_type(raw_job.work_type_en, raw_job.is_internship),
         )
 
     def clean_jobs(self, raw_jobs: list[RawJobvisionJob]) -> list[CleanedJob]:

@@ -97,7 +97,10 @@ _CONTRACT_MAP = {
 }
 
 
-def _map_employment_type(work_schedule_raw: str | None, contract_type_raw: str | None) -> str | None:
+def _map_employment_type(
+    work_schedule_raw: str | None,
+    contract_type_raw: str | None,
+) -> str | None:
     """Map HR.ge's enums onto ref.employment_types.code.
 
     Schedule wins ("Full-time" → ``full_time``) because it is the

@@ -26,21 +26,18 @@ class TestSettings:
 
 class TestValidateBatch:
     def test_healthy_batch_passes(self, make_raw_glints_job) -> None:
-        validator = GlintsBatchValidator(
-            settings=GlintsValidationSettings(min_expected_jobs=2)
-        )
+        validator = GlintsBatchValidator(settings=GlintsValidationSettings(min_expected_jobs=2))
         raw = [{}, {}]
-        parsed = [make_raw_glints_job(), make_raw_glints_job(
-            source_job_id="22222222-2222-2222-2222-222222222222"
-        )]
+        parsed = [
+            make_raw_glints_job(),
+            make_raw_glints_job(source_job_id="22222222-2222-2222-2222-222222222222"),
+        ]
         report = validator.validate(raw, parsed)
         assert report.passed
         assert not report.issues
 
     def test_below_minimum_fails(self, make_raw_glints_job) -> None:
-        validator = GlintsBatchValidator(
-            settings=GlintsValidationSettings(min_expected_jobs=10)
-        )
+        validator = GlintsBatchValidator(settings=GlintsValidationSettings(min_expected_jobs=10))
         report = validator.validate([{}, {}], [make_raw_glints_job()])
         assert not report.passed
 
@@ -66,8 +63,13 @@ class TestValidateBatch:
         report = validator.validate([{}], [stripped])
         # Missing-field rates are report DATA (not pass/fail issues) —
         # the same stance the other sources take.
-        for field in ("location_raw", "description_raw", "tags",
-                      "posting_date", "contract_type_raw"):
+        for field in (
+            "location_raw",
+            "description_raw",
+            "tags",
+            "posting_date",
+            "contract_type_raw",
+        ):
             assert report.missing_field_rates[field] == 1.0
 
     def test_healthy_job_has_zero_missing_rates(self, make_raw_glints_job) -> None:

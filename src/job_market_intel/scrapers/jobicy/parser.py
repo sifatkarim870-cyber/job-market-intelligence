@@ -38,9 +38,7 @@ class JobicyParser:
         return parsed
 
     @staticmethod
-    def filter_focus(
-        jobs: list[RawJobicyJob], focus_industries: list[str]
-    ) -> list[RawJobicyJob]:
+    def filter_focus(jobs: list[RawJobicyJob], focus_industries: list[str]) -> list[RawJobicyJob]:
         """Keep postings whose ``jobIndustry`` matches any focus term.
 
         Substring matching, case-insensitive: the feed uses 'Software

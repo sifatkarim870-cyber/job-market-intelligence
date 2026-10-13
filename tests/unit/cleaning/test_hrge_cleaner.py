@@ -44,8 +44,7 @@ class TestGeorgianNoticeStripping:
 
     def test_notice_without_parenthetical_is_stripped(self, make_raw_hrge_job) -> None:
         notice = (
-            "This announcement is available only in Georgian Language, "
-            "please see the text below"
+            "This announcement is available only in Georgian Language, please see the text below"
         )
         raw = make_raw_hrge_job(description_raw=f"<p>{notice} {_GEO_BODY}</p>")
         cleaned = HRGeCleaner().clean_job(raw)
@@ -162,9 +161,7 @@ class TestDataQualityScore:
 
 
 class TestUrlsAndText:
-    def test_apply_and_original_url_point_at_the_public_page(
-        self, make_raw_hrge_job
-    ) -> None:
+    def test_apply_and_original_url_point_at_the_public_page(self, make_raw_hrge_job) -> None:
         cleaned = HRGeCleaner().clean_job(make_raw_hrge_job())
         assert cleaned.original_url == "https://www.hr.ge/announcement/496982"
         assert cleaned.apply_url == cleaned.original_url

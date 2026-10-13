@@ -1,0 +1,105 @@
+name: Quality gate
+
+# The gate that was missing.
+#
+# On 2026-10-13 the scheduled Kaggle translation kernel had been silently dead
+# for a day: a rotated token, a CPU-only torch image, and a `return 0` on both
+# the failed upload and the zero-progress run. It reported COMPLETE throughout.
+# Every failure in that chain -- and in the 38-row merge-key deletion before
+# it -- shared one shape: something went wrong, and the exit code said it was
+# fine.
+#
+# This workflow exists so that class of failure turns a build red instead. It
+# runs on every push and every PR. Cheap, and it needs no secrets.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref, but never cancel main itself -- a
+# half-finished gate on main is worse than a slightly stale one.
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: uv sync --extra dev --extra test
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+  test:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # --extra selenium as well as dev/test: tests/unit/scrapers/indeed/ imports
+      # selenium.webdriver to assert the proxy flags become Chrome arguments.
+      # seleniumbase is a separate extra precisely because it is a heavy
+      # browser-stack dependency, but a gate that skips those tests silently is
+      # worse than a slow one.
+      - name: Install
+        run: uv sync --extra dev --extra test --extra selenium
+
+      # No TEST_DATABASE_URL is set, so the integration tests skip themselves
+      # via the requires_live_db collection hook. That is deliberate: this gate
+      # must be runnable by anyone who can push, without database credentials.
+      # Schema-level verification of the live database stays a local concern.
+      - name: pytest
+        run: uv run pytest tests -q --no-cov
+
+  env_consistency:
+    name: Env vars documented in .env.example
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: uv sync --extra dev --extra test
+
+      # Catches the class of bug where a Settings class reads an env var nobody
+      # documented -- the first symptom is a silent fallback to a default in
+      # production.
+      - run: uv run pytest tests/unit/test_config_env_consistency.py -q --no-cov

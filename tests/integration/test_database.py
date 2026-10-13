@@ -78,6 +78,29 @@ def sqlite_engine(monkeypatch):
 
 
 class TestDatabaseConfig:
+    @pytest.fixture(autouse=True)
+    def _hermetic_dsn_env(self, monkeypatch):
+        """Neutralise every input `db.target.resolve_dsn()` consults.
+
+        Clearing DATABASE_URL and the DB_* parts is not enough. resolve_dsn()
+        also reads CI_DATABASE_URL, CI_CONTAINER_DB and GITHUB_ACTIONS, and on
+        a GitHub runner GITHUB_ACTIONS is "true", so it falls through to
+        CONTAINER_DSN (jmi_ci) regardless. "Nothing is configured" then never
+        holds, get_database_config() never raises, and a URL built from DB_*
+        parts comes back containing jmi_ci.
+
+        These tests passed only because the machine that wrote them was not CI.
+        Found by the quality gate on its first run.
+        """
+        for var in (
+            "DATABASE_URL",
+            "CI_DATABASE_URL",
+            "CI_CONTAINER_DB",
+            "GITHUB_ACTIONS",
+            "JMI_USE_REMOTE_DB",
+        ):
+            monkeypatch.delenv(var, raising=False)
+
     def test_valid_url_accepted(self):
         cfg = DatabaseConfig(url="postgresql+psycopg://user:pw@localhost:5432/db")
         assert cfg.url.startswith("postgresql")
@@ -206,9 +229,7 @@ class TestSessionLifecycle:
 
 
 class TestTransactionSavepoints:
-    def test_savepoint_rolls_back_independently_of_outer_transaction(
-        self, sqlite_engine
-    ):
+    def test_savepoint_rolls_back_independently_of_outer_transaction(self, sqlite_engine):
         with get_session() as session:
             session.execute(text("CREATE TABLE t4 (id INTEGER PRIMARY KEY)"))
             session.execute(text("INSERT INTO t4 (id) VALUES (1)"))

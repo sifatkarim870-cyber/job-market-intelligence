@@ -35,7 +35,7 @@ def _strip_prefix(value: object, prefix: str) -> str | None:
         return None
     text = value.strip()
     if text.lower().startswith(prefix.lower()):
-        text = text[len(prefix):].strip()
+        text = text[len(prefix) :].strip()
     return text or None
 
 
@@ -174,9 +174,7 @@ class RawMyJobJob(BaseModel):
             company_industry_raw=company.get("industry")
             if isinstance(company.get("industry"), str)
             else None,
-            company_logo_url=company.get("logo")
-            if isinstance(company.get("logo"), str)
-            else None,
+            company_logo_url=company.get("logo") if isinstance(company.get("logo"), str) else None,
             category_raw=category.get("name") if isinstance(category.get("name"), str) else None,
             jobType=merged.get("jobType"),
             workArrangement=merged.get("workArrangement"),

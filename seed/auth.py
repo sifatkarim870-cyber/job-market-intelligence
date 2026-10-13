@@ -19,6 +19,7 @@ Security strategy for the bootstrap admin (do NOT hardcode a password):
      approval, not something this seed silently adds).
   4. This module never logs the raw or hashed password.
 """
+
 from __future__ import annotations
 
 import os
@@ -48,11 +49,14 @@ def seed_roles(conn: Connection) -> SeedResult:
     import json
 
     rows = [
-        {"role_name": r["role_name"], "permissions": json.dumps(r["permissions"])}
-        for r in ROLES
+        {"role_name": r["role_name"], "permissions": json.dumps(r["permissions"])} for r in ROLES
     ]
     return upsert_many(
-        conn, schema="auth", table_name="roles", rows=rows, conflict_cols=("role_name",),
+        conn,
+        schema="auth",
+        table_name="roles",
+        rows=rows,
+        conflict_cols=("role_name",),
     )
 
 
@@ -115,7 +119,6 @@ def seed_admin_user(conn: Connection) -> SeedResult:
     print(f"[seed.auth] API key (shown ONCE, store securely now): {raw_api_key}")
     if generated:
         print(
-            "[seed.auth] (Set ADMIN_BOOTSTRAP_PASSWORD to control this "
-            "in future environments.)\n"
+            "[seed.auth] (Set ADMIN_BOOTSTRAP_PASSWORD to control this in future environments.)\n"
         )
     return result

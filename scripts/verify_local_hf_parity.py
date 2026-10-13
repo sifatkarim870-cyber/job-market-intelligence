@@ -26,6 +26,16 @@ each time. That is a network-read race in the extension, not corrupt data, and
 a verifier that reports phantom corruption is worse than no verifier.
 
 Run:  uv run python scripts/verify_local_hf_parity.py
+
+Portability
+-----------
+Previously this script hardcoded a Windows absolute path to the HF token file
+and a `changeme` local DSN at module import. That made it crash on import
+anywhere else -- Linux, CI, another machine -- which is a large part of why
+there was no automated gate around it: the one script that could have caught a
+bad merge key could not run outside one specific laptop. Everything below is now
+resolved from the environment, with the old local values kept as fallbacks so
+existing local behaviour is unchanged.
 """
 
 from __future__ import annotations
@@ -40,11 +50,42 @@ import pyarrow.parquet as pq
 import requests
 from sqlalchemy import create_engine, text
 
-REPO = "Shifat2110724169/job-market-intel-corpus"
-LOCAL_DSN = "postgresql+psycopg://app_user:changeme@localhost:5432/job_market_intelligence"
-TOKEN = pathlib.Path(
-    r"D:\Research_Project\JobMarketAnalysisPlatform\DataBase\Hugging_Face_token.txt"
-).read_text(encoding="utf-8").strip()
+#: Repository holding the corpus. Overridable for a fork or private mirror.
+REPO = os.environ.get("CORPUS_HF_REPO", "Shifat2110724169/job-market-intel-corpus")
+
+#: Where the local laptop database lives. Same default as before, but
+#: LOCAL_DATABASE_URL (a documented .env variable) now wins over it.
+LOCAL_DSN = os.environ.get("LOCAL_DATABASE_URL") or (
+    "postgresql+psycopg://app_user:changeme@localhost:5432/job_market_intelligence"
+)
+
+
+def _resolve_token() -> str | None:
+    """HF token from env, else the local token file.
+
+    Order matches corpus.shard_export.resolve_token so the two scripts agree on
+    what "the token" is. Returns None rather than raising so a caller can print
+    an actionable message instead of a traceback about an unrelated path.
+    """
+    for var in ("CORPUS_HF_TOKEN", "HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"):
+        val = os.environ.get(var)
+        if val and val.strip():
+            return val.strip()
+    candidates = []
+    env_file = os.environ.get("CORPUS_HF_TOKEN_FILE")
+    if env_file:
+        candidates.append(pathlib.Path(env_file))
+    # scripts/ -> repo root -> DataBase/, where the token file has always lived.
+    candidates.append(pathlib.Path(__file__).resolve().parents[2] / "Hugging_Face_token.txt")
+    for path in candidates:
+        if path.exists():
+            token = path.read_text(encoding="utf-8").strip()
+            if token:
+                return token
+    return None
+
+
+TOKEN = _resolve_token()
 
 #: Data columns compared between the databases and HF. Kept to the ones that
 #: actually drift: a translation applied on the laptop, a re-resolved location, a
@@ -60,27 +101,59 @@ DATA_COLUMNS = (
 )
 
 
+def _env_file_values(env_path: pathlib.Path | None = None) -> dict[str, str]:
+    """Parse the local .env into a dict (later keys win). Empty if absent.
+
+    ``env_path`` is injectable so the parser can be tested without patching
+    ``pathlib.Path`` globally, which would leak into every other module the
+    test process has imported.
+    """
+    if env_path is None:
+        env_path = pathlib.Path(__file__).resolve().parents[1] / ".env"
+    if not env_path.exists():
+        return {}
+    out: dict[str, str] = {}
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", line)
+        if m:
+            out[m.group(1)] = m.group(2).strip().strip('"').strip("'")
+    return out
+
+
 def neon_dsn() -> str | None:
-    """Neon DSN from .env, or None. Mirrors export_corpus_to_hf.neon_dsn()."""
-    env = pathlib.Path(__file__).resolve().parents[1] / ".env"
-    if not env.exists():
+    """Neon DSN from the environment or .env, or None.
+
+    NEON_DATABASE_URL is preferred -- it is unambiguous and is what the local
+    .env actually carries. DATABASE_URL is still accepted as a fallback because
+    it historically held the hosted DSN on this project, but on the current
+    .env it points at localhost, which is why this used to silently report
+    "no Neon DSN" and check local only. A DSN equal to the local one is treated
+    as "not configured" rather than checked twice.
+    """
+    file_values = _env_file_values()
+    url = (
+        (
+            os.environ.get("NEON_DATABASE_URL")
+            or file_values.get("NEON_DATABASE_URL")
+            or file_values.get("DATABASE_URL")
+            or ""
+        )
+        .strip()
+        .strip('"')
+        .strip("'")
+    )
+    if not url:
         return None
-    for line in env.read_text(encoding="utf-8").splitlines():
-        m = re.match(r"^\s*DATABASE_URL\s*=\s*(.+)$", line)
-        if not m:
-            continue
-        url = m.group(1).strip().strip('"').strip("'")
-        # Accept every spelling seen in the wild: the already-normalised
-        # psycopg form from .env itself, plain postgresql:// from psql tooling,
-        # and postgres:// from Heroku-style connection strings.
-        for prefix in ("postgresql+psycopg://", "postgresql://", "postgres://"):
-            if url.startswith(prefix):
-                url = "postgresql+psycopg://" + url[len(prefix) :]
-                break
-        else:
-            return None
-        return None if url == LOCAL_DSN else url
-    return None
+    # Accept every spelling seen in the wild: the already-normalised
+    # psycopg form from .env itself, plain postgresql:// from psql tooling,
+    # and postgres:// from Heroku-style connection strings.
+    for prefix in ("postgresql+psycopg://", "postgresql://", "postgres://"):
+        if url.startswith(prefix):
+            url = "postgresql+psycopg://" + url[len(prefix) :]
+            break
+    else:
+        return None
+    return None if url == LOCAL_DSN else url
 
 
 def _read_sources(dsn: str) -> dict[str, tuple[str, object, object, object]]:
@@ -132,9 +205,16 @@ def read_shard(url: str, shard_path: str) -> dict[str, list]:
     return out
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 - a linear report, split for readability not logic
     from huggingface_hub import HfApi
 
+    if TOKEN is None:
+        print(
+            "No Hugging Face token found (looked at CORPUS_HF_TOKEN, HF_TOKEN, "
+            "CORPUS_HF_TOKEN_FILE and the local Hugging_Face_token.txt).\n"
+            "Proceeding anonymously, which is enough for the public corpus repo "
+            "but will fail against a private fork."
+        )
     api = HfApi(token=TOKEN)
     shards = sorted(
         f
@@ -156,8 +236,19 @@ def main() -> int:
         cols = read_shard(url, shard)
         hf_rows += len(cols["source"])
         for key, values in zip(
-            zip(cols["source"], cols["source_job_id"], cols["posting_date"]),
-            zip(cols["description_en"], cols["country_code"], cols["location_raw"]),
+            zip(
+                cols["source"],
+                cols["source_job_id"],
+                cols["posting_date"],
+                strict=True,
+            ),
+            zip(
+                cols["description_en"],
+                cols["country_code"],
+                cols["location_raw"],
+                strict=True,
+            ),
+            strict=True,
         ):
             hf[key] = values
 
@@ -224,9 +315,7 @@ def main() -> int:
 
     print(
         "\nRESULT:",
-        "HF agrees with local + Neon"
-        if ok
-        else "DIVERGED -- re-run export_corpus_to_hf.py",
+        "HF agrees with local + Neon" if ok else "DIVERGED -- re-run export_corpus_to_hf.py",
     )
     return 0 if ok else 1
 

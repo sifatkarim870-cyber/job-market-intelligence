@@ -43,9 +43,7 @@ class ThemuseParser:
         return parsed
 
     @staticmethod
-    def drop_stale(
-        jobs: list[RawThemuseJob], max_age_days: int
-    ) -> list[RawThemuseJob]:
+    def drop_stale(jobs: list[RawThemuseJob], max_age_days: int) -> list[RawThemuseJob]:
         """Keep postings published within ``max_age_days``.
 
         A record with no parseable publication date is KEPT rather than

@@ -13,6 +13,7 @@ means:
     `update_cols` — call out any table where that's undesirable and set
     `update_cols=[]` (insert-only, never update) instead.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -40,8 +41,7 @@ class SeedResult:
         return (
             f"[{status}] {self.table}: "
             f"{self.inserted} inserted, {self.updated} updated, "
-            f"{self.unchanged} unchanged"
-            + (f", {len(self.errors)} errors" if self.errors else "")
+            f"{self.unchanged} unchanged" + (f", {len(self.errors)} errors" if self.errors else "")
         )
 
 
@@ -117,7 +117,5 @@ def get_id_map(
     table, used by downstream modules that need to resolve FKs (e.g.
     regions.py resolving country_id from an ISO code).
     """
-    rows = conn.execute(
-        text(f"SELECT {key_col}, {id_col} FROM {schema}.{table_name}")
-    ).all()
+    rows = conn.execute(text(f"SELECT {key_col}, {id_col} FROM {schema}.{table_name}")).all()
     return {r[0]: r[1] for r in rows}

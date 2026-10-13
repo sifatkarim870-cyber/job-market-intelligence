@@ -75,6 +75,7 @@ from job_market_intel.normalization.salary_standardization import normalize_annu
 if TYPE_CHECKING:
     from job_market_intel.cleaning.common import CleanedJob
 
+
 def compute_job_content_hash(
     job_title: str,
     company_name: str,
@@ -128,9 +129,7 @@ class JobRepository(AbstractRepository[Any]):
         ).first()
         return dict(row._mapping) if row else None
 
-    def get_all(
-        self, session: Session, *, limit: int = 100, offset: int = 0
-    ) -> list[Any]:
+    def get_all(self, session: Session, *, limit: int = 100, offset: int = 0) -> list[Any]:
         rows = session.execute(
             text(
                 "SELECT job_id, source_id, source_job_id, job_title, posting_date, content_hash "
@@ -331,9 +330,7 @@ class JobRepository(AbstractRepository[Any]):
         if code is None:
             return None
         result = session.execute(
-            text(
-                "SELECT employment_type_id FROM ref.employment_types WHERE code = :code"
-            ),
+            text("SELECT employment_type_id FROM ref.employment_types WHERE code = :code"),
             {"code": code},
         ).scalar()
         if result is None:
@@ -434,9 +431,7 @@ class JobRepository(AbstractRepository[Any]):
         currency_id = self.get_currency_id_by_code(session, job.currency_iso_code)
         # None for sources that don't report an employment type (RemoteOK,
         # Remotive, WWR) -- see get_employment_type_id_by_code's docstring.
-        employment_type_id = self.get_employment_type_id_by_code(
-            session, job.employment_type_code
-        )
+        employment_type_id = self.get_employment_type_id_by_code(session, job.employment_type_code)
         normalized_annual_min_usd, normalized_annual_max_usd = normalize_annual_salary(
             job.salary_min,
             job.salary_max,

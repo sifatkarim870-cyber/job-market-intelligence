@@ -323,9 +323,7 @@ class IndeedClient:
         # The credentials live in a generated file inside a temp dir rather
         # than in the command line, so they don't show up in `ps` output.
         (extension_dir / "background.js").write_text(
-            "const credentials = "
-            + json.dumps(credentials)
-            + ";\n"
+            "const credentials = " + json.dumps(credentials) + ";\n"
             "chrome.webRequest.onAuthRequired.addListener(\n"
             "  () => ({authCredentials: credentials}),\n"
             "  {urls: ['<all_urls>']},\n"

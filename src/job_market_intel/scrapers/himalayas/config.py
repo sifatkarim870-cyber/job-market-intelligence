@@ -1,4 +1,4 @@
-﻿"""Config for the Himalayas scraper.
+"""Config for the Himalayas scraper.
 
 Himalayas (https://himalayas.app) aggregates remote-friendly postings and
 publishes a free, key-free JSON API:
@@ -74,12 +74,8 @@ class HimalayasSettings(BaseSettings):
         ge=1,
         description="Hard ceiling on postings persisted in a single run.",
     )
-    request_timeout_seconds: float = Field(
-        default=25.0, gt=0, description="Per-request timeout."
-    )
-    max_retries: int = Field(
-        default=3, ge=0, description="Attempts per request before giving up."
-    )
+    request_timeout_seconds: float = Field(default=25.0, gt=0, description="Per-request timeout.")
+    max_retries: int = Field(default=3, ge=0, description="Attempts per request before giving up.")
     retry_backoff_seconds: float = Field(
         default=1.5, gt=0, description="Base delay for exponential backoff."
     )

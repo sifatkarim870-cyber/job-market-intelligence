@@ -76,8 +76,7 @@ def main() -> None:
         disclosed_jobs = len(salary_df)
         disclosure_rate = (disclosed_jobs / total_jobs * 100) if total_jobs else 0.0
         print(
-            f"  Salary Disclosure Rate: {disclosure_rate:.1f}% "
-            f"({disclosed_jobs}/{total_jobs} jobs)"
+            f"  Salary Disclosure Rate: {disclosure_rate:.1f}% ({disclosed_jobs}/{total_jobs} jobs)"
         )
 
         if not salary_df.empty:

@@ -71,9 +71,7 @@ class TestParser:
     def test_skips_malformed_records_without_losing_the_batch(self):
         """One bad record must not end the run -- the feed is small, so a
         single bad row is a visible share of it."""
-        parsed = HimalayasParser().parse_jobs(
-            [_api_record(), {"title": "no guid"}, "not a dict"]
-        )
+        parsed = HimalayasParser().parse_jobs([_api_record(), {"title": "no guid"}, "not a dict"])
         assert len(parsed) == 1
 
     def test_source_job_id_alias_exists(self):
@@ -84,8 +82,15 @@ class TestParser:
     def test_missing_optional_fields_are_optional(self):
         """Real records lack minSalary, salaryPeriod and location entirely."""
         parsed = HimalayasParser().parse_jobs(
-            [_api_record(minSalary=None, maxSalary=None, salaryPeriod=None,
-                         locationRestrictions=[], currency=None)]
+            [
+                _api_record(
+                    minSalary=None,
+                    maxSalary=None,
+                    salaryPeriod=None,
+                    locationRestrictions=[],
+                    currency=None,
+                )
+            ]
         )
         assert len(parsed) == 1
         assert parsed[0].location_text is None
@@ -99,8 +104,13 @@ class TestFocusFilter:
 
     def test_drops_non_technical_roles(self):
         jobs = HimalayasParser().parse_jobs(
-            [_api_record(parentCategories=["Healthcare"], categories=["Psychiatry"],
-                         title="Telehealth Mental Health Provider")]
+            [
+                _api_record(
+                    parentCategories=["Healthcare"],
+                    categories=["Psychiatry"],
+                    title="Telehealth Mental Health Provider",
+                )
+            ]
         )
         assert HimalayasParser.filter_focus(jobs, ["Engineering"]) == []
 
@@ -120,7 +130,7 @@ class TestPayPeriod:
     @pytest.mark.parametrize(
         ("raw", "expected"),
         [
-            ("annual", "yearly"),      # the value that actually broke the run
+            ("annual", "yearly"),  # the value that actually broke the run
             ("hourly", "hourly"),
             ("monthly", "monthly"),
             ("per year", "yearly"),
@@ -165,14 +175,10 @@ class TestCleaner:
         assert parsed.posting_date.tzinfo is not None
 
     def test_source_job_id_is_the_guid(self):
-        cleaned = HimalayasCleaner().clean_jobs(
-            HimalayasParser().parse_jobs([_api_record()])
-        )[0]
+        cleaned = HimalayasCleaner().clean_jobs(HimalayasParser().parse_jobs([_api_record()]))[0]
         assert cleaned.source_job_id.startswith("https://himalayas.app/")
 
     def test_html_description_is_stripped(self):
-        cleaned = HimalayasCleaner().clean_jobs(
-            HimalayasParser().parse_jobs([_api_record()])
-        )[0]
+        cleaned = HimalayasCleaner().clean_jobs(HimalayasParser().parse_jobs([_api_record()]))[0]
         assert "<h3>" not in (cleaned.description_clean or "")
         assert cleaned.word_count > 0

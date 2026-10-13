@@ -49,4 +49,6 @@ class RemoteOKSettings(BaseSettings):
     max_retry_attempts: int = 4
     retry_initial_wait_seconds: float = 1.0
     retry_max_wait_seconds: float = 30.0
-    user_agent: str = "JobMarketIntelligencePlatform-Research/1.0 (+https://example-research-project.local)"
+    user_agent: str = (
+        "JobMarketIntelligencePlatform-Research/1.0 (+https://example-research-project.local)"
+    )

@@ -51,9 +51,7 @@ class TestRawArbeitnowJob:
 
     def test_missing_collections_default_to_empty(self):
         """When job_types and tags are omitted entirely, they should default to []."""
-        job = RawArbeitnowJob.model_validate(
-            {"slug": "test-slug", "title": "Test Title"}
-        )
+        job = RawArbeitnowJob.model_validate({"slug": "test-slug", "title": "Test Title"})
         assert job.job_types == []
         assert job.tags == []
 

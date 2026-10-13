@@ -44,17 +44,13 @@ SITEMAP = _sitemap_xml(JOB_1, LOGO, JOB_1_DUP, JOB_2, JOB_IMAGE, JOB_3)
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> JobvisionClient:
     """A client whose sitemap fetch is stubbed (window 10, no pacing)."""
-    client = JobvisionClient(
-        settings=JobvisionSettings(max_jobs_per_run=10, fetch_delay_seconds=0)
-    )
+    client = JobvisionClient(settings=JobvisionSettings(max_jobs_per_run=10, fetch_delay_seconds=0))
     monkeypatch.setattr(client, "_request_text", lambda url, what: SITEMAP)
     return client
 
 
 class TestSelectJobs:
-    def test_selects_unique_job_ids_and_ignores_image_urls(
-        self, client: JobvisionClient
-    ) -> None:
+    def test_selects_unique_job_ids_and_ignores_image_urls(self, client: JobvisionClient) -> None:
         selected = dict(client._select_jobs())
 
         # 73596 twice (dup slug) collapses to one; logo/job-image URLs
@@ -70,9 +66,7 @@ class TestSelectJobs:
         selected = dict(client._select_jobs(exclude_ids={"73596", "127203"}))
         assert set(selected) == {"216383"}
 
-    def test_excluding_everything_returns_empty_not_an_error(
-        self, client: JobvisionClient
-    ) -> None:
+    def test_excluding_everything_returns_empty_not_an_error(self, client: JobvisionClient) -> None:
         assert client._select_jobs(exclude_ids={"73596", "127203", "216383"}) == []
 
     def test_window_caps_unique_unseen_ids(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -104,9 +98,7 @@ class TestFetchRawJobsContract:
             return [("73596", JOB_1)]
 
         monkeypatch.setattr(dry_client, "_select_jobs", fake_select)
-        monkeypatch.setattr(
-            dry_client, "_fetch_job", lambda job_id: {"id": job_id, "title": "x"}
-        )
+        monkeypatch.setattr(dry_client, "_fetch_job", lambda job_id: {"id": job_id, "title": "x"})
 
         jobs = dry_client.fetch_raw_jobs(exclude_ids={"127203"})
 
@@ -140,9 +132,7 @@ class TestFetchRawJobsContract:
         dry_client: JobvisionClient,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr(
-            dry_client, "_select_jobs", lambda exclude_ids=None: [("73596", JOB_1)]
-        )
+        monkeypatch.setattr(dry_client, "_select_jobs", lambda exclude_ids=None: [("73596", JOB_1)])
         monkeypatch.setattr(dry_client, "_fetch_job", lambda job_id: None)
 
         with pytest.raises(JobvisionResponseError):
@@ -153,8 +143,7 @@ class TestDetailUrl:
     def test_job_post_id_query_param(self) -> None:
         client = JobvisionClient()
         assert client._detail_url("1550047") == (
-            "https://candidateapi.jobvision.ir/api/v1/JobPost/Detail"
-            "?jobPostId=1550047"
+            "https://candidateapi.jobvision.ir/api/v1/JobPost/Detail?jobPostId=1550047"
         )
 
 
@@ -187,9 +176,7 @@ class TestFetchJobFailureTaxonomy:
         client: JobvisionClient,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr(
-            client, "_request_json", _raise_from(PermanentHTTPError("HTTP 410"))
-        )
+        monkeypatch.setattr(client, "_request_json", _raise_from(PermanentHTTPError("HTTP 410")))
         assert client._fetch_job("73596") is None
 
     def test_transient_exhaustion_still_raises(
@@ -199,9 +186,7 @@ class TestFetchJobFailureTaxonomy:
     ) -> None:
         # A dead link is id-local; retry exhaustion means the *API* is
         # unreachable — that must fail the run.
-        monkeypatch.setattr(
-            client, "_request_json", _raise_from(TransientHTTPError("HTTP 503"))
-        )
+        monkeypatch.setattr(client, "_request_json", _raise_from(TransientHTTPError("HTTP 503")))
         with pytest.raises(JobvisionFetchError):
             client._fetch_job("73596")
 
@@ -249,9 +234,7 @@ class TestFetchJobFailureTaxonomy:
 
 
 class TestRequestJson:
-    def test_non_json_body_raises_not_skips(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_non_json_body_raises_not_skips(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # A shape change (or bot wall) affects every job — propagating
         # fails the run loudly instead of silently skipping all 400.
         client = JobvisionClient()

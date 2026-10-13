@@ -60,7 +60,7 @@ def _page(ld: dict | None = None, *, sections_html: str = "") -> str:
         "<html><head>"
         f'<script type="application/ld+json">{json.dumps(payload, ensure_ascii=False)}</script>'
         "</head><body>"
-        '<h1>کارشناس فروش بین المللی</h1>'
+        "<h1>کارشناس فروش بین المللی</h1>"
         f"{sections_html}"
         "</body></html>"
     )
@@ -84,8 +84,9 @@ def _standard_sections() -> str:
 
 class TestCoreFields:
     def test_identity_and_core_fields(self) -> None:
-        job = RawJobinjaJob.from_page_html(_page(sections_html=_standard_sections()),
-                                           original_url=_CANONICAL_URL)
+        job = RawJobinjaJob.from_page_html(
+            _page(sections_html=_standard_sections()), original_url=_CANONICAL_URL
+        )
         assert job.source_job_id == "1118910"
         assert job.job_title == "کارشناس فروش بین المللی"
         assert job.company_name == "توسعه نرم افزار مارون | Maron System"
@@ -122,10 +123,14 @@ class TestCoreFields:
 
     def test_logo_imageobject_dict_is_unwrapped(self) -> None:
         job = RawJobinjaJob.from_page_html(
-            _page(_job_posting(hiringOrganization={
-                "name": "Acme",
-                "logo": {"@type": "ImageObject", "url": "https://cdn.example/logo.png"},
-            })),
+            _page(
+                _job_posting(
+                    hiringOrganization={
+                        "name": "Acme",
+                        "logo": {"@type": "ImageObject", "url": "https://cdn.example/logo.png"},
+                    }
+                )
+            ),
             original_url=_CANONICAL_URL,
         )
         assert job.company_logo_url == "https://cdn.example/logo.png"
@@ -154,11 +159,15 @@ class TestSalaryShape:
 
     def test_quantitative_value_dict_is_unwrapped(self) -> None:
         job = RawJobinjaJob.from_page_html(
-            _page(_job_posting(baseSalary={
-                "currency": "IRT",
-                "value": {"@type": "QuantitativeValue", "value": 40000000},
-                "unitText": "MONTH",
-            })),
+            _page(
+                _job_posting(
+                    baseSalary={
+                        "currency": "IRT",
+                        "value": {"@type": "QuantitativeValue", "value": 40000000},
+                        "unitText": "MONTH",
+                    }
+                )
+            ),
             original_url=_CANONICAL_URL,
         )
         assert job.base_salary_value == 40000000
@@ -230,15 +239,17 @@ class TestSections:
         prefix-matched needles must pick the real ``مهارت‌های مورد نیاز``
         section.
         """
-        html = _page(sections_html=(
-            '<h4>شرح موقعیت شغلی</h4>'
-            '<div class="job-description">ما به دنبال فردی با مهارت های '
-            "خوب و تجربه موقعیت کاری قبلی هستیم.</div>"
-            '<h4>زبان\u200cهای مورد نیاز</h4><div class="tags">'
-            '<span>انگلیسی</span><span>عربی</span></div>'
-            '<h4>مهارت\u200cهای مورد نیاز</h4><div class="tags">'
-            "<span>فروش B2B</span></div>"
-        ))
+        html = _page(
+            sections_html=(
+                "<h4>شرح موقعیت شغلی</h4>"
+                '<div class="job-description">ما به دنبال فردی با مهارت های '
+                "خوب و تجربه موقعیت کاری قبلی هستیم.</div>"
+                '<h4>زبان\u200cهای مورد نیاز</h4><div class="tags">'
+                "<span>انگلیسی</span><span>عربی</span></div>"
+                '<h4>مهارت\u200cهای مورد نیاز</h4><div class="tags">'
+                "<span>فروش B2B</span></div>"
+            )
+        )
         job = RawJobinjaJob.from_page_html(html, original_url=_CANONICAL_URL)
 
         assert job.skills_spans == ["فروش B2B"]
@@ -260,15 +271,16 @@ class TestShapeDrift:
         # The parser converts this into a skip; the model must fail loudly.
         with pytest.raises(ValueError, match="JobPosting"):
             RawJobinjaJob.from_page_html(
-                "<html><script type=\"application/ld+json\">"
+                '<html><script type="application/ld+json">'
                 '{"@type": "Organization", "name": "x"}</script></html>',
                 original_url=_CANONICAL_URL,
             )
 
     def test_page_without_ldjson_raises_value_error(self) -> None:
         with pytest.raises(ValueError, match="JobPosting"):
-            RawJobinjaJob.from_page_html("<html><body>hi</body></html>",
-                                          original_url=_CANONICAL_URL)
+            RawJobinjaJob.from_page_html(
+                "<html><body>hi</body></html>", original_url=_CANONICAL_URL
+            )
 
     def test_broken_ldjson_block_falls_through_to_next(self) -> None:
         html = (

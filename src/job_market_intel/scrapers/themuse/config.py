@@ -46,9 +46,7 @@ class ThemuseSettings(BaseSettings):
         default="Mozilla/5.0 (compatible; job-market-intel/1.0)",
         description="Sent on every request.",
     )
-    page_size: int = Field(
-        default=50, ge=1, le=100, description="Records requested per page."
-    )
+    page_size: int = Field(default=50, ge=1, le=100, description="Records requested per page.")
     max_pages_per_run: int = Field(
         default=3,
         ge=1,
@@ -68,9 +66,7 @@ class ThemuseSettings(BaseSettings):
     max_jobs_per_run: int = Field(
         default=150, ge=1, description="Hard ceiling on postings persisted."
     )
-    request_timeout_seconds: float = Field(
-        default=25.0, gt=0, description="Per-request timeout."
-    )
+    request_timeout_seconds: float = Field(default=25.0, gt=0, description="Per-request timeout.")
     max_retries: int = Field(default=3, ge=0, description="Attempts per request.")
     retry_backoff_seconds: float = Field(
         default=1.5, gt=0, description="Base delay for exponential backoff."

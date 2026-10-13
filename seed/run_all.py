@@ -6,6 +6,7 @@ transaction. On success prints a summary report; on any failure, the
 entire run rolls back (nothing partially seeded), and the exception is
 re-raised with a non-zero exit code for CI.
 """
+
 from __future__ import annotations
 
 import sys
@@ -73,7 +74,10 @@ def run_all() -> int:
     total_unchanged = sum(r.unchanged for r in results)
     logger.info(
         "Seed run complete. inserted=%d updated=%d unchanged=%d across %d tables.",
-        total_inserted, total_updated, total_unchanged, len(results),
+        total_inserted,
+        total_updated,
+        total_unchanged,
+        len(results),
     )
     return 0
 

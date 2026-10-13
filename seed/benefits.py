@@ -1,4 +1,5 @@
 """Seeds ref.benefits."""
+
 from __future__ import annotations
 
 from sqlalchemy import Connection
@@ -47,6 +48,9 @@ def seed_benefits(conn: Connection) -> SeedResult:
         for name, category, desc in _BENEFITS
     ]
     return upsert_many(
-        conn, schema="ref", table_name="benefits",
-        rows=rows, conflict_cols=("benefit_name",),
+        conn,
+        schema="ref",
+        table_name="benefits",
+        rows=rows,
+        conflict_cols=("benefit_name",),
     )

@@ -46,7 +46,7 @@ def main_body(source: str) -> str:
 
 #: Shaped like the real kernel: token resolution used to live only inside
 #: upload_overlay, which the checkpoint reaches after five batches.
-CELL = '''import json
+CELL = """import json
 
 import torch
 
@@ -107,7 +107,7 @@ def main():
         if batches % 5 == 0:
             upload_overlay(con, overlay)
     upload_overlay(con, overlay)
-'''
+"""
 
 
 def notebook(cells: list[str], tmp_path: Path) -> Path:
@@ -158,9 +158,7 @@ def test_preflight_runs_before_the_model_is_loaded(patcher, tmp_path: Path) -> N
     src = code_of(path)
 
     main = next(
-        n
-        for n in ast.parse(src).body
-        if isinstance(n, ast.FunctionDef) and n.name == "main"
+        n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == "main"
     )
     calls = [
         c.func.id
@@ -183,8 +181,8 @@ def test_gpu_warning_is_added_but_does_not_exit(patcher, tmp_path: Path) -> None
     src = code_of(path)
 
     assert "no GPU allocated" in src
-    warn_start = src.index("if info[\"gpus\"] == 0")
-    warn_end = src.index("log(\"WARNING", warn_start)
+    warn_start = src.index('if info["gpus"] == 0')
+    warn_end = src.index('log("WARNING', warn_start)
     block = src[warn_start:warn_end]
     assert "raise" not in block and "sys.exit" not in block
 

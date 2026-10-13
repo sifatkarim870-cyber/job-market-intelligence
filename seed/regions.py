@@ -5,6 +5,7 @@ state/province-level resolution in year one (US, Canada, India, Australia,
 UK). Expand per-country as new markets are prioritized — this is additive,
 never breaking.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Connection
@@ -12,36 +13,100 @@ from sqlalchemy import Connection
 from .base import SeedResult, get_id_map, upsert_many
 
 _US_STATES = [
-    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
-    "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
-    "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
-    "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
-    "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
-    "New Hampshire", "New Jersey", "New Mexico", "New York",
-    "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
-    "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
-    "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
-    "West Virginia", "Wisconsin", "Wyoming", "District of Columbia",
+    "Alabama",
+    "Alaska",
+    "Arizona",
+    "Arkansas",
+    "California",
+    "Colorado",
+    "Connecticut",
+    "Delaware",
+    "Florida",
+    "Georgia",
+    "Hawaii",
+    "Idaho",
+    "Illinois",
+    "Indiana",
+    "Iowa",
+    "Kansas",
+    "Kentucky",
+    "Louisiana",
+    "Maine",
+    "Maryland",
+    "Massachusetts",
+    "Michigan",
+    "Minnesota",
+    "Mississippi",
+    "Missouri",
+    "Montana",
+    "Nebraska",
+    "Nevada",
+    "New Hampshire",
+    "New Jersey",
+    "New Mexico",
+    "New York",
+    "North Carolina",
+    "North Dakota",
+    "Ohio",
+    "Oklahoma",
+    "Oregon",
+    "Pennsylvania",
+    "Rhode Island",
+    "South Carolina",
+    "South Dakota",
+    "Tennessee",
+    "Texas",
+    "Utah",
+    "Vermont",
+    "Virginia",
+    "Washington",
+    "West Virginia",
+    "Wisconsin",
+    "Wyoming",
+    "District of Columbia",
 ]
 
 _CA_PROVINCES = [
-    "Ontario", "Quebec", "British Columbia", "Alberta", "Manitoba",
-    "Saskatchewan", "Nova Scotia", "New Brunswick",
-    "Newfoundland and Labrador", "Prince Edward Island",
+    "Ontario",
+    "Quebec",
+    "British Columbia",
+    "Alberta",
+    "Manitoba",
+    "Saskatchewan",
+    "Nova Scotia",
+    "New Brunswick",
+    "Newfoundland and Labrador",
+    "Prince Edward Island",
 ]
 
 _IN_STATES = [
-    "Maharashtra", "Karnataka", "Delhi", "Tamil Nadu", "Telangana",
-    "Uttar Pradesh", "West Bengal", "Gujarat", "Haryana", "Punjab",
+    "Maharashtra",
+    "Karnataka",
+    "Delhi",
+    "Tamil Nadu",
+    "Telangana",
+    "Uttar Pradesh",
+    "West Bengal",
+    "Gujarat",
+    "Haryana",
+    "Punjab",
 ]
 
 _AU_STATES = [
-    "New South Wales", "Victoria", "Queensland", "Western Australia",
-    "South Australia", "Tasmania", "Australian Capital Territory",
+    "New South Wales",
+    "Victoria",
+    "Queensland",
+    "Western Australia",
+    "South Australia",
+    "Tasmania",
+    "Australian Capital Territory",
 ]
 
 _GB_REGIONS = [
-    "England", "Scotland", "Wales", "Northern Ireland",
+    "England",
+    "Scotland",
+    "Wales",
+    "Northern Ireland",
 ]
 
 _BY_COUNTRY: dict[str, list[str]] = {

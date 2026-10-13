@@ -77,9 +77,7 @@ from .exceptions import JobAmFetchError, JobAmResponseError
 # The detail page may carry several JSON-LD blocks (Organization,
 # BreadcrumbList, …); the JobPosting one is the target, so extraction
 # scans every block instead of taking the first.
-_JSONLD_PATTERN = re.compile(
-    r'<script type="application/ld\+json"[^>]*>(.*?)</script>', re.DOTALL
-)
+_JSONLD_PATTERN = re.compile(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', re.DOTALL)
 
 
 class JobAmClient:
@@ -208,7 +206,7 @@ class JobAmClient:
         )
         return None
 
-    def fetch_raw_jobs(self) -> list[dict]:
+    def fetch_raw_jobs(self) -> list[dict]:  # noqa: C901 - retry/fallback branches per source shape
         """Fetch the whole-board list, then enrich the capped prefix.
 
         Returns:

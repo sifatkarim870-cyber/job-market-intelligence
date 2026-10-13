@@ -60,11 +60,13 @@ class RemoteOKPipeline:
         )
         if cleaner is None:
             from job_market_intel.cleaning.remoteok_cleaner import RemoteOKCleaner
+
             cleaner = RemoteOKCleaner()
         self.cleaner = cleaner
 
         if repository is None:
             from job_market_intel.db.job_repository import JobRepository
+
             repository = JobRepository()
         self.repository = repository
 

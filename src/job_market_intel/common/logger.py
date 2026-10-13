@@ -85,8 +85,7 @@ def configure_logging(
     logger.add(sys.stderr, level=console_level.upper(), format=console_format, colorize=True)
 
     file_format = (
-        "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
-        "{name}:{function}:{line} - {message}"
+        "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}"
     )
     logger.add(
         str(log_file_path),

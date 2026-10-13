@@ -121,9 +121,7 @@ def get_session() -> Generator[Session, None, None]:
         session.commit()
     except SQLAlchemyError as err:
         session.rollback()
-        raise TransactionError(
-            f"Transaction failed and was rolled back: {err}"
-        ) from err
+        raise TransactionError(f"Transaction failed and was rolled back: {err}") from err
     except Exception:
         # Non-SQLAlchemy exceptions (e.g. a validation error raised by
         # calling code inside the `with` block) still must not leave a

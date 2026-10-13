@@ -119,8 +119,12 @@ class MyJobClient:
         for page in range(1, self._settings.max_pages_per_run + 1):
             logger.info("Fetching MyJob.mu list page {}.", page)
             page_jobs = self._fetch_list_page(page)
-            logger.info("MyJob.mu page {}: {} jobs (total listed so far: {}).",
-                        page, len(page_jobs), len(listed) + len(page_jobs))
+            logger.info(
+                "MyJob.mu page {}: {} jobs (total listed so far: {}).",
+                page,
+                len(page_jobs),
+                len(listed) + len(page_jobs),
+            )
             if not page_jobs:
                 break
             listed.extend(page_jobs)

@@ -1,4 +1,4 @@
-﻿"""Restore a state snapshot into a target database.
+"""Restore a state snapshot into a target database.
 
 The other half of scripts/export_state_snapshot.py. CI calls it against an
 ephemeral Postgres service container so a scrape can run with no hosted database
@@ -63,9 +63,7 @@ def download_state(work: pathlib.Path) -> pathlib.Path:
 
     api = HfApi(token=_resolve_token())
     names = sorted(
-        n
-        for n in api.list_repo_files(REPO, repo_type="dataset")
-        if n.startswith(STATE_PREFIX)
+        n for n in api.list_repo_files(REPO, repo_type="dataset") if n.startswith(STATE_PREFIX)
     )
     dest = work / "state"
     dest.mkdir(parents=True, exist_ok=True)
@@ -114,12 +112,18 @@ def apply_schema(engine, schema_sql: pathlib.Path) -> None:
     subprocess.run(
         [
             str(_psql_binary()),
-            "-h", url.hostname or "localhost",
-            "-p", str(url.port or 5432),
-            "-U", url.username or "postgres",
-            "-d", (url.path or "/postgres").lstrip("/"),
-            "-v", "ON_ERROR_STOP=1",
-            "-f", str(schema_sql),
+            "-h",
+            url.hostname or "localhost",
+            "-p",
+            str(url.port or 5432),
+            "-U",
+            url.username or "postgres",
+            "-d",
+            (url.path or "/postgres").lstrip("/"),
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-f",
+            str(schema_sql),
         ],
         check=True,
         env=env,
@@ -180,18 +184,12 @@ def _load_table(conn, schema: str, table: str, table_obj) -> None:
     # row order satisfies the constraint. Its FK trigger is disabled for the
     # load and re-enabled after -- safe, because the rows come from a database
     # where they were already valid.
-    self_referencing = any(
-        d == (schema, table) for d in _dependencies(conn, (schema, table))
-    )
+    self_referencing = any(d == (schema, table) for d in _dependencies(conn, (schema, table)))
     if self_referencing:
-        conn.execute(
-            text(f"ALTER TABLE {schema}.{_quote_identifier(table)} DISABLE TRIGGER ALL")
-        )
+        conn.execute(text(f"ALTER TABLE {schema}.{_quote_identifier(table)} DISABLE TRIGGER ALL"))
     try:
         columns = table_obj.column_names
-        values = list(
-            zip(*[table_obj.column(c).to_pylist() for c in columns], strict=True)
-        )
+        values = list(zip(*[table_obj.column(c).to_pylist() for c in columns], strict=True))
         statement = text(
             f"INSERT INTO {schema}.{_quote_identifier(table)} "
             f"({', '.join(_quote_identifier(c) for c in columns)}) "
@@ -203,9 +201,7 @@ def _load_table(conn, schema: str, table: str, table_obj) -> None:
     finally:
         if self_referencing:
             conn.execute(
-                text(
-                    f"ALTER TABLE {schema}.{_quote_identifier(table)} ENABLE TRIGGER ALL"
-                )
+                text(f"ALTER TABLE {schema}.{_quote_identifier(table)} ENABLE TRIGGER ALL")
             )
 
 
@@ -246,9 +242,7 @@ def restore_reference(engine, state_dir: pathlib.Path) -> int:
             for pair in list(remaining):
                 # A self-reference is handled by disabling the trigger below,
                 # not by ordering.
-                blocking = [
-                    d for d in _dependencies(conn, pair) if d in remaining and d != pair
-                ]
+                blocking = [d for d in _dependencies(conn, pair) if d in remaining and d != pair]
                 if blocking:
                     continue
                 ordered.append(pair)
@@ -293,11 +287,7 @@ def main() -> int:
 
     work = pathlib.Path(tempfile.mkdtemp(prefix="jmi_restore_"))
     try:
-        state_dir = (
-            pathlib.Path(args.state_dir)
-            if args.source == "dir"
-            else download_state(work)
-        )
+        state_dir = pathlib.Path(args.state_dir) if args.source == "dir" else download_state(work)
         schema_sql = state_dir / "schema.sql"
         if not schema_sql.exists():
             raise SystemExit(f"{schema_sql} missing from the state snapshot")

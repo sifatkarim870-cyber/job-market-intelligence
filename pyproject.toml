@@ -128,6 +128,13 @@ packages = ["src/job_market_intel"]
 line-length = 100
 target-version = "py311"
 src = ["src", "tests"]
+# analysis/ holds the EDA notebooks and the Streamlit dashboard -- exploratory
+# tooling behind its own `eda` / `dashboard` extras, not part of the shipped
+# package. Excluded for two reasons: nothing in CI imports it, so a lint failure
+# there blocks unrelated work; and ruff 0.x panics in its own diff renderer on
+# the .ipynb cells (crates/ruff_annotate_snippets source_map.rs), which makes
+# `ruff format --check .` exit non-zero on a crash rather than on a finding.
+extend-exclude = ["analysis"]
 
 [tool.ruff.lint]
 select = [

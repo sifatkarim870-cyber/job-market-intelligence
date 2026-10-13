@@ -177,17 +177,22 @@ def _columns(conn: Connection, table: str) -> set[str]:
     return set(rows)
 
 
-def _insert_sql(table: str, cols: list[str], exprs: dict[str, str] | None = None,
-                returning: str | None = None) -> str:
+def _insert_sql(
+    table: str, cols: list[str], exprs: dict[str, str] | None = None, returning: str | None = None
+) -> str:
     exprs = exprs or {}
     values = ", ".join(exprs.get(c, f":{c}") for c in cols)
     sql = f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({values})"
     return sql + (f" RETURNING {returning}" if returning else "")
 
 
-def _upsert_sql(table: str, cols: list[str], conflict_cols: list[str],
-                coalesce_cols: set[str] | None = None,
-                exprs: dict[str, str] | None = None) -> str:
+def _upsert_sql(
+    table: str,
+    cols: list[str],
+    conflict_cols: list[str],
+    coalesce_cols: set[str] | None = None,
+    exprs: dict[str, str] | None = None,
+) -> str:
     """INSERT .. ON CONFLICT (conflict_cols) DO UPDATE.
 
     ``coalesce_cols`` keep the existing Neon value when the incoming one is
@@ -267,8 +272,11 @@ class _RefIndex:
                     "INSERT INTO core.companies (company_name, normalized_name, logo_url) "
                     "VALUES (:company_name, :normalized_name, :logo_url) RETURNING company_id"
                 ),
-                {"company_name": row["company_name"], "normalized_name": key,
-                 "logo_url": row.get("logo_url")},
+                {
+                    "company_name": row["company_name"],
+                    "normalized_name": key,
+                    "logo_url": row.get("logo_url"),
+                },
             ).scalar()
             self._stats["companies_created"] += 1
         self._company_cache[key] = int(hit)
@@ -309,8 +317,12 @@ class _RefIndex:
                         "AND country_id IS NOT DISTINCT FROM :country "
                         "AND remote_work_type_id IS NOT DISTINCT FROM :rw LIMIT 1"
                     ),
-                    {"city": city_id, "region": region_id, "country": country_id,
-                     "rw": remote_type_id},
+                    {
+                        "city": city_id,
+                        "region": region_id,
+                        "country": country_id,
+                        "rw": remote_type_id,
+                    },
                 ).scalar()
             if hit is None:
                 hit = self._neon.execute(
@@ -321,8 +333,14 @@ class _RefIndex:
                         "VALUES (:city, :region, :country, :rw, :raw, :is_remote) "
                         "RETURNING location_id"
                     ),
-                    {"city": city_id, "region": region_id, "country": country_id,
-                     "rw": remote_type_id, "raw": raw, "is_remote": is_remote},
+                    {
+                        "city": city_id,
+                        "region": region_id,
+                        "country": country_id,
+                        "rw": remote_type_id,
+                        "raw": raw,
+                        "is_remote": is_remote,
+                    },
                 ).scalar()
                 self._stats["locations_created"] += 1
             else:
@@ -362,7 +380,12 @@ class _RefIndex:
             logger.info("push: created ref.regions row {!r}", region_name)
         return int(hit)
 
-    def _city_id(self, row: dict[str, Any], region_id: int | None, country_id: int | None) -> int | None:
+    def _city_id(
+        self,
+        row: dict[str, Any],
+        region_id: int | None,
+        country_id: int | None,
+    ) -> int | None:
         city_name = row.get("city_name")
         if city_name is None:
             return None
@@ -390,9 +413,15 @@ class _RefIndex:
                     "longitude, timezone, population) "
                     "VALUES (:name, :region, :country, :lat, :lon, :tz, :pop) RETURNING city_id"
                 ),
-                {"name": city_name, "region": region_id, "country": country_id,
-                 "lat": row.get("latitude"), "lon": row.get("longitude"),
-                 "tz": row.get("timezone"), "pop": row.get("population")},
+                {
+                    "name": city_name,
+                    "region": region_id,
+                    "country": country_id,
+                    "lat": row.get("latitude"),
+                    "lon": row.get("longitude"),
+                    "tz": row.get("timezone"),
+                    "pop": row.get("population"),
+                },
             ).scalar()
             logger.info("push: created ref.cities row {!r}", city_name)
         return int(hit)
@@ -407,9 +436,12 @@ def _load_local(source_code: str, local: Connection) -> dict[str, Any]:
     if source_id is None:
         raise PushError(f"source_code {source_code!r} is not in the LOCAL ref.sources table")
 
-    jobs = [dict(r) for r in local.execute(
-        text("SELECT * FROM core.jobs WHERE source_id = :source_id"), {"source_id": source_id}
-    ).mappings()]
+    jobs = [
+        dict(r)
+        for r in local.execute(
+            text("SELECT * FROM core.jobs WHERE source_id = :source_id"), {"source_id": source_id}
+        ).mappings()
+    ]
     if not jobs:
         return {"source_id": source_id, "jobs": []}
     job_ids = [j["job_id"] for j in jobs]
@@ -420,8 +452,12 @@ def _load_local(source_code: str, local: Connection) -> dict[str, Any]:
     region_cols = _columns(local, "ref.regions")
 
     select_geo = [
-        "l.location_id", "l.raw_location_text", "l.is_global_remote",
-        "l.remote_work_type_id" if "remote_work_type_id" in loc_cols else "NULL AS remote_work_type_id",
+        "l.location_id",
+        "l.raw_location_text",
+        "l.is_global_remote",
+        "l.remote_work_type_id"
+        if "remote_work_type_id" in loc_cols
+        else "NULL AS remote_work_type_id",
         "ci.city_name" if "city_name" in city_cols else "NULL AS city_name",
         "ci.latitude" if "latitude" in city_cols else "NULL AS latitude",
         "ci.longitude" if "longitude" in city_cols else "NULL AS longitude",
@@ -431,20 +467,42 @@ def _load_local(source_code: str, local: Connection) -> dict[str, Any]:
         "rg.region_code" if "region_code" in region_cols else "NULL AS region_code",
         "co.country_name",
     ]
-    locations = [dict(r) for r in local.execute(text(
-        "SELECT " + ", ".join(select_geo) + """
+    locations = (
+        [
+            dict(r)
+            for r in local.execute(
+                text(
+                    "SELECT "
+                    + ", ".join(select_geo)
+                    + """
         FROM ref.locations l
         LEFT JOIN ref.cities ci ON ci.city_id = l.city_id
         LEFT JOIN ref.regions rg ON rg.region_id = l.region_id
         LEFT JOIN ref.countries co ON co.country_id = l.country_id
         WHERE l.location_id = ANY(:ids)"""
-    ), {"ids": location_ids}).mappings()] if location_ids else []
+                ),
+                {"ids": location_ids},
+            ).mappings()
+        ]
+        if location_ids
+        else []
+    )
 
     company_ids = sorted({j["company_id"] for j in jobs if j.get("company_id") is not None})
-    companies = [dict(r) for r in local.execute(text(
-        "SELECT company_id, company_name, normalized_name, logo_url "
-        "FROM core.companies WHERE company_id = ANY(:ids)"
-    ), {"ids": company_ids}).mappings()] if company_ids else []
+    companies = (
+        [
+            dict(r)
+            for r in local.execute(
+                text(
+                    "SELECT company_id, company_name, normalized_name, logo_url "
+                    "FROM core.companies WHERE company_id = ANY(:ids)"
+                ),
+                {"ids": company_ids},
+            ).mappings()
+        ]
+        if company_ids
+        else []
+    )
 
     def _children(table: str) -> dict[int, list[dict[str, Any]]]:
         grouped: dict[int, list[dict[str, Any]]] = {}
@@ -467,15 +525,22 @@ def _load_local(source_code: str, local: Connection) -> dict[str, Any]:
     }
 
 
-def push(source_code: str, dry_run: bool) -> dict[str, Any]:
+def push(source_code: str, dry_run: bool) -> dict[str, Any]:  # noqa: C901 - orchestration
     local_dsn = _dsn("LOCAL_DATABASE_URL")
     neon_dsn = _dsn("NEON_DATABASE_URL")
 
     stats: dict[str, Any] = {
-        "jobs_inserted": 0, "jobs_updated": 0, "jobs_duplicate_links": 0,
-        "companies_created": 0, "locations_created": 0, "locations_reused": 0,
-        "descriptions": 0, "salaries": 0, "salary_history_rows": 0,
-        "job_skill_rows": 0, "job_category_rows": 0,
+        "jobs_inserted": 0,
+        "jobs_updated": 0,
+        "jobs_duplicate_links": 0,
+        "companies_created": 0,
+        "locations_created": 0,
+        "locations_reused": 0,
+        "descriptions": 0,
+        "salaries": 0,
+        "salary_history_rows": 0,
+        "job_skill_rows": 0,
+        "job_category_rows": 0,
     }
 
     local = create_engine(local_dsn)
@@ -501,10 +566,13 @@ def push(source_code: str, dry_run: bool) -> dict[str, Any]:
             # Existing Neon rows for this source, keyed by the natural key.
             existing = {
                 (r["source_job_id"], r["posting_date"]): r["job_id"]
-                for r in nc.execute(text(
-                    "SELECT job_id, source_job_id, posting_date FROM core.jobs "
-                    "WHERE source_id = :source_id"
-                ), {"source_id": neon_source_id}).mappings()
+                for r in nc.execute(
+                    text(
+                        "SELECT job_id, source_job_id, posting_date FROM core.jobs "
+                        "WHERE source_id = :source_id"
+                    ),
+                    {"source_id": neon_source_id},
+                ).mappings()
             }
 
             local_job_cols = _columns(lc, "core.jobs")
@@ -513,15 +581,28 @@ def push(source_code: str, dry_run: bool) -> dict[str, Any]:
 
             refs = _RefIndex(lc, nc, stats)
 
-            insert_cols = [c for c in ["source_id", "source_job_id", "original_url",
-                                       "company_id", "job_title", "location_id"]
-                           if c in both] + [c for c in _RAW_JOB_COLS if c in both] \
+            insert_cols = (
+                [
+                    c
+                    for c in [
+                        "source_id",
+                        "source_job_id",
+                        "original_url",
+                        "company_id",
+                        "job_title",
+                        "location_id",
+                    ]
+                    if c in both
+                ]
+                + [c for c in _RAW_JOB_COLS if c in both]
                 + [c for c in _ENRICH_JOB_COLS if c in both]
+            )
             # de-duplicate while preserving order (company_id etc. appear once)
             insert_cols = list(dict.fromkeys(insert_cols))
 
-            raw_update_cols = [c for c in _RAW_JOB_COLS if c in both
-                               and c not in _RAW_UPDATE_EXCLUDED]
+            raw_update_cols = [
+                c for c in _RAW_JOB_COLS if c in both and c not in _RAW_UPDATE_EXCLUDED
+            ]
             enrich_update_cols = [c for c in _ENRICH_JOB_COLS if c in both]
 
             def _job_params(job: dict[str, Any]) -> dict[str, Any]:
@@ -542,16 +623,14 @@ def push(source_code: str, dry_run: bool) -> dict[str, Any]:
             insert_sql = _insert_sql("core.jobs", insert_cols, returning="job_id")
             update_setters = [f"{c} = :{c}" for c in raw_update_cols]
             update_setters += [
-                "first_scraped_at = LEAST(CAST(:first_scraped_at AS timestamptz), first_scraped_at)",
-                "last_scraped_at = GREATEST(CAST(:last_scraped_at AS timestamptz), last_scraped_at)",
+                "first_scraped_at = LEAST("
+                "CAST(:first_scraped_at AS timestamptz), first_scraped_at)",
+                "last_scraped_at = GREATEST("
+                "CAST(:last_scraped_at AS timestamptz), last_scraped_at)",
             ]
             for c in enrich_update_cols:
-                update_setters.append(
-                    f"{c} = COALESCE(CAST(:{c} AS {_ENRICH_SQL_TYPE[c]}), {c})"
-                )
-            update_sql = (
-                f"UPDATE core.jobs SET {', '.join(update_setters)} WHERE job_id = :job_id"
-            )
+                update_setters.append(f"{c} = COALESCE(CAST(:{c} AS {_ENRICH_SQL_TYPE[c]}), {c})")
+            update_sql = f"UPDATE core.jobs SET {', '.join(update_setters)} WHERE job_id = :job_id"
 
             job_id_map: dict[int, int] = {}  # local job_id -> Neon job_id
             duplicates: list[tuple[int, int]] = []  # (local job, local canonical)
@@ -565,7 +644,9 @@ def push(source_code: str, dry_run: bool) -> dict[str, Any]:
                 # Company/location resolution writes (create-on-demand), so it
                 # must run inside the same transaction as the jobs it feeds.
                 company_map = {c["company_id"]: refs.company_id(c) for c in data["companies"]}
-                location_map = {l["location_id"]: refs.location_id(l) for l in data["locations"]}
+                location_map = {
+                    row["location_id"]: refs.location_id(row) for row in data["locations"]
+                }
 
                 for job in data["jobs"]:
                     key = (job["source_job_id"], job["posting_date"])
@@ -592,16 +673,24 @@ def push(source_code: str, dry_run: bool) -> dict[str, Any]:
                             "which is not part of this push (duplicate links must stay "
                             "inside one source's pushed rows)"
                         )
-                    nc.execute(text(
-                        "UPDATE core.jobs SET is_duplicate_of = :canonical "
-                        "WHERE job_id = :job_id"
-                    ), {"canonical": canonical, "job_id": job_id_map[local_job_id]})
+                    nc.execute(
+                        text(
+                            "UPDATE core.jobs SET is_duplicate_of = :canonical "
+                            "WHERE job_id = :job_id"
+                        ),
+                        {"canonical": canonical, "job_id": job_id_map[local_job_id]},
+                    )
                     stats["jobs_duplicate_links"] += 1
 
                 # --- children ------------------------------------------------
-                neon_desc_cols = [c for c in (_columns(lc, "core.job_descriptions")
-                                              & _columns(nc, "core.job_descriptions"))
-                                  if c not in ("created_at", "updated_at", "description_tsv")]
+                neon_desc_cols = [
+                    c
+                    for c in (
+                        _columns(lc, "core.job_descriptions")
+                        & _columns(nc, "core.job_descriptions")
+                    )
+                    if c not in ("created_at", "updated_at", "description_tsv")
+                ]
                 # description_tsv is a GENERATED column in this schema
                 # (to_tsvector('english', COALESCE(description_clean, ''))):
                 # Postgres maintains it on insert/update, so it is never
@@ -614,11 +703,17 @@ def push(source_code: str, dry_run: bool) -> dict[str, Any]:
                         nc.execute(text(desc_sql), params)
                         stats["descriptions"] += 1
 
-                sal_cols = [c for c in (_columns(lc, "salary.job_salaries")
-                                        & _columns(nc, "salary.job_salaries"))
-                            if c not in ("job_salary_id", "created_at", "updated_at")]
+                sal_cols = [
+                    c
+                    for c in (
+                        _columns(lc, "salary.job_salaries") & _columns(nc, "salary.job_salaries")
+                    )
+                    if c not in ("job_salary_id", "created_at", "updated_at")
+                ]
                 sal_sql = _upsert_sql(
-                    "salary.job_salaries", sal_cols, ["job_id"],
+                    "salary.job_salaries",
+                    sal_cols,
+                    ["job_id"],
                     coalesce_cols={"normalized_annual_min_usd", "normalized_annual_max_usd"}
                     & set(sal_cols),
                 )
@@ -626,7 +721,9 @@ def push(source_code: str, dry_run: bool) -> dict[str, Any]:
                     for row in rows:
                         params = {c: row.get(c) for c in sal_cols}
                         if "currency_id" in params:
-                            params["currency_id"] = refs.translate("currency", row.get("currency_id"))
+                            params["currency_id"] = refs.translate(
+                                "currency", row.get("currency_id")
+                            )
                         params["job_id"] = job_id_map[local_jid]
                         nc.execute(text(sal_sql), params)
                         stats["salaries"] += 1
@@ -634,28 +731,41 @@ def push(source_code: str, dry_run: bool) -> dict[str, Any]:
                 # History / skills / categories: replaced per job -- but only
                 # for jobs that HAVE local rows, so Neon-side rows for jobs
                 # this push doesn't own are never touched.
-                hist_cols = [c for c in (_columns(lc, "salary.salary_history")
-                                         & _columns(nc, "salary.salary_history"))
-                             if c not in ("salary_history_id", "created_at", "updated_at")]
+                hist_cols = [
+                    c
+                    for c in (
+                        _columns(lc, "salary.salary_history")
+                        & _columns(nc, "salary.salary_history")
+                    )
+                    if c not in ("salary_history_id", "created_at", "updated_at")
+                ]
                 for local_jid, rows in data["salary_history"].items():
                     neon_jid = job_id_map[local_jid]
-                    nc.execute(text("DELETE FROM salary.salary_history WHERE job_id = :job_id"),
-                               {"job_id": neon_jid})
+                    nc.execute(
+                        text("DELETE FROM salary.salary_history WHERE job_id = :job_id"),
+                        {"job_id": neon_jid},
+                    )
                     for row in rows:
                         params = {c: row.get(c) for c in hist_cols}
                         if "currency_id" in params:
-                            params["currency_id"] = refs.translate("currency", row.get("currency_id"))
+                            params["currency_id"] = refs.translate(
+                                "currency", row.get("currency_id")
+                            )
                         params["job_id"] = neon_jid
                         nc.execute(text(_insert_sql("salary.salary_history", hist_cols)), params)
                         stats["salary_history_rows"] += 1
 
-                skill_cols = [c for c in (_columns(lc, "bridge.job_skills")
-                                          & _columns(nc, "bridge.job_skills"))
-                              if c not in ("created_at", "updated_at")]
+                skill_cols = [
+                    c
+                    for c in (_columns(lc, "bridge.job_skills") & _columns(nc, "bridge.job_skills"))
+                    if c not in ("created_at", "updated_at")
+                ]
                 for local_jid, rows in data["job_skills"].items():
                     neon_jid = job_id_map[local_jid]
-                    nc.execute(text("DELETE FROM bridge.job_skills WHERE job_id = :job_id"),
-                               {"job_id": neon_jid})
+                    nc.execute(
+                        text("DELETE FROM bridge.job_skills WHERE job_id = :job_id"),
+                        {"job_id": neon_jid},
+                    )
                     for row in rows:
                         params = {c: row.get(c) for c in skill_cols}
                         if "skill_id" in params:
@@ -664,18 +774,26 @@ def push(source_code: str, dry_run: bool) -> dict[str, Any]:
                         nc.execute(text(_insert_sql("bridge.job_skills", skill_cols)), params)
                         stats["job_skill_rows"] += 1
 
-                cat_cols = [c for c in (_columns(lc, "bridge.job_categories_map")
-                                        & _columns(nc, "bridge.job_categories_map"))
-                            if c not in ("created_at", "updated_at")]
+                cat_cols = [
+                    c
+                    for c in (
+                        _columns(lc, "bridge.job_categories_map")
+                        & _columns(nc, "bridge.job_categories_map")
+                    )
+                    if c not in ("created_at", "updated_at")
+                ]
                 for local_jid, rows in data["job_categories"].items():
                     neon_jid = job_id_map[local_jid]
-                    nc.execute(text("DELETE FROM bridge.job_categories_map WHERE job_id = :job_id"),
-                               {"job_id": neon_jid})
+                    nc.execute(
+                        text("DELETE FROM bridge.job_categories_map WHERE job_id = :job_id"),
+                        {"job_id": neon_jid},
+                    )
                     for row in rows:
                         params = {c: row.get(c) for c in cat_cols}
                         if "job_category_id" in params:
                             params["job_category_id"] = refs.translate(
-                                "job_category", row.get("job_category_id"))
+                                "job_category", row.get("job_category_id")
+                            )
                         params["job_id"] = neon_jid
                         nc.execute(text(_insert_sql("bridge.job_categories_map", cat_cols)), params)
                         stats["job_category_rows"] += 1
@@ -698,9 +816,15 @@ def _report(stats: dict[str, Any], source_code: str, dry_run: bool) -> None:
     print(line)
     print(f"  PUSH REPORT   source={source_code}   {mode}")
     print(line)
-    print(f"  core.jobs                inserted={stats['jobs_inserted']:<5} updated={stats['jobs_updated']}")
+    print(
+        f"  core.jobs                inserted={stats['jobs_inserted']:<5} "
+        f"updated={stats['jobs_updated']}"
+    )
     print(f"  core.companies           created={stats['companies_created']}")
-    print(f"  ref.locations            created={stats['locations_created']}  reused={stats['locations_reused']}")
+    print(
+        f"  ref.locations            created={stats['locations_created']}  "
+        f"reused={stats['locations_reused']}"
+    )
     print(f"  core.job_descriptions    written={stats['descriptions']}")
     print(f"  salary.job_salaries      written={stats['salaries']}")
     print(f"  salary.salary_history    rows={stats['salary_history_rows']}")
@@ -714,10 +838,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Push locally-scraped rows into Neon (no scraping)."
     )
-    parser.add_argument("--source-code", default="indeed",
-                        help="ref.sources.source_code to push (default: indeed)")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="run every step, then roll back (report only)")
+    parser.add_argument(
+        "--source-code", default="indeed", help="ref.sources.source_code to push (default: indeed)"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="run every step, then roll back (report only)"
+    )
     args = parser.parse_args()
 
     try:

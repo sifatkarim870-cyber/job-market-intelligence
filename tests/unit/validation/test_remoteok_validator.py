@@ -110,9 +110,7 @@ class TestDuplicateDetection:
         ]
         raw_jobs = [{"id": "1"}, {"id": "2"}, {"id": "1"}]
 
-        report = RemoteOKBatchValidator(settings=_LENIENT_SETTINGS).validate(
-            raw_jobs, parsed_jobs
-        )
+        report = RemoteOKBatchValidator(settings=_LENIENT_SETTINGS).validate(raw_jobs, parsed_jobs)
 
         assert report.passed is False
         assert report.duplicate_source_job_ids == ["1"]
@@ -122,9 +120,7 @@ class TestDuplicateDetection:
         parsed_jobs = [make_raw_remoteok_job(id=str(i)) for i in range(5)]
         raw_jobs = [{"id": str(i)} for i in range(5)]
 
-        report = RemoteOKBatchValidator(settings=_LENIENT_SETTINGS).validate(
-            raw_jobs, parsed_jobs
-        )
+        report = RemoteOKBatchValidator(settings=_LENIENT_SETTINGS).validate(raw_jobs, parsed_jobs)
 
         assert report.duplicate_source_job_ids == []
 
@@ -137,9 +133,7 @@ class TestMissingFieldRates:
         ]
         raw_jobs = [{"id": "1"}, {"id": "2"}]
 
-        report = RemoteOKBatchValidator(settings=_LENIENT_SETTINGS).validate(
-            raw_jobs, parsed_jobs
-        )
+        report = RemoteOKBatchValidator(settings=_LENIENT_SETTINGS).validate(raw_jobs, parsed_jobs)
 
         assert report.missing_field_rates["location_raw"] == 0.5
         assert report.missing_field_rates["salary"] == 0.5

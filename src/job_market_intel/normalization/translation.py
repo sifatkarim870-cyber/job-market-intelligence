@@ -553,9 +553,7 @@ class NllbTranslator:
             if not text_value or not text_value.strip():
                 chunks: list[str] = []
             else:
-                chunks = list(
-                    split_into_chunks(text_value, self._settings.max_chars_per_chunk)
-                )
+                chunks = list(split_into_chunks(text_value, self._settings.max_chars_per_chunk))
             per_text_chunks.append(chunks)
             flat_chunks.extend(chunks)
 

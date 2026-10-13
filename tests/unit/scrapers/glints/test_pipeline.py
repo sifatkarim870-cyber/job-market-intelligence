@@ -72,7 +72,13 @@ def persisted(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
     """
     calls: list[dict[str, Any]] = []
 
-    def fake_persist(self: Any, session: Any, cleaned_jobs: list[Any], raw_count: int, result: Any) -> None:
+    def fake_persist(
+        self: Any,
+        session: Any,
+        cleaned_jobs: list[Any],
+        raw_count: int,
+        result: Any,
+    ) -> None:
         calls.append({"cleaned_jobs": cleaned_jobs, "raw_count": raw_count, "result": result})
 
     monkeypatch.setattr(GlintsPipeline, "_persist_with_session", fake_persist)
@@ -99,9 +105,7 @@ class TestSkipKnownWiring:
         assert result.session_id is None
         assert persisted == []  # store_db=False: nothing persisted
 
-    def test_db_run_passes_known_ids_as_exclusion(
-        self, persisted: list[dict[str, Any]]
-    ) -> None:
+    def test_db_run_passes_known_ids_as_exclusion(self, persisted: list[dict[str, Any]]) -> None:
         client = FakeClient()
         pipeline = _pipeline(client, FakeRepository(ids={KNOWN_ID}))
 

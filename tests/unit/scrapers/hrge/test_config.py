@@ -43,9 +43,7 @@ class TestDefaults:
         """
         rows = HRGeSettings().max_pages_per_run * HRGeSettings().page_size
         budget_seconds = (
-            HRGeSettings().detail_budget_seconds
-            + rows * SECONDS_PER_PERSISTED_ROW
-            + SETUP_SECONDS
+            HRGeSettings().detail_budget_seconds + rows * SECONDS_PER_PERSISTED_ROW + SETUP_SECONDS
         )
         assert budget_seconds < CI_STEP_SECONDS, (
             f"{rows} rows projects to {budget_seconds / 60:.0f} min, "

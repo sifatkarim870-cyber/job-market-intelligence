@@ -96,8 +96,7 @@ def test_client_source_does_not_catch_requests_error():
             caught_names |= names_of(node.type)
 
     assert "RequestsError" not in caught_names, (
-        f"client.py catches {sorted(caught_names)}; RequestsError does not exist "
-        "in curl_cffi"
+        f"client.py catches {sorted(caught_names)}; RequestsError does not exist in curl_cffi"
     )
     assert "RequestException" in caught_names
     assert "CurlError" in caught_names

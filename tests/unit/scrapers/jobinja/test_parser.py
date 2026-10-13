@@ -42,10 +42,12 @@ class TestParseJobs:
         assert [j.source_job_id for j in jobs] == ["11111", "22222"]
 
     def test_page_without_job_posting_is_skipped_not_raised(self) -> None:
-        jobs = JobinjaParser().parse_jobs([
-            _entry(),
-            {"url": _URL_B, "html": "<html><body>maintenance</body></html>"},
-        ])
+        jobs = JobinjaParser().parse_jobs(
+            [
+                _entry(),
+                {"url": _URL_B, "html": "<html><body>maintenance</body></html>"},
+            ]
+        )
         assert len(jobs) == 1
 
     def test_page_without_ldjson_is_skipped(self) -> None:

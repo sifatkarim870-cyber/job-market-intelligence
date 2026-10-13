@@ -74,7 +74,13 @@ def persisted(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
     """
     calls: list[dict[str, Any]] = []
 
-    def fake_persist(self: Any, session: Any, cleaned_jobs: list[Any], raw_count: int, result: Any) -> None:
+    def fake_persist(
+        self: Any,
+        session: Any,
+        cleaned_jobs: list[Any],
+        raw_count: int,
+        result: Any,
+    ) -> None:
         calls.append({"cleaned_jobs": cleaned_jobs, "raw_count": raw_count, "result": result})
 
     monkeypatch.setattr(JobinjaPipeline, "_persist_with_session", fake_persist)
@@ -98,9 +104,7 @@ class TestRunWiring:
         assert result.session_id is None
         assert persisted == []
 
-    def test_db_run_persists_and_records_session(
-        self, persisted: list[dict[str, Any]]
-    ) -> None:
+    def test_db_run_persists_and_records_session(self, persisted: list[dict[str, Any]]) -> None:
         # One raw record whose HTML parses into a real job (minimal
         # JobPosting — enough for parser + cleaner to run end-to-end).
         html = (

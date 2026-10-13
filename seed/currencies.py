@@ -6,6 +6,7 @@ markets (covers every currency likely to appear across RemoteOK, Indeed,
 LinkedIn, Glassdoor postings in year one). Extend this list — it's just
 data — as new markets are onboarded; no code change required.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Connection

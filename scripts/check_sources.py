@@ -21,8 +21,9 @@ def main() -> int:
         # Scalar subqueries instead of joins: joining jobs to sessions
         # multiplies rows (every job x every session of that source) and
         # silently inflates the counts.
-        rows = session.execute(text(
-            """
+        rows = session.execute(
+            text(
+                """
             SELECT s.source_code,
                    s.source_name,
                    s.is_active,
@@ -40,21 +41,23 @@ def main() -> int:
             FROM ref.sources s
             ORDER BY jobs DESC, s.source_code
             """
-        )).all()
+            )
+        ).all()
         target = session.get_bind().url.render_as_string(hide_password=True)
 
     print(f"Target database: {target}")
     print()
-    header = f"{'source_code':<20} {'jobs':>7} {'active':>7}  {'last run (UTC)':<22} {'status':<10} posting dates"
+    header = (
+        f"{'source_code':<20} {'jobs':>7} {'active':>7}  "
+        f"{'last run (UTC)':<22} {'status':<10} posting dates"
+    )
     print(header)
     print("-" * len(header))
     for r in rows:
         jobs = r.jobs
         last_run = r.last_run.strftime("%Y-%m-%d %H:%M") if r.last_run else "-"
         status = r.last_status or "-"
-        dates = (
-            f"{r.oldest_posting} .. {r.newest_posting}" if jobs else ""
-        )
+        dates = f"{r.oldest_posting} .. {r.newest_posting}" if jobs else ""
         active = "yes" if r.is_active else "no"
         print(f"{r.source_code:<20} {jobs:>7} {active:>7}  {last_run:<22} {status:<10} {dates}")
 

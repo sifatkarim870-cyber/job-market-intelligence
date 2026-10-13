@@ -19,9 +19,7 @@ class RawThemuseJob(BaseModel):
 
     id: str = Field(..., description="Numeric id, stringified; the stable identity.")
     name: str = Field(..., description="Job title.")
-    company: dict[str, Any] | None = Field(
-        default=None, description="{id, name, short_name}."
-    )
+    company: dict[str, Any] | None = Field(default=None, description="{id, name, short_name}.")
     contents: str | None = Field(default=None, description="HTML description.")
     publication_date: str | None = Field(
         default=None, description="ISO-8601 publication timestamp."

@@ -21,17 +21,17 @@ _MISSING_FIELD_CHECKS = {
     "location_parts": lambda job: not job.location_parts,
     "description_html": lambda job: not job.description_html or not job.description_html.strip(),
     "posting_date": lambda job: job.posting_date is None,
-    "skills_tags": lambda job: not (
-        job.category_raws
-        or job.software_names
-        or job.language_names
-        or job.industry_raws
-        or job.skills_raws
+    "skills_tags": lambda job: (
+        not (
+            job.category_raws
+            or job.software_names
+            or job.language_names
+            or job.industry_raws
+            or job.skills_raws
+        )
     ),
     "work_type": lambda job: not job.work_type_en and not job.is_internship,
-    "salary_disclosure": lambda job: (
-        job.salary_min_raw is None and job.salary_max_raw is None
-    ),
+    "salary_disclosure": lambda job: job.salary_min_raw is None and job.salary_max_raw is None,
 }
 
 

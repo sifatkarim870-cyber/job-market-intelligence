@@ -1,4 +1,4 @@
-﻿"""Publish the state CI needs to run without a cloud database.
+"""Publish the state CI needs to run without a cloud database.
 
 Replaces the Neon dependency. Neon's free quota is exhausted ("Your account or
 project has exceeded the quota"), and every hosted free Postgres has some quota
@@ -73,14 +73,19 @@ def _dump_schema(work: pathlib.Path) -> pathlib.Path:
     subprocess.run(
         [
             str(_pg_dump_binary()),
-            "-h", "localhost",
-            "-p", "5432",
-            "-U", "app_user",
-            "-d", "job_market_intelligence",
+            "-h",
+            "localhost",
+            "-p",
+            "5432",
+            "-U",
+            "app_user",
+            "-d",
+            "job_market_intelligence",
             "--schema-only",
             "--no-owner",
             "--no-privileges",
-            "--file", str(out),
+            "--file",
+            str(out),
         ],
         check=True,
         env=env,
@@ -190,7 +195,6 @@ def _write_parquet(engine, schema: str, table: str, out: pathlib.Path) -> int:
     return len(rows)
 
 
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dry-run", action="store_true", help="build locally, upload nothing")
@@ -235,4 +239,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

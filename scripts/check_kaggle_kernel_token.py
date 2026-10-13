@@ -62,9 +62,7 @@ A healthy run ends with the overlay upload, not a SystemExit."""
 
 
 def _token_available() -> bool:
-    return TOKEN_FILE.exists() and TOKEN_FILE.read_text(encoding="utf-8").strip().startswith(
-        "hf_"
-    )
+    return TOKEN_FILE.exists() and TOKEN_FILE.read_text(encoding="utf-8").strip().startswith("hf_")
 
 
 def main(argv: list[str] | None = None) -> int:

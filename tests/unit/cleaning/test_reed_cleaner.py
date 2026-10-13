@@ -119,9 +119,7 @@ class TestEmploymentTypePrecedence:
 
     def test_unrecognized_contract_type_falls_back_to_hours(self) -> None:
         assert (
-            _map_employment_type(
-                full_time=True, part_time=False, contract_type_raw="Zero Hours"
-            )
+            _map_employment_type(full_time=True, part_time=False, contract_type_raw="Zero Hours")
             == "full_time"
         )
 

@@ -12,7 +12,11 @@ the source offers, confirmed live during scoping (2026-10-04).
 
 Typical usage:
 
-    from job_market_intel.scrapers.emploitic import EmploiticClient, EmploiticParser, EmploiticSettings
+    from job_market_intel.scrapers.emploitic import (
+        EmploiticClient,
+        EmploiticParser,
+        EmploiticSettings,
+    )
 
     settings = EmploiticSettings()
     client = EmploiticClient(settings=settings)

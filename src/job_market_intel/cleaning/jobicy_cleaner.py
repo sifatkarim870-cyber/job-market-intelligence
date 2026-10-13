@@ -78,9 +78,7 @@ class JobicyCleaner:
         return cleaned
 
     def clean_job(self, raw: RawJobicyJob) -> CleanedJob:
-        description_clean = clean_html_text(raw.jobDescription) or clean_plain_text(
-            raw.jobExcerpt
-        )
+        description_clean = clean_html_text(raw.jobDescription) or clean_plain_text(raw.jobExcerpt)
         word_count = len(description_clean.split()) if description_clean else 0
 
         # Industry tags and the seniority level are this feed's tag list.
@@ -124,7 +122,5 @@ class JobicyCleaner:
             # source (salary_min/max are None), so the period is never used to
             # annualise anything.
             pay_period=DEFAULT_PAY_PERIOD,
-            employment_type_code=(
-                raw.jobType[0] if raw.jobType else None
-            ),
+            employment_type_code=(raw.jobType[0] if raw.jobType else None),
         )

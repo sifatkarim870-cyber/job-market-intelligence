@@ -53,7 +53,7 @@ def _select_aliases() -> list[str]:
         if not text or text.upper() == "SELECT":
             continue
         alias = text.split(" AS ")[-1].strip().lower()
-        cleaned.append(alias.split(".")[-1])   # drop the s./d./j. qualifier
+        cleaned.append(alias.split(".")[-1])  # drop the s./d./j. qualifier
     return cleaned
 
 

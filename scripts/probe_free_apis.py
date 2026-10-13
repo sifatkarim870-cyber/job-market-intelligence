@@ -33,13 +33,14 @@ CANDIDATES: list[tuple[str, str, tuple[str, ...]]] = [
     ("themuse", "https://www.themuse.com/api/public/jobs?page=1", ()),
     ("remotive", "https://remotive.com/api/remote-jobs?limit=3", ("jobs",)),
     ("remoteok", "https://remoteok.com/api", ()),
-    ("nofluffjobs", "https://nofluffjobs.com/api/search/posting?criteria="
-                    "&page=1&sortBy=published&orderBy=DESC", ("postings",)),
+    (
+        "nofluffjobs",
+        "https://nofluffjobs.com/api/search/posting?criteria=&page=1&sortBy=published&orderBy=DESC",
+        ("postings",),
+    ),
     ("justjoin", "https://justjoin.it/api/offers", ("offers",)),
-    ("djinni", "https://djinni.co/api/v2/user-posts?no_auth=true&type=all"
-               "&limit=3", ("posts",)),
+    ("djinni", "https://djinni.co/api/v2/user-posts?no_auth=true&type=all&limit=3", ("posts",)),
     ("remotive_rss", "https://remotive.com/api/remote-jobs?limit=3", ("jobs",)),
-
     # ---- ATS public boards: the high-leverage family ------------------
     ("greenhouse_gitlab", "https://boards-api.greenhouse.io/v1/boards/gitlab/jobs", ("jobs",)),
     ("greenhouse_stripe", "https://boards-api.greenhouse.io/v1/boards/stripe/jobs", ("jobs",)),
@@ -49,10 +50,16 @@ CANDIDATES: list[tuple[str, str, tuple[str, ...]]] = [
     ("lever_shopify", "https://api.lever.co/v0/postings/shopify?mode=json", ("data",)),
     ("lever_plaid", "https://api.lever.co/v0/postings/plaid?mode=json", ("data",)),
     ("ashby_railway", "https://api.ashbyhq.com/posting-api/job-board/railway", ("jobs",)),
-    ("workable_elcom", "https://apply.workable.com/api/v1/widget/accounts/elcom"
-                       "?details=true", ("jobs",)),
-    ("smartrecruiters_bosch", "https://api.smartrecruiters.com/v1/companies/"
-                              "BoschGroup/postings?limit=3", ("content",)),
+    (
+        "workable_elcom",
+        "https://apply.workable.com/api/v1/widget/accounts/elcom?details=true",
+        ("jobs",),
+    ),
+    (
+        "smartrecruiters_bosch",
+        "https://api.smartrecruiters.com/v1/companies/BoschGroup/postings?limit=3",
+        ("content",),
+    ),
     ("recruitee_ing", "https://ing.recruitee.com/api/offers/", ("offers",)),
     ("breezy_linear", "https://breezy.hr/json/linear", ()),
     ("teamtailor_deel", "https://api.teamtailor.com/jobs/deel?version=v2", ("jobs",)),
@@ -72,8 +79,7 @@ def dig(payload: object, path: tuple[str, ...]) -> tuple[dict | None, int | None
     if node is None and isinstance(payload, dict):
         node = payload
     if isinstance(node, dict):
-        for key in ("data", "jobs", "posts", "offers", "postings", "content",
-                    "results", "list"):
+        for key in ("data", "jobs", "posts", "offers", "postings", "content", "results", "list"):
             if isinstance(node.get(key), list):
                 node = node[key]
                 break
@@ -106,7 +112,7 @@ def main() -> int:
             entry["ok"] = False
             entry["err"] = f"{type(exc).__name__}: {str(exc)[:90]}"
         rows.append(entry)
-        time.sleep(0.4)          # be polite; these are third-party servers
+        time.sleep(0.4)  # be polite; these are third-party servers
 
     print(f"{'label':<22}{'ms':>6}  n      first fields")
     print("-" * 116)
@@ -119,7 +125,8 @@ def main() -> int:
     for e in ok:
         print(f"   {e['label']:<22} n={e['n']}")
     (Path(__file__).resolve().parent / "probe_free_apis_result.json").write_text(
-        json.dumps(rows, indent=2, default=str), encoding="utf-8")
+        json.dumps(rows, indent=2, default=str), encoding="utf-8"
+    )
     print("\nwrote scripts/probe_free_apis_result.json")
     return 0
 

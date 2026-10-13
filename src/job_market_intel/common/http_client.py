@@ -22,7 +22,9 @@ import requests
 #: sites reject requests with no User-Agent at all, so sending *something*
 #: identifiable is both more transparent and more reliable than sending
 #: nothing.
-DEFAULT_USER_AGENT = "JobMarketIntelligencePlatform-Research/1.0 (+https://example-research-project.local)"
+DEFAULT_USER_AGENT = (
+    "JobMarketIntelligencePlatform-Research/1.0 (+https://example-research-project.local)"
+)
 
 
 class HTTPClientError(Exception):
@@ -111,9 +113,7 @@ def fetch_json(
     # (see scrapers/reed/client.py's module docstring). No existing
     # source has ever been observed to return 429, so this is additive.
     if response.status_code == 429:
-        raise TransientHTTPError(
-            f"{url} returned 429 (rate limited): {response.text[:500]!r}"
-        )
+        raise TransientHTTPError(f"{url} returned 429 (rate limited): {response.text[:500]!r}")
     if response.status_code >= 400:
         raise PermanentHTTPError(
             f"{url} returned client error status {response.status_code}: {response.text[:500]!r}"

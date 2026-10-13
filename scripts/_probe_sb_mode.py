@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import sys
 
-MODE = sys.argv[1]
-
 from seleniumbase import Driver
+
+MODE = sys.argv[1]
 
 if MODE == "plain":
     kw = {"browser": "chrome", "headless2": True}

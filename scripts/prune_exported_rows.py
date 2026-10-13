@@ -136,9 +136,7 @@ def main(argv: list[str] | None = None) -> int:
     engine = _engine(args.dsn)
 
     with engine.connect() as conn:
-        merged = conn.execute(
-            text(f"SELECT count(*) FROM {LEDGER_TABLE}")
-        ).scalar_one()
+        merged = conn.execute(text(f"SELECT count(*) FROM {LEDGER_TABLE}")).scalar_one()
 
     logger.info("ledger holds {} merged shard(s)", merged)
     if merged == 0:
@@ -152,9 +150,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     ids = prunable_job_ids(engine.connect(), args.keep_days, args.limit)
-    logger.info(
-        "{} job(s) older than {} days have a merged shard", f"{len(ids):,}", args.keep_days
-    )
+    logger.info("{} job(s) older than {} days have a merged shard", f"{len(ids):,}", args.keep_days)
 
     if args.dry_run:
         logger.info("--dry-run: nothing deleted")

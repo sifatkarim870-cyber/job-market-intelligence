@@ -26,11 +26,7 @@ import pathlib
 
 import pytest
 
-_SCRIPT = (
-    pathlib.Path(__file__).resolve().parents[3]
-    / "scripts"
-    / "export_corpus_to_hf.py"
-)
+_SCRIPT = pathlib.Path(__file__).resolve().parents[3] / "scripts" / "export_corpus_to_hf.py"
 
 
 def _module():

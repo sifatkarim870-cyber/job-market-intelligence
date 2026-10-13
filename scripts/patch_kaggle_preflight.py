@@ -61,7 +61,7 @@ import tempfile
 KERNEL = "mskarim870/nllb-translate"
 HEAD = "def main():"
 
-PREFIX = '''    # Resolve the token BEFORE any expensive work. find_token() is otherwise
+PREFIX = """    # Resolve the token BEFORE any expensive work. find_token() is otherwise
     # first reached inside upload_overlay(), which runs only at the first
     # checkpoint -- after five batches of translation. A run without a usable
     # secret therefore loaded the model, translated for as long as it could,
@@ -70,9 +70,9 @@ PREFIX = '''    # Resolve the token BEFORE any expensive work. find_token() is o
     find_token()
     log("token resolved before starting")
 
-'''
+"""
 
-GPU_WARNING = '''    if info["gpus"] == 0:
+GPU_WARNING = """    if info["gpus"] == 0:
         # enable_gpu is true in kernel-metadata.json, so 0 here means Kaggle
         # allocated no GPU slot, not that GPU was switched off. torch is
         # resolved before any user code runs, so a +cpu build proves it. This
@@ -82,9 +82,9 @@ GPU_WARNING = '''    if info["gpus"] == 0:
         # and may reach the time cap first -- so this warns rather than exits.
         log("WARNING: no GPU allocated although enable_gpu=true. Kaggle "
             "assigned no slot; translation will run on CPU.")
-'''
+"""
 
-ANCHOR = '    log(json.dumps(info))\n'
+ANCHOR = "    log(json.dumps(info))\n"
 
 
 def kaggle(*args: str) -> subprocess.CompletedProcess:
@@ -140,9 +140,7 @@ def patch(nb_path: pathlib.Path) -> list[str]:
 
         lines = source.splitlines(keepends=True)
         tree = ast.parse(source)
-        main = next(
-            n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main"
-        )
+        main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main")
         first = main.body[0]
         # 1-based lineno of main's first statement -> 0-based insert index.
         at = first.lineno - 1
@@ -177,11 +175,7 @@ def call_line(main: ast.FunctionDef, name: str) -> int:
     which is exactly what happened while testing this function.
     """
     for node in ast.walk(main):
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id == name
-        ):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == name:
             return node.lineno
     raise SystemExit(f"{name}() is never called inside main()")
 

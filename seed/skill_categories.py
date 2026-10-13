@@ -1,6 +1,7 @@
 """Seeds ref.skill_categories — a flat (no parent used in v1) but
 FK-ready hierarchy; parent_category_id is left NULL for all rows today
 and is available for future subcategorization without a migration."""
+
 from __future__ import annotations
 
 from sqlalchemy import Connection
@@ -41,6 +42,9 @@ SKILL_CATEGORIES = [
 def seed_skill_categories(conn: Connection) -> SeedResult:
     rows = [{"category_name": name, "parent_category_id": None} for name in SKILL_CATEGORIES]
     return upsert_many(
-        conn, schema="ref", table_name="skill_categories",
-        rows=rows, conflict_cols=("category_name",),
+        conn,
+        schema="ref",
+        table_name="skill_categories",
+        rows=rows,
+        conflict_cols=("category_name",),
     )

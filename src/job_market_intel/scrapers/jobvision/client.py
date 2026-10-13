@@ -102,9 +102,7 @@ class JobvisionClient:
             if response.status_code in _RETRYABLE_STATUS:
                 raise TransientHTTPError(f"HTTP {response.status_code}")
             if response.status_code >= 400:
-                raise PermanentHTTPError(
-                    f"HTTP {response.status_code}: {response.text[:200]}"
-                )
+                raise PermanentHTTPError(f"HTTP {response.status_code}: {response.text[:200]}")
             return response
 
         try:
@@ -141,13 +139,10 @@ class JobvisionClient:
             body = response.json()
         except ValueError as exc:
             raise JobvisionFetchError(
-                f"Jobvision {what} returned non-JSON (payload shape "
-                f"change or block?): {exc}"
+                f"Jobvision {what} returned non-JSON (payload shape change or block?): {exc}"
             ) from exc
         if not isinstance(body, dict):
-            raise JobvisionFetchError(
-                f"Jobvision {what} returned a non-object JSON payload."
-            )
+            raise JobvisionFetchError(f"Jobvision {what} returned a non-object JSON payload.")
         return body
 
     # -- discovery -------------------------------------------------------

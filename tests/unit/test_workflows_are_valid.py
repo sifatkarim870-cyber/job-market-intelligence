@@ -100,9 +100,9 @@ def test_steps_that_dump_a_database_name_one(path: pathlib.Path):
             if '"$PG_BIN/pg_dump" -h' not in run:
                 continue
             env = step.get("env") or {}
-            assert (
-                "CI_DATABASE_URL" in env or "DATABASE_URL" in env
-            ), f"{path.name}::{job_name}::{name} dumps without naming a DSN"
+            assert "CI_DATABASE_URL" in env or "DATABASE_URL" in env, (
+                f"{path.name}::{job_name}::{name} dumps without naming a DSN"
+            )
 
 
 @pytest.mark.parametrize("path", workflow_files(), ids=lambda p: p.name)

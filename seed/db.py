@@ -4,6 +4,7 @@ Thin wrapper around the database interface built in Step 4.
 This module calls get_engine() from db.engine to get the process-wide
 SQLAlchemy engine.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator

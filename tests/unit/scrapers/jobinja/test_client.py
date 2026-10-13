@@ -90,9 +90,7 @@ class TestListingPacing:
         client._select_job_urls()
         assert client.sleeps == []  # type: ignore[attr-defined]
 
-    def test_no_trailing_pause_once_window_fills(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_no_trailing_pause_once_window_fills(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Window 2 fills on page 1: no request follows, so no pause.
         client = self._paced_client(monkeypatch, delay=0.5, window=2)
         client._select_job_urls()
@@ -125,9 +123,7 @@ class TestSelectJobUrls:
         assert client.requested_pages == [1, 2, 3]  # type: ignore[attr-defined]
 
     def test_window_bounds_the_walk(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        client = JobinjaClient(
-            settings=JobinjaSettings(max_jobs_per_run=1, fetch_delay_seconds=0)
-        )
+        client = JobinjaClient(settings=JobinjaSettings(max_jobs_per_run=1, fetch_delay_seconds=0))
         monkeypatch.setattr(
             client,
             "_request_text",
@@ -137,8 +133,7 @@ class TestSelectJobUrls:
 
     def test_start_page_offsets_the_walk(self, monkeypatch: pytest.MonkeyPatch) -> None:
         client = JobinjaClient(
-            settings=JobinjaSettings(max_jobs_per_run=10, start_page=900,
-                                     fetch_delay_seconds=0)
+            settings=JobinjaSettings(max_jobs_per_run=10, start_page=900, fetch_delay_seconds=0)
         )
         monkeypatch.setattr(
             client,
@@ -157,9 +152,7 @@ class TestSelectJobUrls:
 class TestFetchRawJobsContract:
     @pytest.fixture
     def dry_client(self, monkeypatch: pytest.MonkeyPatch) -> JobinjaClient:
-        return JobinjaClient(
-            settings=JobinjaSettings(max_jobs_per_run=10, fetch_delay_seconds=0)
-        )
+        return JobinjaClient(settings=JobinjaSettings(max_jobs_per_run=10, fetch_delay_seconds=0))
 
     def test_empty_discovery_raises(
         self,

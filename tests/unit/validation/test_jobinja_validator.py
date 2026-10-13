@@ -26,9 +26,7 @@ class TestSettings:
 
 class TestValidateBatch:
     def test_healthy_batch_passes(self, make_raw_jobinja_job) -> None:
-        validator = JobinjaBatchValidator(
-            settings=JobinjaValidationSettings(min_expected_jobs=2)
-        )
+        validator = JobinjaBatchValidator(settings=JobinjaValidationSettings(min_expected_jobs=2))
         raw = [{}, {}]
         parsed = [make_raw_jobinja_job(), make_raw_jobinja_job(source_job_id="2222222")]
         report = validator.validate(raw, parsed)
@@ -36,9 +34,7 @@ class TestValidateBatch:
         assert not report.issues
 
     def test_below_minimum_fails(self, make_raw_jobinja_job) -> None:
-        validator = JobinjaBatchValidator(
-            settings=JobinjaValidationSettings(min_expected_jobs=10)
-        )
+        validator = JobinjaBatchValidator(settings=JobinjaValidationSettings(min_expected_jobs=10))
         report = validator.validate([{}, {}], [make_raw_jobinja_job()])
         assert not report.passed
 
