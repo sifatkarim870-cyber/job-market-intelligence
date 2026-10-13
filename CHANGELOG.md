@@ -57,8 +57,13 @@ All notable changes to this project are documented here.
 - The laptop's PostgreSQL is the system of record and nothing monitors whether
   its nightly sync still runs. HF would drift ahead silently.
 - Two Kaggle GPU kernels with near-identical names (`nllb-translate`,
-  `jmi-translate-hf`). Confirm exactly one owns the schedule and de-schedule
-  the other, or the same class of silent failure recurs.
+  `jmi-translate-hf`). Confirmed 2026-10-13 that `jmi-translate-hf` owns the
+  daily schedule, so `nllb-translate` is an unscheduled duplicate. It is left
+  in place rather than deleted: it holds a UI-attached HF secret that cannot
+  be read back or migrated programmatically, and deleting a working kernel is
+  not reversible. De-scheduling or removing it is a manual UI step.
+  Two near-identical names is plausibly how the stale-token copy went unnoticed
+  in the first place, so this is worth doing deliberately.
 - `ref.sources.is_active` duplicates `config/sources.json`; `activate_sources.py`
   keeps them in step, but they can drift.
 - Indeed is `enabled: false`; `scrape_browser.yml` builds an empty matrix. Its
