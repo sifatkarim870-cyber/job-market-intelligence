@@ -42,6 +42,21 @@ def _clean_db_env(monkeypatch):
         "DB_POOL_PRE_PING",
         "DB_ECHO",
         "DB_APPLICATION_NAME",
+        # These four are NOT DB_* tuning variables -- they are the other
+        # inputs db.target.resolve_dsn() consults, and leaving them set makes
+        # this fixture incomplete in a way that only shows up in CI.
+        #
+        # GITHUB_ACTIONS is the one that bites: on a runner it is "true", so
+        # resolve_dsn() falls through to CONTAINER_DSN (jmi_ci) even with
+        # DATABASE_URL deleted. "Nothing is configured" therefore never holds,
+        # get_database_config() never raises, and every built-from-parts URL
+        # comes back containing jmi_ci. These tests passed for as long as they
+        # had only ever been run on the laptop that wrote them; the quality
+        # gate found it on its first run.
+        "GITHUB_ACTIONS",
+        "CI_DATABASE_URL",
+        "CI_CONTAINER_DB",
+        "JMI_USE_REMOTE_DB",
     ):
         monkeypatch.delenv(var, raising=False)
 

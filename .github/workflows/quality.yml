@@ -67,8 +67,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      # --extra selenium as well as dev/test: tests/unit/scrapers/indeed/ imports
+      # selenium.webdriver to assert the proxy flags become Chrome arguments.
+      # seleniumbase is a separate extra precisely because it is a heavy
+      # browser-stack dependency, but a gate that skips those tests silently is
+      # worse than a slow one.
       - name: Install
-        run: uv sync --extra dev --extra test
+        run: uv sync --extra dev --extra test --extra selenium
 
       # No TEST_DATABASE_URL is set, so the integration tests skip themselves
       # via the requires_live_db collection hook. That is deliberate: this gate
