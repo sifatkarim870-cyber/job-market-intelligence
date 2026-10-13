@@ -14,6 +14,7 @@ is only one endpoint and a failure means something systemic is wrong.
 
 from __future__ import annotations
 
+import math
 import time
 
 from loguru import logger
@@ -90,8 +91,56 @@ class GreenhouseClient:
             )
         return [entry for entry in jobs if isinstance(entry, dict)]
 
+    def _rotation_offset(self) -> int:
+        """Where in the board list this run should start.
+
+        Why this exists
+        ---------------
+        ``fetch_all`` breaks out of the walk as soon as ``max_jobs_per_run``
+        records have accumulated, and the configured slugs are ordered by
+        posting count descending so the biggest boards come first. Those two
+        facts together meant the budget was exhausted by the first two boards:
+        databricks alone carries 894 of the 1,000-row budget, stripe another
+        723, and the walk stopped there. A live dry run after the board list
+        was expanded to 96 confirmed it -- 96 boards attempted, 1,000 records
+        fetched, nothing past stripe ever requested. Every other board was
+        never fetched in any run, ever.
+
+        Rotating the starting point each hour means consecutive scheduled runs
+        begin elsewhere, so coverage is uniform across the list over a cycle
+        instead of permanently concentrated on the two largest boards. The
+        stride is deliberately larger than one so the walk makes real progress
+        per run rather than creeping one board at a time.
+
+        Derived from the clock rather than a persisted counter so it needs no
+        state, cannot drift if a run is skipped, and is deterministic within an
+        hour for a given list length.
+        """
+        slugs = self._settings.company_slugs
+        if not slugs:
+            return 0
+        hour_blocks = int(time.time() // 3600)
+        # The stride must be COPRIME with the list length, or the offsets cycle
+        # through only len/gcd(stride, len) distinct positions. With n=96 and
+        # stride=24 the walk only ever started at 0, 24, 48 or 72 -- three
+        # quarters of the boards unreachable, which a test caught the first
+        # time it was written.
+        n = len(slugs)
+        stride = max(1, n // 4)
+        while stride > 1 and math.gcd(stride, n) != 1:
+            stride -= 1
+        return (hour_blocks * stride) % n
+
+    def _rotated_slugs(self) -> list[str]:
+        """The configured boards, rotated to start at this run's offset."""
+        slugs = list(self._settings.company_slugs)
+        offset = self._rotation_offset()
+        if not offset or len(slugs) < 2:
+            return slugs
+        return slugs[offset:] + slugs[:offset]
+
     def fetch_all(self) -> tuple[list[dict], dict[str, str]]:
-        """Fetch every configured board, skipping the ones that fail.
+        """Fetch boards until the job budget is spent, skipping failures.
 
         Returns:
             ``(records, failures)`` where ``records`` are raw job dicts from
@@ -102,13 +151,18 @@ class GreenhouseClient:
         records: list[dict] = []
         failures: dict[str, str] = {}
         budget = self._settings.max_jobs_per_run
+        slugs = self._rotated_slugs()
 
-        for index, slug in enumerate(self._settings.company_slugs):
+        for index, slug in enumerate(slugs):
             if len(records) >= budget:
                 logger.info(
-                    "job budget of {} reached after {} board(s); skipping the rest",
+                    "job budget of {} reached after {} board(s); "
+                    "skipping the remaining {} of {} this run (the start "
+                    "point rotates each hour, so they are reached in a later run)",
                     budget,
                     index,
+                    len(slugs) - index,
+                    len(slugs),
                 )
                 break
             try:
@@ -124,7 +178,7 @@ class GreenhouseClient:
 
             logger.info("board {}: {} posting(s)", slug, len(jobs))
             records.extend(jobs)
-            if index < len(self._settings.company_slugs) - 1:
+            if index < len(slugs) - 1:
                 time.sleep(self._settings.inter_board_delay_seconds)
 
         if len(records) > budget:

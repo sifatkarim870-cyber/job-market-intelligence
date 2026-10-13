@@ -28,44 +28,110 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 #: Board slugs verified to resolve against the live public API by
-#: ``scripts/probe_greenhouse_boards.py``, which tried 78 candidates and found
-#: 30 live boards carrying 6,573 postings between them.
-#:
-#: Ordered by volume (descending), so that if ``max_jobs_per_run`` truncates
-#: the walk, the boards already fetched are the big ones. Verified rather than
-#: guessed: a wrong slug is not free, it costs an HTTP request and a warning on
-#: every single run, forever.
+#: ``scripts/probe_greenhouse_boards.py``. Expanded 2026-10-14 from 78
+#: candidates to 502, which found 90 live boards carrying 10,470 postings
+#: -- 66 boards (4,280 postings) not previously configured. Ordered by
+#: posting count descending because ``max_jobs_per_run`` stops the walk once
+#: its budget is spent, so the largest boards are always the ones reached.
+#: A local full backfill should raise GREENHOUSE_MAX_JOBS_PER_RUN rather
+#: than rely on the CI-sized default.
 DEFAULT_COMPANY_SLUGS: list[str] = [
-    "databricks",  # 893
-    "stripe",  # 731
-    "anthropic",  # ~600
-    "datadog",  # 432
-    "elastic",
-    "cloudflare",
-    "mongodb",
+    "databricks",  # 894
+    "stripe",  # 723
+    "anthropic",  # 646
+    "datadog",  # 439
+    "cloudflare",  # 436
+    "mongodb",  # 393
+    "elastic",  # 381
     "okta",  # 379
-    "brex",
-    "gitlab",  # 220
-    "coinbase",
-    "fivetran",  # 201
-    "scaleai",
-    "robinhood",
-    "reddit",  # 155
-    "figma",
-    "twilio",  # 138
-    "intercom",
-    "asana",
-    "gusto",
-    "vercel",
-    "mixpanel",
-    "algolia",
-    "typeform",
-    "circleci",
-    "veracode",
-    "buildkite",
-    "netlify",
-    "airtable",
-    "prisma",
+    "zscaler",  # 366
+    "verkada",  # 310
+    "brex",  # 268
+    "roblox",  # 258
+    "samsara",  # 239
+    "coinbase",  # 227
+    "gitlab",  # 218
+    "flexport",  # 205
+    "scaleai",  # 183
+    "ubiquiti",  # 180
+    "lyft",  # 179
+    "robinhood",  # 177
+    "pinterest",  # 176
+    "airbnb",  # 167
+    "twilio",  # 146
+    "reddit",  # 145
+    "klaviyo",  # 145
+    "figma",  # 143
+    "anaplan",  # 137
+    "rubrik",  # 137
+    "roku",  # 124
+    "instacart",  # 120
+    "intercom",  # 108
+    "asana",  # 103
+    "mozilla",  # 95
+    "kaseya",  # 94
+    "vercel",  # 89
+    "five9",  # 88
+    "engine",  # 78
+    "qualtrics",  # 70
+    "duolingo",  # 59
+    "jetbrains",  # 58
+    "zocdoc",  # 58
+    "newrelic",  # 55
+    "pagerduty",  # 54
+    "mixpanel",  # 53
+    "commvault",  # 53
+    "twitch",  # 52
+    "discord",  # 47
+    "checkr",  # 44
+    "trustpilot",  # 44
+    "lighthouse",  # 36
+    "druva",  # 34
+    "flex",  # 32
+    "dropbox",  # 30
+    "zuora",  # 29
+    "slice",  # 27
+    "nucleus",  # 25
+    "pendo",  # 23
+    "webflow",  # 23
+    "contentful",  # 21
+    "nextdoor",  # 21
+    "udacity",  # 21
+    "yext",  # 21
+    "wise",  # 20
+    "greenhouse",  # 18
+    "trivago",  # 18
+    "coursera",  # 16
+    "yugabyte",  # 16
+    "litmos",  # 15
+    "vonage",  # 15
+    "mattermost",  # 14
+    "typeform",  # 13
+    "circleci",  # 13
+    "link",  # 13
+    "skillsoft",  # 13
+    "flipp",  # 11
+    "wasabi",  # 10
+    "platformsh",  # 9
+    "sumologic",  # 9
+    "upwork",  # 9
+    "buildkite",  # 8
+    "rstudio",  # 8
+    "sendbird",  # 7
+    "udemy",  # 7
+    "netlify",  # 5
+    "hootsuite",  # 4
+    "clever",  # 3
+    "liveperson",  # 3
+    "method",  # 3
+    "thrive",  # 3
+    "staging",  # 1
+    "fivetran",  # no longer resolving -- kept, see note
+    "gusto",  # no longer resolving -- kept, see note
+    "algolia",  # no longer resolving -- kept, see note
+    "veracode",  # no longer resolving -- kept, see note
+    "airtable",  # no longer resolving -- kept, see note
+    "prisma",  # no longer resolving -- kept, see note
 ]
 
 

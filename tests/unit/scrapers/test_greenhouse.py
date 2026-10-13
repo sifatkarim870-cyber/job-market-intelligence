@@ -282,3 +282,114 @@ def test_board_url_shape(slug: str):
     client_url = GreenhouseClient(GreenhouseSettings()).board_url(slug)
     assert client_url.startswith("https://boards-api.greenhouse.io/v1/boards/")
     assert client_url.endswith("/jobs?content=true")
+
+
+# ---------------------------------------------------------------------------
+# Board-rotation
+#
+# The fourth bug, found 2026-10-14 rather than while building: the board list
+# is ordered by posting count descending, and fetch_all() breaks out of the walk
+# as soon as max_jobs_per_run records have accumulated. Those two facts
+# together meant databricks (894 postings) and stripe (723) exhausted the whole
+# 1,000-row budget and the walk stopped -- so with 96 configured boards, 94 of
+# them were never fetched in any run, ever. A live dry run confirmed it:
+# "96 boards attempted, 1,000 records fetched".
+#
+# The fix rotates the starting point each hour. These tests pin the property
+# that matters: no configured board may become permanently unreachable.
+# ---------------------------------------------------------------------------
+
+
+def _client(n: int = 96):
+    from job_market_intel.scrapers.greenhouse.client import GreenhouseClient
+
+    return GreenhouseClient(settings=GreenhouseSettings(company_slugs=[f"b{i}" for i in range(n)]))
+
+
+def test_rotation_never_drops_a_board() -> None:
+    """A rotation must be a permutation, not a subset."""
+    client = _client()
+    rotated = client._rotated_slugs()
+    assert len(rotated) == 96
+    assert set(rotated) == {f"b{i}" for i in range(96)}
+
+
+def test_rotation_moves_the_starting_point_between_hours() -> None:
+    """If the start never moves, the bug is still there."""
+    from unittest.mock import patch
+
+    client = _client()
+    starts = set()
+    for hour in range(6):
+        with patch("time.time", return_value=3600 * (100 + hour)):
+            starts.add(client._rotated_slugs()[0])
+    assert len(starts) > 1, "rotation is not moving the starting board"
+
+
+def test_rotation_is_stable_within_an_hour() -> None:
+    """Two runs in the same hour must agree, or retries double-fetch."""
+    from unittest.mock import patch
+
+    client = _client()
+    with patch("time.time", return_value=3600 * 100 + 60):
+        first = client._rotated_slugs()
+    with patch("time.time", return_value=3600 * 100 + 3599):
+        second = client._rotated_slugs()
+    assert first == second
+
+
+def test_rotation_covers_the_tail_within_a_day() -> None:
+    """The point of rotating: a board past the budget must still be reached.
+
+    This is the regression itself. With no rotation the walk always stopped
+    inside the first two boards, so the last board was unreachable forever.
+    """
+    from unittest.mock import patch
+
+    from job_market_intel.scrapers.greenhouse.client import GreenhouseClient
+
+    client = GreenhouseClient(
+        settings=GreenhouseSettings(company_slugs=[f"b{i}" for i in range(96)])
+    )
+    reached = set()
+    for hour in range(96):
+        with patch("time.time", return_value=3600 * (1000 + hour)):
+            reached.add(client._rotated_slugs()[0])
+    # Every board is a starting point at some point in the cycle.
+    assert len(reached) == 96
+
+
+def test_rotation_handles_degenerate_lists() -> None:
+    """A one-board or empty list must not raise or lose the board."""
+    from job_market_intel.scrapers.greenhouse.client import GreenhouseClient
+
+    assert GreenhouseClient(
+        settings=GreenhouseSettings(company_slugs=["only"])
+    )._rotated_slugs() == ["only"]
+    assert GreenhouseClient(settings=GreenhouseSettings(company_slugs=[]))._rotated_slugs() == []
+
+
+def test_budget_still_stops_the_walk_within_one_run() -> None:
+    """Rotation must not turn the budget into a suggestion."""
+    from unittest.mock import patch
+
+    from job_market_intel.scrapers.greenhouse.client import GreenhouseClient
+
+    client = GreenhouseClient(
+        settings=GreenhouseSettings(company_slugs=["big", "small"], max_jobs_per_run=10)
+    )
+    calls: list[str] = []
+
+    def fake(slug: str):
+        calls.append(slug)
+        return [{"id": slug, "title": "t", "content": ""}] * 20
+
+    with (
+        patch.object(GreenhouseClient, "fetch_board", staticmethod(fake)),
+        patch("time.time", return_value=3600 * 100),
+        patch("time.sleep"),
+    ):
+        records, _failures = client.fetch_all()
+
+    assert len(records) == 10, "budget not enforced"
+    assert calls == ["big"], "walk did not stop after the budget was spent"
