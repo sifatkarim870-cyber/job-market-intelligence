@@ -211,6 +211,15 @@
       "max_env": "JOBBANK_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "jobbank.gc.ca - Canadian federal government board. Government source: no API key, no proxy, no captcha, robots.txt permits the job paths. HTML walk over occupational terms (GET /jobsearch/jobsearch?term=&page=) plus one detail request per posting, so the job cap is what bounds run time rather than page count."
+    },
+    {
+      "code": "usajobs",
+      "group": "api",
+      "script": "scripts/run_usajobs_scraper.py",
+      "timeout": 45,
+      "max_env": "USAJOBS_MAX_JOBS_PER_RUN",
+      "enabled": false,
+      "notes": "data.usajobs.gov/api/search - US federal government board, the single largest US employer by headcount. Needs a free data.gov key (USAJOBS_API_KEY or USAJOBS_API_KEY_FILE), so it ships disabled until that secret is in the GitHub Actions env. ONE search request plus ONE job page per posting: there is no position detail endpoint (/api/v2/position/{id} and four other spellings all 404) and PositionFormattedDescription is a marker object, not text, so the full duties/requirements only exist on the public page. data.gov meters keys at 500 requests/hour, which is what USAJOBS_INTER_REQUEST_DELAY_SECONDS exists to protect. Richest source for structured fields in the corpus: pay grade, job series, salary band with interval code, and lat/lon on every posting. Added 2026-10-14."
     }
   ]
 }

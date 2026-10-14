@@ -48,6 +48,19 @@ def _rows_result(rows: list) -> MagicMock:
     return result
 
 
+def _mapping_result(rows: list) -> MagicMock:
+    """Result supporting ``.mappings().first()``, the row shape the cache lookup uses.
+
+    ``rows`` are dicts so the code under test can read them by column name, the
+    way a real SQLAlchemy Row behaves. Plain tuples would fail on ``row["key"]``.
+    """
+    result = MagicMock()
+    result.all.return_value = rows
+    result.mappings.return_value.all.return_value = rows
+    result.mappings.return_value.first.return_value = rows[0] if rows else None
+    return result
+
+
 def _scalar_result(value) -> MagicMock:
     result = MagicMock()
     result.scalar.return_value = value
@@ -373,15 +386,25 @@ class TestResolveAndCacheLocation:
 
     def test_cache_hit_short_circuits_full_resolution(self) -> None:
         session = MagicMock()
-        session.execute.return_value = _scalar_result(123)
+        # The cache lookup joins ref.locations so it can tell a good cached
+        # answer from a stale one (no country + is_global_remote).
+        session.execute.side_effect = lambda stmt, params=None: _mapping_result(
+            []
+            if "FROM ref.sources" in str(stmt)
+            else [{"location_id": 123, "country_id": 4, "is_global_remote": False}]
+        )
 
         location_id = resolve_and_cache_location(session, "Remote - US", source_id=1)
 
         assert location_id == 123
-        # Only the cache SELECT should have run.
-        assert session.execute.call_count == 1
-        sql = " ".join(str(session.execute.call_args.args[0]).split())
-        assert sql.startswith("SELECT location_id FROM core.location_aliases")
+        sqls = [" ".join(str(c.args[0]).split()) for c in session.execute.call_args_list]
+        # source_home_country is consulted first (it decides whether the cached
+        # answer is stale), then the cache lookup itself.
+        assert any(
+            s.startswith("SELECT a.location_id, l.country_id, l.is_global_remote") for s in sqls
+        )
+        # A cached answer with a real country is trusted: no resolution ran.
+        assert not any("FROM ref.cities" in s for s in sqls)
 
     def test_cache_miss_resolves_and_writes_alias_row(self) -> None:  # noqa: C901 - fake DB router
         session = MagicMock()
@@ -390,8 +413,8 @@ class TestResolveAndCacheLocation:
         def _execute(stmt, params=None):
             sql = " ".join(str(stmt).split())
             calls.append(sql)
-            if sql.startswith("SELECT location_id FROM core.location_aliases"):
-                return _scalar_result(None)  # cache miss
+            if "FROM core.location_aliases" in sql and sql.startswith("SELECT a.location_id"):
+                return _mapping_result([])  # cache miss
             if "FROM ref.cities" in sql:
                 return _rows_result([])
             if "FROM ref.regions" in sql:
@@ -424,7 +447,7 @@ class TestResolveAndCacheLocation:
     def test_unresolvable_city_on_single_country_board_uses_source_country(self):  # noqa: C901
         """A national board's unparseable city must not become "worldwide".
 
-        jobvision's 390 aliases are all Persian ("تهران, تهران"), which the
+        jobvision's 390 aliases are all Persian ("ØªÙ‡Ø±Ø§Ù†, ØªÙ‡Ø±Ø§Ù†"), which the
         English-only seed cannot match. Before SOURCE_HOME_COUNTRY existed,
         all 60,982 of its jobs resolved to remote_global with
         is_global_remote=True -- a factual claim that the job is open to
@@ -439,8 +462,8 @@ class TestResolveAndCacheLocation:
             calls.append(sql)
             if isinstance(params, dict):
                 params_seen.append(dict(params))
-            if sql.startswith("SELECT location_id FROM core.location_aliases"):
-                return _scalar_result(None)
+            if "FROM core.location_aliases" in sql and sql.startswith("SELECT a.location_id"):
+                return _mapping_result([])
             if "FROM ref.sources" in sql:
                 return _scalar_result("jobvision")
             if "FROM ref.cities" in sql:
@@ -477,6 +500,96 @@ class TestResolveAndCacheLocation:
         assert insert_params["country_id"] == 706
         assert insert_params["is_global_remote"] is False
         assert insert_params["remote_work_type_id"] == 3  # remote_country
+
+    def test_stale_global_alias_is_re_resolved_not_returned(self):  # noqa: C901 - fake DB router
+        """A cached "no country + open to the world" answer must not stick.
+
+        Measured 2026-10-14 on the local database: jobbank's 40 rows (location
+        "All of Canada") and 2 usajobs rows (location "Multiple Locations") all
+        pointed at one ref.locations row with is_global_remote=True and no
+        country, because neither source was in SOURCE_HOME_COUNTRY when their
+        aliases were cached. Returning that cache entry made 42 Canadian and US
+        federal postings claim a worldwide opening.
+
+        The cache row cannot be deleted -- the runtime role holds INSERT and
+        SELECT on core.location_aliases but no DELETE -- so trusting it was the
+        only way to fix it.
+        """
+        session = MagicMock()
+        calls: list[str] = []
+        params_seen: list[dict] = []
+
+        def _execute(stmt, params=None):  # noqa: C901 - fake DB router
+            sql = " ".join(str(stmt).split())
+            calls.append(sql)
+            if isinstance(params, dict):
+                params_seen.append(dict(params))
+            if sql.startswith("SELECT a.location_id, l.country_id"):
+                # Cached answer: location 3, no country, global remote.
+                return _mapping_result(
+                    [{"location_id": 3, "country_id": None, "is_global_remote": True}]
+                )
+            if "FROM ref.sources" in sql:
+                return _scalar_result("jobbank")
+            if "FROM ref.cities" in sql:
+                return _rows_result([])
+            if "FROM ref.regions" in sql:
+                return _rows_result([])
+            if "FROM ref.countries" in sql:
+                if ":iso" in sql:
+                    return _scalar_result(38)  # Canada
+                return _scalar_result(None)
+            if "FROM ref.remote_work_types" in sql:
+                return _scalar_result(3)
+            if sql.startswith("SELECT location_id FROM ref.locations"):
+                return _scalar_result(None)
+            if sql.startswith("INSERT INTO ref.locations"):
+                return _scalar_result(880)
+            if "core.location_aliases" in sql:
+                raise AssertionError(
+                    f"a stale alias must never be rewritten; unexpected SQL: {sql}"
+                )
+            raise AssertionError(f"unexpected SQL: {sql}")
+
+        session.execute.side_effect = _execute
+
+        location_id = resolve_and_cache_location(session, "All of Canada", source_id=165)
+
+        # The stale entry (3) was discarded and a real country location made.
+        assert location_id == 880
+        assert location_id != 3
+        insert_params = next(p for p in params_seen if "is_global_remote" in p)
+        assert insert_params["country_id"] == 38  # Canada, not None
+        assert insert_params["is_global_remote"] is False
+        # The alias row is UNIQUE(raw, source) and the runtime role holds only
+        # SELECT+INSERT on it, so it can be neither updated nor re-inserted. It
+        # is left alone and bypassed on every call instead.
+        assert not any("core.location_aliases" in s and s.startswith("INSERT") for s in calls)
+        assert not any("core.location_aliases" in s and s.startswith("UPDATE") for s in calls)
+        assert not any("core.location_aliases" in s and s.startswith("DELETE") for s in calls)
+
+    def test_global_alias_on_multicountry_board_is_still_trusted(self) -> None:
+        """A remote-first board really does assert a worldwide opening.
+
+        remoteok is deliberately absent from SOURCE_HOME_COUNTRY, so its cached
+        global answer must be returned as-is. Guarding against the previous bug
+        must not turn real remote rows into country-labelled ones.
+        """
+        session = MagicMock()
+
+        def _execute(stmt, params=None):
+            sql = " ".join(str(stmt).split())
+            if sql.startswith("SELECT a.location_id, l.country_id"):
+                return _mapping_result(
+                    [{"location_id": 3, "country_id": None, "is_global_remote": True}]
+                )
+            if "FROM ref.sources" in sql:
+                return _scalar_result("remoteok")
+            raise AssertionError(f"unexpected SQL: {sql}")
+
+        session.execute.side_effect = _execute
+
+        assert resolve_and_cache_location(session, "Anywhere", source_id=1) == 3
 
 
 @pytest.mark.parametrize(

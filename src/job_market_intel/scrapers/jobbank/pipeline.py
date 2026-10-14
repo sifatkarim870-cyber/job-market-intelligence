@@ -101,7 +101,7 @@ class JobBankPipeline:
         result = JobBankPipelineRunResult(
             raw_count=len(raw_jobs),
             parsed_count=len(parsed),
-            validation_passed=bool(getattr(report, "validation_passed", True)),
+            validation_passed=report.passed,
             cleaned_count=len(cleaned),
             fetch_failures=len(fetch_failures),
             issues=list(parse_issues) + list(getattr(report, "issues", []) or []),
