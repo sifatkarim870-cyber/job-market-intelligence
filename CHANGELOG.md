@@ -2,6 +2,65 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] - 2026-10-14
+
+### Added
+
+- **USAJOBS scraper** (`usajobs`) - the US federal government's job board, the
+  single largest US employer by headcount and the answer to a corpus that had
+  no United States rows at all from any federal source. Free data.gov key, no
+  proxy, no captcha, no per-agreement registration.
+
+  Unusually rich structured fields: every posting carries the employing bureau,
+  department and sub-agency, the pay grade and job series, the salary band with
+  its pay interval, publication and closing dates, and a structured location
+  with city, state and coordinates. Of those, the salary band, dates,
+  organisation hierarchy and city/state **do** persist; the pay grade, job
+  series and coordinates do **not**, because the schema has no columns for them
+  and `raw_payload` is not persisted. Adding those columns would change the
+  shard contract for all 22 sources and is a separate change.
+
+  Costs one API request per 50 postings plus one job page per posting, because
+  **there is no position detail endpoint** - `/api/v2/position/{id}` and four
+  other spellings all return 404, and `PositionFormattedDescription` is a marker
+  object rather than text. The full duties and requirements therefore come from
+  the public page's `page-section` blocks (~30k chars) rather than its JSON-LD
+  `description` (~400 chars). Ships disabled in `config/sources.json` until the
+  key is in the Actions env.
+
+### Fixed
+
+- **Four pipelines could never report a failed batch.** `jobbank`,
+  `arbeitnow`, `greenhouse` and `usajobs` read
+  `getattr(report, "validation_passed", True)` from the validation report.
+  `BatchValidationReport` has no attribute of that name - the field is `passed`
+  - so the `getattr` fallback silently swallowed the `AttributeError` and every
+  run reported `validation_passed=True`. `scheduler/jobs.py` gates on that field,
+  so a degraded or empty fetch could not raise anything downstream. The other 18
+  pipelines already read `.passed`; these four now match.
+- **42 government jobs claimed to be open to the entire world.** `usajobs`
+  (US) and `jobbank` (CA) are national government boards but were missing from
+  `SOURCE_HOME_COUNTRY`, so the country fallback never ran for them. Every
+  Job Bank row (location `"All of Canada"`) and 2 USAJOBS rows (location
+  `"Multiple Locations"`) collapsed onto one shared `ref.locations` row with
+  `is_global_remote = True` and no country. That is a factual claim about the
+  job, not a statement about the parser - exactly what that map's docstring
+  says it exists to prevent. Both sources are now 40/40 and 10/10 on
+  `country_code`, with 0 global-remote rows.
+- **A cached location alias could pin a job to a wrong country forever.**
+  `resolve_and_cache_location` returned a `core.location_aliases` hit without
+  re-matching, so the bad resolutions above were cached and every later scrape
+  re-applied them. The alias cannot simply be deleted or updated: the table is
+  `UNIQUE(raw_location_text, source_id)` and the runtime role holds only
+  `SELECT` and `INSERT` on it. The resolver now bypasses an alias that asserts
+  a worldwide opening for a single-country board, resolves fresh, and leaves the
+  dead row in place. `scripts/reresolve_home_country.py` (new, dry-run by
+  default) repoints the 42 already-affected jobs.
+
+  The three bypassed alias rows remain in `core.location_aliases` pointing at
+  the wrong location, so that audit trail disagrees with `core.jobs` for those
+  entries until a privileged cleanup. Documented in the resolver.
+
 ## [Unreleased] - 2026-10-13
 
 ### Fixed

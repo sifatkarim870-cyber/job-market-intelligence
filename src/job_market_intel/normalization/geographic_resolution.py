@@ -652,6 +652,15 @@ def get_or_create_location(
 #: there is no single home country) and every remote-first board
 #: (remoteok, remotive, weworkremotely), where a genuine worldwide claim is
 #: the correct answer.
+#:
+#: usajobs and jobbank are national government boards and were missing here
+#: until 2026-10-14, which is precisely the case this map documents. Measured
+#: on a live 10-posting USAJOBS run: 8/10 rows resolved a country from the text
+#: and 2/10 fell through to None -- those two are US postings with an
+#: unparseable location string, and they became country-less rows in a corpus
+#: whose whole problem is too few countries. Job Bank's rows all carry
+#: ``country_code`` NULL for the same reason: its locations read "All of
+#: Canada", which names no region or city for the resolver to match.
 SOURCE_HOME_COUNTRY: dict[str, str] = {
     "jobvision": "IR",
     "jobinja": "IR",
@@ -663,6 +672,8 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "emploitic": "FR",
     "jobam": "AM",
     "jobmaster": "IL",
+    "usajobs": "US",
+    "jobbank": "CA",
 }
 
 
@@ -705,19 +716,49 @@ def resolve_and_cache_location(
     if not cleaned:
         return None
 
-    cached = session.execute(
-        text(
-            "SELECT location_id FROM core.location_aliases "
-            "WHERE raw_location_text = :raw_text AND source_id IS NOT DISTINCT FROM :source_id"
-        ),
-        {"raw_text": cleaned, "source_id": source_id},
-    ).scalar()
-    if cached is not None:
-        return int(cached)
+    home_country = source_home_country(session, source_id)
 
-    resolved = resolve_location_text(
-        session, cleaned, default_country_iso2=source_home_country(session, source_id)
+    cached = (
+        session.execute(
+            text(
+                "SELECT a.location_id, l.country_id, l.is_global_remote "
+                "FROM core.location_aliases a "
+                "JOIN ref.locations l ON l.location_id = a.location_id "
+                "WHERE a.raw_location_text = :raw_text "
+                "AND a.source_id IS NOT DISTINCT FROM :source_id"
+            ),
+            {"raw_text": cleaned, "source_id": source_id},
+        )
+        .mappings()
+        .first()
     )
+
+    # An alias that resolved to "no country, and open to the whole world" is
+    # wrong for a single-country board, and wrong in a way that overwrites a
+    # real country claim -- is_global_remote is a factual assertion about the
+    # job, not a statement about our parser. Such aliases exist because the
+    # source was not yet in SOURCE_HOME_COUNTRY when they were cached, so the
+    # fallback never ran. Re-resolving is the only remedy available here: the
+    # cached row cannot be deleted (the runtime role has INSERT but no DELETE
+    # on core.location_aliases) and would be re-applied on every run anyway.
+    stale_cached = bool(
+        cached is not None
+        and home_country is not None
+        and cached["country_id"] is None
+        and cached["is_global_remote"]
+    )
+    if cached is not None and not stale_cached:
+        return int(cached["location_id"])
+    if stale_cached:
+        logger.info(
+            "re-resolving stale location alias for {!r} (source_id={}): it claims a "
+            "global opening, but this is a single-country ({}) board",
+            cleaned,
+            source_id,
+            home_country,
+        )
+
+    resolved = resolve_location_text(session, cleaned, default_country_iso2=home_country)
     remote_work_type_id = _get_remote_work_type_id(session, resolved.remote_work_type_code)
     location_id = get_or_create_location(
         session,
@@ -729,19 +770,39 @@ def resolve_and_cache_location(
         is_global_remote=resolved.is_global_remote,
     )
 
-    session.execute(
-        text(
-            "INSERT INTO core.location_aliases "
-            "(raw_location_text, source_id, location_id, match_method) "
-            "VALUES (:raw_text, :source_id, :location_id, :match_method)"
-        ),
-        {
-            "raw_text": cleaned,
-            "source_id": source_id,
-            "location_id": location_id,
-            "match_method": resolved.match_method,
-        },
-    )
+    if stale_cached:
+        # The alias row cannot be corrected from here. core.location_aliases is
+        # UNIQUE(raw_location_text, source_id) and the runtime role holds only
+        # SELECT and INSERT on it -- no UPDATE, no DELETE -- so an INSERT would
+        # violate the key and an UPDATE would raise InsufficientPrivilege. The
+        # row is therefore left in place and simply never trusted again: the
+        # `stale_cached` check above bypasses it on every call, for this source,
+        # for as long as it says "no country and open to the world".
+        #
+        # Consequence to be aware of: core.location_aliases keeps an audit
+        # trail that disagrees with core.jobs for these rows. The job rows are
+        # correct; the alias rows are dead entries awaiting a privileged
+        # cleanup.
+        logger.info(
+            "alias for {!r} (source_id={}) stays stale in core.location_aliases; "
+            "bypassing it and resolving fresh",
+            cleaned,
+            source_id,
+        )
+    else:
+        session.execute(
+            text(
+                "INSERT INTO core.location_aliases "
+                "(raw_location_text, source_id, location_id, match_method) "
+                "VALUES (:raw_text, :source_id, :location_id, :match_method)"
+            ),
+            {
+                "raw_text": cleaned,
+                "source_id": source_id,
+                "location_id": location_id,
+                "match_method": resolved.match_method,
+            },
+        )
 
     logger.debug(
         "Resolved location {!r} (source_id={}) -> location_id={} (method={}).",

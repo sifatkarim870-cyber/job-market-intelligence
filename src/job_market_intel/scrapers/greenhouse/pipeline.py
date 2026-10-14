@@ -115,7 +115,7 @@ class GreenhousePipeline:
         result = GreenhousePipelineRunResult(
             raw_count=len(raw_jobs),
             parsed_count=len(parsed),
-            validation_passed=bool(getattr(report, "validation_passed", True)),
+            validation_passed=report.passed,
             cleaned_count=len(cleaned),
             boards_attempted=len(self._settings.company_slugs),
             boards_failed=len(board_failures),
