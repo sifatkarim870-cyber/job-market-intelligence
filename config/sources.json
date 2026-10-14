@@ -202,6 +202,15 @@
       "max_env": "THEMUSE_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "themuse.com/api/public/jobs - free key-free JSON API; ~20,000 pages of company-authored postings, so the largest untapped source measured. Rich company objects, levels, categories and locations. Page-based pagination. Added 2026-10-12."
+    },
+    {
+      "code": "jobbank",
+      "group": "html",
+      "script": "scripts/run_jobbank_scraper.py",
+      "timeout": 45,
+      "max_env": "JOBBANK_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "jobbank.gc.ca - Canadian federal government board. Government source: no API key, no proxy, no captcha, robots.txt permits the job paths. HTML walk over occupational terms (GET /jobsearch/jobsearch?term=&page=) plus one detail request per posting, so the job cap is what bounds run time rather than page count."
     }
   ]
 }

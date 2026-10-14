@@ -98,6 +98,23 @@ _SOURCES = [
         True,
         False,
     ),
+    # Job Bank is the Government of Canada's official board -- a public-sector
+    # source rather than a commercial ATS, which matters twice over: it
+    # publishes under an open government licence, and it needs no key, no
+    # proxy and no captcha. Canada was carrying 0.3% of the corpus.
+    # trust_score 0.90 is the highest here: it is a federal government source,
+    # so its postings are first-party rather than mirrored guesses. Note that
+    # Job Bank itself aggregates postings mirrored in from commercial boards
+    # (Talent.com, ZipRecruiter and others), so some rows are third-party.
+    (
+        "jobbank",
+        "Job Bank Canada",
+        "government",
+        "https://www.jobbank.gc.ca",
+        0.90,
+        False,
+        False,
+    ),
 ]
 
 
