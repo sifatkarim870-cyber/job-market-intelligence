@@ -219,7 +219,16 @@
       "timeout": 45,
       "max_env": "USAJOBS_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "data.usajobs.gov/api/search - US federal government board, the single largest US employer by headcount. Needs a free data.gov key (USAJOBS_API_KEY or USAJOBS_API_KEY_FILE), so it ships disabled until that secret is in the GitHub Actions env. ONE search request plus ONE job page per posting: there is no position detail endpoint (/api/v2/position/{id} and four other spellings all 404) and PositionFormattedDescription is a marker object, not text, so the full duties/requirements only exist on the public page. data.gov meters keys at 500 requests/hour, which is what USAJOBS_INTER_REQUEST_DELAY_SECONDS exists to protect. Richest source for structured fields in the corpus: pay grade, job series, salary band with interval code, and lat/lon on every posting. Added 2026-10-14."
+      "notes": "data.usajobs.gov/api/search - US federal government board, the single largest US employer by headcount. Needs a free data.gov key (USAJOBS_API_KEY or USAJOBS_API_KEY_FILE), so it ships disabled until that secret is in the GitHub Actions env. ONE search request plus ONE job page per posting: there is no position detail endpoint (/api/v2/position/{id} and four other spellings all 404) and PositionFormattedDescription is a marker object, not text, so the full duties/requirements only exist on the public page. data.gov meters keys at 500 requests/hour, which is what USAJOBS_INTER_REQUEST_DELAY_SECONDS exists to protect. Richest structured fields of any source: pay grade, job series, salary band with interval code, and structured city/state on every posting. Added 2026-10-14."
+    },
+    {
+      "code": "wellfound",
+      "group": "html",
+      "script": "scripts/run_wellfound_scraper.py",
+      "timeout": 60,
+      "max_env": "WELLFOUND_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "wellfound.com - startup/tech job board, and the best salary source in the corpus: 6 of 6 postings sampled carried an explicit minValue/maxValue in a named currency with a period. No key, no proxy, no captcha. Discovery works ONLY through /location/<country> and /role/l/<role>/<country>: /jobs returns HTTP 200, renders a page=N pager, and then IGNORES it (pages 1-11 each returned the identical 43 job ids and 0 new ones, measured 2026-10-14), so walking it would burn the request budget re-reading page 1 while appearing to progress. The working paths yield 45-58 distinct jobs per page, 540 distinct US jobs over 11 pages. Listing pages are 600-860KB and detail pages ~100KB, so the page cap is the request-budget knob; timeout 60 because these are the largest HTML pages of any source. /location/canada 404s and is therefore not in the default listing set. Added 2026-10-14."
     }
   ]
 }
