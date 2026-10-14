@@ -6,6 +6,37 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- **Wellfound scraper** (`wellfound`) - the startup and tech job board, filling
+  a segment the corpus had none of. No key, no proxy, no captcha. It is the
+  **best salary source in the corpus**: 6 of 6 postings sampled carried an
+  explicit `minValue`/`maxValue` in a named currency with a period, where most
+  boards carry a figure on only some rows. A live 40-posting run produced 40/40
+  descriptions (311-1474 words), 40/40 salary rows, 40/40 posting dates,
+  `data_quality_score` 1.00 throughout, 14 distinct employers, and 39/40 rows
+  with a resolved `country_code`.
+
+  Discovery works **only** through `/location/<country>` and
+  `/role/l/<role>/<country>`. `/jobs` returns HTTP 200, renders a `page=N`
+  pager, and then ignores the parameter -- pages 1 through 11 each returned the
+  identical 43 job ids and zero new ones (measured 2026-10-14). Walking it
+  would spend the entire request budget re-reading page 1 while appearing to
+  make progress, so only the working paths are walked, and the client now stops
+  any listing after repeated empty pages so that failure mode cannot return.
+
+  Two traps worth recording: `identifier` is a schema.org `PropertyValue` whose
+  `name` is the *company* and whose `value` is the id -- and that value is
+  sometimes `"<id>-<slug>"` rather than a bare id. And
+  `hiringOrganization.location` is the company's offices while `jobLocation` is
+  where the job is; on the sampled Checkr role they differed (Denver and San
+  Francisco as offices, San Francisco as the job), so conflating them would put
+  every job at a company in its head office.
+
+  `robots.txt` is served as `Content-Type: text/html` despite being real
+  plain-text robots content. Its `User-agent: *` rules disallow `/_jobs/`,
+  `/*?after_sign_in=*` and `/*?inFrame=*`; this scraper uses `/location/`,
+  `/role/` and `/jobs/<id>-<slug>`, and `/jobs/` is a different path from the
+  disallowed `/_jobs/`.
+
 - **USAJOBS scraper** (`usajobs`) - the US federal government's job board, the
   single largest US employer by headcount and the answer to a corpus that had
   no United States rows at all from any federal source. Free data.gov key, no
@@ -60,6 +91,10 @@ All notable changes to this project are documented here.
   The three bypassed alias rows remain in `core.location_aliases` pointing at
   the wrong location, so that audit trail disagrees with `core.jobs` for those
   entries until a privileged cleanup. Documented in the resolver.
+- **A short final listing page lost its jobs.** The Wellfound client treated a
+  page with fewer than five links as the tail and broke out *before* collecting
+  it, discarding the last page of every listing walked. Caught by a test; the
+  links are now collected first and the walk stops after.
 
 ## [Unreleased] - 2026-10-13
 
