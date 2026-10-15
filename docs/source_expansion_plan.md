@@ -100,7 +100,7 @@ without credentials; USAJOBS returns 401. Both are one env var away.
 |---|---|---|
 | France Travail | FR | official API, free `client_id`; SPA currently intercepts the API host — needs the documented base URL |
 | Arbetsförmedlingen | SE | `jobsearch.api.jobtechdev.se`, keyless; 404 on the paths tried — endpoint may have moved |
-| NAV | NO | public feed; 404/405 on the paths tried |
+| NAV | NO | **dropped 2026-10-15 — no public feed exists.** `nav.no` is a Next.js SPA; its 120 KB job-search page carries zero job records. The only feed-shaped endpoints are a 4-item news RSS and a 15,099-URL **CMS** sitemap whose 1,742 job-ish URLs are labour-market statistics tables, not postings. Vacancies sit behind an employer login. The earlier "public feed" note was the wrong inference from correct 404s. See `source_requirements.md`. |
 | Job Bank / Eluta | CA | government; `jobbank.gc.ca/api/jobsearch` returned 404 — may be retired |
 | Bundesagentur | DE | official API, now OAuth-gated (403 without a client) |
 | MyCareersFuture | SG | `api.mycareersfuture.gov.sg`, needs the right path |
