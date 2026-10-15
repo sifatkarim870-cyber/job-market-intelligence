@@ -2,9 +2,61 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased] - 2026-10-14
+## [Unreleased] - 2026-10-15
+
+### Fixed
+
+- **Built In rows lost their country.** `builtin` was missing from
+  `SOURCE_HOME_COUNTRY`, so 9 of 40 live rows landed on the collapsed
+  global-remote row with no country -- on a board that only ever posts in the
+  US. Added, and `scripts/reresolve_home_country.py` repointed them. All four
+  boards added in this cycle are now 40/40, 40/40, 10/10 and 40/40 on
+  `country_code` with zero false `is_global_remote` rows; the one remaining
+  global-remote row is a Wellfound posting that genuinely says "Anywhere in the
+  World". `wellfound` is deliberately **not** in the map: its postings span the
+  US, UK, DE, FR, NL, ES, IE and IN.
 
 ### Added
+
+- **Built In scraper** (`builtin`) - the US tech and startup board, pairing with
+  Wellfound to cover the segment the corpus had none of. US-only in practice:
+  every posting sampled carried
+  `applicantLocationRequirements: {"@type": "Country", "name": "USA"}`. Rich per
+  posting: 2-6k characters of description, posting *and* closing dates, and up
+  to 46 benefits (`"Offers 401(K)"`, `"Provides adoption assistance"`). A live
+  40-posting run produced 40/40 descriptions (979-2182 words), 40/40 posting and
+  closing dates, 31/40 disclosed salaries, and `data_quality_score` 0.86-1.00.
+
+  **The one trap: the `JobPosting` node is not at the top level of the JSON-LD.**
+  Built In emits an ~8.8 KB document shaped
+  `{"@context": ..., "@graph": [ ... ]}`. A parser that checks `json["@type"]`
+  finds nothing and reports an empty board on a site serving every field -- the
+  first probe did exactly that and reported "no JobPosting on any detail page"
+  on all six postings it fetched. `extract_posting` walks the whole document.
+
+  Four more shapes, all measured over 24 postings:
+
+  * `geo` is a **sibling of** `address` on the `Place` node, not a child. Reading
+    `address["geo"]` returns nothing on every posting, silently -- caught by a
+    live run reporting 0 of 8 rows with coordinates, after a first attempt that
+    had confidently documented the wrong path.
+  * `industry` is a **list on 21 of 24** postings and a bare string on 3, so a
+    scalar-typed field rejects three quarters of the board.
+  * `jobLocation` is a bare `Place` on 19 of 24 and a list on the other 5.
+  * `hiringOrganization.logo` is an `ImageObject` dict (`{"url": ...}`), not a
+    URL string.
+
+  robots.txt disallows `/search/` and `/jobs*?search=`, so discovery is
+  facet-based and never keyword-based; `Allow: /jobs*?page=` permits the
+  pagination because it is the longer, governing match. Listing pages yield
+  20-27 distinct links (182 over 8 pages, pager to 1000).
+
+  `jobLocationType` is `"TELECOMMUTE"` on remote roles, the only explicit remote
+  flag on this board -- but `core.jobs.remote_work_type_id` is populated solely
+  by the location resolver, and `CleanedJob` has no remote field, so the flag
+  currently rides in `raw_payload` and is **not persisted**. Wiring it properly
+  means adding a field to `CleanedJob` and teaching the repository about it,
+  which touches every source and is a separate change.
 
 - **Wellfound scraper** (`wellfound`) - the startup and tech job board, filling
   a segment the corpus had none of. No key, no proxy, no captcha. It is the

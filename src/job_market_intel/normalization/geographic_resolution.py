@@ -653,14 +653,23 @@ def get_or_create_location(
 #: (remoteok, remotive, weworkremotely), where a genuine worldwide claim is
 #: the correct answer.
 #:
-#: usajobs and jobbank are national government boards and were missing here
-#: until 2026-10-14, which is precisely the case this map documents. Measured
-#: on a live 10-posting USAJOBS run: 8/10 rows resolved a country from the text
-#: and 2/10 fell through to None -- those two are US postings with an
-#: unparseable location string, and they became country-less rows in a corpus
-#: whose whole problem is too few countries. Job Bank's rows all carry
-#: ``country_code`` NULL for the same reason: its locations read "All of
-#: Canada", which names no region or city for the resolver to match.
+#: usajobs, jobbank and builtin are boards whose postings all sit in one
+#: country, and were missing here until 2026-10-14/15 -- precisely the case this
+#: map documents. Measured on live runs:
+#:
+#: * usajobs: 8/10 rows resolved a country from the text, 2/10 fell through to
+#:   None. Those two are US federal postings whose location string was
+#:   unparseable ("Multiple Locations").
+#: * jobbank: every row's location reads "All of Canada", which names no region
+#:   or city for the resolver to match, so all 40 had country_code NULL.
+#: * builtin: US-only in practice -- every posting sampled carried
+#:   ``applicantLocationRequirements: {"@type": "Country", "name": "USA"}`` --
+#:   but 9 of 40 live rows landed on the collapsed global-remote row and lost
+#:   their country, because their location text names a state without a city
+#:   ("Texas, USA") or says "Anywhere in the World".
+#:
+#: wellfound is deliberately NOT here: its listings cover the US, UK, DE, FR,
+#: NL, ES, IE and IN, and individual postings genuinely span countries.
 SOURCE_HOME_COUNTRY: dict[str, str] = {
     "jobvision": "IR",
     "jobinja": "IR",
@@ -674,6 +683,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "jobmaster": "IL",
     "usajobs": "US",
     "jobbank": "CA",
+    "builtin": "US",
 }
 
 
