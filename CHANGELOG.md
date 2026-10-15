@@ -147,6 +147,41 @@ All notable changes to this project are documented here.
   page with fewer than five links as the tail and broke out *before* collecting
   it, discarding the last page of every listing walked. Caught by a test; the
   links are now collected first and the walk stops after.
+- **`get_or_create_location` silently lost rows on a concurrent insert.** The
+  first CI run of USAJOBS lost one row in twenty:
+
+  ```
+  failed to persist USAJOBS job 26-CB-13082116-DH: Transaction block failed
+  and was rolled back: (psycopg.errors.UniqueViolation) duplicate key value
+  violates unique constraint "locations_pkey"
+  ```
+
+  It is a check-then-insert, so two sessions that both find nothing both
+  insert. The per-row savepoint in each pipeline kept the other nineteen rows,
+  but the failed row was simply gone -- silently, on every run, forever. It
+  never reproduced locally because a single sequential writer cannot race
+  itself.
+
+  Now the INSERT runs inside `session.begin_nested()`, and on `IntegrityError`
+  the code re-reads the row the winner committed. A full `session.rollback()`
+  would have been wrong here: the pipeline calls this from inside
+  `transaction(session)` -- a savepoint per job row -- so a full rollback
+  discards the job row too and loses two rows instead of one. Six integration
+  tests cover it, and they were checked to fail against both the unfixed code
+  and the plausible-but-wrong full-rollback variant.
+
+  **Root cause of the collision: identified, not yet fixed.** Identity
+  sequences do not agree with seeded ids on the CI database. Measured
+  2026-10-15 on `job_market_intelligence_test`: every reference table's ids
+  start in the thousands (countries 1393..1450, cities 2251..2340) while its
+  identity sequence sits at 57,147 / 92,357, because the seeder upserts on
+  every integration-test run and each run advances the sequence. A CI database
+  seeded with explicit ids but a sequence still near 1 will hand out a
+  `location_id` that already exists, which is exactly a `locations_pkey`
+  violation. The laptop's sequences are all far *ahead*, which is why the same
+  code never collides there -- the same laptop-versus-CI asymmetry that hid
+  this in the first place. The remedy is to resync every identity column to
+  `max(id)` as part of seeding; that is a separate change and is not in here.
 
 ## [Unreleased] - 2026-10-13
 
