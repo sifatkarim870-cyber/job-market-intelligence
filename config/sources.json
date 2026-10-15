@@ -229,6 +229,15 @@
       "max_env": "WELLFOUND_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "wellfound.com - startup/tech job board, and the best salary source in the corpus: 6 of 6 postings sampled carried an explicit minValue/maxValue in a named currency with a period. No key, no proxy, no captcha. Discovery works ONLY through /location/<country> and /role/l/<role>/<country>: /jobs returns HTTP 200, renders a page=N pager, and then IGNORES it (pages 1-11 each returned the identical 43 job ids and 0 new ones, measured 2026-10-14), so walking it would burn the request budget re-reading page 1 while appearing to progress. The working paths yield 45-58 distinct jobs per page, 540 distinct US jobs over 11 pages. Listing pages are 600-860KB and detail pages ~100KB, so the page cap is the request-budget knob; timeout 60 because these are the largest HTML pages of any source. /location/canada 404s and is therefore not in the default listing set. Added 2026-10-14."
+    },
+    {
+      "code": "builtin",
+      "group": "html",
+      "script": "scripts/run_builtin_scraper.py",
+      "timeout": 60,
+      "max_env": "BUILTIN_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "builtin.com - US tech/startup board; pairs with wellfound to cover the segment the corpus had none of. US-only in practice (every posting sampled carried applicantLocationRequirements name='USA'). Rich: 2-6k char descriptions, posting AND closing dates, and up to 46 benefits per posting; baseSalary on ~3/4. TRAP: the JobPosting node is nested under '@graph' in an ~8.8KB JSON-LD document, so a parser reading json['@type'] finds NOTHING and reports an empty board on a site serving every field - the first probe hit exactly this. Also: geo is a sibling of address on the Place node (not a child), industry is a list on 21/24 postings and a string on 3, jobLocation is a bare dict on 19/24 and a list on 5, and hiringOrganization.logo is an ImageObject dict. Discovery paginates on /jobs?page=N (182 distinct links over 8 pages, 20-27 per page, pager to 1000); robots.txt disallows /search/ and /jobs*?search= so keyword search is off limits, while Allow: /jobs*?page= permits the pagination. Listing pages are 230-400KB. Added 2026-10-15."
     }
   ]
 }
