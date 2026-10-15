@@ -218,8 +218,8 @@
       "script": "scripts/run_usajobs_scraper.py",
       "timeout": 45,
       "max_env": "USAJOBS_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "data.usajobs.gov/api/search - US federal government board, the single largest US employer by headcount. Needs a free data.gov key (USAJOBS_API_KEY or USAJOBS_API_KEY_FILE), so it ships disabled until that secret is in the GitHub Actions env. ONE search request plus ONE job page per posting: there is no position detail endpoint (/api/v2/position/{id} and four other spellings all 404) and PositionFormattedDescription is a marker object, not text, so the full duties/requirements only exist on the public page. data.gov meters keys at 500 requests/hour, which is what USAJOBS_INTER_REQUEST_DELAY_SECONDS exists to protect. Richest structured fields of any source: pay grade, job series, salary band with interval code, and structured city/state on every posting. Added 2026-10-14."
+      "enabled": true,
+      "notes": "data.usajobs.gov/api/search - US federal government board, the single largest US employer by headcount. Needs a free data.gov key, supplied to CI as the USAJOBS_API_KEY repository secret and passed to the scrape step in scrape_api.yml (enabled 2026-10-15, once both were true - a secret that exists but is not wired to the step is indistinguishable from no secret, which is the bug the REED_API_KEY comment above it describes). Locally use USAJOBS_API_KEY or USAJOBS_API_KEY_FILE. ONE search request plus ONE job page per posting: there is no position detail endpoint (/api/v2/position/{id} and four other spellings all 404) and PositionFormattedDescription is a marker object, not text, so the full duties/requirements only exist on the public page. data.gov meters keys at 500 requests/hour, which is what USAJOBS_INTER_REQUEST_DELAY_SECONDS exists to protect - do not lower it without measuring the key's real ceiling. Richest structured fields of any source: pay grade, job series, salary band with interval code, and structured city/state on every posting. Added 2026-10-14."
     },
     {
       "code": "wellfound",

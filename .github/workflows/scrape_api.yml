@@ -155,6 +155,13 @@ jobs:
           # REED_-prefixed vars and ignores the rest), and fail-fast:false
           # already keeps one dead source from cancelling the others.
           REED_API_KEY: ${{ secrets.REED_API_KEY }}
+          # USAJOBS is the same trap as Reed, and the same fix. Its key is a
+          # data.gov Authorization-Key; without it the pipeline raises
+          # USAJobsAuthError before fetching anything, because it aborts on a
+          # missing key rather than reporting a successful run that persisted
+          # nothing. Set the secret AND pass it here -- a secret that exists but
+          # is not wired to the step is indistinguishable from no secret.
+          USAJOBS_API_KEY: ${{ secrets.USAJOBS_API_KEY }}
         run: uv run python ${{ matrix.script }}
 
       - name: Export new rows to a Hugging Face shard
