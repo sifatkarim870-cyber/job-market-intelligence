@@ -138,6 +138,7 @@ from enum import Enum
 
 from loguru import logger
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 
@@ -592,10 +593,28 @@ def get_or_create_location(
     would silently accumulate one duplicate ``ref.locations`` row per
     distinct unmatched raw string instead of collapsing them.
 
-    Not atomic against concurrent inserts of a brand-new combination
-    (matches this project's existing ``get_or_create_company`` -- see that
-    function -- current single-scraper-at-a-time execution makes this an
-    accepted, documented, non-blocking risk rather than an oversight).
+    Concurrent-insert safety
+    -----------------------
+    This is a check-then-insert, so two sessions can both find nothing and both
+    insert. ``ref.locations`` carries ``uq_locations_combo UNIQUE (city_id,
+    region_id, country_id, remote_work_type_id)``, so the loser gets an
+    ``IntegrityError`` and its row is lost.
+
+    This is not hypothetical. The first CI run of USAJOBS lost one row in
+    twenty to it::
+
+        failed to persist USAJOBS job 26-CB-13082116-DH: Transaction block
+        failed and was rolled back: (psycopg.errors.UniqueViolation) duplicate
+        key value violates unique constraint "locations_pkey"
+
+    The per-row savepoint in the pipeline is what kept the other nineteen, but
+    the failed row was simply gone -- silently, on every run, forever. It never
+    reproduced locally because a single sequential writer cannot race itself.
+
+    The fix is the canonical one: attempt the insert, and on IntegrityError
+    roll back to a savepoint and re-read the row the winner just committed. A
+    savepoint is required rather than a full rollback because the failure would
+    otherwise poison the caller's enclosing transaction.
     """
     existing = session.execute(
         text(
@@ -615,24 +634,59 @@ def get_or_create_location(
     if existing is not None:
         return int(existing)
 
-    new_id = session.execute(
-        text(
-            "INSERT INTO ref.locations "
-            "(city_id, region_id, country_id, remote_work_type_id, "
-            "raw_location_text, is_global_remote) "
-            "VALUES (:city_id, :region_id, :country_id, :remote_work_type_id, "
-            ":raw_location_text, :is_global_remote) "
-            "RETURNING location_id"
-        ),
-        {
-            "city_id": city_id,
-            "region_id": region_id,
-            "country_id": country_id,
-            "remote_work_type_id": remote_work_type_id,
-            "raw_location_text": raw_location_text,
-            "is_global_remote": is_global_remote,
-        },
-    ).scalar()
+    params = {
+        "city_id": city_id,
+        "region_id": region_id,
+        "country_id": country_id,
+        "remote_work_type_id": remote_work_type_id,
+        "raw_location_text": raw_location_text,
+        "is_global_remote": is_global_remote,
+    }
+    insert_sql = text(
+        "INSERT INTO ref.locations "
+        "(city_id, region_id, country_id, remote_work_type_id, "
+        "raw_location_text, is_global_remote) "
+        "VALUES (:city_id, :region_id, :country_id, :remote_work_type_id, "
+        ":raw_location_text, :is_global_remote) "
+        "RETURNING location_id"
+    )
+
+    try:
+        # A nested savepoint, not a bare INSERT: an IntegrityError inside a
+        # transaction poisons it in PostgreSQL until the transaction ends. The
+        # pipeline calls this from inside transaction(session) -- a savepoint per
+        # job row -- so a full session.rollback() here would discard that job
+        # row too and lose two rows instead of none. begin_nested() issues
+        # ROLLBACK TO SAVEPOINT, leaving the caller's work intact.
+        with session.begin_nested():
+            new_id = session.execute(insert_sql, params).scalar()
+    except IntegrityError:
+        # Lost the race. The savepoint above has already been rolled back by its
+        # context manager, so the enclosing transaction is still usable.
+        logger.debug(
+            "lost the insert race for ref.locations {}; re-reading the winner's row",
+            (city_id, region_id, country_id, remote_work_type_id),
+        )
+        new_id = session.execute(
+            text(
+                "SELECT location_id FROM ref.locations WHERE "
+                "city_id IS NOT DISTINCT FROM :city_id AND "
+                "region_id IS NOT DISTINCT FROM :region_id AND "
+                "country_id IS NOT DISTINCT FROM :country_id AND "
+                "remote_work_type_id = :remote_work_type_id"
+            ),
+            {
+                "city_id": city_id,
+                "region_id": region_id,
+                "country_id": country_id,
+                "remote_work_type_id": remote_work_type_id,
+            },
+        ).scalar()
+        if new_id is None:
+            # The winner's row is already gone, or the failure was not the combo
+            # constraint at all. Re-raise rather than inventing an id.
+            raise
+
     if new_id is None:
         raise RuntimeError("Failed to insert ref.locations row.")
     return int(new_id)
