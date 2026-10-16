@@ -759,6 +759,9 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   'Iceland' and the other 3 carried no location at all, so the home-
     #:   country fallback is load-bearing here rather than a nicety.
     "alfred": "IS",
+    #: net_empregos: Portugal. Every posting measured carried addressCountry
+    #:   'PT', so this is a measured fact about the board.
+    "net_empregos": "PT",
 }
 
 
