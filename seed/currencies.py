@@ -31,6 +31,13 @@ CURRENCIES: list[dict] = [
     {"iso_code": "ILS", "currency_name": "Israeli New Shekel", "symbol": "₪"},
     {"iso_code": "SEK", "currency_name": "Swedish Krona", "symbol": "kr"},
     {"iso_code": "NOK", "currency_name": "Norwegian Krone", "symbol": "kr"},
+    # Added for the alfred source. Alfred publishes no baseSalary at all
+    # (0 of 10 postings measured), so no amount is ever stored against this --
+    # but get_currency_id_by_code looks the code up on every row and returns
+    # NULL with a warning for an unknown one, and a country whose default
+    # currency cannot resolve is a hole in the reference data rather than a
+    # property of the country.
+    {"iso_code": "ISK", "currency_name": "Icelandic Krona", "symbol": "kr."},
     {"iso_code": "DKK", "currency_name": "Danish Krone", "symbol": "kr"},
     {"iso_code": "PLN", "currency_name": "Polish Zloty", "symbol": "zł"},
     {"iso_code": "CZK", "currency_name": "Czech Koruna", "symbol": "Kč"},
