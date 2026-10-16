@@ -18,6 +18,11 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("MX", "MEX", "Mexico", "North America", "MXN"),
     ("GB", "GBR", "United Kingdom", "Europe", "GBP"),
     ("IE", "IRL", "Ireland", "Europe", "EUR"),
+    # Added for the alfred source. Without this row the resolver cannot place a
+    # single Icelandic posting: it would leave country_id NULL on every row and
+    # fall back to the global-remote location, which is exactly the failure the
+    # other single-country sources were added to fix.
+    ("IS", "ISL", "Iceland", "Europe", "ISK"),
     ("DE", "DEU", "Germany", "Europe", "EUR"),
     ("FR", "FRA", "France", "Europe", "EUR"),
     ("ES", "ESP", "Spain", "Europe", "EUR"),
