@@ -752,6 +752,9 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   city_exact misses on spelling and those postings fall through to the
     #:   source default instead of the global-remote row.
     "apna": "IN",
+    #: mustakbil: Pakistan. Every posting measured carried addressCountry
+    #:   'PK' and currency PKR, so this is a measured fact about the board.
+    "mustakbil": "PK",
 }
 
 
