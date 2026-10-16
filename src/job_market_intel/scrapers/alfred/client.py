@@ -33,7 +33,6 @@ import re
 import time
 from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup
 from loguru import logger
 
 from job_market_intel.common.http_client import (
@@ -52,6 +51,17 @@ from .exceptions import AlfredFetchError, AlfredResponseError
 #: through as a key. The two alternatives are there because a short slug has no
 #: interior at all -- "3d-artist" is only four characters of body.
 _SLUG = re.compile(r"^(?:[a-z0-9]{5,}|[a-z0-9][a-z0-9-]{3,197}[a-z0-9])$")
+
+#: <loc> values from a sitemap document.
+#:
+#: A regex rather than ``BeautifulSoup(xml, "xml")`` on purpose: that requires
+#: lxml, which is **not** a declared dependency of this project. The code passed
+#: locally only because an unrelated ad-hoc install had put lxml on this
+#: machine, and CI failed with
+#: ``bs4.exceptions.FeatureNotFound: Couldn't find a tree builder with the
+#: features you requested: xml``. A sitemap is flat, machine-generated XML, so
+#: extracting <loc> is all that is needed and it is not worth a new dependency.
+_LOC = re.compile(r"<loc>\s*(.*?)\s*</loc>", re.I | re.S)
 
 
 class AlfredClient:
@@ -84,9 +94,13 @@ class AlfredClient:
     # ------------------------------------------------------------- discovery
 
     def _sitemap_urls(self, xml: str) -> list[str]:
-        """All <loc> values in a sitemap index or urlset document."""
-        soup = BeautifulSoup(xml, "xml")
-        return [u.get_text(strip=True) for u in soup.find_all("loc")]
+        """All <loc> values in a sitemap index or urlset document.
+
+        Regex, not an XML tree builder -- see the note on ``_LOC``. Handles both
+        shapes a sitemap can take: a ``<sitemapindex>`` of child sitemaps and a
+        flat ``<urlset>`` of pages.
+        """
+        return [m.group(1).strip() for m in _LOC.finditer(xml or "")]
 
     def _resolve_jobs_sitemap(self, index_xml: str, failures: dict[str, str]) -> tuple[str, str]:
         """Return ``(xml, url)`` for the sitemap that holds the postings.

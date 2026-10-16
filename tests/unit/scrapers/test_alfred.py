@@ -184,6 +184,52 @@ class TestSitemapDiscovery:
         assert not hasattr(settings, "listing_path")
 
 
+class TestSitemapParsing:
+    """Sitemap parsing must not need an XML library.
+
+    ``BeautifulSoup(xml, "xml")`` requires lxml, which is not a declared
+    dependency of this project. The first implementation used it and passed
+    locally only because an unrelated ad-hoc install had put lxml on this
+    machine; CI failed with ``FeatureNotFound: Couldn't find a tree builder
+    with the features you requested: xml``. These tests pin the dependency-free
+    behaviour so the trap cannot be re-introduced by a well-meaning refactor.
+    """
+
+    def test_loc_values_are_extracted_from_an_index(self) -> None:
+        client = AlfredClient(AlfredSettings())
+        assert client._sitemap_urls(SITEMAP_INDEX) == [
+            "https://alfred.is/sitemap-web.xml",
+            "https://alfred.is/sitemap-jobs.xml",
+        ]
+
+    def test_loc_values_are_extracted_from_a_urlset(self) -> None:
+        assert len(AlfredClient(AlfredSettings())._sitemap_urls(JOBS_SITEMAP)) == 6
+
+    def test_whitespace_and_newlines_inside_loc_are_tolerated(self) -> None:
+        xml = "<urlset><url><loc>\n  https://alfred.is/starf/x  \n</loc></url></urlset>"
+        assert AlfredClient(AlfredSettings())._sitemap_urls(xml) == ["https://alfred.is/starf/x"]
+
+    def test_a_document_with_no_loc_yields_nothing_rather_than_raising(self) -> None:
+        client = AlfredClient(AlfredSettings())
+        assert client._sitemap_urls("") == []
+        assert client._sitemap_urls("<urlset></urlset>") == []
+
+    def test_the_client_module_does_not_import_an_xml_parser(self) -> None:
+        import inspect
+
+        from job_market_intel.scrapers.alfred import client as client_module
+
+        code_lines = [
+            line
+            for line in inspect.getsource(client_module).splitlines()
+            if not line.lstrip().startswith("#")
+        ]
+        assert not any("BeautifulSoup" in line for line in code_lines), (
+            "the client must not reach for an XML tree builder; it needs lxml, "
+            "which is not a declared dependency of this project"
+        )
+
+
 class TestSlug:
     def test_accepts_a_real_slug(self) -> None:
         assert _SLUG.match("adstod-a-tannlknastofu")
