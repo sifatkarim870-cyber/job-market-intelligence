@@ -745,6 +745,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "jobbank": "CA",
     "builtin": "US",
     "careers24": "ZA",
+    #: apna: India. All 30 postings measured carried addressCountry 'IN'
+    #:   and applicantLocationRequirements name='India', so this is a fact about
+    #:   the board rather than an inference. It matters here more than elsewhere:
+    #:   the board writes 'Bengaluru' where ref.cities holds 'Bangalore', so
+    #:   city_exact misses on spelling and those postings fall through to the
+    #:   source default instead of the global-remote row.
+    "apna": "IN",
 }
 
 
