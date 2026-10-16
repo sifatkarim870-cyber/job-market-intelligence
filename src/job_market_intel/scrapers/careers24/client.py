@@ -69,8 +69,7 @@ class Careers24Client:
             )
         except TransientHTTPError as exc:
             raise Careers24FetchError(
-                f"Careers24 unreachable after {self._settings.max_retry_attempts} "
-                f"attempts: {exc}"
+                f"Careers24 unreachable after {self._settings.max_retry_attempts} attempts: {exc}"
             ) from exc
         except PermanentHTTPError as exc:
             raise Careers24FetchError(f"Careers24 refused {url}: {exc}") from exc
@@ -130,7 +129,9 @@ class Careers24Client:
             short_page = len(links) < self._settings.min_links_per_page
             logger.info(
                 "careers24 page {}: {} new ({} total){}",
-                page, new, len(found),
+                page,
+                new,
+                len(found),
                 " [short page, treating as the tail]" if short_page else "",
             )
             if len(found) >= self._settings.max_jobs_per_run or short_page:

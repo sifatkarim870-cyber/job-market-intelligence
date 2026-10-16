@@ -69,8 +69,7 @@ POSTING = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
     "title": "Office Administrator",
-    "description": "<p>We are looking for an office administrator to join our "
-    "Pretoria team.</p>",
+    "description": "<p>We are looking for an office administrator to join our Pretoria team.</p>",
     "industry": "Admin",
     "identifier": {
         "@type": "PropertyValue",
@@ -190,11 +189,12 @@ class TestSalaryShapes:
         recorded where 15 exist.
         """
         lo, hi, period, currency, unit, shape = _extract_salary(
-            {"baseSalary": {
-                "currency": "ZAR",
-                "value": {"@type": "QuantitativeValue", "value": "650000",
-                          "unitText": "YEAR"},
-            }}
+            {
+                "baseSalary": {
+                    "currency": "ZAR",
+                    "value": {"@type": "QuantitativeValue", "value": "650000", "unitText": "YEAR"},
+                }
+            }
         )
         assert (lo, hi) == (650000.0, 650000.0)
         assert shape == "quantitative"
@@ -205,11 +205,12 @@ class TestSalaryShapes:
     def test_nested_value_with_a_daily_rate(self) -> None:
         """Measured verbatim from advert 2393721."""
         lo, _, period, _, _, _ = _extract_salary(
-            {"baseSalary": {
-                "currency": "ZAR",
-                "value": {"@type": "QuantitativeValue", "value": "180",
-                          "unitText": "DAY"},
-            }}
+            {
+                "baseSalary": {
+                    "currency": "ZAR",
+                    "value": {"@type": "QuantitativeValue", "value": "180", "unitText": "DAY"},
+                }
+            }
         )
         assert lo == 180.0
         assert period == "daily"
@@ -222,10 +223,12 @@ class TestSalaryShapes:
         the cleaner drop the amount rather than call R 80 a yearly salary.
         """
         lo, _, period, _, unit, _ = _extract_salary(
-            {"baseSalary": {
-                "currency": "ZAR",
-                "value": {"@type": "QuantitativeValue", "value": "80", "unitText": ""},
-            }}
+            {
+                "baseSalary": {
+                    "currency": "ZAR",
+                    "value": {"@type": "QuantitativeValue", "value": "80", "unitText": ""},
+                }
+            }
         )
         assert lo == 80.0
         assert unit is None
@@ -243,9 +246,12 @@ class TestSalaryShapes:
     def test_range_shape_still_works(self) -> None:
         """Wellfound's and Built In's shape, in case the site ever emits it."""
         lo, hi, period, _, _, shape = _extract_salary(
-            {"baseSalary": {"currency": "USD",
-                            "value": {"minValue": 100000, "maxValue": 120000,
-                                      "unitText": "YEAR"}}}
+            {
+                "baseSalary": {
+                    "currency": "USD",
+                    "value": {"minValue": 100000, "maxValue": 120000, "unitText": "YEAR"},
+                }
+            }
         )
         assert (lo, hi) == (100000.0, 120000.0)
         assert shape == "range"
@@ -254,12 +260,21 @@ class TestSalaryShapes:
     def test_range_shape_reads_unit_text_from_either_level(self) -> None:
         """Wellfound/Built In put it inside ``value``; some emitters put it outside."""
         outer = _extract_salary(
-            {"baseSalary": {"currency": "USD", "unitText": "YEAR",
-                            "value": {"minValue": 1, "maxValue": 2}}}
+            {
+                "baseSalary": {
+                    "currency": "USD",
+                    "unitText": "YEAR",
+                    "value": {"minValue": 1, "maxValue": 2},
+                }
+            }
         )
         inner = _extract_salary(
-            {"baseSalary": {"currency": "USD",
-                            "value": {"minValue": 1, "maxValue": 2, "unitText": "YEAR"}}}
+            {
+                "baseSalary": {
+                    "currency": "USD",
+                    "value": {"minValue": 1, "maxValue": 2, "unitText": "YEAR"},
+                }
+            }
         )
         assert outer[2] == inner[2] == "yearly"
 
@@ -270,32 +285,36 @@ class TestSalaryShapes:
     @pytest.mark.parametrize(
         ("raw", "expected"),
         [
-            ("650000", 650000.0),                    # the shape the site uses
-            ("R 1 250 000,00", 1250000.0),           # rand with European decimals
-            ("$120,000", 120000.0),                  # English thousands separator
-            ("1.250.000", 1250000.0),                # European thousands separator
+            ("650000", 650000.0),  # the shape the site uses
+            ("R 1 250 000,00", 1250000.0),  # rand with European decimals
+            ("$120,000", 120000.0),  # English thousands separator
+            ("1.250.000", 1250000.0),  # European thousands separator
             ("ZAR 98 500", 98500.0),
             ("", None),
             (None, None),
-            ("n/a", None),                           # decoration but no digits
-            (True, None),                            # a bool is not a salary
+            ("n/a", None),  # decoration but no digits
+            (True, None),  # a bool is not a salary
         ],
     )
     def test_formatted_monetary_strings_are_coerced(self, raw, expected) -> None:
         """The obvious strip-and-float leaves the spaces in and raises instead."""
-        assert _extract_salary(
-            {"baseSalary": {"value": {"value": raw, "unitText": "YEAR"}}}
-        )[0] == expected
+        assert (
+            _extract_salary({"baseSalary": {"value": {"value": raw, "unitText": "YEAR"}}})[0]
+            == expected
+        )
 
     @pytest.mark.parametrize(
         ("unit", "expected"),
-        [("YEAR", "yearly"), ("MONTH", "monthly"), ("WEEK", "weekly"),
-         ("DAY", "daily"), ("HOUR", "hourly")],
+        [
+            ("YEAR", "yearly"),
+            ("MONTH", "monthly"),
+            ("WEEK", "weekly"),
+            ("DAY", "daily"),
+            ("HOUR", "hourly"),
+        ],
     )
     def test_every_unit_maps_into_the_schema_vocabulary(self, unit: str, expected: str) -> None:
-        _, _, period, _, _, _ = _extract_salary(
-            {"baseSalary": {"value": "100", "unitText": unit}}
-        )
+        _, _, period, _, _, _ = _extract_salary({"baseSalary": {"value": "100", "unitText": unit}})
         assert period == expected
         assert period in ALLOWED_PERIODS
 
@@ -309,9 +328,7 @@ class TestSalaryShapes:
 
 class TestLocation:
     def test_bare_place_is_read(self) -> None:
-        label, country, city, region = _extract_location(
-            {"jobLocation": POSTING["jobLocation"]}
-        )
+        label, country, city, region = _extract_location({"jobLocation": POSTING["jobLocation"]})
         assert (country, city, region) == ("South Africa", "Pretoria", "Gauteng")
         assert label == "Pretoria, Gauteng"
 
@@ -341,11 +358,15 @@ class TestLocation:
         because that is what the source actually said.
         """
         label, country, city, region = _extract_location(
-            {"jobLocation": {"address": {
-                "addressLocality": "Gauteng",
-                "addressRegion": "Gauteng",
-                "addressCountry": "South Africa",
-            }}}
+            {
+                "jobLocation": {
+                    "address": {
+                        "addressLocality": "Gauteng",
+                        "addressRegion": "Gauteng",
+                        "addressCountry": "South Africa",
+                    }
+                }
+            }
         )
         assert label == "Gauteng"
         assert (country, city, region) == ("South Africa", "Gauteng", "Gauteng")
@@ -357,7 +378,9 @@ class TestLocation:
 class TestParser:
     def test_a_full_posting_is_parsed(self) -> None:
         job = Careers24Parser().parse(
-            "2393648", detail_html(), url="https://www.careers24.com/jobs/adverts/2393648-x",
+            "2393648",
+            detail_html(),
+            url="https://www.careers24.com/jobs/adverts/2393648-x",
             listing_page=1,
         )
         assert job.source_job_id == "2393648"
@@ -489,8 +512,14 @@ class TestCleaner:
 class TestEmploymentTypeMapping:
     @pytest.mark.parametrize(
         ("raw", "expected"),
-        [("FULL_TIME", "full_time"), ("PART_TIME", "part_time"), ("CONTRACT", "contract"),
-         ("CONTRACTOR", "freelance"), ("TEMPORARY", "temporary"), ("INTERN", "internship")],
+        [
+            ("FULL_TIME", "full_time"),
+            ("PART_TIME", "part_time"),
+            ("CONTRACT", "contract"),
+            ("CONTRACTOR", "freelance"),
+            ("TEMPORARY", "temporary"),
+            ("INTERN", "internship"),
+        ],
     )
     def test_schema_vocabulary_maps_to_the_database_codes(self, raw: str, expected: str) -> None:
         assert _map_employment_type(raw) == expected

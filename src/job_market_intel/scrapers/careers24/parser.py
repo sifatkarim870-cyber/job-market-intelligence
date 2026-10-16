@@ -83,11 +83,11 @@ def _money(value: Any) -> float | None:
 
     if "," in text:
         if "." not in text and text.count(",") == 1 and len(text.rsplit(",", 1)[1]) != 3:
-            text = text.replace(",", ".")          # decimal separator
+            text = text.replace(",", ".")  # decimal separator
         else:
-            text = text.replace(",", "")           # thousands separator
+            text = text.replace(",", "")  # thousands separator
     elif text.count(".") > 1:
-        text = text.replace(".", "")               # "1.250.000" can only be thousands
+        text = text.replace(".", "")  # "1.250.000" can only be thousands
 
     try:
         return float(text)
@@ -259,7 +259,8 @@ class Careers24Parser:
         if declared and str(declared) != job_id:
             logger.warning(
                 "careers24 id mismatch: URL says {} but JSON-LD identifier says {}",
-                job_id, declared,
+                job_id,
+                declared,
             )
 
         salary_min, salary_max, salary_period, currency, unit, shape = _extract_salary(ld)
@@ -311,6 +312,7 @@ class Careers24Parser:
         if issues:
             logger.warning(
                 "dropped {} of {} Careers24 records that failed to parse",
-                len(issues), len(records),
+                len(issues),
+                len(records),
             )
         return parsed, issues
