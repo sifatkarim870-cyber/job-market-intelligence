@@ -724,6 +724,12 @@ def get_or_create_location(
 #:
 #: wellfound is deliberately NOT here: its listings cover the US, UK, DE, FR,
 #: NL, ES, IE and IN, and individual postings genuinely span countries.
+#: careers24: South Africa only. Every posting measured carried
+#:   ``jobLocation.address.addressCountry = "South Africa"``, so this is a fact
+#:   about the board, not an assumption -- and without it the resolver would
+#:   collapse any posting whose location text is province-only ("Gauteng") or
+#:   absent onto the global-remote row and lose the country, which is how
+#:   builtin lost 9 of 40 and usajobs/jobbank lost 42 between them.
 SOURCE_HOME_COUNTRY: dict[str, str] = {
     "jobvision": "IR",
     "jobinja": "IR",
@@ -738,6 +744,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "usajobs": "US",
     "jobbank": "CA",
     "builtin": "US",
+    "careers24": "ZA",
 }
 
 
