@@ -260,8 +260,82 @@ def restore_reference(engine, state_dir: pathlib.Path) -> int:
             _relax_identity_columns(conn, schema, table)
             _load_table(conn, schema, table, table_obj)
             total += table_obj.num_rows
+
+        _resync_identity_sequences(conn, ordered)
     logger.info("restored {:,} reference rows", total)
     return total
+
+
+def _resync_identity_sequences(conn, tables: list[tuple[str, str]]) -> list[str]:
+    """Advance every identity sequence to the highest id actually loaded.
+
+    **This is the root cause of the CI ``locations_pkey`` collisions.**
+
+    Postgres does not move an identity sequence when a row is inserted with an
+    explicit id. The restore above has to insert explicit ids -- that is the
+    whole point of the snapshot, so every FK keeps lining up -- but the
+    sequence is left exactly where it was. On a fresh database that means it
+    still reads 1, so the first row a scraper generates collides with the row
+    the snapshot already loaded at id 1.
+
+    It stayed invisible for a long time because most sources resolve their
+    locations to ids that already exist and therefore never generate a new one.
+    Careers24 exposed it on its first CI run on 2026-10-16: 30 of 100 postings
+    failed with ``duplicate key value violates unique constraint
+    "locations_pkey"``, and the per-row savepoint swallowed each one, so the
+    job still reported success while losing 30% of its rows.
+
+    The fix has to be generic rather than a list of four known columns
+    (``ref.locations``, ``ref.cities``, ``ref.regions``, ``ref.countries``),
+    because any source that creates a row in any identity-bearing reference
+    table hits this, and the next one will not be on the list. So every
+    identity column in the loaded tables is advanced to its own ``max()``.
+
+    ``setval`` is called with ``is_called = true`` so the next generated value
+    is ``max + 1`` and not ``max`` itself.
+    """
+    resynced: list[str] = []
+    for schema, table in tables:
+        columns = conn.execute(
+            text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = :s AND table_name = :t AND is_identity = 'YES' "
+                "ORDER BY ordinal_position"
+            ),
+            {"s": schema, "t": table},
+        ).all()
+        for (column,) in columns:
+            ident = _quote_identifier(column)
+            qualified = f"{schema}.{_quote_identifier(table)}"
+            max_id = int(
+                conn.execute(
+                    text(f"SELECT COALESCE(MAX({ident}), 0) FROM {qualified}")
+                ).scalar_one()
+            )
+            if max_id <= 0:
+                continue
+            # pg_sequence_last_value returns NULL for a sequence that has never
+            # been used, which is precisely the fresh-database case this fix is
+            # about. Reading it through pg_sequences instead would compare a
+            # schema-qualified name against a bare sequence name and silently
+            # find nothing.
+            current = conn.execute(
+                text("SELECT pg_sequence_last_value(pg_get_serial_sequence(:st, :c))"),
+                {"st": qualified, "c": column},
+            ).scalar_one()
+            if current is not None and int(current) >= max_id:
+                continue
+            conn.execute(
+                text("SELECT setval(pg_get_serial_sequence(:st, :c), :v, true)"),
+                {"st": qualified, "c": column, "v": max_id},
+            )
+            was = current if current is not None else "unused"
+            resynced.append(f"{schema}.{table}.{column} {was}->{max_id}")
+    if resynced:
+        logger.info("resynced {} identity sequence(s): {}", len(resynced), resynced)
+    else:
+        logger.info("identity sequences already at or ahead of their loaded ids")
+    return resynced
 
 
 def _always_identity_columns(conn, schema: str, table: str) -> list[str]:
