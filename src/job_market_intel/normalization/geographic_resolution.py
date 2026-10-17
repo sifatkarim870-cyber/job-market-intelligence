@@ -762,6 +762,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: jobwebghana: Ghana. addressCountry is absent on the postings measured,
     #:   so this is the fallback rather than a read-back.
     "jobwebghana": "GH",
+    #: acbar_jobs: Afghanistan. Deliberately NOT derived from the board's
+    #:   own 'Nationality' row, which reads 'Afghan'/'National' and describes
+    #:   who may apply rather than where the job is.
+    "acbar_jobs": "AF",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
     #:   the board rather than an inference. It matters here more than elsewhere:

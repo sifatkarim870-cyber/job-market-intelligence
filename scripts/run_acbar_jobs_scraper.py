@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+"""Run the ACBAR jobs scraper.
+
+    uv run python scripts/run_acbar_jobs_scraper.py                 # fetch + persist
+    uv run python scripts/run_acbar_jobs_scraper.py --no-db         # dry run
+    uv run python scripts/run_acbar_jobs_scraper.py --max-jobs 20   # smaller walk
+
+No key, registration or proxy is needed. Afghanistan had ZERO coverage in the
+corpus before this source.
+
+No schema.org data: the parser reads a <dl> of label/value rows. Two measured
+traps it handles:
+  * the body container embeds a related-jobs carousel carrying six ISO dates
+    belonging to OTHER postings -- removed before the body text is taken, so
+    zero foreign dates survive;
+  * the Salary row is prose ("As Per Organization", "Negotiable"), not a figure,
+    so no salary is stored.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+
+from job_market_intel.scrapers.acbar_jobs import AcbarJobsPipeline, AcbarJobsSettings
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Scrape the ACBAR jobs board (acbar.org).")
+    ap.add_argument("--no-db", action="store_true", help="Fetch and report; do not persist.")
+    ap.add_argument(
+        "--max-jobs",
+        type=int,
+        default=None,
+        help="Cap postings fetched this run (default: ACBAR_JOBS_MAX_JOBS_PER_RUN).",
+    )
+    ap.add_argument(
+        "--pages",
+        type=int,
+        default=None,
+        help="Listing pages to walk (default: ACBAR_JOBS_MAX_PAGES, 20 postings per page).",
+    )
+    args = ap.parse_args()
+
+    overrides: dict = {}
+    if args.max_jobs is not None:
+        overrides["max_jobs_per_run"] = args.max_jobs
+    if args.pages is not None:
+        overrides["max_pages"] = args.pages
+    settings = AcbarJobsSettings(**overrides)
+
+    result = AcbarJobsPipeline(settings=settings).run(store_db=not args.no_db)
+
+    print("\n" + "=" * 64)
+    print("ACBAR JOBS - RUN SUMMARY")
+    print("=" * 64)
+    print(f"Postings fetched:        {result.raw_count}")
+    print(f"Fetch failures:          {result.fetch_failures}")
+    print(f"Parsed:                  {result.parsed_count}")
+    print(f"Cleaned:                 {result.cleaned_count}")
+    print(f"Batch validation:        {'PASSED' if result.validation_passed else 'FAILED'}")
+    print("Salaries:                0 -- the Salary row is prose ('As Per Organization',")
+    print("                         'Negotiable'), not a figure. Kept verbatim for audit.")
+    if args.no_db:
+        print("DRY-RUN MODE (--no-db): Database storage skipped.")
+    else:
+        print(f"Inserted:                {result.inserted_count}")
+        print(f"Updated:                 {result.updated_count}")
+        print(f"Unchanged:               {result.unchanged_count}")
+        print(f"Failed to persist:       {result.failed_count}")
+    if result.issues:
+        print(f"Issues ({len(result.issues)}):")
+        for issue in result.issues[:5]:
+            print(f"  - {issue}")
+    print("=" * 64)
+
+    # A run that persisted nothing while reporting a failed batch validation is
+    # breakage, not a quiet board.
+    persisted = result.inserted_count + result.updated_count + result.unchanged_count
+    if not args.no_db and not result.validation_passed and persisted == 0:
+        print(
+            "\nERROR: the run persisted 0 rows and batch validation FAILED. "
+            "This is breakage, not a quiet board -- exiting non-zero so CI cannot "
+            "report success on a source that collected nothing."
+        )
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
