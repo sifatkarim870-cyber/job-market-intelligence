@@ -1,7 +1,7 @@
 """Cleans raw PhilJobNet postings into the shared ``CleanedJob`` contract.
 
-The salary reads ``\"not specified\"`` on most postings and a single figure
-(``\"₱20,000.00\"``) on some. The figure has no stated period, so it is stored
+The salary reads ``"not specified"`` on most postings and a single figure
+(``"â‚±20,000.00"``) on some. The figure has no stated period, so it is stored
 with ``pay_period = monthly`` (the Philippine convention) and that guess is
 recorded in ``raw_payload`` so it is auditable rather than silent.
 

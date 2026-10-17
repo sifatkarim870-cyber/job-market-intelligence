@@ -2,16 +2,16 @@
 
 Two facts shape this cleaner, both measured:
 
-* **There is no salary.** ``Salary`` reads ``\"T.B.D.\"`` on every measured
+* **There is no salary.** ``Salary`` reads ``"T.B.D."`` on every measured
   posting, which is not a figure, so ``salary_disclosed`` is always ``False`` and
   no ``pay_period`` is claimed about a number that does not exist. The verbatim
-  string is kept in ``raw_payload[\"salary_text\"]``.
+  string is kept in ``raw_payload["salary_text"]``.
 
 * **The posting date is approximate.** It is derived from a relative phrase
-  (\"Posted 1 week ago\", \"Posted 3 days ago\") rather than published, so
-  ``raw_payload[\"posted_date_is_derived\"]`` is ``True`` and any freshness
+  ("Posted 1 week ago", "Posted 3 days ago") rather than published, so
+  ``raw_payload["posted_date_is_derived"]`` is ``True`` and any freshness
   analysis over this source must treat the date as an estimate. The closing date
-  is absolute (\"Closes 5 November 2026\").
+  is absolute ("Closes 5 November 2026").
 
 ``Salary`` and ``Openings`` are recorded verbatim; the employer is extracted
 from the card header (the ``<h1>``'s parent text minus the ``<h1>``) rather than

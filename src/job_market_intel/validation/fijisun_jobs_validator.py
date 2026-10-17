@@ -1,7 +1,7 @@
 """Batch validation for the Fiji Sun jobs scraper.
 
 ``salary`` is **not** in the census: every measured posting reads
-``\"T.B.D.\"``, which is not a figure, so a check there would be a permanent 100%
+``"T.B.D."``, which is not a figure, so a check there would be a permanent 100%
 failure saying nothing about the parser.
 """
 

@@ -44,6 +44,10 @@ dependencies = [
     # huggingface-hub note above for why this is a core dependency.
     "pyarrow>=15.0",
     "psycopg[binary]>=3.1,<4.0",
+    # PDF text extraction for boards that publish postings as PDFs rather than
+    # HTML (hiiraan.com, Somalia). Declared here rather than ad-hoc installed,
+    # per the lxml lesson: an ad-hoc install is not a dependency.
+    "pypdf>=4.0",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "python-dotenv>=1.0,<2.0",
