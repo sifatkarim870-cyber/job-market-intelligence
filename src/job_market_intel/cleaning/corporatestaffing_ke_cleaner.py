@@ -1,7 +1,7 @@
 """Cleans raw Corporate Staffing postings into the shared ``CleanedJob`` contract.
 
 ``Salary: Open`` / ``Salary: Confidential`` is prose, not a figure, so no salary
-is stored. The verbatim string is kept in ``raw_payload[\"salary_text\"]``.
+is stored. The verbatim string is kept in ``raw_payload["salary_text"]``.
 
 Employment type comes from ``Job Type: Full Time``. Location from
 ``Location: Nairobi``. Posted/closing dates from ``Date Posted`` / ``Deadline``

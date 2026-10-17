@@ -842,6 +842,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "fijisun_jobs": "FJ",
     "corporatestaffing_ke": "KE",
     "philjobnet": "PH",
+    "hiiraan_jobs": "SO",
     "jobsnepal": "NP",
     "karriere_at": "AT",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'

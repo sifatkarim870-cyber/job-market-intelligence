@@ -1,11 +1,11 @@
 """Cleans raw Karriere.at postings into the shared ``CleanedJob`` contract.
 
-``employmentType`` arrives as a **list** (``[\"PART_TIME\"]``) -- the same shape
+``employmentType`` arrives as a **list** (``["PART_TIME"]``) -- the same shape
 as Angola Emprego, not the bare string Jobweb Ghana sends. Both shapes survive
 the normaliser.
 
 ``Salary`` nests ``value``/``minValue``/``maxValue``/``unitText`` under ``value``
-(the Apna/Mustakbil shape) and ``unitText`` is ``\"MONTH\"``, so ``pay_period``
+(the Apna/Mustakbil shape) and ``unitText`` is ``"MONTH"``, so ``pay_period``
 is **monthly** rather than the ``yearly`` default.
 
 Postings are in **German**. ``core.jobs.language_code`` plus the existing

@@ -2,7 +2,7 @@
 
 ``Salary`` reads ``"Negotiable as per competence and experience."`` -- prose, not
 a figure -- so no salary is stored. The verbatim string is kept in
-``raw_payload[\"salary_text\"]``.
+``raw_payload["salary_text"]``.
 
 Postings are in **English**.
 """
