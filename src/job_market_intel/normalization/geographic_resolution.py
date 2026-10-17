@@ -745,6 +745,9 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "jobbank": "CA",
     "builtin": "US",
     "careers24": "ZA",
+    #: careerjunction: South Africa. addressCountry is the ISO code 'ZA'
+    #:   on every posting measured, same as careers24.
+    "careerjunction": "ZA",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
     #:   the board rather than an inference. It matters here more than elsewhere:
