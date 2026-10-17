@@ -99,6 +99,44 @@ class TestListingLinks:
         found = [m.group(1) for m in _JOB_LINK.finditer(html)]
         assert found == ["/vagas/grande-oportunidade-para-coordenador-industrial-4818"]
 
+    def test_the_measured_href_form_is_absolute(self) -> None:
+        """THE trap, and it cost a CI run.
+
+        Measured 2026-10-18: **all 15** listing hrefs are absolute and **zero**
+        are relative. The first version of this scraper anchored on
+        ``href="/vagas/..."`` and matched nothing on a board serving 15 postings
+        a page -- CI run 39032134903 reported "0 link(s)" on every page.
+
+        The local probe missed it because it resolved links with ``urljoin``,
+        which normalizes both forms, so the probe and the implementation
+        disagreed about what the site emits. This test pins the raw form.
+        """
+        html = (
+            '<a href="https://angolaemprego.com/vagas/'
+            'grande-oportunidade-para-coordenador-industrial-4818">x</a>'
+        )
+        found = [m.group(1) for m in _JOB_LINK.finditer(html)]
+        assert found == ["/vagas/grande-oportunidade-para-coordenador-industrial-4818"]
+
+    def test_both_forms_are_accepted(self) -> None:
+        """Defensive: a board that switches to relative hrefs must not break it."""
+        slug = "/vagas/grande-oportunidade-para-head-of-geology"
+        for prefix in ("", "https://angolaemprego.com", "https://www.angolaemprego.com"):
+            html = f'<a href="{prefix}{slug}">x</a>'
+            assert [m.group(1) for m in _JOB_LINK.finditer(html)] == [slug]
+
+    def test_a_real_listing_snippet_excludes_the_bare_listing_path(self) -> None:
+        """The exact shape of the first three hrefs on the live listing."""
+        html = (
+            '<a href="https://angolaemprego.com/vagas">Todas</a>'
+            '<a href="https://angolaemprego.com/vagas/grande-oportunidade-para-coordenador-'
+            'industrial-4818">1</a>'
+            '<a href="https://angolaemprego.com/vagas/grande-oportunidade-para-motoristas">2</a>'
+        )
+        found = [m.group(1) for m in _JOB_LINK.finditer(html)]
+        assert "/vagas" not in found, "the bare listing path must not be treated as a posting"
+        assert len(found) == 2
+
     def test_a_slug_without_a_numeric_suffix_still_matches(self) -> None:
         """Measured: some slugs end -4818 and others do not."""
         html = '<a href="/vagas/grande-oportunidade-para-head-of-geology">x</a>'
