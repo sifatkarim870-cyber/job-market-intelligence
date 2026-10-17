@@ -15,6 +15,7 @@ from .base import SeedResult, upsert_many
 
 CURRENCIES: list[dict] = [
     {"iso_code": "USD", "currency_name": "United States Dollar", "symbol": "$"},
+    {"iso_code": "AFN", "currency_name": "Afghan Afghani", "symbol": "Ø‹"},
     {"iso_code": "EUR", "currency_name": "Euro", "symbol": "€"},
     {"iso_code": "GBP", "currency_name": "British Pound Sterling", "symbol": "£"},
     {"iso_code": "CAD", "currency_name": "Canadian Dollar", "symbol": "$"},
