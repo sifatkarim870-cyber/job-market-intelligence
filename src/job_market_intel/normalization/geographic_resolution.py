@@ -766,6 +766,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   own 'Nationality' row, which reads 'Afghan'/'National' and describes
     #:   who may apply rather than where the job is.
     "acbar_jobs": "AF",
+    #: jobs_af: Afghanistan, same country as acbar_jobs. Its addressCountry is
+    #:   the name 'Afghanistan', so the cleaner normalizes it; this is the
+    #:   fallback for rows whose location text resolves to nothing.
+    "jobs_af": "AF",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
     #:   the board rather than an inference. It matters here more than elsewhere:
