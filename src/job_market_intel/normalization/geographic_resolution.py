@@ -840,6 +840,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   fallback for rows whose location text resolves to nothing.
     "jobs_af": "AF",
     "fijisun_jobs": "FJ",
+    "corporatestaffing_ke": "KE",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
     #:   the board rather than an inference. It matters here more than elsewhere:

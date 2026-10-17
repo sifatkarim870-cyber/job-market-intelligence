@@ -355,6 +355,15 @@
       "max_env": "FIJISUN_JOBS_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "fijisun.com.fj - Fiji; Fiji had ZERO postings. No key, no registration, no proxy. See the scraper module docstrings for the measured traps: og:title is SITE-wide, the posting date is relative ('Posted 1 week ago'), the closing date is absolute ('Closes 5 November 2026'), and Salary reads 'T.B.D.' on every measured posting."
+    },
+    {
+      "code": "corporatestaffing_ke",
+      "group": "html",
+      "script": "scripts/run_corporatestaffing_ke_scraper.py",
+      "timeout": 60,
+      "max_env": "CORPORATE_STAFFING_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "corporatestaffing.co.ke - Kenya; Kenya had brightmonday.co.ke (workbook verdict 'HTML scraper') but it is Cloudflare-walled from datacenter IPs. Corporate Staffing is the working substitute: no key, no registration, no proxy. Discovery: /jobs/ carries 40 postings and /jobs/page/2/ adds 40 new ones. Hrefs are ABSOLUTE (measured 40 absolute, 0 relative). robots.txt is User-agent:* with an empty Disallow:, so the whole site is permitted. NO JSON-LD: everything is in labelled rows (Date Posted, Job Type, Employer, Salary, Location, Deadline); dates are dd/mm/yyyy (Kenyan convention, not ISO). Salary reads 'Open' / 'Confidential' -- prose, not a figure -- so no salary is stored. Registered 2026-10-18."
     }
   ]
 }
