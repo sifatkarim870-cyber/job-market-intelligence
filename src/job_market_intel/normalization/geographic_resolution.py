@@ -748,6 +748,14 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: careerjunction: South Africa. addressCountry is the ISO code 'ZA'
     #:   on every posting measured, same as careers24.
     "careerjunction": "ZA",
+    #: vagas_com_br: Brazil. addressCountry is the NAME 'Brasil', not the
+    #:   ISO code, so the cleaner normalizes it and this is the fallback for
+    #:   rows that carry no usable address at all.
+    "vagas_com_br": "BR",
+    #: angola_emprego: Angola. addressCountry is not consistently present
+    #:   on the postings measured, so this is the fallback rather than a
+    #:   read-back of something the payload always carries.
+    "angola_emprego": "AO",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
     #:   the board rather than an inference. It matters here more than elsewhere:
