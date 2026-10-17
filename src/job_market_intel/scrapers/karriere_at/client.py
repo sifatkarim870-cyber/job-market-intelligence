@@ -101,9 +101,10 @@ class KarriereAtClient:
             empty_streak = 0
 
         if not found and not failures:
-            raise KarriereAtResponseError(
-                f"no postings found in {self._settings.max_pages} page(s) of {self._settings.listing_path}. An empty result here means "
-                "the markup changed -- not that the board is empty -- so it is "
+            raise KarriereAtResponseError(  # noqa: UP032
+                f"no postings found in {self._settings.max_pages} page(s) of "
+                f"{self._settings.listing_path}. An empty result here means the "
+                "markup changed -- not that the board is empty -- so it is "
                 "raised rather than returned empty."
             )
         return found, failures
