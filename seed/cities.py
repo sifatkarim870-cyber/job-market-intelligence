@@ -107,6 +107,77 @@ _CITIES: list[tuple[str, str, str | None, float, float, str]] = [
     ("Lima", "PE", None, -12.0464, -77.0428, "America/Lima"),
     ("Montevideo", "UY", None, -34.9011, -56.1645, "America/Montevideo"),
     ("Moscow", "RU", None, 55.7558, 37.6173, "Europe/Moscow"),
+    # ---------------------------------------------------------------------
+    # Cities for the boards added later. Each entry below exists because a
+    # measured posting named that city and the resolver had no row to match it
+    # against -- which is how 150 Rwandan, 112 Afghan and 65 Ghanaian postings
+    # ended up country-only.
+    # ---------------------------------------------------------------------
+    # Brazil. vagas.com.br posted in Belo Horizonte, Mariana, Parauapebas,
+    # Governador Celso Ramos and Governador Valadares.
+    ("Brasilia", "BR", "Distrito Federal", -15.7975, -47.8919, "America/Sao_Paulo"),
+    ("Belo Horizonte", "BR", "Minas Gerais", -19.9167, -43.9345, "America/Sao_Paulo"),
+    ("Governador Valadares", "BR", "Minas Gerais", -18.8511, -41.9455, "America/Sao_Paulo"),
+    ("Mariana", "BR", "Minas Gerais", -19.6636, -43.0376, "America/Sao_Paulo"),
+    ("Salvador", "BR", "Bahia", -12.9777, -38.5016, "America/Bahia"),
+    ("Fortaleza", "BR", "Ceara", -3.7319, -38.5267, "America/Fortaleza"),
+    ("Recife", "BR", "Pernambuco", -8.0476, -34.8770, "America/Recife"),
+    ("Curitiba", "BR", "Parana", -25.4284, -49.2733, "America/Sao_Paulo"),
+    ("Porto Alegre", "BR", "Rio Grande do Sul", -30.0346, -51.2177, "America/Sao_Paulo"),
+    ("Manaus", "BR", "Amazonas", -3.1190, -60.0217, "America/Manaus"),
+    ("Campinas", "BR", "Sao Paulo", -22.9058, -47.0608, "America/Sao_Paulo"),
+    ("Campo Grande", "BR", "Mato Grosso do Sul", -20.4697, -54.6201, "America/Campo_Grande"),
+    ("Parauapebas", "BR", "Para", -6.0672, -49.9017, "America/Belem"),
+    ("Governador Celso Ramos", "BR", "Santa Catarina", -27.3153, -49.6556, "America/Sao_Paulo"),
+    # Afghanistan. acbar.org posts in Baghlan, Kabul, Nangarhar, Balkh,
+    # Kunar, Herat, Kandahar, Helmand and Oruzgan.
+    ("Kabul", "AF", "Kabul", 34.5553, 69.2075, "Asia/Kabul"),
+    ("Kandahar", "AF", "Kandahar", 31.6289, 65.7372, "Asia/Kabul"),
+    ("Herat", "AF", "Herat", 34.3529, 62.2040, "Asia/Kabul"),
+    ("Mazar-e Sharif", "AF", "Balkh", 36.7090, 67.1109, "Asia/Kabul"),
+    ("Jalalabad", "AF", "Nangarhar", 34.4265, 70.4515, "Asia/Kabul"),
+    ("Kunduz", "AF", "Kunar", 36.7286, 68.8681, "Asia/Kabul"),
+    ("Ghazni", "AF", "Ghazni", 33.5533, 68.4228, "Asia/Kabul"),
+    ("Kunun", "AF", "Kunar", 34.9333, 64.9500, "Asia/Kabul"),
+    ("Taloqan", "AF", "Takhar", 36.7139, 69.7964, "Asia/Kabul"),
+    ("Lashkar Gah", "AF", "Helmand", 32.6264, 64.8372, "Asia/Kabul"),
+    ("Chaharmalq", "AF", "Uruzgan", 33.1000, 66.2500, "Asia/Kabul"),
+    ("Pull-e-Khumri", "AF", "Baghlan", 36.3000, 67.6200, "Asia/Kabul"),
+    # Angola. angolaemprego.com posts in Luanda, Cazenga and the Huambo area.
+    ("Luanda", "AO", "Luanda", -8.8390, 13.2894, "Africa/Luanda"),
+    ("Huambo", "AO", "Huambo", -12.7761, 15.7392, "Africa/Luanda"),
+    ("Lubango", "AO", "Huila", -14.9167, 13.4925, "Africa/Luanda"),
+    ("Benguela", "AO", "Benguela", -12.5783, 13.4156, "Africa/Luanda"),
+    ("Cabinda", "AO", "Cabinda", -5.5500, 12.2000, "Africa/Luanda"),
+    ("Cazenga", "AO", "Luanda", -8.8833, 13.4667, "Africa/Luanda"),
+    ("Malanje", "AO", "Malanje", -9.5333, 16.3333, "Africa/Luanda"),
+    # Rwanda. jobinrwanda.com names Kigali repeatedly and mentions HUYE.
+    ("Kigali", "RW", "Kigali", -1.9441, 30.0619, "Africa/Kigali"),
+    ("Huye", "RW", "Butare", -2.6036, 29.7361, "Africa/Kigali"),
+    # Ghana. jobwebghana.com posts in Accra, Kumasi, Takoradi and Tema.
+    ("Kumasi", "GH", "Ashanti", 6.6885, -1.6244, "Africa/Accra"),
+    ("Takoradi", "GH", "Western", 4.8975, -1.7605, "Africa/Accra"),
+    ("Tema", "GH", "Greater Accra", 5.6698, -0.0166, "Africa/Accra"),
+    ("Tamale", "GH", "Northern", 9.4008, -0.8393, "Africa/Accra"),
+    # Iceland. alfred.is is all Reykjavik.
+    ("Reykjavik", "IS", None, 64.1466, -21.9426, "Atlantic/Reykjavik"),
+    # Pakistan. mustakbil.pk posts in Taxila, Rawalpindi and Islamabad.
+    ("Taxila", "PK", None, 33.7459, 72.3592, "Asia/Karachi"),
+    ("Rawalpindi", "PK", None, 33.5651, 73.0169, "Asia/Karachi"),
+    ("Islamabad", "PK", None, 33.6844, 73.0479, "Asia/Karachi"),
+    ("Lahore", "PK", None, 31.5204, 74.3587, "Asia/Karachi"),
+    # South Africa. careers24 and careerjunction post across all nine provinces.
+    ("Durban", "ZA", "KwaZulu-Natal", -29.8587, 31.0218, "Africa/Johannesburg"),
+    ("Pretoria", "ZA", "Gauteng", -25.7479, 28.2293, "Africa/Johannesburg"),
+    ("Centurion", "ZA", "Gauteng", -25.8603, 28.1894, "Africa/Johannesburg"),
+    ("Port Elizabeth", "ZA", "Eastern Cape", -33.9608, 25.6022, "Africa/Johannesburg"),
+    ("East London", "ZA", "Eastern Cape", -33.0192, 27.9075, "Africa/Johannesburg"),
+    ("Polokwane", "ZA", "Limpopo", -23.8965, 29.4657, "Africa/Johannesburg"),
+    ("Nelspruit", "ZA", "Mpumalanga", -25.4658, 30.9853, "Africa/Johannesburg"),
+    ("Kimberley", "ZA", "Northern Cape", -28.7382, 24.7719, "Africa/Johannesburg"),
+    ("Bloemfontein", "ZA", "Free State", -29.1042, 26.2007, "Africa/Johannesburg"),
+    ("Rustenburg", "ZA", "North West", -25.6672, 27.2422, "Africa/Johannesburg"),
+    ("George", "ZA", "Western Cape", -33.9630, 22.4612, "Africa/Johannesburg"),
 ]
 
 

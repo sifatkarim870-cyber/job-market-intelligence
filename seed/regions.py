@@ -109,12 +109,168 @@ _GB_REGIONS = [
     "Northern Ireland",
 ]
 
+_BR_STATES = [
+    # 26 states + the federal district. Seeded because vagas.com.br and
+    # greenhouse carry Brazilian postings whose ``addressRegion`` is a bare
+    # state abbreviation ("SC", "PA", "MG"), and with zero Brazilian regions
+    # seeded there was nothing correct for such a token to match -- which is how
+    # 'Governador Celso Ramos, SC' (Santa Catarina) reached US "South Carolina".
+    "Acre",
+    "Alagoas",
+    "Amapa",
+    "Amazonas",
+    "Bahia",
+    "Ceara",
+    "Distrito Federal",
+    "Espirito Santo",
+    "Goias",
+    "Maranhao",
+    "Mato Grosso",
+    "Mato Grosso do Sul",
+    "Minas Gerais",
+    "Para",
+    "Paraiba",
+    "Parana",
+    "Pernambuco",
+    "Piaui",
+    "Rio de Janeiro",
+    "Rio Grande do Norte",
+    "Rio Grande do Sul",
+    "Rondonia",
+    "Roraima",
+    "Santa Catarina",
+    "Sao Paulo",
+    "Sergipe",
+    "Tocantins",
+]
+
+_AF_PROVINCES = [
+    # Afghanistan, from acbar.org (112 rows) and jobs.af (12 rows). Every
+    # measured posting names its province in the board's own Location field, e.g.
+    # "Baghlan - Pull-e-Khumri" and "Nangarhar - Chaprahar, Khogyani".
+    "Badakhshan",
+    "Badghis",
+    "Baghlan",
+    "Balkh",
+    "Bamyan",
+    "Daikundi",
+    "Faryab",
+    "Ghazni",
+    "Ghor",
+    "Helmand",
+    "Herat",
+    "Jowzjan",
+    "Kabul",
+    "Kandahar",
+    "Kapisa",
+    "Khost",
+    "Kunar",
+    "Laghman",
+    "Logar",
+    "Nangarhar",
+    "Nimruz",
+    "Nuristan",
+    "Paktia",
+    "Paktika",
+    "Parwan",
+    "Samangan",
+    "Sar-e Pul",
+    "Takhar",
+    "Uruzgan",
+    "Wardak",
+    "Zabul",
+]
+
+_AO_PROVINCES = [
+    # Angola, from angolaemprego.com. Postings name the province directly
+    # ("Luanda Province").
+    "Bengo",
+    "Bie",
+    "Benguela",
+    "Bié",
+    "Cabinda",
+    "Cuando Cubango",
+    "Cuanza Norte",
+    "Cuanza Sul",
+    "Huambo",
+    "Huíla",
+    "Luanda",
+    "Lunda Norte",
+    "Lunda Sul",
+    "Malanje",
+    "Moxico",
+    "Namibe",
+    "Uíge",
+    "Zaire",
+]
+
+_RW_DISTRICTS = [
+    # Rwanda's five former provinces.
+    "Butare",
+    "Byumba",
+    "Gitarama",
+    "Kibuye",
+    "Kigali",
+    "Ruhengeri",
+]
+
+_GH_REGIONS = [
+    # Ghana's 16 regions, from jobwebghana.com (65 rows).
+    "Ahafo",
+    "Ashanti",
+    "Bono",
+    "Central",
+    "Eastern",
+    "Greater Accra",
+    "Northern",
+    "Oti",
+    "Savannah",
+    "Upper East",
+    "Upper West",
+    "Volta",
+    "Western",
+    "Western North",
+    "North East",
+    "Bono East",
+]
+
+_ZA_PROVINCES = [
+    # South Africa, from careers24 (40 rows) and careerjunction (23).
+    "Eastern Cape",
+    "Free State",
+    "Gauteng",
+    "KwaZulu-Natal",
+    "Limpopo",
+    "Mpumalanga",
+    "Northern Cape",
+    "North West",
+    "Western Cape",
+]
+
+_PT_REGIONS = [
+    # Portugal, from net_empregos (30 rows) and greenhouse (30).
+    "Lisboa",
+    "Porto",
+    "Braga",
+    "Coimbra",
+    "Faro",
+    "Aveiro",
+    "Setubal",
+]
+
 _BY_COUNTRY: dict[str, list[str]] = {
     "US": _US_STATES,
     "CA": _CA_PROVINCES,
     "IN": _IN_STATES,
     "AU": _AU_STATES,
     "GB": _GB_REGIONS,
+    "BR": _BR_STATES,
+    "AF": _AF_PROVINCES,
+    "AO": _AO_PROVINCES,
+    "RW": _RW_DISTRICTS,
+    "GH": _GH_REGIONS,
+    "ZA": _ZA_PROVINCES,
+    "PT": _PT_REGIONS,
 }
 
 
