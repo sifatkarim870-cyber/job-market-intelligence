@@ -181,6 +181,19 @@ def fetch_html(
         raise TransientHTTPError(
             f"{url} returned server error status {response.status_code}: {response.text[:500]!r}"
         )
+    # 429 (Too Many Requests) is a 4xx status but, unlike the others, IS
+    # worth retrying after a cooldown. ``fetch_json`` has had this branch since
+    # it was added for Reed; ``fetch_html`` did not, which meant every
+    # server-rendered scraper treated rate limiting as *permanent* and gave up
+    # on the posting instead of backing off.
+    #
+    # Measured 2026-10-18 on Vagas.com.br: the first ~15 detail fetches in a
+    # run returned HTTP 200 and the rest returned 429. Because 429 fell through
+    # to the ``>= 400`` branch below, ``call_with_retry`` never retried and the
+    # run lost 30 of 45 postings (67%) while reporting them as failures rather
+    # than as the throttle they were.
+    if response.status_code == 429:
+        raise TransientHTTPError(f"{url} returned 429 (rate limited): {response.text[:500]!r}")
     if response.status_code >= 400:
         raise PermanentHTTPError(
             f"{url} returned client error status {response.status_code}: {response.text[:500]!r}"

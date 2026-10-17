@@ -259,6 +259,60 @@ class TestFetchHtmlTransientFailures:
             pass
 
 
+class TestFetchHtmlRateLimiting:
+    """HTTP 429 is 4xx but is the one client status that *is* worth retrying.
+
+    ``fetch_json`` has had this since it was added for Reed. ``fetch_html`` did
+    not, and every server-rendered scraper inherited the consequence: a throttled
+    page raised ``PermanentHTTPError``, ``call_with_retry`` gave up on it, and
+    the posting was recorded as a fetch failure instead of being retried after a
+    cooldown.
+
+    Measured 2026-10-18 on Vagas.com.br: the first ~15 detail fetches returned
+    200 and the remaining 30 of 45 returned 429, so the run lost 67% of its
+    batch. A run that backs off gets them back.
+    """
+
+    def test_429_response_raises_transient_not_permanent(self, monkeypatch) -> None:
+        """The whole point: 429 must not be classified as permanent."""
+        monkeypatch.setattr(
+            "job_market_intel.common.http_client.requests.get",
+            lambda *args, **kwargs: _FakeResponse(429, text="<html>rate limited</html>"),
+        )
+        with pytest.raises(TransientHTTPError):
+            fetch_html("https://example.test/job/1")
+
+    def test_429_is_not_reported_as_a_client_error(self, monkeypatch) -> None:
+        """The permanent branch's message must not be what a 429 produces."""
+        monkeypatch.setattr(
+            "job_market_intel.common.http_client.requests.get",
+            lambda *args, **kwargs: _FakeResponse(429, text="throttled"),
+        )
+        with pytest.raises(TransientHTTPError) as exc:
+            fetch_html("https://example.test/job/1")
+        assert "429" in str(exc.value)
+        assert "rate limited" in str(exc.value)
+
+    def test_other_4xx_stay_permanent(self, monkeypatch) -> None:
+        """Only 429 is special. 403/404 must not become retryable."""
+        for status in (400, 403, 404, 410):
+            monkeypatch.setattr(
+                "job_market_intel.common.http_client.requests.get",
+                lambda *args, _status=status, **kwargs: _FakeResponse(_status, text="no"),
+            )
+            with pytest.raises(PermanentHTTPError):
+                fetch_html("https://example.test/job/1")
+
+    def test_fetch_json_429_is_transient_too(self, monkeypatch) -> None:
+        """Pins the behaviour the fetch_html branch was copied from."""
+        monkeypatch.setattr(
+            "job_market_intel.common.http_client.requests.get",
+            lambda *args, **kwargs: _FakeResponse(429, json_data={}, text=""),
+        )
+        with pytest.raises(TransientHTTPError):
+            fetch_json("https://example.test/api/jobs")
+
+
 class TestFetchHtmlPermanentFailures:
     def test_404_response_raises_permanent(self, monkeypatch) -> None:
         monkeypatch.setattr(
