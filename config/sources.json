@@ -382,6 +382,15 @@
       "max_env": "KARRIERE_AT_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "karriere.at - Austria; Austria had ZERO postings. No key, no registration, no proxy. No working pager: ?page=2 returns 0 new, so all 15 postings sit on one page. Hrefs are ABSOLUTE (measured 15 absolute, 0 relative). Detail pages carry a schema.org JobPosting. Traps: employmentType is a LIST ([\"PART_TIME\"]); identifier is a PropertyValue whose value is a STRING; jobLocation is an ARRAY of Place; baseSalary nests value/minValue/maxValue/unitText under value (Apna/Mustakbil shape); datePosted carries a timezone offset; description is HTML; NO industry. robots: User-agent:* group is empty (allow all). Registered 2026-10-18."
+    },
+    {
+      "code": "jobsnepal",
+      "group": "html",
+      "script": "scripts/run_jobsnepal_scraper.py",
+      "timeout": 60,
+      "max_env": "JOBSNEPAL_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "jobsnepal.com - Nepal; Nepal had ZERO postings. No key, no registration, no proxy. Discovery: /top-job carries ~12 postings and /top-job?page=2 adds 8 new. Hrefs are relative. No JSON-LD. Labelled rows: 'Job posted on 05 Oct, 2026 Apply before 18 Oct, 2026', 'LOCATION Central Office', 'Salary: Negotiable as per competence', 'Position Type Full Time', 'Experience 7+ years', 'Category Accounting/Finance', 'Posted Date 05 Oct, 2026'. Dates are dd Mmm, yyyy (Nepali convention). Salary is prose, not a figure. The <title> is '<Job Title> - <Company> - <id> - JobsNepal', which is where the company comes from. og:title/og:description are site-wide and must not be used. robots.txt: User-agent:* with an empty Disallow. Registered 2026-10-18."
     }
   ]
 }
