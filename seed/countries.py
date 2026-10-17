@@ -78,6 +78,13 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("AU", "AUS", "Australia", "Oceania", "AUD"),
     ("NZ", "NZL", "New Zealand", "Oceania", "NZD"),
     ("ZA", "ZAF", "South Africa", "Africa", "ZAR"),
+    # Angola backs angolaemprego.com (source code "angola_emprego", 20 rows).
+    # Added because its addressCountry is not consistently present on the
+    # postings, so SOURCE_HOME_COUNTRY's "AO" fallback had nothing to resolve
+    # against and every one of those rows collapsed onto the global-remote
+    # location instead of Angola. A fallback pointing at a country the seed
+    # does not contain is silently a no-op, which is what happened.
+    ("AO", "AGO", "Angola", "Africa", "AOA"),
     ("NG", "NGA", "Nigeria", "Africa", "NGN"),
     ("KE", "KEN", "Kenya", "Africa", "KES"),
     ("EG", "EGY", "Egypt", "Africa", "EGP"),

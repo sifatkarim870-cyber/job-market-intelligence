@@ -44,7 +44,16 @@ from .exceptions import AngolaEmpregoFetchError, AngolaEmpregoResponseError
 
 #: ``/vagas/<slug>``. Slugs are hyphenated words, optionally ending in a
 #: numeric id (``...-4818``), so the shape is required rather than guessed.
-_JOB_LINK = re.compile(r'href="(/vagas/[^"?#]{8,160}/?)"')
+#:
+#: The host prefix is **optional** on purpose. Measured 2026-10-18: every one of
+#: the 15 listing hrefs is **absolute** -- ``href="https://angolaemprego.com/
+#: vagas/<slug>"`` -- and *zero* are relative. A pattern anchored on
+#: ``href="/vagas/..."`` therefore matched nothing at all on a board serving 15
+#: postings a page, which is what CI run 39032134903 did. The first version of
+#: this scraper had exactly that bug and the local probe did not catch it,
+#: because the probe resolved links with ``urljoin``, which normalizes both
+#: forms and so disagreed with the implementation about what the site emits.
+_JOB_LINK = re.compile(r'href="(?:https?://[^"/]+)?(/vagas/[^"?#]{8,160}/?)"')
 #: The bare ``/vagas/`` listing itself, which must not be treated as a posting.
 _LISTING_ONLY = "/vagas/"
 
