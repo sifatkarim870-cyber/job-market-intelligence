@@ -756,6 +756,9 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   on the postings measured, so this is the fallback rather than a
     #:   read-back of something the payload always carries.
     "angola_emprego": "AO",
+    #: jobinrwanda: Rwanda. The board publishes no location field at all,
+    #:   so this is the only thing giving its rows a country.
+    "jobinrwanda": "RW",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
     #:   the board rather than an inference. It matters here more than elsewhere:

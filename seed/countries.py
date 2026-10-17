@@ -85,6 +85,11 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # location instead of Angola. A fallback pointing at a country the seed
     # does not contain is silently a no-op, which is what happened.
     ("AO", "AGO", "Angola", "Africa", "AOA"),
+    # Rwanda backs jobinrwanda.com (source code "jobinrwanda"). It publishes
+    # no location field at all, so SOURCE_HOME_COUNTRY's "RW" is the only
+    # thing that can give those rows a country -- and a fallback aimed at a
+    # country the seed lacks is silently a no-op, which is what Angola was.
+    ("RW", "RWA", "Rwanda", "Africa", "RWF"),
     ("NG", "NGA", "Nigeria", "Africa", "NGN"),
     ("KE", "KEN", "Kenya", "Africa", "KES"),
     ("EG", "EGY", "Egypt", "Africa", "EGP"),
