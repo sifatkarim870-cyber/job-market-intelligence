@@ -14,9 +14,14 @@ such dependency.
 
 from __future__ import annotations
 
+import pytest
 from sqlalchemy import text
 
-import pytest
+# This module needs a live, seeded database. When none is available (the CI
+# Quality gate, which sets no TEST_DATABASE_URL) the collection hook in
+# tests/integration/conftest.py skips the whole module rather than attempting
+# a connection that cannot succeed.
+pytestmark = pytest.mark.requires_live_db
 
 from job_market_intel.db.session import get_session
 from job_market_intel.normalization.geographic_resolution import (
