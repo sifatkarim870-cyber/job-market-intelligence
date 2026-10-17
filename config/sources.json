@@ -373,6 +373,15 @@
       "max_env": "PHILJOBNET_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "philjobnet.gov.ph - Philippines; Philippines had ZERO postings. No key, no registration, no proxy. NO JSON-LD: everything is markup extraction from a .portfolio-details block. TRAPS: (1) og:title/og:description are SITE-wide ('PhilJobNet | Job Details') and must not be used; title comes from <h1>. (2) Salary reads 'not specified' on most postings and a single figure (PHP 20,000.00) on some; the figure has no stated period, so pay_period defaults to monthly and that assumption is recorded in raw_payload. (3) No robots.txt (HTTP 404), so nothing is disallowed. Registered 2026-10-18."
+    },
+    {
+      "code": "karriere_at",
+      "group": "html",
+      "script": "scripts/run_karriere_at_scraper.py",
+      "timeout": 60,
+      "max_env": "KARRIERE_AT_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "karriere.at - Austria; Austria had ZERO postings. No key, no registration, no proxy. No working pager: ?page=2 returns 0 new, so all 15 postings sit on one page. Hrefs are ABSOLUTE (measured 15 absolute, 0 relative). Detail pages carry a schema.org JobPosting. Traps: employmentType is a LIST ([\"PART_TIME\"]); identifier is a PropertyValue whose value is a STRING; jobLocation is an ARRAY of Place; baseSalary nests value/minValue/maxValue/unitText under value (Apna/Mustakbil shape); datePosted carries a timezone offset; description is HTML; NO industry. robots: User-agent:* group is empty (allow all). Registered 2026-10-18."
     }
   ]
 }
