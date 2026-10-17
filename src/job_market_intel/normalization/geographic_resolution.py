@@ -839,6 +839,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   the name 'Afghanistan', so the cleaner normalizes it; this is the
     #:   fallback for rows whose location text resolves to nothing.
     "jobs_af": "AF",
+    "fijisun_jobs": "FJ",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
     #:   the board rather than an inference. It matters here more than elsewhere:

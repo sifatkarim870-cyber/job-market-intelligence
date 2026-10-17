@@ -90,6 +90,7 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # thing that can give those rows a country -- and a fallback aimed at a
     # country the seed lacks is silently a no-op, which is what Angola was.
     ("RW", "RWA", "Rwanda", "Africa", "RWF"),
+    ("FJ", "FJI", "Fiji", "Oceania", "FJD"),
     # Afghanistan backs acbar.org. A fallback aimed at a country the seed
     # lacks is silently a no-op, which is what Angola was.
     ("AF", "AFG", "Afghanistan", "Asia", "AFN"),
