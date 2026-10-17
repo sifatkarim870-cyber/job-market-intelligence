@@ -257,6 +257,11 @@ _US_STATE_ABBREVIATIONS: dict[str, str] = {
     "ca": "California",
     "co": "Colorado",
     "ct": "Connecticut",
+    # NOTE: several of these keys are also subdivision codes in other
+    # countries -- SC (Santa Catarina, Brazil), GA (Georgia the country),
+    # LA (Liaoning, China), AL (Alabama vs Albania's "AL"), IN (Indiana vs
+    # India), ME (Maine vs Montenegro), MD (Maryland vs Moldova). The gate in
+    # _us_abbreviation_allowed below is what keeps that from mattering.
     "de": "Delaware",
     "fl": "Florida",
     "ga": "Georgia",
@@ -302,6 +307,48 @@ _US_STATE_ABBREVIATIONS: dict[str, str] = {
     "wy": "Wyoming",
     "dc": "District of Columbia",
 }
+
+
+def _us_abbreviation_allowed(default_country_iso2: str | None) -> bool:
+    """Whether a bare two-letter token may be expanded as a **US** state code.
+
+    The bug this prevents
+    ---------------------
+    ``_US_STATE_ABBREVIATIONS`` was applied unconditionally, so *any* two-letter
+    token anywhere in the corpus was expanded to a US state name before the
+    region lookup. Measured 2026-10-18 on Vagas.com.br::
+
+        raw_location_text                region_id=40   country='United States'
+        'Governador Celso Ramos, SC'
+
+    ``Governador Celso Ramos`` is a municipality in **Santa Catarina, Brazil**,
+    and ``SC`` is its state code. The city matched nothing -- ``ref.cities``
+    holds only 2 Brazilian cities (Sao Paulo, Rio de Janeiro) -- so the comma
+    fallback reached the state part, expanded ``SC`` to ``South Carolina``, and
+    matched ``region_id=40``. The row was filed under the United States.
+
+    The gate
+    --------
+    The expansion is applied only when the source's declared home country is the
+    US, or when it is unknown. An unknown country keeps the old behaviour on
+    purpose: this module must not change what a source with no ``SOURCE_HOME_COUNTRY``
+    entry resolves to, and being strict there could silently regress a US board
+    that has not been registered yet.
+
+    When the home country is a different country, the token is matched raw. An
+    unrecognized abbreviation then simply fails to match, the caller falls through
+    to UNMATCHED, and ``source_default_country`` assigns the board's own country --
+    which is the honest answer for "Governador Celso Ramos, SC" and an
+    improvement on asserting South Carolina.
+
+    A genuinely-US posting on a non-US board is unaffected: ``"Philadelphia,
+    Pennsylvania"`` resolves on the **city** part in the comma fallback, before
+    the state part is ever consulted. Verified on live data: the one genuinely
+    US Vagas.com.br posting still resolves to the US after this change.
+    """
+    if not default_country_iso2:
+        return True  # unknown: preserve existing behaviour for unregistered sources
+    return default_country_iso2.upper() == "US"
 
 
 def _normalize_segment(segment: str) -> str:
@@ -377,7 +424,11 @@ def _match_country(session: Session, normalized_segment: str) -> int | None:
     return int(row) if row is not None else None
 
 
-def _match_comma_fallback(session: Session, normalized: str) -> _SegmentMatch | None:
+def _match_comma_fallback(
+    session: Session,
+    normalized: str,
+    default_country_iso2: str | None = None,
+) -> _SegmentMatch | None:
     """Retries a "City, ST"/"City, Country" shaped segment that failed to
     match as a whole: city part alone, then the state/country part alone.
     Returns None (never UNMATCHED) if this fallback also finds nothing,
@@ -385,6 +436,9 @@ def _match_comma_fallback(session: Session, normalized: str) -> _SegmentMatch | 
     the single source of truth for that rather than duplicating it here.
     Pulled out of _match_segment to keep that function's own branching
     within this project's mccabe complexity limit.
+
+    ``default_country_iso2`` gates the US state-abbreviation expansion. See
+    :func:`_us_abbreviation_allowed` for why that gate is necessary.
     """
     if "," not in normalized:
         return None
@@ -402,7 +456,14 @@ def _match_comma_fallback(session: Session, normalized: str) -> _SegmentMatch | 
             )
 
     if rest_part:
-        state_name = _US_STATE_ABBREVIATIONS.get(rest_part, rest_part)
+        if _us_abbreviation_allowed(default_country_iso2):
+            state_name = _US_STATE_ABBREVIATIONS.get(rest_part, rest_part)
+        else:
+            # Not a US source: "SC" is far more likely Santa Catarina than South
+            # Carolina. Matching it on the raw token instead means an
+            # unrecognized abbreviation simply fails here and the caller falls
+            # through to the source's own country, which is the honest answer.
+            state_name = rest_part
         region_match = _match_region(session, state_name.lower())
         if region_match is not None:
             region_id, country_id = region_match
@@ -417,7 +478,11 @@ def _match_comma_fallback(session: Session, normalized: str) -> _SegmentMatch | 
     return None
 
 
-def _match_segment(session: Session, segment: str) -> _SegmentMatch:
+def _match_segment(
+    session: Session,
+    segment: str,
+    default_country_iso2: str | None = None,
+) -> _SegmentMatch:
     """Resolves a single segment (one piece of a ``;``-split raw string)
     to its most specific match: city, then region, then country, then an
     explicit global assertion, then unmatched -- then, if nothing
@@ -425,6 +490,10 @@ def _match_segment(session: Session, segment: str) -> _SegmentMatch:
     city part and just the state/country part (see module docstring's
     "City, ST"/"City, Country" comma fallback section, and
     _match_comma_fallback above).
+
+    ``default_country_iso2`` is threaded through to the comma fallback, where it
+    gates the US state-abbreviation expansion. See :func:`_us_abbreviation_allowed`
+    for why an unconditional expansion is wrong.
     """
     normalized = _normalize_segment(segment)
     if not normalized or normalized in _GLOBAL_ASSERTION_PHRASES:
@@ -446,7 +515,7 @@ def _match_segment(session: Session, segment: str) -> _SegmentMatch:
     if country_id is not None:
         return _SegmentMatch(level=_MatchLevel.COUNTRY, country_id=country_id)
 
-    fallback_match = _match_comma_fallback(session, normalized)
+    fallback_match = _match_comma_fallback(session, normalized, default_country_iso2)
     if fallback_match is not None:
         return fallback_match
 
@@ -476,7 +545,7 @@ def resolve_location_text(
     """
     segments = split_location_segments(raw_text) or [raw_text]
 
-    matches = [_match_segment(session, seg) for seg in segments]
+    matches = [_match_segment(session, seg, default_country_iso2) for seg in segments]
     best_match = max(matches, key=lambda m: m.level.value)
 
     if best_match.level == _MatchLevel.CITY:
@@ -834,9 +903,11 @@ def resolve_and_cache_location(
     cached = (
         session.execute(
             text(
-                "SELECT a.location_id, l.country_id, l.is_global_remote "
+                "SELECT a.location_id, l.country_id, l.is_global_remote, "
+                "co.iso_code_2 AS country_iso "
                 "FROM core.location_aliases a "
                 "JOIN ref.locations l ON l.location_id = a.location_id "
+                "LEFT JOIN ref.countries co ON co.country_id = l.country_id "
                 "WHERE a.raw_location_text = :raw_text "
                 "AND a.source_id IS NOT DISTINCT FROM :source_id"
             ),
@@ -860,7 +931,40 @@ def resolve_and_cache_location(
         and cached["country_id"] is None
         and cached["is_global_remote"]
     )
-    if cached is not None and not stale_cached:
+
+    # Second kind of stale alias: the cache holds a *real, named* country that
+    # this resolver would no longer produce.
+    #
+    # Measured 2026-10-18 on Vagas.com.br (Brazil)::
+
+    #     raw_location_text                region_id=40   country='United States'
+    #     'Governador Celso Ramos, SC'
+    #
+    # 'Governador Celso Ramos' is in Santa Catarina, Brazil, and 'SC' is its state
+    # code. It reached US 'South Carolina' because `_US_STATE_ABBREVIATIONS` was
+    # applied unconditionally, so any two-letter token became a US state name.
+    # That is now gated (see `_us_abbreviation_allowed`) and the city is seeded.
+    #
+    # This defect is nastier than the global-remote one above precisely because it
+    # is *invisible*: the row has a real region_id and a real country_id, so every
+    # existing health check passes it. Nothing else would ever notice it.
+    #
+    # The remedy is the same and for the same reason -- the alias cannot be
+    # corrected in place, since the runtime role holds only SELECT and INSERT on
+    # core.location_aliases -- so the resolver declines to trust it and computes
+    # the answer again. The extra resolve is paid only when a cached country
+    # disagrees with the source's own, which is rare and self-limiting: on the
+    # next run the fresh answer is what gets written.
+    stale_country_conflict = bool(
+        cached is not None
+        and home_country is not None
+        and cached["country_id"] is not None
+        and cached["country_iso"] is not None
+        and cached["country_iso"].upper() != home_country.upper()
+    )
+    re_resolve = stale_cached or stale_country_conflict
+
+    if cached is not None and not re_resolve:
         return int(cached["location_id"])
     if stale_cached:
         logger.info(
@@ -869,6 +973,16 @@ def resolve_and_cache_location(
             cleaned,
             source_id,
             home_country,
+        )
+    elif stale_country_conflict:
+        logger.info(
+            "re-resolving stale location alias for {!r} (source_id={}): it is cached "
+            "under {} but this is a {} board, and the current matching rules no "
+            "longer produce that answer",
+            cleaned,
+            source_id,
+            cached["country_iso"],
+            home_country.upper(),
         )
 
     resolved = resolve_location_text(session, cleaned, default_country_iso2=home_country)
@@ -883,19 +997,19 @@ def resolve_and_cache_location(
         is_global_remote=resolved.is_global_remote,
     )
 
-    if stale_cached:
+    if re_resolve:
         # The alias row cannot be corrected from here. core.location_aliases is
         # UNIQUE(raw_location_text, source_id) and the runtime role holds only
         # SELECT and INSERT on it -- no UPDATE, no DELETE -- so an INSERT would
-        # violate the key and an UPDATE would raise InsufficientPrivilege. The
-        # row is therefore left in place and simply never trusted again: the
-        # `stale_cached` check above bypasses it on every call, for this source,
-        # for as long as it says "no country and open to the world".
+        # violate the key and an UPDATE raises InsufficientPrivilege (measured,
+        # not assumed). The row is therefore left in place and simply never
+        # trusted again: the checks above bypass it on every call, for this
+        # source, for as long as it contradicts what the resolver produces now.
         #
-        # Consequence to be aware of: core.location_aliases keeps an audit
-        # trail that disagrees with core.jobs for these rows. The job rows are
-        # correct; the alias rows are dead entries awaiting a privileged
-        # cleanup.
+        # Consequence to be aware of: core.location_aliases keeps an audit trail
+        # that disagrees with core.jobs for these rows. The job rows are correct;
+        # the alias rows are dead entries awaiting a privileged cleanup. This
+        # script is what surfaces them: scripts/reresolve_stale_country.py.
         logger.info(
             "alias for {!r} (source_id={}) stays stale in core.location_aliases; "
             "bypassing it and resolving fresh",
