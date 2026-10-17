@@ -364,6 +364,15 @@
       "max_env": "CORPORATE_STAFFING_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "corporatestaffing.co.ke - Kenya; Kenya had brightmonday.co.ke (workbook verdict 'HTML scraper') but it is Cloudflare-walled from datacenter IPs. Corporate Staffing is the working substitute: no key, no registration, no proxy. Discovery: /jobs/ carries 40 postings and /jobs/page/2/ adds 40 new ones. Hrefs are ABSOLUTE (measured 40 absolute, 0 relative). robots.txt is User-agent:* with an empty Disallow:, so the whole site is permitted. NO JSON-LD: everything is in labelled rows (Date Posted, Job Type, Employer, Salary, Location, Deadline); dates are dd/mm/yyyy (Kenyan convention, not ISO). Salary reads 'Open' / 'Confidential' -- prose, not a figure -- so no salary is stored. Registered 2026-10-18."
+    },
+    {
+      "code": "philjobnet",
+      "group": "html",
+      "script": "scripts/run_philjobnet_scraper.py",
+      "timeout": 60,
+      "max_env": "PHILJOBNET_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "philjobnet.gov.ph - Philippines; Philippines had ZERO postings. No key, no registration, no proxy. NO JSON-LD: everything is markup extraction from a .portfolio-details block. TRAPS: (1) og:title/og:description are SITE-wide ('PhilJobNet | Job Details') and must not be used; title comes from <h1>. (2) Salary reads 'not specified' on most postings and a single figure (PHP 20,000.00) on some; the figure has no stated period, so pay_period defaults to monthly and that assumption is recorded in raw_payload. (3) No robots.txt (HTTP 404), so nothing is disallowed. Registered 2026-10-18."
     }
   ]
 }
