@@ -8,10 +8,7 @@ import time
 
 import pytest
 
-_SCRIPT = pathlib.Path(
-    r"D:\Research_Project\JobMarketAnalysisPlatform\DataBase\job-market-intel"
-    r"\scripts\sync_corpus_from_hf.py"
-)
+_SCRIPT = pathlib.Path(__file__).resolve().parents[3] / "scripts" / "sync_corpus_from_hf.py"
 
 
 def _module():
