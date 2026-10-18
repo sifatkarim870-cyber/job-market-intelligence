@@ -258,6 +258,29 @@ _PT_REGIONS = [
     "Setubal",
 ]
 
+_MY_REGIONS = [
+    # Malaysia's 13 states plus 3 federal territories, from hiredly (30 rows,
+    # of which 29 read "Petaling Jaya, Selangor"). Before this, ref.regions had
+    # no Malaysian row at all, so every one of those postings resolved to
+    # country-only with the state sitting in the raw text.
+    "Johor",
+    "Kedah",
+    "Kelantan",
+    "Melaka",
+    "Negeri Sembilan",
+    "Pahang",
+    "Perak",
+    "Perlis",
+    "Pulau Pinang",
+    "Sabah",
+    "Sarawak",
+    "Selangor",
+    "Terengganu",
+    "Kuala Lumpur",
+    "Labuan",
+    "Putrajaya",
+]
+
 _BY_COUNTRY: dict[str, list[str]] = {
     "US": _US_STATES,
     "CA": _CA_PROVINCES,
@@ -271,6 +294,7 @@ _BY_COUNTRY: dict[str, list[str]] = {
     "GH": _GH_REGIONS,
     "ZA": _ZA_PROVINCES,
     "PT": _PT_REGIONS,
+    "MY": _MY_REGIONS,
 }
 
 

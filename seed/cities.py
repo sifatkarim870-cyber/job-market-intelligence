@@ -69,7 +69,45 @@ _CITIES: list[tuple[str, str, str | None, float, float, str]] = [
     ("Hong Kong", "HK", None, 22.3193, 114.1694, "Asia/Hong_Kong"),
     ("Manila", "PH", None, 14.5995, 120.9842, "Asia/Manila"),
     ("Jakarta", "ID", None, -6.2088, 106.8456, "Asia/Jakarta"),
+    # Region stays None here deliberately. The conflict key is
+    # (country_id, COALESCE(region_id, 0), city_name), so adding a region to an
+    # existing row makes it a *different* key and leaves the old row behind as an
+    # orphan -- which test_seed.py's idempotency check catches. Kuala Lumpur is a
+    # federal territory and matches on its city name alone ("city_exact"), so the
+    # region link buys nothing and costs a duplicate.
     ("Kuala Lumpur", "MY", None, 3.1390, 101.6869, "Asia/Kuala_Lumpur"),
+    # Malaysia's main job markets, added with the hiredly source: 29 of its
+    # first 30 postings read "Petaling Jaya, Selangor", and ref.cities held
+    # exactly one Malaysian city, so all of them resolved to country-only.
+    ("Petaling Jaya", "MY", "Selangor", 3.1053, 101.6069, "Asia/Kuala_Lumpur"),
+    ("Shah Alam", "MY", "Selangor", 3.0733, 101.5183, "Asia/Kuala_Lumpur"),
+    ("Subang Jaya", "MY", "Selangor", 3.0449, 101.5854, "Asia/Kuala_Lumpur"),
+    ("Klang", "MY", "Selangor", 3.0688, 101.5183, "Asia/Kuala_Lumpur"),
+    ("Cyberjaya", "MY", "Selangor", 2.9213, 101.6558, "Asia/Kuala_Lumpur"),
+    ("Putrajaya", "MY", "Putrajaya", 3.0216, 101.6564, "Asia/Kuala_Lumpur"),
+    ("Johor Bahru", "MY", "Johor", 1.4927, 103.7414, "Asia/Kuala_Lumpur"),
+    ("Skudai", "MY", "Johor", 1.5347, 103.5569, "Asia/Kuala_Lumpur"),
+    ("Batu Pahat", "MY", "Johor", 1.8548, 103.4704, "Asia/Kuala_Lumpur"),
+    ("George Town", "MY", "Pulau Pinang", 5.4141, 100.3288, "Asia/Kuala_Lumpur"),
+    ("Penang", "MY", "Pulau Pinang", 5.4164, 100.3327, "Asia/Kuala_Lumpur"),
+    ("Butterworth", "MY", "Pulau Pinang", 5.3992, 100.3098, "Asia/Kuala_Lumpur"),
+    ("Bukit Mertajam", "MY", "Pulau Pinang", 5.0125, 101.2848, "Asia/Kuala_Lumpur"),
+    ("Ipoh", "MY", "Perak", 4.5975, 101.0901, "Asia/Kuala_Lumpur"),
+    ("Kota Kinabalu", "MY", "Sabah", 5.9804, 116.0735, "Asia/Kuching"),
+    ("Sandakan", "MY", "Sabah", 5.8388, 118.1159, "Asia/Kuching"),
+    ("Tawau", "MY", "Sabah", 4.2448, 117.8912, "Asia/Kuching"),
+    ("Kuching", "MY", "Sarawak", 1.5535, 110.3593, "Asia/Kuching"),
+    ("Miri", "MY", "Sarawak", 4.3995, 113.9914, "Asia/Kuching"),
+    ("Sibu", "MY", "Sarawak", 2.2960, 111.4975, "Asia/Kuching"),
+    ("Melaka", "MY", "Melaka", 2.1896, 102.2501, "Asia/Kuala_Lumpur"),
+    ("Alor Setar", "MY", "Kedah", 6.1248, 100.3678, "Asia/Kuala_Lumpur"),
+    ("Sungai Petani", "MY", "Kedah", 5.6415, 100.3565, "Asia/Kuala_Lumpur"),
+    ("Kuantan", "MY", "Pahang", 3.8077, 103.3260, "Asia/Kuala_Lumpur"),
+    ("Kota Bharu", "MY", "Kelantan", 6.1248, 102.2381, "Asia/Kuala_Lumpur"),
+    ("Kuala Terengganu", "MY", "Terengganu", 5.3117, 103.1324, "Asia/Kuala_Lumpur"),
+    ("Seremban", "MY", "Negeri Sembilan", 2.7297, 101.9381, "Asia/Kuala_Lumpur"),
+    ("Labuan", "MY", "Labuan", 5.2831, 115.2308, "Asia/Kuala_Lumpur"),
+    ("Kangar", "MY", "Perlis", 6.4981, 100.1776, "Asia/Kuala_Lumpur"),
     ("Bangkok", "TH", None, 13.7563, 100.5018, "Asia/Bangkok"),
     ("Ho Chi Minh City", "VN", None, 10.8231, 106.6297, "Asia/Ho_Chi_Minh"),
     ("Karachi", "PK", None, 24.8607, 67.0011, "Asia/Karachi"),
