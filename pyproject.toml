@@ -40,6 +40,10 @@ dependencies = [
     # clear error messages — exactly what the Step 3 base config loader
     # needs, without hand-rolling env parsing.
     "passlib[bcrypt]>=1.7.4",
+    # Headless browser for JS-rendered boards that are NOT Cloudflare-
+    # protected (jobsearch.az, hiredly.com, jobsireland.ie, shine.com).
+    # Declared as a dependency, not ad-hoc installed (the lxml lesson).
+    "playwright>=1.40",
     # Parquet writer/reader for the Hugging Face corpus shards. See the
     # huggingface-hub note above for why this is a core dependency.
     "pyarrow>=15.0",

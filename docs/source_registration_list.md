@@ -2,14 +2,22 @@
 
 Generated 2026-10-16 from `WebsiteToScrape.docx` joined against
 `job_sites_by_country_SCRAPEABILITY_backup_20261007.xlsx` and a live re-probe.
+Sections B, C and D rewritten **2026-10-18** from direct measurement.
 
 Every URL below was **requested during this triage** and its HTTP status is
 recorded, because reciting an API endpoint from memory is how people end up
 signing up for one that has moved. Where a URL failed to resolve today, that is
 said rather than quietly dropped.
 
-Nothing on this list has been built. Nothing here needs the scraper to exist
-first -- each entry is blocked purely on a credential or a network capability.
+Nothing in sections A-E has been built. Nothing here needs the scraper to exist
+first -- each entry is blocked purely on a credential, a network capability, or
+the fact that the page is not what it claims to be.
+
+**The three verdicts are different and are kept apart deliberately:**
+
+- **A / B** -- blocked. Needs an account (A) or a residential IP (B).
+- **C** -- buildable. Needs engineering time, not money.
+- **D** -- rejected. Not a posting list at all, so no amount of the above helps.
 
 ---
 
@@ -99,12 +107,13 @@ require payment. Not an action item.
 
 ---
 
-## B. Blocked on anti-bot, not on a credential
+## B. Cloudflare-walled -- blocked on the IP, not on a credential
 
-These need **no account**. They return HTTP 403 / a captcha challenge from this
-network and would need a **residential proxy** to be scrapable at all.
+These need **no account**. Every one of them serves a Cloudflare interstitial
+("Just a moment...", `cf-browser-verification`) to a datacenter IP, which is
+what GitHub Actions runners have.
 
-| Site | Region | Observed on 2026-10-16 |
+| Site | Region | Observed |
 |---|---|---|
 | Naukri | India | HTTP 403 on `/` and `/njkhr/login` (368b -- a block page, not content) |
 | InfoJobs (ES) | Spain | captcha challenge; `/` returned **HTTP 405** |
@@ -116,39 +125,90 @@ network and would need a **residential proxy** to be scrapable at all.
 | Jora | Australia/global | robots **disallows** the job paths |
 | Dubizzle | UAE | Incapsula challenge |
 | hh.ru / HeadHunter | Russia/CIS | captcha challenge |
-| BrighterMonday | Kenya | captcha challenge |
-| Jobberman | Africa | captcha challenge |
+| BrighterMonday | Kenya/Uganda | captcha challenge |
+| Jobberman | Kenya/Ghana | captcha challenge |
 | Laimoon | Middle East | HTTP 503 |
+| net-empregos | Portugal | captcha challenge |
+| jobsnepal | Nepal | captcha challenge |
+| keejob.com | Tunisia | `cloudflare` marker in the body (see section C) |
+| emploipartner.com | Luxembourg | `cloudflare` marker in the body |
+| careercenter.am | Armenia | `cloudflare` marker in the body |
+| jobwebkenya.com | Kenya | `cloudflare` marker in the body |
 
 **A residential proxy unblocks more coverage than anything else on this page.**
-Fourteen boards, including India's largest (Naukri), Spain's InfoJobs,
-Switzerland's Jobs.ch and Russia's HeadHunter.
+It is also the one item on this page that cannot be solved by writing code, and
+it has not been purchased.
+
+**What was measured instead of buying one.** Headless Chromium was run against
+IrishJobs, Stellenanzeigen and Nationale Vacaturebank and returned the *same*
+Access-Denied / 63-byte / privacy-gate responses as plain HTTP. A browser does
+not clear a challenge that is keyed to the IP, so "just render it" is not a way
+around this section. `jobsnepal` is the working example of what does happen: its
+scraper is correct and green locally, but CI came back with a Cloudflare
+"Just a moment..." page, so it sits in `config/sources.json` with
+`enabled: false` until it can run from a home IP.
 
 ---
 
-## C. JS-rendered, no anti-bot -- possible without a credential
+## C. JS-rendered -- headless browser, and what that actually solved
 
-These are reachable and not walled, but the listing is rendered client-side, so
-they need a browser-based fetcher rather than plain HTTP. The project already
-runs `indeed` that way, so the machinery exists.
+Section C used to list eleven boards as "needs a browser, no anti-bot". That was
+wrong on both halves and is corrected here by measurement.
 
-| Site | Region |
-|---|---|
-| APEC | France |
-| IrishJobs | Ireland |
-| Jobs.ie | Ireland |
-| JobScout24 | Switzerland |
-| Nationale Vacaturebank | Netherlands |
-| Totaljobs | UK |
-| Trade Me Jobs | New Zealand |
-| StepStone Germany | Germany |
-| Stellenanzeigen | Germany |
-| Profesia | Slovakia |
-| PNet | South Africa |
+Each board was requested twice: once with plain `requests`, once through a
+headless Chromium, and the two responses compared.
+
+| Site | Region | Plain HTTP | Cloudflare? | Verdict |
+|---|---|---|---|---|
+| **jobsearch.az** | Azerbaijan | 200, 512 KB, **0 anchors** | no | **SHIPPED** -- `jobsearch_az`, 30 rows |
+| hiredly.com | Malaysia | 200, 194 KB, 0 anchors | no | browser viable, not yet built |
+| jobsireland.ie | Ireland | 200, 176 KB, 0 real postings | no | browser viable, not yet built |
+| shine.com | India | 200, 36 KB, 0 anchors | no | browser viable, not yet built |
+| jobs.ge | Georgia | 200, 332 KB, 1043x `/ge` | no | `/ge` is a locale prefix, not a posting path -- needs a second look |
+| keejob.com | Tunisia | 200, 221 KB | **yes** | moved to section B |
+| emploipartner.com | Luxembourg | 200, 92 KB | **yes** | moved to section B |
+| careercenter.am | Armenia | 200, 599 KB | **yes** | moved to section B |
+| jobwebkenya.com | Kenya | 200, 363 KB | **yes** | moved to section B |
+
+**The split that matters is not JS-vs-HTML, it is Cloudflare-vs-not.** Four
+boards were JS-rendered *and* unwalled, and those are genuinely buildable with a
+browser; the four that were JS-rendered *and* walled are the same problem as
+section B wearing a different hat.
+
+The APEC / IrishJobs / Jobs.ie / JobScout24 / Nationale Vacaturebank /
+Totaljobs / Trade Me Jobs / StepStone / Stellenanzeigen / Profesia / PNet rows
+this section used to carry are removed: headless Chromium was measured against
+IrishJobs, Stellenanzeigen and Nationale Vacaturebank and got the same blocked
+responses as plain HTTP, so "browser" was never going to be the answer for them.
+
+**How the machinery works now.** `jobsearch_az` is the first source built this
+way. `playwright` is a declared dependency in `pyproject.toml` -- not an ad-hoc
+install -- and `config/sources.json` carries a `browser: true` flag so
+`scrape_html.yml` runs `playwright install --with-deps chromium` for that one
+job and skips the download for every other source in the matrix.
 
 ---
 
-## D. Already investigated and resolved
+## D. Category and directory pages -- rejected, not blocked
+
+Roughly nineteen candidates in the workbook look like boards and are not. The
+listing URL resolves and returns HTTP 200, but what it renders is a set of
+category links, not postings. A scraper written against one of these would
+persist dozens of rows whose `job_title` is "Engineering" or "Sales".
+
+minajobs.net, kumarijob.com, praca.pl, praca.by, qatarliving.com, iefp.cv,
+hotnigerianjobs.com, jobfind.gr, jobwebkenya.com, bdjobs.com,
+arbetsformedlingen.se, jobbnorge.no, jobnet.dk, ngcareers.com, kariera.sk,
+saramin.co.kr, skill.jobs, staff.am.
+
+This is a different verdict from sections B and C and is worth stating
+separately: **no amount of proxying, credentials or browser time will make these
+into postings.** They are navigation, and a board behind them may still be
+worth building.
+
+---
+
+## E. Already investigated and resolved
 
 | Site | Outcome |
 |---|---|
@@ -159,10 +219,12 @@ runs `indeed` that way, so the machinery exists.
 
 ## Recommended order
 
-1. **France Travail** -- an entire country, authoritative source, documented API.
-2. **A residential proxy** -- unblocks 14 boards, several of them large national
-   or regional leaders.
-3. **MyCareersFuture** -- a country (UK) with thin coverage, but confirm the
-   host is reachable for you first.
-4. The browser-rendered group in section C, which needs no credential at all --
-   only engineering time.
+1. **hiredly.com / jobsireland.ie / shine.com** -- the three remaining unwalled
+   JS-rendered boards. The machinery exists; these are days of work, not a
+   purchase. Malaysia, Ireland and (thinly covered) India.
+2. **France Travail** -- an entire country, authoritative source, documented API.
+   Blocked only on registration.
+3. **A residential proxy** -- unblocks the whole of section B, several of them
+   large national or regional leaders. Not purchased.
+4. **jobs.ge** -- second look. It is unwalled and 332 KB; the `/ge` shape needs
+   working out before it can be called a rejection.

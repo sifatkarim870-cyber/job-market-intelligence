@@ -47,7 +47,8 @@ jobs:
             { include: [ .sources[]
                          | select(.group == $g and .enabled)
                          | select($only == "" or .code == $only)
-                         | { code, script, timeout, max_env } ] }' config/sources.json)
+                         | { code, script, timeout, max_env,
+                             browser: (.browser // false) } ] }' config/sources.json)
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           echo "$matrix" | jq -r '.include[] | "  \(.code)  timeout=\(.timeout)min  \(.script)"'
 
@@ -91,6 +92,19 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --extra dev --extra test
+
+      - name: Install Chromium (browser sources only)
+        # jobsearch.az is a Nuxt SPA: plain HTTP returns the bundle with zero
+        # anchors, so it can only be read through a real browser. `browser:
+        # true` in config/sources.json puts it in this group; every other source
+        # in the matrix skips this step and does not pay the download.
+        #
+        # --with-deps installs the shared libraries Chromium needs on the
+        # runner image (libnss3, libatk, ...). Without it Chromium starts and
+        # then dies with a bare "missing X server" style error that looks like
+        # a site problem rather than a runner one.
+        if: matrix.browser
+        run: uv run playwright install --with-deps chromium
 
       - name: Seed the ephemeral database from the HF state snapshot
         env:

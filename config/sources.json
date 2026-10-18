@@ -20,7 +20,13 @@
     "code defaults.",
     "",
     "enabled: false keeps a source out of the matrix until it is deliberately",
-    "switched on (Indeed is here because it drives a real Chrome and gets blocked)."
+    "switched on (Indeed is here because it drives a real Chrome and gets blocked).",
+    "",
+    "browser: true when the source renders pages with Playwright instead of",
+    "parsing the markup that plain HTTP returns. The workflow then runs",
+    "`playwright install --with-deps chromium` before the scraper, which costs",
+    "~40s of download, so only sources that need it pay for it. The binary is",
+    "then cached by setup-uv and reused across runs."
   ],
   "sources": [
     {
@@ -400,6 +406,16 @@
       "max_env": "HIIRAAN_JOBS_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "hiiraan.com/jobs.php - Somalia; Somalia had ZERO postings. No key, no registration, no proxy. Postings are PDFs (Terms of Reference), not HTML -- the first PDF-based source in this project. Text extracted with pypdf, a declared dependency (not an ad-hoc install). Discovery: /jobs.php links 16 PDFs shaped /uploads/<year>/jobs/<mm>/<id>_<slug>-tor.pdf. No working pager: /jobs.php?page=2 returns 0 new. Hrefs are relative. Labelled fields: Position Title, Department, Position Level, Reports To, Employment Type, Location ('Mogadishu, Somalia'), Deadline for submission ('17th August 2026, 11.59 PM'). No salary, no posting date, no company field. robots.txt disallows /comments/ and /social/. Registered 2026-10-18."
+    },
+    {
+      "code": "jobsearch_az",
+      "group": "html",
+      "script": "scripts/run_jobsearch_az_scraper.py",
+      "timeout": 60,
+      "max_env": "JOBSEARCH_AZ_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "jobsearch.az - Azerbaijan; Azerbaijan had ZERO postings. No key, no registration, no proxy. FIRST HEADLESS-BROWSER SOURCE in this project: the site is a Nuxt SPA and plain HTTP returns 512 KB of bundle with zero anchors, so Playwright renders it and the listing resolves to 30 plain div.list__item cards shaped /vacancies/<slug>. A 'Daha etralli' ('Load more') control appends more; Playwright's own click times out on it (a sticky scroller intercepts the pointer event) so it is clicked with force=True. Hrefs are relative. robots.txt: User-agent: * / Allow: /. Traps, all measured 2026-10-18: (1) the first <h1> on the page is h1.company__title -- the EMPLOYER -- because the company block renders above the vacancy block; the job title is .vacancy__info h1.vacancy__title. (2) #content_block is 2,488 chars of real description against 5,849 chars of whole-page navigation chrome, so the description is scoped to that node. (3) the posting date is ONLY on the listing card and carries no year -- 'Bu gun' (today), 'Dunen' (yesterday), '16 okt' -- so the year is inferred and rolled back when it would land in the future. (4) the deadline is Azerbaijani: 'Son tarix 17 noy 2026'. (5) there is NO salary: every card renders a li.money but the figure is injected after the DOM snapshot and reads empty. (6) the related-jobs column renders first and carries its own deadline, so the deadline is scoped to .vacancy__info. Registered 2026-10-18.",
+      "browser": true
     }
   ]
 }

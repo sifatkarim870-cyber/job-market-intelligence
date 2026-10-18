@@ -76,6 +76,46 @@ class TestRegistryShape:
             assert isinstance(s["timeout"], int) and s["timeout"] > 0, s["code"]
 
 
+class TestBrowserFlag:
+    """``browser: true`` is what makes scrape_html.yml install Chromium.
+
+    A source that renders pages through Playwright but is not flagged fails at
+    run time with "Executable doesn't exist at ...chrome-win/chrome.exe", which
+    reads like a broken machine rather than a missing registry key -- and on a
+    scheduled run nobody is watching the log. The reverse direction is not
+    harmless either: it pays ~40s of download on every run for nothing.
+    """
+
+    @staticmethod
+    def _imports_playwright(code: str) -> bool:
+        pkg = REPO / "src/job_market_intel/scrapers" / code
+        return any("playwright" in p.read_text(encoding="utf-8") for p in pkg.rglob("*.py"))
+
+    def test_playwright_sources_are_flagged_browser(self, sources: list[dict]) -> None:
+        unflagged = sorted(
+            s["code"]
+            for s in sources
+            if self._imports_playwright(s["code"]) and not s.get("browser")
+        )
+        assert not unflagged, (
+            f"these sources import playwright but are not flagged browser: true, "
+            f"so CI never installs Chromium and the run fails: {unflagged}"
+        )
+
+    def test_the_browser_flag_is_not_carried_by_a_source_that_does_not_use_it(
+        self, sources: list[dict]
+    ) -> None:
+        stale = sorted(
+            s["code"]
+            for s in sources
+            if s.get("browser") and not self._imports_playwright(s["code"])
+        )
+        assert not stale, (
+            f"these are flagged browser: true but nothing in their package imports "
+            f"playwright, so CI downloads Chromium for nothing: {stale}"
+        )
+
+
 class TestNothingShipsUnscheduled:
     """The bug this file is about."""
 

@@ -51,6 +51,7 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("SG", "SGP", "Singapore", "Asia", "SGD"),
     ("HK", "HKG", "Hong Kong", "Asia", "HKD"),
     ("PH", "PHL", "Philippines", "Asia", "PHP"),
+    ("AZ", "AZE", "Azerbaijan", "Asia", "AZN"),
     ("SO", "SOM", "Somalia", "Africa", "SOS"),
     ("NP", "NPL", "Nepal", "Asia", "NPR"),
     ("ID", "IDN", "Indonesia", "Asia", "IDR"),

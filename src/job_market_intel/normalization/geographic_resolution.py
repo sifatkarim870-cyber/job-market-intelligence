@@ -842,6 +842,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "fijisun_jobs": "FJ",
     "corporatestaffing_ke": "KE",
     "philjobnet": "PH",
+    "jobsearch_az": "AZ",
     "hiiraan_jobs": "SO",
     "jobsnepal": "NP",
     "karriere_at": "AT",
