@@ -157,6 +157,33 @@ _CONFLICT = {
     "job_salaries": "(job_id)",
 }
 
+#: Why the ``ON CONFLICT`` target above is not the whole answer for core.jobs.
+#:
+#: The unique constraint is ``(source_id, source_job_id, posting_date)``, but
+#: that constraint is not how a posting is identified *within a source* --
+#: ``db.job_repository.save_cleaned_job`` looks the row up by
+#: ``(source_id, source_job_id)`` alone and, crucially, never rewrites
+#: ``posting_date``. Local therefore holds exactly one row per source_job_id,
+#: permanently.
+#:
+#: Relying on ON CONFLICT alone let the merge disagree with that. A shard whose
+#: ``posting_date`` differed from the stored row's slipped past the constraint
+#: and became a second row for the same posting. Measured on the corpus
+#: 2026-10-19: **2,053 over-published rows out of 131,139**, across 15
+#: sources -- jobmaster 1,126, jobinja 535, jobinrwanda 150, jobvision 128,
+#: and jobsearch_az 24 of its 56 (43% of that source).
+#:
+#: jobsearch_az is the worst because its posting date comes from the listing
+#: card, which prints a year-less, often relative label: "Bu gün" (today),
+#: "Dünən" (yesterday), "16 okt". The same slug read "Bu gün" at 23:53 local
+#: and "16 okt" twenty minutes later, so the derived date moved and a second
+#: row appeared. A source whose date is derived rather than published will
+#: keep minting these.
+#:
+#: So the merge now pre-checks ``(source_id, source_job_id)``, matching the
+#: repository, and counts an already-known posting as a conflict instead of a
+#: second insert. The constraint stays as a backstop, not as the mechanism.
+
 
 def _token() -> str:
     settings = CorpusSettings()
@@ -351,6 +378,29 @@ def insert_shard(
         params["normalized_title_id"] = maps["normalized_title_id"].get(str(nti)) if nti else None
 
         with engine.begin() as conn:
+            existing = conn.execute(
+                text(
+                    "SELECT job_id FROM core.jobs "
+                    "WHERE source_id = :source_id AND source_job_id = :source_job_id "
+                    "ORDER BY first_scraped_at, posting_date LIMIT 1"
+                ),
+                {"source_id": params["source_id"], "source_job_id": params["source_job_id"]},
+            ).first()
+
+            if existing is not None:
+                # Already have this posting, possibly under a different
+                # posting_date. Refresh liveness and count it as a conflict.
+                conn.execute(
+                    text(
+                        "UPDATE core.jobs SET last_scraped_at = GREATEST("
+                        "COALESCE(:last_scraped_at, last_scraped_at), last_scraped_at) "
+                        "WHERE job_id = :job_id"
+                    ),
+                    {"job_id": existing.job_id, "last_scraped_at": params["last_scraped_at"]},
+                )
+                conflicted += 1
+                continue
+
             job_id = conn.execute(job_sql, params).scalar_one_or_none()
             if job_id is None:
                 conflicted += 1

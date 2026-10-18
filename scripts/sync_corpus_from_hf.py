@@ -111,8 +111,31 @@ def download_dumps(
     return fetched
 
 
+#: Attempts for the remote row count. See count_remote_rows: reading every
+#: shard over hf:// in one query fails intermittently with a misleading
+#: UnicodeDecodeError, and one retry is already usually enough.
+_COUNT_ATTEMPTS = 3
+
+
 def count_remote_rows(files: list[dict], repo_id: str, memory_limit: str) -> dict:
-    """Row count straight from Parquet footers -- a few KB, not a scan."""
+    """Row count straight from Parquet footers -- a few KB, not a scan.
+
+    Retries, because reading ~43 files over ``hf://`` in one ``read_parquet``
+    fails intermittently and the error is actively misleading. Observed twice on
+    2026-10-19 against a corpus that was perfectly readable a minute later:
+
+        UnicodeDecodeError: 'utf-8' codec can't decode byte 0xcb
+
+    Nothing is corrupt. Every shard read cleanly on its own and the same
+    multi-file query succeeded on the next run. DuckDB's httpfs surfaces a
+    truncated or raced HTTP response as a decode error on the Parquet bytes it
+    was handed.
+
+    Left unretried, that makes the whole sync report FAILED on its pull half
+    while the merge and export -- the parts that actually maintain local/HF
+    parity -- succeed perfectly. A scheduled task that cries wolf about a
+    transient CDN hiccup is a task nobody reads.
+    """
     import duckdb
 
     paths = [
@@ -125,15 +148,37 @@ def count_remote_rows(files: list[dict], repo_id: str, memory_limit: str) -> dic
     ]
     if not paths:
         return {"shard_files": 0, "rows": None, "bytes": 0}
-    con = duckdb.connect()
-    con.execute(f"SET memory_limit='{memory_limit}'")
-    con.execute("SET temp_directory='D:/duckdb_tmp'")
-    con.execute("INSTALL httpfs; LOAD httpfs")
+
     urls = [f"hf://datasets/{repo_id}/{p}" for p in sorted(paths)]
     started = time.time()
-    rows = con.execute(
-        f"SELECT count(*) FROM read_parquet({urls!r}, hive_partitioning=true)"
-    ).fetchone()[0]
+    rows = None
+    last_error: Exception | None = None
+    for attempt in range(1, _COUNT_ATTEMPTS + 1):
+        con = duckdb.connect()
+        try:
+            con.execute(f"SET memory_limit='{memory_limit}'")
+            con.execute("SET temp_directory='D:/duckdb_tmp'")
+            con.execute("INSTALL httpfs; LOAD httpfs")
+            rows = con.execute(
+                f"SELECT count(*) FROM read_parquet({urls!r}, hive_partitioning=true)"
+            ).fetchone()[0]
+            break
+        except Exception as exc:  # noqa: BLE001
+            last_error = exc
+            _log(
+                f"remote row count attempt {attempt}/{_COUNT_ATTEMPTS} failed: "
+                f"{type(exc).__name__}: {str(exc)[:120]}"
+            )
+            time.sleep(3 * attempt)
+        finally:
+            con.close()
+
+    if rows is None:
+        raise RuntimeError(
+            f"could not read remote row count after {_COUNT_ATTEMPTS} attempts; "
+            f"last error was {type(last_error).__name__}: {last_error}"
+        ) from last_error
+
     _log(f"remote shard rows: {rows:,} ({time.time() - started:.1f}s, footer-only read)")
     return {
         "shard_files": len(paths),
