@@ -310,3 +310,149 @@ class TestRepublishedPostingIsNotASecondRow:
                     text("DELETE FROM core.jobs WHERE source_id = :s AND source_job_id = :slug"),
                     {"s": source_id, "slug": slug},
                 )
+
+
+class TestShardGeographySurvivesTheMerge:
+    """``location_raw`` must become ``location_id``, not be dropped.
+
+    The shard carries ``location_raw`` but not ``location_id`` -- a surrogate
+    key, per-database, exactly like ``job_id``. The merge has to resolve it.
+
+    Without that, **every** CI-merged row in the corpus landed with
+    ``location_id = NULL``. Measured 2026-10-19: 33,388 rows with no country,
+    led by glints 15,059, greenhouse 2,821, jobmaster 2,042, arbeitnow 1,926
+    and 51job 1,917 -- all CI-scraped sources. The corpus looked as though
+    those boards simply publish no geography.
+    """
+
+    @staticmethod
+    def _source_id(engine, code: str) -> int:
+        with engine.begin() as conn:
+            return conn.execute(
+                text(
+                    "INSERT INTO ref.sources (source_code, source_name, source_type) "
+                    "VALUES (:c, 'Geo probe', 'job_board') "
+                    "ON CONFLICT (source_code) DO UPDATE SET source_name = 'Geo probe' "
+                    "RETURNING source_id"
+                ),
+                {"c": code},
+            ).scalar_one()
+
+    def _fold(self, engine, mod, source_id, code, slug, location_raw, posting_date):
+        import datetime as dt
+
+        company_id = mod.unknown_company_id(engine)
+        maps = {
+            "source_code": {code: source_id},
+            "job_category": {},
+            "employment_type": {},
+            "experience_level": {},
+            "education_level": {},
+            "normalized_title_id": {},
+        }
+        stamp = dt.datetime(2026, 10, 15, tzinfo=dt.UTC)
+        row = {
+            "source_job_id": slug,
+            "source_code": code,
+            "title_original": "Probe Engineer",
+            "job_url": f"https://example.invalid/{slug}",
+            "posting_date": posting_date,
+            "location_raw": location_raw,
+            "closing_date": None,
+            "first_scraped_at": stamp,
+            "last_scraped_at": stamp,
+            "job_status": "active",
+            "content_hash": "geo-probe",
+            "data_quality_score": 1.0,
+            "language_code": None,
+            "title_en": None,
+            "description_clean": "Probe description long enough to be stored.",
+            "salary_min": None,
+            "salary_max": None,
+            "salary_currency": None,
+            "pay_period": None,
+            "salary_disclosed": False,
+            "is_negotiable": None,
+        }
+        return mod.insert_shard(
+            engine,
+            [row],
+            code,
+            maps,
+            company_id,
+            f"shards/source={code}/dt=2026-10-18/{slug}.parquet",
+        )
+
+    def _one(self, engine, source_id, slug):
+        with engine.connect() as conn:
+            return (
+                conn.execute(
+                    text("""
+                    SELECT l.raw_location_text, co.iso_code_2, ci.city_name
+                    FROM core.jobs j
+                    LEFT JOIN ref.locations l ON l.location_id = j.location_id
+                    LEFT JOIN ref.countries co ON co.country_id = l.country_id
+                    LEFT JOIN ref.cities ci ON ci.city_id = l.city_id
+                    WHERE j.source_id = :s AND j.source_job_id = :slug
+                """),
+                    {"s": source_id, "slug": slug},
+                )
+                .mappings()
+                .one_or_none()
+            )
+
+    def _cleanup(self, engine, source_id):
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "DELETE FROM core.jobs WHERE source_id = :s "
+                    "AND source_job_id LIKE 'geo-probe-%'"
+                ),
+                {"s": source_id},
+            )
+
+    def test_a_merged_row_keeps_its_location(self, engine, mod):
+        source_id = self._source_id(engine, "geo_probe")
+        try:
+            self._fold(
+                engine, mod, source_id, "geo_probe", "geo-probe-1", "Kuala Lumpur", "2026-10-15"
+            )
+            row = self._one(engine, source_id, "geo-probe-1")
+            assert row is not None
+            # ref.locations is deduped on (city_id, region_id, country_id,
+            # remote_work_type_id) and keeps whichever raw text created it
+            # first, so raw_location_text is not the shard's string -- the
+            # per-source text lives in core.location_aliases. What matters is
+            # that the row resolved to the right place.
+            assert row["city_name"] == "Kuala Lumpur"
+            assert row["iso_code_2"] == "MY", (
+                "the merged row has no country -- this is the bug that left "
+                "33,388 CI-merged rows with no geography"
+            )
+        finally:
+            self._cleanup(engine, source_id)
+
+    def test_an_unresolvable_location_does_not_lose_the_row(self, engine, mod):
+        """Geography is enrichment, not identity."""
+        source_id = self._source_id(engine, "geo_probe2")
+        try:
+            self._fold(
+                engine,
+                mod,
+                source_id,
+                "geo_probe2",
+                "geo-probe-2",
+                "Somewhere That Is Not A Place At All",
+                "2026-10-15",
+            )
+            assert self._one(engine, source_id, "geo-probe-2") is not None
+        finally:
+            self._cleanup(engine, source_id)
+
+    def test_a_row_with_no_location_raw_still_inserts(self, engine, mod):
+        source_id = self._source_id(engine, "geo_probe3")
+        try:
+            self._fold(engine, mod, source_id, "geo_probe3", "geo-probe-3", None, "2026-10-15")
+            assert self._one(engine, source_id, "geo-probe-3") is not None
+        finally:
+            self._cleanup(engine, source_id)

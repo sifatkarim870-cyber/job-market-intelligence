@@ -71,12 +71,16 @@ import sys
 
 from loguru import logger
 from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "src"))
 
 from job_market_intel.corpus.shard_export import (
     CorpusSettings,  # noqa: E402
     resolve_token,  # noqa: E402
+)
+from job_market_intel.normalization.geographic_resolution import (  # noqa: E402
+    resolve_and_cache_location,
 )
 
 REPO = "Shifat2110724169/job-market-intel-corpus"
@@ -302,6 +306,53 @@ def _text(value) -> str | None:
     return None if value is None else str(value)
 
 
+def resolve_shard_locations(
+    engine,
+    rows: list[dict],
+    source_code: str,
+    source_id: int | None,
+) -> dict[str, int | None]:
+    """``location_raw`` -> ``location_id`` for every distinct text in a shard.
+
+    Why this has to happen at all: the shard carries ``location_raw`` but not
+    ``location_id``. ``location_id`` is a surrogate key, per-database, exactly
+    like ``job_id`` and for the same reason -- CI's 12345 is not local's 12345.
+    Without this pass **every** CI-merged row in the corpus landed with
+    ``location_id = NULL``. Measured on the corpus 2026-10-19: 33,388 rows with
+    no country, led by glints 15,059, greenhouse 2,821, jobmaster 2,042,
+    arbeitnow 1,926 and 51job 1,917 -- all of them CI-scraped sources.
+
+    Why a separate Session rather than inside the row loop: the caller holds an
+    open ``engine.begin()`` connection, and ``resolve_and_cache_location`` needs
+    ``begin_nested()``/``rollback()`` to survive a concurrent-insert
+    IntegrityError on ref.locations. A bare ``Connection.rollback()`` would
+    abandon the whole enclosing transaction instead of rolling back to a
+    savepoint, which is precisely what that function's docstring is written to
+    avoid. A Session gets the savepoint semantics for free.
+
+    A location that will not resolve is logged and stored as ``None``. Geography
+    is enrichment, not identity: a row that cannot be placed is still a row, and
+    dropping a whole shard over one unparsable location string would not be.
+    """
+    if source_id is None:
+        return {}
+    location_by_raw: dict[str, int | None] = {}
+    with Session(engine) as geo:
+        for raw in {r.get("location_raw") for r in rows if r.get("location_raw")}:
+            try:
+                location_by_raw[raw] = resolve_and_cache_location(geo, raw, source_id)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "could not resolve location {!r} for {}: {}",
+                    str(raw)[:60],
+                    source_code,
+                    exc,
+                )
+                location_by_raw[raw] = None
+        geo.commit()
+    return location_by_raw
+
+
 def insert_shard(
     engine,
     rows: list[dict],
@@ -313,10 +364,14 @@ def insert_shard(
     """Fold one shard's rows into local. Returns (inserted, conflicted)."""
     inserted = conflicted = 0
 
+    source_id = maps["source_code"].get(source_code)
+    location_by_raw = resolve_shard_locations(engine, rows, source_code, source_id)
+
     job_sql = text(
         """
         INSERT INTO core.jobs (
             source_id, source_job_id, original_url, company_id, job_title,
+            location_id,
             normalized_title_id, job_category_id, employment_type_id,
             experience_level_id, education_level_id, num_vacancies,
             visa_sponsorship, relocation_support, application_method,
@@ -325,6 +380,7 @@ def insert_shard(
             language_code, job_title_en, created_at, updated_at
         ) VALUES (
             :source_id, :source_job_id, :original_url, :company_id, :job_title,
+            :location_id,
             :normalized_title_id, :job_category_id, :employment_type_id,
             :experience_level_id, :education_level_id, :num_vacancies,
             :visa_sponsorship, :relocation_support, :application_method,
@@ -351,6 +407,7 @@ def insert_shard(
             "original_url": _text(row.get("job_url")) or "",
             "company_id": company_id,
             "job_title": _text(row.get("title_original")) or "",
+            "location_id": location_by_raw.get(row.get("location_raw")),
             "posting_date": posting_date,
             "closing_date": _as_date(row.get("closing_date")),
             "first_scraped_at": row.get("first_scraped_at") or dt.datetime.now(dt.UTC),
