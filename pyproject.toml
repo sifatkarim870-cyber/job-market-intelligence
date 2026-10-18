@@ -16,6 +16,28 @@ authors = [
 dependencies = [
     "apscheduler>=3.10,<4.0",
     "beautifulsoup4>=4.15.0",
+    # Columnar SQL over the Parquet corpus shards, read straight off hf://
+    # without downloading them. Used by sync_corpus_from_hf.py (row counts
+    # from Parquet footers), merge_incoming_shards.py and apply_translations.py.
+    #
+    # This was UNDECLARED for the life of the project and only worked because
+    # somebody ran `uv pip install duckdb` by hand. On 2026-10-19 a plain
+    # `uv sync` pruned it and run_corpus_sync.cmd began failing its pull half
+    # with "ModuleNotFoundError: No module named 'duckdb'" -- and that sync is
+    # what keeps local and HF identical, so it silently breaks the project's
+    # core invariant. tests/unit/test_declared_dependencies.py now audits every
+    # import in scripts/ and src/ against this file so it cannot recur.
+    "duckdb>=1.0",
+    # Required by DuckDB's Python client to materialise TIMESTAMP WITH TIME
+    # ZONE columns, which core.jobs carries (first_scraped_at,
+    # last_scraped_at, created_at, updated_at). Without it, DuckDB does not
+    # fail cleanly: it raises `UnicodeDecodeError: 'utf-8' codec can't decode
+    # byte 0xcb` on a perfectly valid file, which reads like data corruption
+    # and sends you hunting through the corpus for bad bytes that are not
+    # there. It only ever arrived as a transitive dependency of pandas, which
+    # lives in the `eda` extra -- so a plain `uv sync` broke the corpus sync.
+    # Declared for the same reason duckdb is.
+    "pytz>=2024.1",
     # Step: Job.am's Cloudflare challenges plain-``requests`` HTTP from
     # GitHub Actions' runner IPs regardless of User-Agent (three CI
     # attempts, three runner IPs, two UAs -- all 403 "Just a moment..."
