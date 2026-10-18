@@ -143,3 +143,170 @@ def test_posting_date_is_required_not_invented(mod):
     assert mod._as_date("2026-10-11") == date(2026, 10, 11)
     assert mod._as_date(date(2026, 10, 11)) == date(2026, 10, 11)
     assert mod._as_date(None) is None
+
+
+class TestRepublishedPostingIsNotASecondRow:
+    """A shard whose posting_date moved must not create a second row.
+
+    ``uq_jobs_source_natural_key`` is ``(source_id, source_job_id,
+    posting_date)``, so a changed date satisfies the constraint and inserts.
+    But ``db/job_repository.save_cleaned_job`` identifies a posting by
+    ``(source_id, source_job_id)`` and never rewrites ``posting_date``, so
+    local holds exactly one row per source_job_id. Relying on the constraint
+    let the merge disagree with that.
+
+    Measured on the corpus 2026-10-19: 2,053 over-published rows out of
+    131,139, across 15 sources.
+    """
+
+    @staticmethod
+    def _source_id(engine, code: str = "republish_probe") -> int:
+        with engine.begin() as conn:
+            return conn.execute(
+                text(
+                    "INSERT INTO ref.sources (source_code, source_name, source_type) "
+                    "VALUES (:c, 'Republish probe', 'job_board') "
+                    "ON CONFLICT (source_code) DO UPDATE SET source_code = EXCLUDED.source_code "
+                    "RETURNING source_id"
+                ),
+                {"c": code},
+            ).scalar_one()
+
+    def _fold(self, engine, mod, source_id, slug, posting_date, rows):
+        """Run one shard through the real merge loop, against the real schema."""
+        company_id = mod.unknown_company_id(engine)
+        maps = {
+            "source_code": {"republish_probe": source_id},
+            "job_category": {},
+            "employment_type": {},
+            "experience_level": {},
+            "education_level": {},
+            "normalized_title_id": {},
+        }
+        payload = [
+            {
+                "source_job_id": slug,
+                "source_code": "republish_probe",
+                "title_original": "Probe Engineer",
+                "job_url": f"https://example.invalid/{slug}",
+                "posting_date": posting_date,
+                "closing_date": None,
+                "first_scraped_at": rows,
+                "last_scraped_at": rows,
+                "job_status": "active",
+                "content_hash": "probe-hash",
+                "data_quality_score": 1.0,
+                "language_code": None,
+                "title_en": None,
+                "description_clean": "Probe description long enough to be stored.",
+                "salary_min": None,
+                "salary_max": None,
+                "salary_currency": None,
+                "pay_period": None,
+                "salary_disclosed": False,
+                "is_negotiable": None,
+            }
+        ]
+        return mod.insert_shard(
+            engine,
+            payload,
+            "republish_probe",
+            maps,
+            company_id,
+            f"shards/source=republish_probe/dt=2026-10-18/probe-{slug}.parquet",
+        )
+
+    def _count(self, engine, source_id, slug) -> int:
+        with engine.connect() as conn:
+            return conn.execute(
+                text(
+                    "SELECT count(*) FROM core.jobs WHERE source_id = :s AND source_job_id = :slug"
+                ),
+                {"s": source_id, "slug": slug},
+            ).scalar_one()
+
+    def test_same_posting_two_posting_dates_stays_one_row(self, engine, mod):
+        import datetime as dt
+
+        source_id = self._source_id(engine)
+        slug = "republish-probe-slug-1"
+        try:
+            self._fold(
+                engine, mod, source_id, slug, "2026-10-15", dt.datetime(2026, 10, 15, tzinfo=dt.UTC)
+            )
+            assert self._count(engine, source_id, slug) == 1
+
+            # Same posting, later derived date -- the jobsearch_az case exactly.
+            self._fold(
+                engine, mod, source_id, slug, "2026-10-18", dt.datetime(2026, 10, 18, tzinfo=dt.UTC)
+            )
+            assert self._count(engine, source_id, slug) == 1, (
+                "a shard whose posting_date differs inserted a SECOND row for the "
+                "same posting; that is how 2,053 duplicates got into the corpus"
+            )
+        finally:
+            with engine.begin() as conn:
+                conn.execute(
+                    text("DELETE FROM core.jobs WHERE source_id = :s AND source_job_id = :slug"),
+                    {"s": source_id, "slug": slug},
+                )
+
+    def test_a_genuinely_new_posting_is_still_inserted(self, engine, mod):
+        """The guard must not turn into 'ignore every shard we have seen'."""
+        import datetime as dt
+
+        source_id = self._source_id(engine)
+        stamp = dt.datetime(2026, 10, 18, tzinfo=dt.UTC)
+        try:
+            for slug in ("republish-probe-a", "republish-probe-b", "republish-probe-c"):
+                self._fold(engine, mod, source_id, slug, "2026-10-15", stamp)
+            for slug in ("republish-probe-a", "republish-probe-b", "republish-probe-c"):
+                assert self._count(engine, source_id, slug) == 1, slug
+        finally:
+            with engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "DELETE FROM core.jobs WHERE source_id = :s "
+                        "AND source_job_id LIKE 'republish-probe-%'"
+                    ),
+                    {"s": source_id},
+                )
+
+    def test_republishing_refreshes_last_scraped_at_rather_than_being_dropped_silently(
+        self, engine, mod
+    ):
+        """A known posting still counts as observed, so liveness is maintained."""
+        import datetime as dt
+
+        source_id = self._source_id(engine)
+        slug = "republish-probe-slug-2"
+        try:
+            self._fold(
+                engine, mod, source_id, slug, "2026-10-15", dt.datetime(2026, 10, 15, tzinfo=dt.UTC)
+            )
+            with engine.connect() as conn:
+                before = conn.execute(
+                    text(
+                        "SELECT last_scraped_at FROM core.jobs "
+                        "WHERE source_id = :s AND source_job_id = :slug"
+                    ),
+                    {"s": source_id, "slug": slug},
+                ).scalar_one()
+            self._fold(
+                engine, mod, source_id, slug, "2026-10-18", dt.datetime(2026, 10, 18, tzinfo=dt.UTC)
+            )
+            with engine.connect() as conn:
+                after = conn.execute(
+                    text(
+                        "SELECT last_scraped_at FROM core.jobs "
+                        "WHERE source_id = :s AND source_job_id = :slug"
+                    ),
+                    {"s": source_id, "slug": slug},
+                ).scalar_one()
+            assert after >= before
+        finally:
+            with engine.begin() as conn:
+                conn.execute(
+                    text("DELETE FROM core.jobs WHERE source_id = :s AND source_job_id = :slug"),
+                    {"s": source_id, "slug": slug},
+                )
