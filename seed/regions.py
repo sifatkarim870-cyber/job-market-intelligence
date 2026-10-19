@@ -317,6 +317,59 @@ _IE_COUNTIES = [
     "Wicklow",
 ]
 
+#: Egypt's 27 governorates, for forasna.
+#:
+#: The board's own spelling, without the hamza on the "al-" article, so a
+#: posting's region string matches what the site publishes. 17 of the 27 were
+#: observed on live postings (2026-10-20); the rest are the remaining
+#: governorates.
+#:
+#: Seeded because forasna writes every address as
+#: "<locality>, <governorate>" and the corpus resolves the region from the
+#: second half. Without them every Egyptian posting would land country-only.
+_EG_GOVERNORATES = [
+    "القاهرة",
+    "الجيزة",
+    "الاسكندرية",
+    "الدقهلية",
+    "الشرقية",
+    "المنوفية",
+    "المنيا",
+    "القليوبية",
+    "الغربية",
+    "البحيرة",
+    "كفر الشيخ",
+    "بني سويف",
+    "الفيوم",
+    "أسيوط",
+    "سوهاج",
+    "قنا",
+    "الأقصر",
+    "أسوان",
+    "البحر الأحمر",
+    "الوادي الجديد",
+    "مطروح",
+    "شمال سيناء",
+    "جنوب سيناء",
+    "بورسعيد",
+    "دمياط",
+    "السويس",
+    "الاسماعيلية",
+]
+
+#: Saudi regions seen on forasna, for the postings whose addressCountry is SA.
+#:
+#: Without them, a Saudi posting's locality would either match an Egyptian city
+#: of the same name or fall through to the source's home country -- and
+#: "الرياض" IS both a village in Kafr El Sheikh and Riyadh, so the name
+#: collides. The region is what tells them apart.
+_SA_REGIONS = [
+    "الرياض",
+    "أبها",
+    "تبوك",
+]
+
+
 _BY_COUNTRY: dict[str, list[str]] = {
     "US": _US_STATES,
     "CA": _CA_PROVINCES,
@@ -332,6 +385,8 @@ _BY_COUNTRY: dict[str, list[str]] = {
     "PT": _PT_REGIONS,
     "MY": _MY_REGIONS,
     "IE": _IE_COUNTIES,
+    "EG": _EG_GOVERNORATES,
+    "SA": _SA_REGIONS,
 }
 
 

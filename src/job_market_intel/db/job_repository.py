@@ -467,6 +467,44 @@ class JobRepository(AbstractRepository[Any]):
                         "job_title_en": job.job_title_en,
                     },
                 )
+                # The salary row is refreshed here too. The content hash
+                # covers the title, company, description, location and the
+                # salary BOUNDS -- but not the currency, the pay period, or
+                # the normalised USD figures derived from them. So a job whose
+                # currency changed, or whose conversion rate was added to
+                # _USD_CONVERSION_RATES afterwards, kept a stale salary row
+                # for ever: the hash matched, so the salary was never
+                # rewritten. Measured 2026-10-20: adding an EGP rate left
+                # every already-persisted forasna row with NULL normalised
+                # columns, and a re-scrape reported "unchanged" for all 20.
+                #
+                # Only the derived columns are rewritten. salary_min and
+                # salary_max are part of the content hash, so by definition
+                # they are unchanged on this path.
+                session.execute(
+                    text(
+                        "UPDATE salary.job_salaries SET "
+                        "currency_id = :currency_id, "
+                        "pay_period = :pay_period, "
+                        "salary_disclosed = :salary_disclosed, "
+                        "is_negotiable = :is_negotiable, "
+                        "normalized_annual_min_usd = :normalized_annual_min_usd, "
+                        "normalized_annual_max_usd = :normalized_annual_max_usd "
+                        "WHERE job_id = :job_id AND posting_date = :posting_date"
+                    ),
+                    {
+                        "job_id": job_id,
+                        "posting_date": existing_posting_date,
+                        "currency_id": currency_id,
+                        "pay_period": job.pay_period,
+                        "salary_disclosed": bool(
+                            job.salary_min is not None or job.salary_max is not None
+                        ),
+                        "is_negotiable": None,
+                        "normalized_annual_min_usd": normalized_annual_min_usd,
+                        "normalized_annual_max_usd": normalized_annual_max_usd,
+                    },
+                )
                 return "unchanged"
             else:
                 # Content changed -> Update job, description, salary

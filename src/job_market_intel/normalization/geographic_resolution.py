@@ -936,6 +936,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "hiredly": "MY",
     "jobsge": "GE",
     "jobsireland": "IE",
+    "forasna": "EG",
     "hiiraan_jobs": "SO",
     "jobsnepal": "NP",
     "karriere_at": "AT",

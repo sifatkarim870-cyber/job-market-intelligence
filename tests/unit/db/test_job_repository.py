@@ -171,11 +171,29 @@ class TestSaveCleanedJobBranches:
 
         assert status == "unchanged"
         executed_sql = [" ".join(str(c.args[0]).split()) for c in session.execute.call_args_list]
-        # Only the "still scraped" touch on core.jobs -- descriptions and
-        # salary must NOT be touched when nothing actually changed.
+        # The description is NOT touched -- it is part of the content hash, so
+        # by definition it has not changed.
         assert any(sql.startswith("UPDATE core.jobs") for sql in executed_sql)
         assert not any(sql.startswith("UPDATE core.job_descriptions") for sql in executed_sql)
-        assert not any(sql.startswith("UPDATE salary.job_salaries") for sql in executed_sql)
+        # The salary row IS touched, but only its DERIVED columns: the
+        # content hash covers salary_min and salary_max, and not the
+        # currency, the pay period or the normalised USD figures derived from
+        # them. Without this, a job whose currency changed -- or whose
+        # conversion rate was added to _USD_CONVERSION_RATES afterwards --
+        # kept a stale salary row for ever.
+        #
+        # Measured 2026-10-20: adding an EGP rate left every already-persisted
+        # forasna row with NULL normalised columns, and the re-scrape that
+        # should have filled them reported "unchanged" for all 20.
+        salary_updates = [
+            sql for sql in executed_sql if sql.startswith("UPDATE salary.job_salaries")
+        ]
+        assert len(salary_updates) == 1, "the derived salary columns must be refreshed"
+        assert "normalized_annual_min_usd" in salary_updates[0]
+        assert "pay_period" in salary_updates[0]
+        # ... but the BOUNDS are not rewritten on this path, because the hash
+        # says they are the same.
+        assert "salary_min =" not in salary_updates[0]
 
     def test_existing_record_with_different_hash_is_updated_everywhere(
         self, monkeypatch, make_cleaned_job
