@@ -456,3 +456,241 @@ class TestShardGeographySurvivesTheMerge:
             assert self._one(engine, source_id, "geo-probe-3") is not None
         finally:
             self._cleanup(engine, source_id)
+
+
+class TestShardPathResolution:
+    """The ledger's ``last_path`` goes stale; the repository is the authority.
+
+    A snapshot export rewrites a source's shard under a new name and leaves
+    the ledger pointing at the old one. Measured 2026-10-19: **32 of 44**
+    sources had a ``last_path`` that was no longer in the repository -- every
+    one re-exported as ``part-0.parquet`` -- so the merge skipped them with a
+    404 and a warning, and a ``--remerge`` repaired a quarter of the corpus
+    while appearing to succeed.
+
+    And every shard for a source is folded, not just the newest: the original
+    CI shard still carries the pay information that the consolidated export
+    lost, and folding it alongside is the only way to recover it.
+    """
+
+    def test_a_stale_ledger_path_falls_back_to_the_repo(self, mod):
+        repo_files = {"shards/source=reed/dt=2026-10-19/part-0.parquet"}
+        entry = {"last_path": "shards/source=reed/dt=2026-10-19/part-20261019T010203Z.parquet"}
+        assert mod.resolve_shard_paths("reed", entry, repo_files) == [
+            "shards/source=reed/dt=2026-10-19/part-0.parquet"
+        ]
+
+    def test_a_live_ledger_path_is_used_first(self, mod):
+        live = "shards/source=reed/dt=2026-10-19/part-20261019T010203Z.parquet"
+        repo_files = {live, "shards/source=reed/dt=2026-10-19/part-0.parquet"}
+        entry = {"last_path": live}
+        assert mod.resolve_shard_paths("reed", entry, repo_files)[0] == live
+
+    def test_every_shard_for_the_source_is_returned(self, mod):
+        """The original CI shard and the consolidated export are both needed.
+
+        The consolidated one is an export of the already-merged database, so
+        it has lost the pay information; the original still has it.
+
+        The order does not matter -- every insert is ON CONFLICT DO NOTHING,
+        and the consolidated shard triggers no salary insert at all because
+        its ``salary_disclosed`` is NULL for the affected rows.
+        """
+        repo_files = {
+            "shards/source=arbeitnow/dt=2026-10-19/part-0.parquet",
+            "shards/source=arbeitnow/dt=2026-10-19/part-20261019T125634Z.parquet",
+        }
+        paths = mod.resolve_shard_paths("arbeitnow", {}, repo_files)
+        assert len(paths) == 2
+        assert set(paths) == repo_files
+
+    def test_another_source_shard_is_never_picked_up(self, mod):
+        repo_files = {
+            "shards/source=reed/dt=2026-10-19/part-0.parquet",
+            "shards/source=remoteok/dt=2026-10-19/part-0.parquet",
+        }
+        paths = mod.resolve_shard_paths("reed", {}, repo_files)
+        assert paths == ["shards/source=reed/dt=2026-10-19/part-0.parquet"]
+
+    def test_a_source_with_no_shard_on_hf_resolves_to_nothing(self, mod):
+        assert mod.resolve_shard_paths("ghost", {}, set()) == []
+
+
+class TestShardSalarySurvivesTheMerge:
+    """A shard row with no *amount* must still keep its currency and pay period.
+
+    The bug this prevents
+    ---------------------
+    The merge wrote a ``salary.job_salaries`` row only when the shard carried
+    a figure (``salary_min`` or ``salary_max``). A source that publishes **no
+    amount** but does publish a currency and a pay period therefore lost
+    both -- and got no salary row at all.
+
+    Measured on the corpus 2026-10-19: for **every** source, the number of
+    jobs holding a salary row equalled the number of shard rows carrying a
+    ``pay_period``, exactly. 27,679 of 132,808 jobs (20.8%) had no salary row.
+    The locally-created rows for the same source *did* have one --
+    ``job_repository`` always writes a placeholder -- so the same source's
+    rows were stored differently depending on whether CI or the local run
+    created them.
+
+    The exporter LEFT JOINs ``salary.job_salaries``, so the shard distinguishes
+    the two cases cleanly: ``salary_disclosed`` is NULL for a job with no
+    salary record and False for one with a placeholder row.
+    """
+
+    @staticmethod
+    def _source_id(engine, code: str) -> int:
+        with engine.begin() as conn:
+            return conn.execute(
+                text(
+                    "INSERT INTO ref.sources (source_code, source_name, source_type) "
+                    "VALUES (:c, 'Salary probe', 'job_board') "
+                    "ON CONFLICT (source_code) DO UPDATE SET source_name = 'Salary probe' "
+                    "RETURNING source_id"
+                ),
+                {"c": code},
+            ).scalar_one()
+
+    def _fold(self, engine, mod, source_id, code, slug, **salary):
+        import datetime as dt
+
+        company_id = mod.unknown_company_id(engine)
+        maps = {
+            "source_code": {code: source_id},
+            "job_category": {},
+            "employment_type": {},
+            "experience_level": {},
+            "education_level": {},
+            "normalized_title_id": {},
+            "salary_currency": salary.get("currency_map", {}),
+        }
+        stamp = dt.datetime(2026, 10, 15, tzinfo=dt.UTC)
+        row = {
+            "source_job_id": slug,
+            "source_code": code,
+            "title_original": "Probe Engineer",
+            "job_url": f"https://example.invalid/{slug}",
+            "posting_date": "2026-10-15",
+            "location_raw": None,
+            "closing_date": None,
+            "first_scraped_at": stamp,
+            "last_scraped_at": stamp,
+            "job_status": "active",
+            "content_hash": "salary-probe",
+            "data_quality_score": 1.0,
+            "language_code": None,
+            "title_en": None,
+            "description_clean": "Probe description long enough to be stored.",
+            "salary_min": salary.get("salary_min"),
+            "salary_max": salary.get("salary_max"),
+            "salary_currency": salary.get("salary_currency"),
+            "pay_period": salary.get("pay_period"),
+            "salary_disclosed": salary.get("salary_disclosed"),
+            "is_negotiable": None,
+        }
+        return mod.insert_shard(
+            engine,
+            [row],
+            code,
+            maps,
+            company_id,
+            f"shards/source={code}/dt=2026-10-18/{slug}.parquet",
+        )
+
+    def _salary(self, engine, source_id, slug):
+        with engine.connect() as conn:
+            return (
+                conn.execute(
+                    text("""
+                    SELECT sa.salary_min, sa.salary_max, sa.pay_period,
+                           sa.salary_disclosed, cur.iso_code AS currency
+                    FROM core.jobs j
+                    LEFT JOIN salary.job_salaries sa
+                           ON sa.job_id = j.job_id AND sa.posting_date = j.posting_date
+                    LEFT JOIN ref.currencies cur ON cur.currency_id = sa.currency_id
+                    WHERE j.source_id = :s AND j.source_job_id = :slug
+                """),
+                    {"s": source_id, "slug": slug},
+                )
+                .mappings()
+                .one_or_none()
+            )
+
+    def _cleanup(self, engine, source_id):
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "DELETE FROM core.jobs WHERE source_id = :s "
+                    "AND source_job_id LIKE 'salary-probe-%'"
+                ),
+                {"s": source_id},
+            )
+
+    def test_a_figure_less_row_keeps_its_currency_and_pay_period(self, engine, mod):
+        source_id = self._source_id(engine, "salary_probe")
+        try:
+            self._fold(
+                engine,
+                mod,
+                source_id,
+                "salary_probe",
+                "salary-probe-1",
+                salary_min=None,
+                salary_max=None,
+                salary_currency="EUR",
+                pay_period="hourly",
+                salary_disclosed=False,
+            )
+            row = self._salary(engine, source_id, "salary-probe-1")
+            assert row is not None, "the job did not insert"
+            assert row["pay_period"] == "hourly", "the pay period was thrown away"
+            assert row["salary_disclosed"] is False, "the disclosed flag was thrown away"
+            assert row["salary_min"] is None and row["salary_max"] is None
+        finally:
+            self._cleanup(engine, source_id)
+
+    def test_a_row_with_a_figure_still_lands(self, engine, mod):
+        source_id = self._source_id(engine, "salary_probe2")
+        try:
+            self._fold(
+                engine,
+                mod,
+                source_id,
+                "salary_probe2",
+                "salary-probe-2",
+                salary_min=1000,
+                salary_max=2000,
+                salary_currency="EUR",
+                pay_period="yearly",
+                salary_disclosed=True,
+            )
+            row = self._salary(engine, source_id, "salary-probe-2")
+            assert row is not None
+            assert row["salary_min"] == 1000
+            assert row["salary_max"] == 2000
+            assert row["pay_period"] == "yearly"
+        finally:
+            self._cleanup(engine, source_id)
+
+    def test_a_shard_with_nothing_to_say_about_pay_still_gets_no_row(self, engine, mod):
+        """Nothing to say means every salary field is NULL -- not False."""
+        source_id = self._source_id(engine, "salary_probe3")
+        try:
+            self._fold(
+                engine,
+                mod,
+                source_id,
+                "salary_probe3",
+                "salary-probe-3",
+                salary_min=None,
+                salary_max=None,
+                salary_currency=None,
+                pay_period=None,
+                salary_disclosed=None,
+            )
+            row = self._salary(engine, source_id, "salary-probe-3")
+            assert row is not None, "the job itself must still insert"
+            assert row["pay_period"] is None
+        finally:
+            self._cleanup(engine, source_id)

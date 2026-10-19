@@ -70,7 +70,7 @@ import pathlib
 import sys
 
 from loguru import logger
-from sqlalchemy import create_engine, text
+from sqlalchemy import Connection, create_engine, text
 from sqlalchemy.orm import Session
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "src"))
@@ -437,7 +437,7 @@ def insert_shard(
         with engine.begin() as conn:
             existing = conn.execute(
                 text(
-                    "SELECT job_id FROM core.jobs "
+                    "SELECT job_id, posting_date FROM core.jobs "
                     "WHERE source_id = :source_id AND source_job_id = :source_job_id "
                     "ORDER BY first_scraped_at, posting_date LIMIT 1"
                 ),
@@ -455,6 +455,14 @@ def insert_shard(
                     ),
                     {"job_id": existing.job_id, "last_scraped_at": params["last_scraped_at"]},
                 )
+                # The salary row is still written here. It used to be skipped
+                # by the `continue` below, which meant a job that already
+                # existed could never gain a salary record from a shard that
+                # carried one -- and, with the figure-only condition, a job
+                # whose posting had been merged before it had no salary row at
+                # all and no way to get one. The same is true of the job's
+                # description, which this path also skipped.
+                _insert_salary(conn, existing.job_id, existing.posting_date, row, maps)
                 conflicted += 1
                 continue
 
@@ -484,37 +492,9 @@ def insert_shard(
                     {"job_id": job_id, "posting_date": posting_date, **desc},
                 )
 
-            if row.get("salary_min") is not None or row.get("salary_max") is not None:
-                conn.execute(
-                    text(
-                        """
-                        INSERT INTO salary.job_salaries (
-                            job_id, posting_date, salary_min, salary_max, currency_id,
-                            pay_period, salary_disclosed, is_negotiable,
-                            normalized_annual_min_usd, normalized_annual_max_usd
-                        ) VALUES (
-                            :job_id, :posting_date, :salary_min, :salary_max, :currency_id,
-                            :pay_period, :salary_disclosed, :is_negotiable,
-                            :normalized_annual_min_usd, :normalized_annual_max_usd
-                        )
-                        ON CONFLICT (job_id) DO NOTHING
-                        """
-                    ),
-                    {
-                        "job_id": job_id,
-                        "posting_date": posting_date,
-                        "salary_min": row.get("salary_min"),
-                        "salary_max": row.get("salary_max"),
-                        "currency_id": maps["salary_currency"].get(str(row.get("salary_currency")))
-                        if row.get("salary_currency")
-                        else None,
-                        "pay_period": _text(row.get("pay_period")),
-                        "salary_disclosed": bool(row.get("salary_disclosed")),
-                        "is_negotiable": row.get("is_negotiable"),
-                        "normalized_annual_min_usd": row.get("salary_annual_min_usd"),
-                        "normalized_annual_max_usd": row.get("salary_annual_max_usd"),
-                    },
-                )
+            # A salary row is written whenever the shard says ANYTHING about
+            # pay -- not only when it carries a figure.
+            _insert_salary(conn, job_id, posting_date, row, maps)
 
             conn.execute(
                 text(
@@ -531,16 +511,145 @@ def insert_shard(
     return inserted, conflicted
 
 
-def plan(ledger: dict, already: set[str], only: str | None) -> list[tuple[str, str, int]]:
+def _insert_salary(
+    conn: Connection,
+    job_id: int,
+    posting_date: str,
+    row: dict,
+    maps: dict,
+) -> None:
+    """Write the job's ``salary.job_salaries`` row, if the shard says anything.
+
+    A salary row is written whenever the shard says ANYTHING about pay -- not
+    only when it carries a figure.
+
+    The bug this fixes
+    -----------------
+    The condition used to be "salary_min is not None or salary_max is not
+    None", so a shard row with no amount contributed NO salary row at all --
+    and with it went the currency and the pay period the shard had carried.
+    Measured on the corpus 2026-10-19: for **every** source, the number of
+    jobs holding a salary.job_salaries row equalled the number of shard rows
+    carrying a pay_period, exactly -- because the merge only kept a salary
+    row when a figure came with it. 27,679 of 132,808 jobs (20.8%) ended up
+    with no salary row, while the locally-created rows for the same source
+    (which ``job_repository`` always gives one) had one. So the same source's
+    rows were stored differently depending on whether CI or the local run
+    created them.
+
+    The exporter LEFT JOINs ``salary.job_salaries``, so the shard tells the
+    two cases apart cleanly: ``salary_disclosed`` is NULL for a job with no
+    salary record and False for one with a placeholder row. "Anything at all"
+    therefore means: a disclosed flag present (True or False), a currency, or
+    a pay period.
+
+    A source that reports no currency, no pay period and no disclosed flag
+    still gets no row -- the behaviour is unchanged for a shard that genuinely
+    has nothing to say.
+    """
+    if not (
+        row.get("salary_disclosed") is not None
+        or row.get("salary_currency")
+        or row.get("pay_period")
+        or row.get("salary_min") is not None
+        or row.get("salary_max") is not None
+    ):
+        return
+    conn.execute(
+        text(
+            """
+            INSERT INTO salary.job_salaries (
+                job_id, posting_date, salary_min, salary_max, currency_id,
+                pay_period, salary_disclosed, is_negotiable,
+                normalized_annual_min_usd, normalized_annual_max_usd
+            ) VALUES (
+                :job_id, :posting_date, :salary_min, :salary_max, :currency_id,
+                :pay_period, :salary_disclosed, :is_negotiable,
+                :normalized_annual_min_usd, :normalized_annual_max_usd
+            )
+            ON CONFLICT (job_id) DO NOTHING
+            """
+        ),
+        {
+            "job_id": job_id,
+            "posting_date": posting_date,
+            "salary_min": row.get("salary_min"),
+            "salary_max": row.get("salary_max"),
+            "currency_id": maps["salary_currency"].get(str(row.get("salary_currency")))
+            if row.get("salary_currency")
+            else None,
+            "pay_period": _text(row.get("pay_period")),
+            "salary_disclosed": bool(row.get("salary_disclosed")),
+            "is_negotiable": row.get("is_negotiable"),
+            "normalized_annual_min_usd": row.get("salary_annual_min_usd"),
+            "normalized_annual_max_usd": row.get("salary_annual_max_usd"),
+        },
+    )
+
+
+def resolve_shard_paths(code: str, entry: dict, repo_files: set[str]) -> list[str]:
+    """The shard files to fold for one source, newest first.
+
+    The ledger's ``last_path`` is a hint, and it goes stale: a snapshot export
+    rewrites a source's shard under a new name and leaves the ledger pointing
+    at the old one. Measured 2026-10-19: **32 of 44** sources had a
+    ``last_path`` that was no longer in the repository -- every one of them
+    re-exported as ``part-0.parquet`` -- so the merge skipped them with a 404
+    and a warning, and a ``--remerge`` repaired a quarter of the corpus while
+    appearing to succeed.
+
+    So the repository is the authority on which file exists, and the ledger is
+    only used for the row count.
+
+    **Every** shard for the source is returned, not just the newest, and this
+    is not tidiness. A source that CI scraped keeps its original
+    timestamped shard alongside the consolidated ``part-0.parquet``, and the
+    two do not carry the same data: ``part-0.parquet`` is an export of the
+    already-merged local database, so it has lost the pay information the
+    merge discarded, while the original CI shard still has it. Measured
+    2026-10-19: ``arbeitnow``'s original shard carries a pay_period on
+    300/300 rows and its consolidated one on 353/2,285.
+
+    Folding the original alongside the consolidated is therefore the only way
+    to recover what was lost -- and it is safe, because every insert is
+    ``ON CONFLICT ... DO NOTHING``.
+
+    The order of the returned paths does not affect the result: the
+    consolidated export has ``salary_disclosed`` NULL for the rows that lost
+    their salary record, so it triggers no insert at all, and the original CI
+    shard -- which has the flag -- is what fills the gap. The ledger's path
+    is listed first because it is the authoritative one.
+    """
+    prefix = f"shards/source={code}/"
+    current = sorted(f for f in repo_files if f.startswith(prefix) and f.endswith(".parquet"))
+    if not current:
+        return []
+    # The ledger's path first when it exists -- it is the authoritative
+    # "newest" shard -- then the rest, newest first.
+    last = entry.get("last_path")
+    ordered: list[str] = []
+    if last and last in current:
+        ordered.append(last)
+    ordered.extend(sorted((f for f in current if f not in ordered), reverse=True))
+    return ordered
+
+
+def plan(
+    ledger: dict,
+    already: set[str],
+    only: str | None,
+    repo_files: set[str] | None = None,
+) -> list[tuple[str, str, int]]:
     """Ledger entries whose shard has not been folded into local yet."""
+    repo_files = repo_files if repo_files is not None else set()
     out: list[tuple[str, str, int]] = []
     for code, entry in sorted(ledger.items()):
         if only and code != only:
             continue
-        path = entry.get("last_path")
-        if not path or path in already:
-            continue
-        out.append((code, path, entry.get("last_rows") or 0))
+        for path in resolve_shard_paths(code, entry, repo_files):
+            if path in already:
+                continue
+            out.append((code, path, entry.get("last_rows") or 0))
     return out
 
 
@@ -575,7 +684,12 @@ def main(argv: list[str] | None = None) -> int:
             conn.execute(text(LEDGER_DDL))
         already = merged_paths(engine)
 
-    candidates = plan(ledger, already, args.source)
+    candidates = plan(
+        ledger,
+        already,
+        args.source,
+        repo_files=set(api.list_repo_files(args.repo, repo_type="dataset")),
+    )
 
     logger.info(
         "ledger has {} sources; {} not yet merged ({} already recorded)",
