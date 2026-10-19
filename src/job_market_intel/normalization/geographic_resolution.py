@@ -478,6 +478,34 @@ def _match_comma_fallback(
     return None
 
 
+def _country_outranks_region(
+    session: Session,
+    normalized_segment: str,
+    default_country_iso2: str | None,
+) -> int | None:
+    """A country_id to prefer over a same-named region, or None.
+
+    ``Georgia`` is the only country name in the world that is also a US state
+    name, and the region matcher fired first, so every posting whose location
+    string was literally "Georgia" was attributed to the **United States**.
+    Measured on 2026-10-19: 539 rows -- 537 from ``hrge``, a Georgian board,
+    plus one each from ``builtin`` and ``greenhouse``.
+
+    Resolution order matters here. ``_match_segment`` tries city, then region,
+    then country, so the region always won. But a bare country name is a
+    stronger signal than a region name: "Georgia" said on its own means the
+    country.
+
+    Gated on the source's home country exactly like
+    :func:`_us_abbreviation_allowed`, and for the same reason: on a **US**
+    board "Georgia" means the state essentially every time, and flipping it
+    there would break 537 correct rows to fix 539 wrong ones.
+    """
+    if _us_abbreviation_allowed(default_country_iso2):
+        return None
+    return _match_country(session, normalized_segment)
+
+
 def _match_segment(
     session: Session,
     segment: str,
@@ -491,9 +519,11 @@ def _match_segment(
     "City, ST"/"City, Country" comma fallback section, and
     _match_comma_fallback above).
 
-    ``default_country_iso2`` is threaded through to the comma fallback, where it
-    gates the US state-abbreviation expansion. See :func:`_us_abbreviation_allowed`
-    for why an unconditional expansion is wrong.
+    ``default_country_iso2`` is threaded through to the comma fallback and to
+    :func:`_country_outranks_region`, where it gates the US state-abbreviation
+    expansion and the country-over-region preference. See
+    :func:`_us_abbreviation_allowed` for why an unconditional expansion is
+    wrong.
     """
     normalized = _normalize_segment(segment)
     if not normalized or normalized in _GLOBAL_ASSERTION_PHRASES:
@@ -505,6 +535,10 @@ def _match_segment(
         return _SegmentMatch(
             level=_MatchLevel.CITY, city_id=city_id, region_id=region_id, country_id=country_id
         )
+
+    country_first = _country_outranks_region(session, normalized, default_country_iso2)
+    if country_first is not None:
+        return _SegmentMatch(level=_MatchLevel.COUNTRY, country_id=country_first)
 
     region_match = _match_region(session, normalized)
     if region_match is not None:
