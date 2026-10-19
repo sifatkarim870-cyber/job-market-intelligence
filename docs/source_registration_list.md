@@ -163,7 +163,7 @@ headless Chromium, and the two responses compared.
 | **jobsearch.az** | Azerbaijan | 200, 512 KB, **0 anchors** | no | **SHIPPED** -- `jobsearch_az`, 30 rows |
 | **jobs.ge** | Georgia | 200, 332 KB, 308x `?view=jobs&id=` | no | **SHIPPED** -- `jobsge`, 60 rows |
 | **hiredly.com** | Malaysia | 200, 194 KB, 0 anchors | no | **SHIPPED** -- `hiredly`, 30 rows |
-| jobsireland.ie | Ireland | 200, 176 KB, 0 real postings | no | browser viable, not yet built |
+| **jobsireland.ie** | Ireland | 200, 176 KB, 3,898 postings | no | **SHIPPED** -- `jobsireland`, 108 rows, **no browser** |
 | shine.com | India | 200, 36 KB, 0 anchors | no | browser viable, not yet built |
 | keejob.com | Tunisia | 200, 221 KB | **yes** | moved to section B |
 | emploipartner.com | Luxembourg | 200, 92 KB | **yes** | moved to section B |
@@ -219,13 +219,29 @@ worth building.
 
 ## Recommended order
 
-1. **jobsireland.ie / shine.com** -- the two remaining unwalled JS-rendered
-   boards. The machinery exists; these are days of work, not a purchase.
-   Ireland (zero coverage) and (thinly covered) India.
+1. **shine.com** -- the last remaining unwalled JS-rendered board. The
+   machinery exists; this is days of work, not a purchase. India is thinly
+   covered (51job carries it, 3,696 rows).
 2. **France Travail** -- an entire country, authoritative source, documented API.
    Blocked only on registration.
 3. **A residential proxy** -- unblocks the whole of section B, several of them
    large national or regional leaders. Not purchased.
+
+**CORRECTION -- jobsireland.ie.** This file previously carried it as unwalled
+but with "all 188 anchors on `/en-US/browse-jobs` chrome, no posting links",
+and parked it as needing a different approach than anchor scraping. That was
+measuring the wrong thing. The links are plain HTML
+(`/en-US/job-Details?id=2475739`) -- but a **second link per card is the
+literal template** `/en-US/job-Details?id=#JobId`, with the id substituted at
+runtime, so an anchor scan sees a placeholder and no id. The site is an Orchard
+CMS application and is server-rendered, so it needs **no browser at all** --
+the cheapest source built so far. 3,898 postings across 78 pages; built and
+shipped as `jobsireland` on 2026-10-19.
+
+**CORRECTION -- Ireland was not "zero coverage".** It was the **thinnest**-
+covered country: 261 rows, and 260 of them from `greenhouse` (Stripe,
+MongoDB, GitLab and Typeform postings that happened to be located in Ireland).
+Fifth lowest of 59. The difference is worth 108 rows.
 
 **CORRECTION -- jobs.ge.** This file previously carried jobs.ge as needing a
 second look, on the grounds that `/ge` is "a locale prefix, not a posting
