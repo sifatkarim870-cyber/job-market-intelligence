@@ -83,12 +83,26 @@ class JobBankSettings(BaseSettings):
     )
 
     max_pages_per_term: int = Field(
-        default=2,
+        default=1,
         ge=1,
         le=25,
         description=(
-            "Pages to walk per search term. Job Bank paginates with ?page=N; two "
-            "pages per term is ~50 postings before the per-run job cap applies."
+            "Pages to walk per search term. Job Bank paginates with ?page=N.\n\n"
+            "One page per term, not two. This is the setting that actually "
+            "bounds a CI run, and it was measured rather than guessed: the "
+            "detail pages dominate the cost (one request per posting), and "
+            "over CI's WAN a posting costs about 60s against 7s locally -- "
+            "roughly 9x. Two pages per term is ~50 postings, which is ~50 "
+            "minutes of work, and that landed exactly on jobbank's 45-minute "
+            "step cap: the full sweep of 2026-10-19 failed on jobbank and "
+            "nothing else, with \"The action 'Run jobbank scraper' has "
+            'timed out after 45 minutes".\n\n'
+            "One page per term is ~25 postings, about 25 minutes, which fits "
+            "inside the cap with room to spare. The registry's timeout for "
+            "this source was raised 45 -> 75 minutes at the same time, so the "
+            "run has headroom either way.\n\n"
+            "Raise this for a local backfill with JOBBANK_MAX_PAGES_PER_TERM, "
+            "where the 9x WAN penalty does not apply."
         ),
     )
 
