@@ -164,6 +164,7 @@ headless Chromium, and the two responses compared.
 | **jobs.ge** | Georgia | 200, 332 KB, 308x `?view=jobs&id=` | no | **SHIPPED** -- `jobsge`, 60 rows |
 | **hiredly.com** | Malaysia | 200, 194 KB, 0 anchors | no | **SHIPPED** -- `hiredly`, 30 rows |
 | **jobsireland.ie** | Ireland | 200, 176 KB, 3,898 postings | no | **SHIPPED** -- `jobsireland`, 108 rows, **no browser** |
+| **forasna.com** | Egypt | 200, 281 KB, 2,852 postings | no | **SHIPPED** -- `forasna`, 60 rows, **no browser** |
 | shine.com | India | 200, 36 KB, 0 anchors | no | browser viable, not yet built |
 | keejob.com | Tunisia | 200, 221 KB | **yes** | moved to section B |
 | emploipartner.com | Luxembourg | 200, 92 KB | **yes** | moved to section B |
@@ -174,6 +175,30 @@ headless Chromium, and the two responses compared.
 boards were JS-rendered *and* unwalled, and those are genuinely buildable with a
 browser; the four that were JS-rendered *and* walled are the same problem as
 section B wearing a different hat.
+
+**A better way to find the next source than this list.** `WebsiteToScrape.docx`
+carries 200 (site, region) pairs, but the list above was drawn by asking "which
+of these is reachable?" -- which finds the *reachable* boards, not the
+*missing* ones. The sharper question is **"which countries does the corpus
+cover thinly?"**, and then to look for a board in one of those. Measured on
+2026-10-20 the corpus covered 60 countries, and the thin ones were
+Bangladesh 0, Nigeria 0, Russia 0, Ukraine 0, Czechia 0, Chile 0, Peru 0,
+Turkey 1, Egypt 1, Uruguay 1, Finland 2, Indonesia 3, Hungary 4, Belgium 4,
+New Zealand 5, Argentina 5, Somalia 5, Italy 7, Iceland 7, Saudi Arabia 7.
+
+That is how `forasna` was found: Egypt had **one** posting, and the docx
+listed forasna. Cross-referencing the docx against the corpus's thin
+countries found `job.com.bd`, `chakri.com`, `Wuzzuf`, `Rozee.pk` and
+`forasna` in one pass -- and a plain-HTTP triage of all five found forasna
+unwalled, keyless and complete, while `chakri` answered 523, `Wuzzuf` and
+`Rozee.pk` were Cloudflare-walled and `job.com.bd` served only 10 postings a
+page with its pagination parameters ignored.
+
+**CORRECTION -- "zero coverage" is the wrong frame.** Earlier notes here
+treated a country as covered or not, and called Ireland and Egypt "zero
+coverage". The corpus does not count countries at zero; it counts them at
+*thin*, and the difference is worth 108 rows for Ireland and 60 for Egypt. The
+thin list above is the honest one.
 
 The APEC / IrishJobs / Jobs.ie / JobScout24 / Nationale Vacaturebank /
 Totaljobs / Trade Me Jobs / StepStone / Stellenanzeigen / Profesia / PNet rows
