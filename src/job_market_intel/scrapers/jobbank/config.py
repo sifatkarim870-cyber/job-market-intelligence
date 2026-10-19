@@ -88,21 +88,17 @@ class JobBankSettings(BaseSettings):
         le=25,
         description=(
             "Pages to walk per search term. Job Bank paginates with ?page=N.\n\n"
-            "One page per term, not two. This is the setting that actually "
-            "bounds a CI run, and it was measured rather than guessed: the "
-            "detail pages dominate the cost (one request per posting), and "
-            "over CI's WAN a posting costs about 60s against 7s locally -- "
-            "roughly 9x. Two pages per term is ~50 postings, which is ~50 "
-            "minutes of work, and that landed exactly on jobbank's 45-minute "
-            "step cap: the full sweep of 2026-10-19 failed on jobbank and "
-            "nothing else, with \"The action 'Run jobbank scraper' has "
-            'timed out after 45 minutes".\n\n'
-            "One page per term is ~25 postings, about 25 minutes, which fits "
-            "inside the cap with room to spare. The registry's timeout for "
-            "this source was raised 45 -> 75 minutes at the same time, so the "
-            "run has headroom either way.\n\n"
-            "Raise this for a local backfill with JOBBANK_MAX_PAGES_PER_TERM, "
-            "where the 9x WAN penalty does not apply."
+            "One page per term, not two, and the reason is the VOLUME rather "
+            "than the cost of a request. This source has 29 search terms, so "
+            "two pages per term is 58 listing pages before any detail page is "
+            "fetched, and the detail pages are one request each on top. The "
+            "full sweep of 2026-10-19 failed on jobbank and nothing else: "
+            "\"The action 'Run jobbank scraper' has timed out after 45 "
+            "minutes\" -- exactly jobbank's step cap.\n\n"
+            "One page per term is already ~25 postings, which is the whole "
+            "row budget, so the second page bought nothing but listing "
+            "traffic.\n\n"
+            "Raise this for a local backfill with JOBBANK_MAX_PAGES_PER_TERM."
         ),
     )
 
@@ -140,17 +136,15 @@ class JobBankSettings(BaseSettings):
             "25, not 1000, and the reason is that this default IS the cap a CI "
             "run gets: the workflow's scrape step passes no row cap of its own "
             "unless its max_jobs input is set, so the scraper's own default "
-            "applies. Measured 2026-10-19: a posting costs about 60 seconds "
-            "over CI's WAN against 7 seconds locally -- roughly 9x -- and this "
-            "source has 29 search terms, so a 1000-posting budget is 29 terms "
-            "of listing pages followed by hundreds of detail requests. The "
-            "step was killed at its timeout with the postings fetched but "
+            "applies. This source has 29 search terms, so a 1000-posting "
+            "budget is 29 terms of listing pages followed by hundreds of "
+            "detail requests -- far more than the step's 45-minute cap "
+            "allowed. The step was killed with the postings fetched but "
             "**not yet persisted**, so the run wrote NOTHING. That is why "
             "Canada's jobbank rows were 40 while the budget said 1000.\n\n"
-            "25 postings is about 25 minutes of fetching, which fits inside "
-            "the step cap with room to spare, and the run reaches the "
-            "persist step. Raise it via JOBBANK_MAX_JOBS_PER_RUN for a local "
-            "backfill, where the 9x WAN penalty does not apply."
+            "Measured after the change: 25 postings fetched, parsed, cleaned "
+            "and persisted in 2 minutes. Raise it via "
+            "JOBBANK_MAX_JOBS_PER_RUN for a local backfill."
         ),
     )
 
