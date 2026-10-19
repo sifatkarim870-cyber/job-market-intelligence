@@ -213,10 +213,10 @@
       "code": "jobbank",
       "group": "html",
       "script": "scripts/run_jobbank_scraper.py",
-      "timeout": 45,
+      "timeout": 75,
       "max_env": "JOBBANK_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "jobbank.gc.ca - Canadian federal government board. Government source: no API key, no proxy, no captcha, robots.txt permits the job paths. HTML walk over occupational terms (GET /jobsearch/jobsearch?term=&page=) plus one detail request per posting, so the job cap is what bounds run time rather than page count."
+      "notes": "jobbank.gc.ca - Canadian federal government board. Government source: no API key, no proxy, no captcha, robots.txt permits the job paths. HTML walk over occupational terms (GET /jobsearch/jobsearch?term=&page=) plus one detail request per posting, so the job cap is what bounds run time rather than page count. Timeout raised 45 -> 75 on 2026-10-20: a full CI sweep failed on this source alone with 'The action has timed out after 45 minutes' -- exactly this source's cap, which the workflow passes to timeout-minutes. It is not a hang: locally the same scraper does 3 postings in 21.5s. Over CI's WAN it is ~9x slower, and jobbank makes one request per posting with a 30s timeout and 3 retries, so a slow posting can burn ~93s. 45 postings landed on the 45-minute cap; 75 sits inside the job-level ceiling of 90."
     },
     {
       "code": "usajobs",
