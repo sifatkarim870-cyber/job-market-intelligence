@@ -131,13 +131,26 @@ class JobBankSettings(BaseSettings):
     )
 
     max_jobs_per_run: int = Field(
-        default=1000,
+        default=25,
         ge=1,
         description=(
-            "Cap on postings persisted in one run. Detail pages dominate the "
-            "cost -- one request per posting -- so this is what actually bounds "
-            "run time. Raise it via JOBBANK_MAX_JOBS_PER_RUN for a local "
-            "backfill."
+            "Cap on postings fetched in one run. Detail pages dominate the "
+            "cost -- one request per posting -- so this is what actually "
+            "bounds run time.\n\n"
+            "25, not 1000, and the reason is that this default IS the cap a CI "
+            "run gets: the workflow's scrape step passes no row cap of its own "
+            "unless its max_jobs input is set, so the scraper's own default "
+            "applies. Measured 2026-10-19: a posting costs about 60 seconds "
+            "over CI's WAN against 7 seconds locally -- roughly 9x -- and this "
+            "source has 29 search terms, so a 1000-posting budget is 29 terms "
+            "of listing pages followed by hundreds of detail requests. The "
+            "step was killed at its timeout with the postings fetched but "
+            "**not yet persisted**, so the run wrote NOTHING. That is why "
+            "Canada's jobbank rows were 40 while the budget said 1000.\n\n"
+            "25 postings is about 25 minutes of fetching, which fits inside "
+            "the step cap with room to spare, and the run reaches the "
+            "persist step. Raise it via JOBBANK_MAX_JOBS_PER_RUN for a local "
+            "backfill, where the 9x WAN penalty does not apply."
         ),
     )
 
