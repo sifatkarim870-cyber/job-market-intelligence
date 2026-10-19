@@ -449,7 +449,14 @@ class JobRepository(AbstractRepository[Any]):
                         "last_scraped_at = now(), "
                         "last_scraping_session_id = "
                         "COALESCE(:session_id, last_scraping_session_id), "
-                        "closing_date = :closing_date "
+                        "closing_date = :closing_date, "
+                        # Refreshed on every re-scrape for the same reason
+                        # closing_date above is: an English title that first
+                        # appears on a later scrape is not a substantive
+                        # content change, so it must not be left stale. The
+                        # COALESCE keeps a value the translation kernel wrote
+                        # from being blanked by a source that has none.
+                        "job_title_en = COALESCE(:job_title_en, job_title_en) "
                         "WHERE job_id = :job_id AND posting_date = :posting_date"
                     ),
                     {
@@ -457,6 +464,7 @@ class JobRepository(AbstractRepository[Any]):
                         "posting_date": existing_posting_date,
                         "session_id": session_id,
                         "closing_date": c_date,
+                        "job_title_en": job.job_title_en,
                     },
                 )
                 return "unchanged"
@@ -473,6 +481,7 @@ class JobRepository(AbstractRepository[Any]):
                         "closing_date = :closing_date, "
                         "location_id = :location_id, "
                         "employment_type_id = :employment_type_id, "
+                        "job_title_en = COALESCE(:job_title_en, job_title_en), "
                         "last_scraped_at = now(), "
                         "last_scraping_session_id = "
                         "COALESCE(:session_id, last_scraping_session_id), "
@@ -488,6 +497,7 @@ class JobRepository(AbstractRepository[Any]):
                         "closing_date": c_date,
                         "location_id": location_id,
                         "employment_type_id": employment_type_id,
+                        "job_title_en": job.job_title_en,
                         "session_id": session_id,
                         "job_id": job_id,
                         "posting_date": existing_posting_date,
@@ -590,12 +600,12 @@ class JobRepository(AbstractRepository[Any]):
                     "location_id, employment_type_id, posting_date, closing_date, "
                     "first_scraped_at, last_scraped_at, "
                     "last_scraping_session_id, "
-                    "job_status, content_hash, data_quality_score) "
+                    "job_status, content_hash, data_quality_score, job_title_en) "
                     "VALUES "
                     "(:source_id, :source_job_id, :original_url, :company_id, :job_title, "
                     ":location_id, :employment_type_id, :posting_date, :closing_date, "
                     "now(), now(), :session_id, "
-                    "'active', :content_hash, :data_quality_score) "
+                    "'active', :content_hash, :data_quality_score, :job_title_en) "
                     "RETURNING job_id"
                 ),
                 {
@@ -604,6 +614,13 @@ class JobRepository(AbstractRepository[Any]):
                     "original_url": job.original_url,
                     "company_id": company_id,
                     "job_title": job.job_title,
+                    # The publisher's own English title, when the source
+                    # publishes one. Setting it here makes translation.py's
+                    # "job_title_en IS NULL" selection skip the row, so a
+                    # bilingual board's own English is never replaced by a
+                    # machine translation of its original. See
+                    # CleanedJob.job_title_en's docstring.
+                    "job_title_en": job.job_title_en,
                     "location_id": location_id,
                     "employment_type_id": employment_type_id,
                     "posting_date": p_date,

@@ -201,6 +201,166 @@ class TestSaveCleanedJobBranches:
         assert any(sql.startswith("UPDATE salary.job_salaries") for sql in executed_sql)
 
 
+class TestEnglishTitlePersistence:
+    """``core.jobs.job_title_en`` for a source that publishes its own English.
+
+    Added for Jobs.ge, the first bilingual source: its listing is served in
+    English while the ad body is Georgian, so the board supplies a real
+    English title rather than one a machine would invent.
+
+    Measured before this was wired up: 60 jobsge rows persisted with
+    ``job_title_en`` NULL on every one, and ``raw_html_ref`` NULL too, so the
+    English title kept in ``raw_payload`` went nowhere. Putting it in the
+    payload was not a store.
+
+    Both write paths use ``COALESCE(:job_title_en, job_title_en)`` rather than
+    an assignment, because ``translation.py`` also writes this column and a
+    row that has no English title of its own must not blank a machine
+    translation that is already there.
+    """
+
+    def _repo(self, monkeypatch) -> JobRepository:
+        repo = JobRepository()
+        monkeypatch.setattr(repo, "get_or_create_company", lambda *a, **k: 42)
+        monkeypatch.setattr(repo, "get_currency_id_by_code", lambda *a, **k: 7)
+        monkeypatch.setattr(repo, "get_employment_type_id_by_code", lambda *a, **k: None)
+        return repo
+
+    @staticmethod
+    def _calls(session) -> list[tuple[str, dict]]:
+        """(normalized sql, bound params) per execute() call.
+
+        job_repository passes the parameter dict as the SECOND POSITIONAL
+        argument -- session.execute(text(...), {...}) -- so reading it from
+        kwargs, as one would expect, silently yields {} for every statement.
+        """
+        out = []
+        for c in session.execute.call_args_list:
+            sql = " ".join(str(c.args[0]).split())
+            params = c.args[1] if len(c.args) > 1 else c.kwargs.get("params")
+            out.append((sql, params or {}))
+        return out
+
+    def test_insert_writes_the_english_title(self, monkeypatch, make_cleaned_job) -> None:
+        repo = self._repo(monkeypatch)
+        job = make_cleaned_job(source_job_id="1", job_title="ტრენერი")
+        job.job_title_en = "Trainee"
+        session = _mock_session(existing_row=None)
+
+        status = repo.save_cleaned_job(session, job, source_id=1, session_id=1)
+
+        assert status == "inserted"
+        insert_sql, insert = next(
+            (sql, p) for sql, p in self._calls(session) if sql.startswith("INSERT INTO core.jobs")
+        )
+        # Assert BOTH halves of the binding, not just the params dict. Checking
+        # only the dict is what left the "drop job_title_en from the column
+        # list" mutation vacuous: :job_title_en still appears in VALUES, so the
+        # mock session sees a complete-looking params mapping while real
+        # Postgres would reject the statement outright.
+        assert "job_title_en" in insert, "the column is not in the INSERT at all"
+        assert insert_sql.count("job_title_en") == 2, (
+            "job_title_en must appear once in the column list and once as a "
+            "VALUES placeholder; got "
+            f"{insert_sql.count('job_title_en')} in: {insert_sql[:200]}"
+        )
+        assert insert_sql.count(":job_title_en") == 1
+        assert insert["job_title_en"] == "Trainee"
+        assert insert["job_title"] == "ტრენერი", "job_title stays Georgian"
+
+    def test_insert_writes_null_when_there_is_no_english_title(
+        self, monkeypatch, make_cleaned_job
+    ) -> None:
+        """The 44 single-language sources must be unaffected."""
+        repo = self._repo(monkeypatch)
+        job = make_cleaned_job(source_job_id="1")
+        session = _mock_session(existing_row=None)
+
+        repo.save_cleaned_job(session, job, source_id=1, session_id=1)
+
+        insert = next(
+            p for sql, p in self._calls(session) if sql.startswith("INSERT INTO core.jobs")
+        )
+        assert insert["job_title_en"] is None
+
+    def test_the_unchanged_path_still_refreshes_the_english_title(
+        self, monkeypatch, make_cleaned_job
+    ) -> None:
+        """A title that first appears on a later scrape is not a content change.
+
+        Same reasoning as closing_date, which this path already refreshes: the
+        content hash does not include the English title, so without this the
+        value would sit NULL forever on an otherwise-unchanged job.
+        """
+        repo = self._repo(monkeypatch)
+        job = make_cleaned_job(source_job_id="1", job_title="Engineer")
+        job.job_title_en = "Engineer"
+        matching_hash = compute_job_content_hash(
+            job_title=job.job_title,
+            company_name=job.company_name,
+            description_clean=job.description_clean,
+            location_cleaned=job.location_cleaned,
+            salary_min=job.salary_min,
+            salary_max=job.salary_max,
+        )
+        session = _mock_session(existing_row=(123, date(2026, 1, 1), matching_hash))
+
+        status = repo.save_cleaned_job(session, job, source_id=1, session_id=1)
+
+        assert status == "unchanged"
+        update = next(
+            (sql, p)
+            for sql, p in self._calls(session)
+            if sql.startswith("UPDATE core.jobs") and "last_scraped_at = now()" in sql
+        )
+        assert "job_title_en" in update[0]
+        assert update[1]["job_title_en"] == "Engineer"
+
+    def test_a_null_english_title_never_blanks_an_existing_value(
+        self, monkeypatch, make_cleaned_job
+    ) -> None:
+        """COALESCE, not assignment -- translation.py owns this column too."""
+        repo = self._repo(monkeypatch)
+        job = make_cleaned_job(source_job_id="1", job_title="Engineer")
+        assert job.job_title_en is None, "CleanedJob's default is None"
+        matching_hash = compute_job_content_hash(
+            job_title=job.job_title,
+            company_name=job.company_name,
+            description_clean=job.description_clean,
+            location_cleaned=job.location_cleaned,
+            salary_min=job.salary_min,
+            salary_max=job.salary_max,
+        )
+        session = _mock_session(existing_row=(123, date(2026, 1, 1), matching_hash))
+
+        repo.save_cleaned_job(session, job, source_id=1, session_id=1)
+
+        for sql, params in self._calls(session):
+            if sql.startswith("UPDATE core.jobs"):
+                assert "COALESCE(:job_title_en, job_title_en)" in sql
+                assert params["job_title_en"] is None
+                break
+
+    def test_the_content_changed_path_writes_it_too(self, monkeypatch, make_cleaned_job) -> None:
+        repo = self._repo(monkeypatch)
+        job = make_cleaned_job(source_job_id="1", job_title="Senior Engineer")
+        job.job_title_en = "Senior Engineer"
+        session = _mock_session(
+            existing_row=(123, date(2026, 1, 1), "0" * 64), existing_salary=(None, None)
+        )
+
+        status = repo.save_cleaned_job(session, job, source_id=1, session_id=1)
+
+        assert status == "updated"
+        update = next(
+            (sql, p)
+            for sql, p in self._calls(session)
+            if sql.startswith("UPDATE core.jobs") and "updated_at = now()" in sql
+        )
+        assert "COALESCE(:job_title_en, job_title_en)" in update[0]
+        assert update[1]["job_title_en"] == "Senior Engineer"
+
+
 class TestSalaryStandardization:
     """Step 27: normalized_annual_*_usd computation and the conditional
     salary.salary_history append on update. See
