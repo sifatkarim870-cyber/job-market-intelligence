@@ -878,6 +878,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "philjobnet": "PH",
     "jobsearch_az": "AZ",
     "hiredly": "MY",
+    "jobsge": "GE",
     "hiiraan_jobs": "SO",
     "jobsnepal": "NP",
     "karriere_at": "AT",

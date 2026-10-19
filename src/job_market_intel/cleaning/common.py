@@ -138,6 +138,28 @@ class CleanedJob(BaseModel):
             ``core.jobs.employment_type_id`` via a ``ref.employment_types``
             lookup -- the first field any source has populated there;
             previously always written as ``NULL`` regardless of source.
+        job_title_en: The publisher's **own** English rendering of the title,
+            for a source that publishes two of them, or ``None`` (the default,
+            and every source before Jobs.ge). Maps onto
+            ``core.jobs.job_title_en``.
+
+            This is distinct from ``translation.py``, which owns that same
+            column for machine translation. The two do not conflict because
+            the translation kernel selects rows with ``job_title_en IS NULL``
+            (``translation.py``, "rows needing translation"):
+
+                OR (j.language_code NOT IN ('en', 'unknown')
+                    AND j.job_title_en IS NULL)
+
+            so a row that already carries the publisher's own English title is
+            **skipped**, not overwritten -- which is the right outcome. A
+            bilingual board's own English beats a machine translation of its
+            Georgian, so ``Jobs.ge`` sets it from ``/en/jobs`` while leaving
+            ``job_title`` Georgian to match the Georgian description.
+
+            Optional with a ``None`` default on purpose: 44 of the 45
+            registered sources have no second title, and adding a required
+            field would break every one of their cleaners at construction.
     """
 
     source_job_id: str
@@ -160,3 +182,4 @@ class CleanedJob(BaseModel):
     currency_iso_code: str
     pay_period: str
     employment_type_code: str | None = None
+    job_title_en: str | None = None
