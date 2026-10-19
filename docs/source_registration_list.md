@@ -161,10 +161,10 @@ headless Chromium, and the two responses compared.
 | Site | Region | Plain HTTP | Cloudflare? | Verdict |
 |---|---|---|---|---|
 | **jobsearch.az** | Azerbaijan | 200, 512 KB, **0 anchors** | no | **SHIPPED** -- `jobsearch_az`, 30 rows |
-| hiredly.com | Malaysia | 200, 194 KB, 0 anchors | no | browser viable, not yet built |
+| **jobs.ge** | Georgia | 200, 332 KB, 308x `?view=jobs&id=` | no | **SHIPPED** -- `jobsge`, 60 rows |
+| **hiredly.com** | Malaysia | 200, 194 KB, 0 anchors | no | **SHIPPED** -- `hiredly`, 30 rows |
 | jobsireland.ie | Ireland | 200, 176 KB, 0 real postings | no | browser viable, not yet built |
 | shine.com | India | 200, 36 KB, 0 anchors | no | browser viable, not yet built |
-| jobs.ge | Georgia | 200, 332 KB, 1043x `/ge` | no | `/ge` is a locale prefix, not a posting path -- needs a second look |
 | keejob.com | Tunisia | 200, 221 KB | **yes** | moved to section B |
 | emploipartner.com | Luxembourg | 200, 92 KB | **yes** | moved to section B |
 | careercenter.am | Armenia | 200, 599 KB | **yes** | moved to section B |
@@ -219,12 +219,26 @@ worth building.
 
 ## Recommended order
 
-1. **hiredly.com / jobsireland.ie / shine.com** -- the three remaining unwalled
-   JS-rendered boards. The machinery exists; these are days of work, not a
-   purchase. Malaysia, Ireland and (thinly covered) India.
+1. **jobsireland.ie / shine.com** -- the two remaining unwalled JS-rendered
+   boards. The machinery exists; these are days of work, not a purchase.
+   Ireland (zero coverage) and (thinly covered) India.
 2. **France Travail** -- an entire country, authoritative source, documented API.
    Blocked only on registration.
 3. **A residential proxy** -- unblocks the whole of section B, several of them
    large national or regional leaders. Not purchased.
-4. **jobs.ge** -- second look. It is unwalled and 332 KB; the `/ge` shape needs
-   working out before it can be called a rejection.
+
+**CORRECTION -- jobs.ge.** This file previously carried jobs.ge as needing a
+second look, on the grounds that `/ge` is "a locale prefix, not a posting
+path". That was wrong. `/ge/?view=jobs&id=761321` **is** the posting: the query
+string is the ad id and the page is the ad. 308 of them on page 1, with real
+titles, employers, published dates and deadlines. Built and shipped as
+`jobsge` on 2026-10-19; the lesson recorded in its config docstring is that a
+posting path can be entirely in the query string, which a path-shape reading
+misses by construction.
+
+**CORRECTION -- hrge is Georgian, not Croatian.** `SOURCE_HOME_COUNTRY` maps
+`"hrge": "GE"`, which reads like a typo for HR (Croatia). It is not: `hrge` is
+`www.hr.ge`, a `.ge` domain, and its page title is `მოლარე` -- Georgian for
+"Cashier". The mapping is right. Worth knowing separately: its
+`announcement-search` endpoint currently returns HTTP 500 "Attempted to divide
+by zero", so the source is worth re-checking before its next run.
