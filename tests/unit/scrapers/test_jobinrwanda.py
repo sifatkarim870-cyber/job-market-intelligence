@@ -25,6 +25,8 @@ Run with:  uv run pytest tests/unit/scrapers/test_jobinrwanda.py -q
 
 from __future__ import annotations
 
+from datetime import date, timedelta
+
 import pytest
 from bs4 import BeautifulSoup
 
@@ -44,7 +46,7 @@ from job_market_intel.scrapers.jobinrwanda.parser import (
 )
 
 #: Trimmed from a live detail page fetched 2026-10-18 (/job/accountant-172).
-DETAIL = """<!DOCTYPE html><html><head>
+DETAIL = DETAIL_TEMPLATE = """<!DOCTYPE html><html><head>
 <title>Accountant | Job in Rwanda</title></head>
 <body>
 <div class="node node--type-job node--view-mode-full">
@@ -56,12 +58,22 @@ DETAIL = """<!DOCTYPE html><html><head>
     Under the supervision and guidance of the Head of Finance &amp; Administration
     to work diligently on the assigned tasks on time and to produce results.</p>
     <p>ACCO HUYE - Head Office. The deadline for submission of applications is
-    19 October 2026 at 5:00 PM. Only shortlisted candidates will be contacted.</p>
+    __DEADLINE__ at 5:00 PM. Only shortlisted candidates will be contacted.</p>
     <div class="field--name-body">Click on the APPLY button to send your
     application documents: Your application will be routed to the hiring manager.</div>
   </div>
 </div>
 </body></html>"""
+
+#: The deadline is 30 days out rather than a fixed date: the cleaner
+#: drops a deadline that is no longer open, so a hard-coded one expires
+#: and takes the test with it. This fixture rotted that way on
+#: 20 October 2026.
+DETAIL = DETAIL_TEMPLATE.replace(
+    "__DEADLINE__",
+    (date.today() + timedelta(days=30)).strftime("%d %B %Y"),
+)
+
 
 #: A page with no deadline at all (4 of 6 measured).
 NO_DEADLINE = """<html><head><title>Accounting Intern | Job in Rwanda</title></head>

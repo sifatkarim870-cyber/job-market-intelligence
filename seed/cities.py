@@ -12,7 +12,7 @@ from sqlalchemy import Connection, text
 from .base import SeedResult, get_id_map
 
 # (city_name, country_iso2, region_name_or_None, lat, lon, timezone)
-_CITIES: list[tuple[str, str, str | None, float, float, str]] = [
+_CITIES: list[tuple[str, str, str | None, float | None, float | None, str | None]] = [
     ("New York", "US", "New York", 40.7128, -74.0060, "America/New_York"),
     ("San Francisco", "US", "California", 37.7749, -122.4194, "America/Los_Angeles"),
     ("Los Angeles", "US", "California", 34.0522, -118.2437, "America/Los_Angeles"),
@@ -284,6 +284,116 @@ _CITIES: list[tuple[str, str, str | None, float, float, str]] = [
     ("Bloemfontein", "ZA", "Free State", -29.1042, 26.2007, "Africa/Johannesburg"),
     ("Rustenburg", "ZA", "North West", -25.6672, 27.2422, "Africa/Johannesburg"),
     ("George", "ZA", "Western Cape", -33.9630, 22.4612, "Africa/Johannesburg"),
+    #: Egyptian localities, for forasna. Measured on live postings, and only
+    #: the ones that are safe to seed.
+    #:
+    #: ``_match_city`` matches on ``lower(city_name)`` with NO country filter, and
+    #: treats two rows with the same name as ambiguous -- no match at all. So a
+    #: locality seen under two governorates must not be seeded: it would always
+    #: resolve to whichever governorate was seeded first. Excluded on that
+    #: ground: "مدينة العبور" (القاهرة and القليوبية) and "وسط البلد" (القاهرة
+    #: and كفر الشيخ).
+    #:
+    #: "الرياض" is excluded for a different reason: it is a village in Kafr El
+    #: Sheikh AND the Saudi capital, and 6 of the 320 sampled postings are SA.
+    #: Seeding it as an Egyptian city would file a Saudi posting under Egypt.
+    #:
+    #: Coordinates are NULL on purpose: the board publishes none and none were
+    #: measured. The country has a single timezone, so Africa/Cairo is exact.
+    #: Every entry is a real posting's own locality->governorate pair.
+    # الاسكندرية
+    ("الابراهيمية", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    ("العامرية", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    ("العجمى", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    ("العصافرة", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    ("المنتزه", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    ("المندرة", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    ("باب شرق", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    ("برج العرب", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    ("سان ستيفانو", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    ("سموحة", "EG", "الاسكندرية", None, None, "Africa/Cairo"),
+    # البحر الأحمر
+    ("الغردقة", "EG", "البحر الأحمر", None, None, "Africa/Cairo"),
+    # البحيرة
+    ("ايتاى البارود", "EG", "البحيرة", None, None, "Africa/Cairo"),
+    ("وادى النطرون", "EG", "البحيرة", None, None, "Africa/Cairo"),
+    # الجيزة
+    ("أبو رواش", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("ابو النمرس", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("الجيزة", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("الدقى", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("السادس من اكتوبر", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("الشيخ زايد", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("العجوزة", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("الكيت كات", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("المنيب", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("المهندسين", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("الهرم", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("اوسيم", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("حدائق الأهرام", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    ("طريق مصر إسكندرية الصحراوي", "EG", "الجيزة", None, None, "Africa/Cairo"),
+    # الدقهلية
+    ("السنبلاوين", "EG", "الدقهلية", None, None, "Africa/Cairo"),
+    ("المنصورة", "EG", "الدقهلية", None, None, "Africa/Cairo"),
+    # السويس
+    ("العين السخنة", "EG", "السويس", None, None, "Africa/Cairo"),
+    # الشرقية
+    ("ابو حماد", "EG", "الشرقية", None, None, "Africa/Cairo"),
+    ("الزقازيق", "EG", "الشرقية", None, None, "Africa/Cairo"),
+    ("العاشر من رمضان", "EG", "الشرقية", None, None, "Africa/Cairo"),
+    ("بلبيس", "EG", "الشرقية", None, None, "Africa/Cairo"),
+    # الغربية
+    ("المحلة الكبرى", "EG", "الغربية", None, None, "Africa/Cairo"),
+    ("طنطا", "EG", "الغربية", None, None, "Africa/Cairo"),
+    # الفيوم
+    ("الحادقة", "EG", "الفيوم", None, None, "Africa/Cairo"),
+    # القاهرة
+    ("15 مايو", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("الازبكية", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("البساتين", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("التجمع الاول", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("التجمع الخامس", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("الزيتون", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("السلام", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("الشرابية", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("الشروق", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("العاصمة الجديدة", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("القاهرة الجديدة", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("القطامية", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("المرج", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("المعادى", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("المقطم", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("المنيل", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("الموسكى", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("النزهة", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("النزهة الجديدة", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("جاردن سيتى", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("جسر السويس", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("حلوان", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("شبرا", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("شيراتون", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("عباسية", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("عين شمس", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("مدينة الشروق", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("مدينة بدر", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("مدينة نصر", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    ("مصر الجديدة", "EG", "القاهرة", None, None, "Africa/Cairo"),
+    # القليوبية
+    ("الخانكة", "EG", "القليوبية", None, None, "Africa/Cairo"),
+    ("القناطر الخيرية", "EG", "القليوبية", None, None, "Africa/Cairo"),
+    ("بنها", "EG", "القليوبية", None, None, "Africa/Cairo"),
+    ("قها", "EG", "القليوبية", None, None, "Africa/Cairo"),
+    # المنوفية
+    ("مدينة السادات", "EG", "المنوفية", None, None, "Africa/Cairo"),
+    # المنيا
+    ("ابو قرقاص", "EG", "المنيا", None, None, "Africa/Cairo"),
+    ("المنيا", "EG", "المنيا", None, None, "Africa/Cairo"),
+    # الوادي الجديد
+    ("الداخلة", "EG", "الوادي الجديد", None, None, "Africa/Cairo"),
+    # جنوب سيناء
+    ("شرم الشيخ", "EG", "جنوب سيناء", None, None, "Africa/Cairo"),
+    # سوهاج
+    ("سوهاج", "EG", "سوهاج", None, None, "Africa/Cairo"),
 ]
 
 
