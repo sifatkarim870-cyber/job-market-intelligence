@@ -244,6 +244,28 @@ _PARENTHETICAL_RE = re.compile(r"\([^)]*\)")
 #: real Indeed string puts the neighborhood detail after the ZIP.
 _US_ZIP_SUFFIX_RE = re.compile(r"\b\d{5}(?:-\d{4})?\s*$")
 
+#: Strips a leading county abbreviation, so "Co. Mayo" -> "Mayo".
+#:
+#: Needed by jobsireland.ie, which writes every address as
+#: "<premises>, <town>, Co. <County>, <Eircode>". Measured on 600 cards:
+#: all 26 counties appear, and without this the county segment normalizes to
+#: "co. mayo", which matches no seeded region name. Stripping is preferred over
+#: seeding the names as "Co. Mayo" so that BOTH "Co. Mayo" and "Mayo" resolve
+#: -- the seed holds "Mayo".
+#:
+#: Gated on the token being exactly "co." followed by more text, so it cannot
+#: eat a place genuinely named "Co." or a company suffix like "Limerick. Co".
+_COUNTY_PREFIX_RE = re.compile(r"^co\.\s+", re.IGNORECASE)
+
+#: Strips a trailing standalone number from a place name, so "Dublin 12"
+#: -> "Dublin".
+#:
+#: jobsireland.ie writes Dublin addresses with the postal district attached:
+#: "MOTHER MCAULEY CENTRE, Curlew Road, Drimnagh, Dublin 12, D12 C432" and
+#: "Dublin 2". ref.cities holds "Dublin", so the bare name has to be retried.
+#: Anchored on a single trailing number group so "Route 66" keeps its digits.
+_TRAILING_NUMBER_RE = re.compile(r"\s+\d+\s*$")
+
 #: Two-letter USPS state/territory abbreviations -> the full name as
 #: seeded in ref.regions.region_name (seed/regions.py). Used only in the
 #: comma-fallback path below, when a bare abbreviation like "CA" needs
@@ -352,15 +374,35 @@ def _us_abbreviation_allowed(default_country_iso2: str | None) -> bool:
 
 
 def _normalize_segment(segment: str) -> str:
-    """Lowercases, strips a leading remote/hybrid/on-site qualifier, a
-    trailing parenthetical, and a trailing US ZIP code, and collapses
-    whitespace. Pure text transform, no DB access -- directly
-    unit-testable without a session.
+    """Lowercases, strips a leading remote/hybrid/on-site qualifier, a leading
+    ``Co.`` county abbreviation, a trailing parenthetical, and a trailing US
+    ZIP code, and collapses whitespace. Pure text transform, no DB access --
+    directly unit-testable without a session.
     """
     cleaned = _REMOTE_PREFIX_RE.sub("", segment.strip())
     cleaned = _PARENTHETICAL_RE.sub("", cleaned)
     cleaned = _US_ZIP_SUFFIX_RE.sub("", cleaned)
+    cleaned = _COUNTY_PREFIX_RE.sub("", cleaned)
     return " ".join(cleaned.split()).lower()
+
+
+def _city_name_candidates(normalized_segment: str) -> list[str]:
+    """Place-name spellings to try against ``ref.cities``, most specific first.
+
+    "Dublin 12" -> ["dublin 12", "dublin"]. jobsireland.ie appends the Dublin
+    postal district to the city name ("Dublin 8", "Dublin 12", "Dublin 2"), and
+    ``ref.cities`` holds "Dublin" -- so without the retry every Dublin posting
+    on the board falls through to country-only.
+
+    The full string is tried FIRST on purpose: if some source ever seeds a city
+    genuinely called "Hamilton 2", the exact match still wins and this never
+    silently rewrites it.
+    """
+    candidates = [normalized_segment]
+    stripped = _TRAILING_NUMBER_RE.sub("", normalized_segment).strip()
+    if stripped and stripped != normalized_segment:
+        candidates.append(stripped)
+    return candidates
 
 
 def split_location_segments(raw_text: str) -> list[str]:
@@ -444,16 +486,26 @@ def _match_comma_fallback(
         return None
 
     city_part, _, rest_part = normalized.partition(",")
-    city_part = city_part.strip()
-    rest_part = rest_part.strip()
+    # Both halves are re-normalized rather than used as they came out of
+    # `normalized`. Idempotent, and necessary because the parts carry
+    # transforms that only apply at the start of a string: "Galbally, Co.
+    # Limerick" leaves the county half as "co. limerick", which matches no
+    # seeded region name, so the row fell through to country-only even with all
+    # 26 Irish counties seeded. See _COUNTY_PREFIX_RE.
+    city_part = _normalize_segment(city_part)
+    rest_part = _normalize_segment(rest_part)
 
     if city_part:
-        city_match = _match_city(session, city_part)
-        if city_match is not None:
-            city_id, region_id, country_id = city_match
-            return _SegmentMatch(
-                level=_MatchLevel.CITY, city_id=city_id, region_id=region_id, country_id=country_id
-            )
+        for candidate in _city_name_candidates(city_part):
+            city_match = _match_city(session, candidate)
+            if city_match is not None:
+                city_id, region_id, country_id = city_match
+                return _SegmentMatch(
+                    level=_MatchLevel.CITY,
+                    city_id=city_id,
+                    region_id=region_id,
+                    country_id=country_id,
+                )
 
     if rest_part:
         if _us_abbreviation_allowed(default_country_iso2):
@@ -529,7 +581,11 @@ def _match_segment(
     if not normalized or normalized in _GLOBAL_ASSERTION_PHRASES:
         return _SegmentMatch(level=_MatchLevel.GLOBAL)
 
-    city_match = _match_city(session, normalized)
+    city_match = None
+    for candidate in _city_name_candidates(normalized):
+        city_match = _match_city(session, candidate)
+        if city_match is not None:
+            break
     if city_match is not None:
         city_id, region_id, country_id = city_match
         return _SegmentMatch(
@@ -879,6 +935,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "jobsearch_az": "AZ",
     "hiredly": "MY",
     "jobsge": "GE",
+    "jobsireland": "IE",
     "hiiraan_jobs": "SO",
     "jobsnepal": "NP",
     "karriere_at": "AT",

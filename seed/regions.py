@@ -281,6 +281,42 @@ _MY_REGIONS = [
     "Putrajaya",
 ]
 
+#: Ireland's 26 traditional counties, for jobsireland.ie.
+#:
+#: Every address on that board is "<premises>, <town>, Co. <County>, <Eircode>",
+#: so without these the county segment matches nothing and every row resolves to
+#: country-only. All 26 were observed across 600 live cards. Seeded WITHOUT the
+#: "Co." prefix because ``_normalize_segment`` now strips it -- that way both
+#: "Co. Mayo" and a bare "Mayo" resolve.
+_IE_COUNTIES = [
+    "Carlow",
+    "Cavan",
+    "Clare",
+    "Cork",
+    "Donegal",
+    "Dublin",
+    "Galway",
+    "Kerry",
+    "Kildare",
+    "Kilkenny",
+    "Laois",
+    "Leitrim",
+    "Limerick",
+    "Longford",
+    "Louth",
+    "Mayo",
+    "Meath",
+    "Monaghan",
+    "Offaly",
+    "Roscommon",
+    "Sligo",
+    "Tipperary",
+    "Waterford",
+    "Westmeath",
+    "Wexford",
+    "Wicklow",
+]
+
 _BY_COUNTRY: dict[str, list[str]] = {
     "US": _US_STATES,
     "CA": _CA_PROVINCES,
@@ -295,6 +331,7 @@ _BY_COUNTRY: dict[str, list[str]] = {
     "ZA": _ZA_PROVINCES,
     "PT": _PT_REGIONS,
     "MY": _MY_REGIONS,
+    "IE": _IE_COUNTIES,
 }
 
 
