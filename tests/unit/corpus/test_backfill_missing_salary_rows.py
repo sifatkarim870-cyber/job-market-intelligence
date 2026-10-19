@@ -111,10 +111,8 @@ class TestSurvey:
                     JOIN ref.sources src ON src.source_id = j.source_id
                     LEFT JOIN salary.job_salaries sal
                            ON sal.job_id = j.job_id AND sal.posting_date = j.posting_date
-                    WHERE sal.job_salary_id IS NULL
                     GROUP BY 1
-                    HAVING count(*) = count(*) FILTER (WHERE sal.job_salary_id IS NULL)
-                       AND count(*) > 0
+                    HAVING count(sal.job_salary_id) = 0
                 """)
             ).all()
         for (code,) in no_salary:
