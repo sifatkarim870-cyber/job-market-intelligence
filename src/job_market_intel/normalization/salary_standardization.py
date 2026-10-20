@@ -113,6 +113,7 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "GEL": 0.3850574602,  # 1 GEL = 0.3850574602 USD (19 Oct 2026; 1 USD = 2.597 GEL)
     "AZN": 0.5886196281,  # 1 AZN = 0.5886196281 USD (19 Oct 2026; 1 USD = 1.6989 AZN)
     "MYR": 0.2450040609,  # 1 MYR = 0.2450040609 USD (19 Oct 2026; 1 USD = 4.0816 MYR)
+    "ZAR": 0.0608742393,  # 1 ZAR = 0.0608742393 USD (20 Oct 2026; 1 USD = 16.42731 ZAR)
     "IRT": 6.036086175e-07,  # 1 IRT = 6.036e-07 USD (19 Oct 2026; 1 USD = 1,656,703 IRT;
     #  the old ISO code, which is what the corpus stores)
 }
