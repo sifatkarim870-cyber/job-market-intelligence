@@ -164,6 +164,7 @@ headless Chromium, and the two responses compared.
 | **jobs.ge** | Georgia | 200, 332 KB, 308x `?view=jobs&id=` | no | **SHIPPED** -- `jobsge`, 60 rows |
 | **hiredly.com** | Malaysia | 200, 194 KB, 0 anchors | no | **SHIPPED** -- `hiredly`, 30 rows |
 | **jobsireland.ie** | Ireland | 200, 176 KB, 3,898 postings | no | **SHIPPED** -- `jobsireland`, 108 rows, **no browser** |
+| **jobmail.co.za** | South Africa | 200, 142 KB, 8,000+ postings | no | **SHIPPED** -- `jobmail`, 197 rows, **no browser** |
 | **forasna.com** | Egypt | 200, 281 KB, 2,852 postings | no | **SHIPPED** -- `forasna`, 60 rows, **no browser** |
 | shine.com | India | 200, 36 KB, 0 anchors | no | browser viable, not yet built |
 | keejob.com | Tunisia | 200, 221 KB | **yes** | moved to section B |
@@ -187,7 +188,15 @@ Turkey 1, Egypt 1, Uruguay 1, Finland 2, Indonesia 3, Hungary 4, Belgium 4,
 New Zealand 5, Argentina 5, Somalia 5, Italy 7, Iceland 7, Saudi Arabia 7.
 
 That is how `forasna` was found: Egypt had **one** posting, and the docx
-listed forasna. Cross-referencing the docx against the corpus's thin
+listed forasna. And `jobmail`: South Africa had 178 rows, and the docx
+listed it -- plain HTTP, 200, 142 KB, 25 real posting links, no Cloudflare,
+robots.txt disallowing only `/setup-alerts/*`, and a board holding at least
+**8,000** postings.
+
+The same pass triaged four others to nothing: `chakri.com` answers HTTP 523,
+`Wuzzuf` and `Rozee.pk` are Cloudflare-walled, and `job.com.bd` serves only
+10 postings a page with its `count` pagination parameter ignored outright --
+the response body is byte-identical for `?count=0` and `?count=10`. Cross-referencing the docx against the corpus's thin
 countries found `job.com.bd`, `chakri.com`, `Wuzzuf`, `Rozee.pk` and
 `forasna` in one pass -- and a plain-HTTP triage of all five found forasna
 unwalled, keyless and complete, while `chakri` answered 523, `Wuzzuf` and
