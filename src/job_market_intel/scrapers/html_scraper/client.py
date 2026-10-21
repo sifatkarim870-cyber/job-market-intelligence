@@ -198,11 +198,12 @@ class HtmlScraperClient:
         )
         return html, unique_jobs
 
-    def discover_detail_paths(self) -> tuple[list[dict], dict[str, str]]:
+    def discover_detail_paths(self, max_jobs: int | None = None) -> tuple[list[dict], dict[str, str]]:
         """Walk listing pages, collecting detail URLs."""
         found: list[dict] = []
         failures: dict[str, str] = {}
         seen_urls: set[str] = set()
+        budget = max_jobs or self._site_config.max_jobs_per_run
 
         for page in range(1, self._site_config.max_pages + 1):
             try:
@@ -222,7 +223,7 @@ class HtmlScraperClient:
             logger.info(
                 "html_scraper page {}: {} new ({} total)", page, new, len(found)
             )
-            if len(found) >= self._site_config.max_jobs_per_run:
+            if len(found) >= budget:
                 break
             time.sleep(self._site_config.inter_request_delay_seconds)
 
@@ -239,7 +240,7 @@ class HtmlScraperClient:
     def fetch_raw_jobs(self, max_jobs: int | None = None) -> tuple[list[dict], dict[str, str]]:
         """Discover and fetch postings."""
         budget = self._site_config.max_jobs_per_run if max_jobs is None else max_jobs
-        discovered, failures = self.discover_detail_paths()
+        discovered, failures = self.discover_detail_paths(budget)
 
         selected = discovered[:budget]
         records = []
