@@ -3,7 +3,7 @@
   "source_name": "IEFP Cabo Verde – state (iefp.cv)",
   "country": "Cabo Verde",
   "base_url": "https://iefp.cv",
-  "listing_path": "/",
+  "listing_path": "/jobs/",
   "listing_pagination": "?page={page}",
   "max_pages": 10,
   "max_jobs_per_run": 60,

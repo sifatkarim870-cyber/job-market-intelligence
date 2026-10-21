@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlparse
 
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -16,6 +17,7 @@ from job_market_intel.scrapers.html_scraper.config import (
     load_site_config,
 )
 from job_market_intel.scrapers.html_scraper.parser import HtmlScraperParser
+from job_market_intel.validation.html_scraper_quality import filter_postings
 from job_market_intel.validation.html_scraper_validator import HtmlScraperBatchValidator
 
 
@@ -80,6 +82,17 @@ class HtmlScraperPipeline:
                 list(fetch_failures)[:5],
             )
         parsed, parse_issues = self._parser.parse_many(raw_jobs)
+        parsed, rejected = filter_postings(
+            parsed,
+            site_host=urlparse(self._site_config.base_url).netloc,
+        )
+        if rejected:
+            logger.info(
+                "html_scraper {}: dropped {} record(s) that are not postings (first: {})",
+                self._source_code,
+                len(rejected),
+                rejected[0][1],
+            )
         report = self._validator.validate(raw_jobs, parsed)
         cleaned = self._cleaner.clean_jobs(parsed)
         result = HtmlScraperPipelineRunResult(

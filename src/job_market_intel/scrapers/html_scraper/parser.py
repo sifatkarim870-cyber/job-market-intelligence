@@ -72,6 +72,134 @@ def _parse_date(text: str | None) -> date | None:
     return None
 
 
+def _meta_title(soup: BeautifulSoup) -> str | None:
+    """``og:title`` is set by the page author for exactly this purpose."""
+    for attr in ("property", "name"):
+        tag = soup.find("meta", attrs={attr: "og:title"})
+        if tag and tag.get("content"):
+            return tag["content"].strip()
+    return None
+
+
+def _usable_title(candidate: str | None, *, max_len: int = 120) -> str | None:
+    """Filter page furniture masquerading as a job title."""
+    if not candidate:
+        return None
+    text = candidate.strip().strip("-–—|:")
+    if not 3 <= len(text) <= max_len:
+        return None
+    from job_market_intel.validation.html_scraper_quality import NAV_TITLES
+
+    if text.lower() in NAV_TITLES:
+        return None
+    return text
+
+
+def _extract_title(soup: BeautifulSoup, selector: str) -> tuple[str | None, str]:
+    """Pick the most trustworthy title on the page.
+
+    The generic configs use ``h1, h2, h3, [class*='title']``, and
+    ``select_one`` returns whichever appears first in the document -- on
+    skill.jobs that was the "Position Summary" heading, on prace.cz an
+    employer blurb. A real detail page has one ``h1`` that names the job, so it
+    is preferred over the selector; ``og:title`` is the next best because the
+    site itself declares it.
+    """
+    h1 = _usable_title(_extract_text(soup.find("h1")))
+    if h1:
+        return h1, "h1"
+
+    og = _usable_title(_meta_title(soup))
+    if og:
+        return og, "og:title"
+
+    for element in soup.select(selector) if selector else []:
+        candidate = _usable_title(_extract_text(element))
+        if candidate:
+            return candidate, "selector"
+
+    return None, ""
+
+
+#: Class/id fragments that hold the body of a posting on boards across the
+#: languages in scope. Used only when the configured selector returns nothing.
+_DESCRIPTION_HINTS = (
+    "job-description",
+    "jobdescription",
+    "job-detail",
+    "jobdetail",
+    "description",
+    "desc",
+    "detail",
+    "content",
+    "vacancy",
+    "offer",
+    "annonce",
+    "descripcion",
+    "beschreibung",
+    "описание",
+    "опис",
+)
+
+_DESCRIPTION_SELECTOR = ", ".join(
+    [f"[class*='{h}']" for h in _DESCRIPTION_HINTS]
+    + [f"[id*='{h}']" for h in _DESCRIPTION_HINTS]
+    + ["article", "main"]
+)
+
+
+def _fallback_description(soup: BeautifulSoup, min_chars: int = 200) -> str | None:
+    """Find the posting body when the configured selector misses it.
+
+    Auto-generated configs guess ``.job-description, .description, ...``; on
+    kosovajob, prace.cz, kalibrr and enbek.kz that selector matched nothing, so
+    the row was stored with an empty description and the quality gate had to
+    throw away a real posting. The largest link-light block among the usual
+    container hints is a good enough second attempt.
+    """
+    best = ""
+    for element in soup.select(_DESCRIPTION_SELECTOR):
+        text = element.get_text(" ", strip=True)
+        if len(text) <= len(best) or len(text) < min_chars:
+            continue
+        link_chars = sum(len(a.get_text(strip=True)) for a in element.find_all("a"))
+        if link_chars > 0.5 * len(text):
+            continue  # navigation block
+        best = text
+        if len(best) > 20000:
+            break
+    return best[:20000] or None
+
+
+def _resolve_title(
+    soup: BeautifulSoup,
+    selector: str,
+    url: str | None,
+    title_hint: str | None,
+    source_code: str,
+) -> tuple[str, str]:
+    """Title + where it came from. Raises when the page names nothing."""
+    title, source = _extract_title(soup, selector)
+    if title:
+        return title, source
+
+    hint = _usable_title(title_hint)
+    if hint:
+        return hint, "listing"
+
+    # Fallback: derive a title from the URL slug before giving up, e.g.
+    # "/jobs/senior-developer-role-123" -> "Senior Developer Role".
+    if url:
+        last_segment = url.rsplit("/", 1)[-1].split("?")[0].split("#")[0]
+        slug = re.sub(r"-\d+$", "", last_segment)  # drop the trailing id
+        if slug and len(slug) > 3:
+            return slug.replace("-", " ").replace("_", " ").title(), "url-slug"
+
+    raise HtmlScraperParseError(
+        f"{source_code} posting has no title. The detail page markup may have changed."
+    )
+
+
 def parse_detail(
     source_code: str,
     site_config: SiteConfig,
@@ -85,24 +213,12 @@ def parse_detail(
     soup = BeautifulSoup(html or "", "html.parser")
     sel = site_config.selectors
 
-    title = _extract_text(_select_one(soup, sel.job_title)) or title_hint or ""
-    if not title:
-        # Fallback: derive a title from the URL slug before giving up, e.g.
-        # "/jobs/senior-developer-role-123" -> "Senior Developer Role".
-        if url:
-            last_segment = url.rsplit("/", 1)[-1]
-            last_segment = last_segment.split("?")[0].split("#")[0]
-            # Remove trailing numeric ID and hyphens
-            slug = re.sub(r"-\d+$", "", last_segment)
-            if slug and len(slug) > 3:
-                title = slug.replace("-", " ").replace("_", " ").title()
-        if not title:
-            raise HtmlScraperParseError(
-                f"{source_code} posting has no title. The detail page markup may have changed."
-            )
+    title, title_source = _resolve_title(soup, sel.job_title, url, title_hint, source_code)
 
     company_name = _extract_text(_select_one(soup, sel.company)) or "Unknown employer"
     description = _extract_text(_select_one(soup, sel.description))
+    if not description or len(description) < 200:
+        description = _fallback_description(soup) or description
     location = _extract_text(_select_one(soup, sel.location))
     employment_type = (
         _extract_text(_select_one(soup, sel.employment_type)) if sel.employment_type else None
@@ -140,6 +256,7 @@ def parse_detail(
         "page_bytes": len(html or ""),
         "url": url,
         "skills": skills,
+        "title_source": title_source,
     }
     if salary:
         raw_payload["salary_raw"] = salary

@@ -3,7 +3,7 @@
   "source_name": "Empleos.net (empleos.net)",
   "country": "Costa Rica",
   "base_url": "https://empleos.net",
-  "listing_path": "/",
+  "listing_path": "/vacantes",
   "listing_pagination": "?page={page}",
   "max_pages": 10,
   "max_jobs_per_run": 60,

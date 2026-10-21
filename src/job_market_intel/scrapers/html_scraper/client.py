@@ -33,7 +33,9 @@ def _extract_text(element) -> str | None:
     return text.strip() if text else None
 
 
-# Common URL path keywords that indicate a job detail page across languages
+# URL path keywords that indicate a job detail page, across the languages the
+# source lists cover. Deliberately excludes very short tokens ("mes", "zis")
+# that matched unrelated words like "times".
 _JOB_PATH_KEYWORDS = (
     "job",
     "jobs",
@@ -41,57 +43,94 @@ _JOB_PATH_KEYWORDS = (
     "careers",
     "vacancy",
     "vacancies",
+    "vacante",
+    "vacantes",
     "position",
     "positions",
+    "opening",
+    "openings",
     "listing",
     "listings",
     "offer",
     "offers",
     "emploi",
     "emplois",
+    "offre",
+    "offres",
     "trabajo",
     "trabajos",
+    "empleo",
+    "empleos",
     "rabota",
     "praca",
+    "prace",
+    "pracovni",
     "posao",
-    "mes",
-    "vacante",
-    "vacantes",
-    "annonce",
-    "annonces",
-    "stelle",
-    "stellen",
-    "lavoro",
-    "lavori",
+    "oglas",
+    "oglasz",
+    "nabidka",
+    "nabidky",
+    "vakansiya",
+    "vakansiyalar",
     "vacature",
     "vacatures",
-    "meso",
-    "mesos",
-    "zis",
-    "pracovni",
-    "praca",
-    "prace",
+    "stelle",
+    "stellen",
+    "stellenangebot",
+    "lavoro",
+    "lavori",
+    "annonce",
+    "annonces",
+    "oferta",
+    "oferty",
+    "anuncio",
+    "anuncios",
+    "convocatoria",
+    "arbs",
+    "darbs",
+    "darbo",
+    "skelbim",
+    "tyopaikat",
+    "tuyen-dung",
+    "tuyendung",
 )
 
 
+def _is_offsite_social(url: str) -> bool:
+    """Social/profile links are never a posting on the board being scraped."""
+    from job_market_intel.validation.html_scraper_quality import OFFSITE_HOSTS
+
+    host = urlparse(url).netloc.lower()
+    host = host[4:] if host.startswith("www.") else host
+    return any(host == h or host.endswith("." + h) for h in OFFSITE_HOSTS)
+
+
 def _is_job_url(url: str) -> bool:
-    """Heuristic: does this URL look like a job detail page?"""
+    """Heuristic: does this URL look like a job detail page?
+
+    Section URLs are rejected explicitly. Without that, the auto-detect pass
+    happily returns ``/job-search/operations-jobs`` and ``/jobs/today/`` --
+    category pages that mention "job" and were stored as postings.
+    """
+    from job_market_intel.validation.html_scraper_quality import (
+        SECTION_FRAGMENTS,
+        SECTION_SEGMENTS,
+    )
+
     path = urlparse(url).path.lower()
     if len(path) <= 1:  # just "/"
         return False
-    # Must contain at least one job-related keyword
     if not any(kw in path for kw in _JOB_PATH_KEYWORDS):
         return False
-    # Filter out category/listing pages (URLs that are just "/jobs" or similar)
-    # A detail page should have a slug or id after the job keyword
-    path_parts = [p for p in path.split("/") if p]
-    if len(path_parts) <= 1:
-        return False  # Just "/jobs" or "/careers" - category page, not detail
-    # The last path segment should be longer than just "jobs" (likely a slug or id)
-    last_segment = path_parts[-1]
-    if last_segment in ("jobs", "careers", "vacancy", "vacancies", "listing", "listings"):
+    for fragment in SECTION_FRAGMENTS:
+        if fragment in path:
+            return False
+    segments = [s for s in path.split("/") if s]
+    last = segments[-1]
+    if last in SECTION_SEGMENTS:
         return False
-    return True
+    # "/en/ads/sri-lanka/driver-jobs", "/jobs-in-nepal/marketing-sales-jobs-in-nepal"
+    return not (last.endswith(("-jobs", "-job")) or "-jobs-in-" in last)
 
 
 class _LinkExtractor(HTMLParser):
@@ -204,12 +243,14 @@ class HtmlScraperClient:
             title = _extract_text(el)
             if link:
                 link = urljoin(self._site_config.base_url, link)
+                if _is_offsite_social(link):
+                    continue
                 jobs.append({"url": link, "title": title or ""})
 
         # If selector found nothing, auto-extract all job-looking links
         if not jobs:
             raw_links = _extract_links_from_html(html, self._site_config.base_url)
-            jobs = [{"url": u, "title": t} for u, t in raw_links]
+            jobs = [{"url": u, "title": t} for u, t in raw_links if not _is_offsite_social(u)]
 
         # Deduplicate by URL
         seen = set()
