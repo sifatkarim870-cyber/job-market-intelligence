@@ -11,6 +11,13 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+#: The link selector the config generator writes for every site it cannot
+#: inspect. It is a hypothesis, not a verified selector, so discovery applies
+#: the same URL test to its matches that auto-detection uses.
+GENERIC_LINK_SELECTOR = (
+    "a[href*='/job/'], a[href*='/vacancy/'], a[href*='/listing/'], a[href*='/career/']"
+)
+
 
 class SelectorConfig(BaseModel):
     job_card: str = Field(default="", description="CSS selector for job listing cards")
@@ -66,11 +73,16 @@ class HtmlScraperSettings(BaseSettings):
         )
 
 
-def load_site_config(
-    source_code: str, sites_dir: str = "scrapers/html_scraper/sites"
-) -> SiteConfig:
-    """Load a site config from JSON file."""
-    config_path = Path(sites_dir) / f"{source_code}.json"
+def load_site_config(source_code: str, sites_dir: str | None = None) -> SiteConfig:
+    """Load a site config from JSON file.
+
+    ``sites_dir`` used to default to the relative string
+    ``scrapers/html_scraper/sites``, which only exists if the process happens to
+    run from inside ``src/``. Every caller passed the absolute settings path, so
+    the broken default was never exercised -- calling it without an argument
+    raised ``FileNotFoundError``. It now resolves through the settings object.
+    """
+    config_path = Path(sites_dir or HtmlScraperSettings().sites_dir) / f"{source_code}.json"
     if not config_path.exists():
         raise FileNotFoundError(f"Site config not found: {config_path}")
     with open(config_path, encoding="utf-8") as f:
@@ -78,9 +90,9 @@ def load_site_config(
     return SiteConfig(**data)
 
 
-def list_available_sites(sites_dir: str = "scrapers/html_scraper/sites") -> list[str]:
+def list_available_sites(sites_dir: str | None = None) -> list[str]:
     """List all available site config files."""
-    sites_path = Path(sites_dir)
+    sites_path = Path(sites_dir or HtmlScraperSettings().sites_dir)
     if not sites_path.exists():
         return []
     return sorted(p.stem for p in sites_path.glob("*.json"))

@@ -18,7 +18,7 @@
     "salary": "[class*='salary'], [class*='pay']",
     "skills": "[class*='skill'], [class*='tag']"
   },
-  "detail_url_pattern": "",
+  "detail_url_pattern": "^/[a-z0-9-]+/[a-z0-9-]+$",
   "id_from_url": true,
   "user_agent": "job-market-intel-research (research@example.org)",
   "request_timeout_seconds": 30,

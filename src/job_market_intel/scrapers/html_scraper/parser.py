@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from typing import Any
+from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from loguru import logger
@@ -81,40 +82,98 @@ def _meta_title(soup: BeautifulSoup) -> str | None:
     return None
 
 
-def _usable_title(candidate: str | None, *, max_len: int = 120) -> str | None:
-    """Filter page furniture masquerading as a job title."""
+def _site_brand(site_host: str) -> str:
+    host = site_host.split(":")[0].lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host.split(".")[0] if host else ""
+
+
+def _brand_names(site_host: str) -> tuple[str, ...]:
+    """Both ``prace.cz`` and ``prace``: sites prefix titles with either."""
+    host = site_host.split(":")[0].lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if not host:
+        return ()
+    short = host.split(".")[0]
+    return (host, short) if short != host else (host,)
+
+
+def _usable_title(candidate: str | None, *, site_host: str = "", max_len: int = 120) -> str | None:
+    """Filter page furniture masquerading as a job title.
+
+    ``0 €`` and ``Choose language:`` are real examples of an ``h1`` on a
+    posting page; both passed the earlier version because it only checked
+    length, and they were stored as job titles. A leading site name is also
+    stripped: prace.cz publishes ``Prace.cz - Řidič/ka C+E`` as ``og:title``.
+    """
     if not candidate:
         return None
     text = candidate.strip().strip("-–—|:")
+    brand = _site_brand(site_host)
+    for name in _brand_names(site_host):
+        for separator in (" - ", " | ", " – ", " — ", " :: "):
+            prefix = f"{name}{separator}".lower()
+            if text.lower().startswith(prefix):
+                text = text[len(prefix) :].strip()
+                break
     if not 3 <= len(text) <= max_len:
+        return None
+    if sum(char.isalpha() for char in text) < 3:
         return None
     from job_market_intel.validation.html_scraper_quality import NAV_TITLES
 
-    if text.lower() in NAV_TITLES:
+    lowered = text.lower()
+    if lowered in NAV_TITLES:
         return None
+    return None if brand and lowered == brand else text
+
+
+def _clean_doc_title(soup: BeautifulSoup, site_host: str) -> str | None:
+    """``<title>`` minus the site name: "Mesar m/z - Posao.hr" -> "Mesar m/z"."""
+    tag = soup.find("title")
+    text = tag.get_text(" ", strip=True) if tag else ""
+    if not text:
+        return None
+    brand = _site_brand(site_host)
+    for separator in (" | ", " – ", " — ", " - ", " :: ", " » ", " · "):
+        if separator not in text:
+            continue
+        parts = [part.strip() for part in text.split(separator)]
+        if not any(brand and brand in part.lower() for part in parts):
+            continue
+        kept = [part for part in parts if not (brand and brand in part.lower())]
+        if kept:
+            return max(kept, key=len)
     return text
 
 
-def _extract_title(soup: BeautifulSoup, selector: str) -> tuple[str | None, str]:
+def _extract_title(
+    soup: BeautifulSoup, selector: str, *, site_host: str = ""
+) -> tuple[str | None, str]:
     """Pick the most trustworthy title on the page.
 
     The generic configs use ``h1, h2, h3, [class*='title']``, and
     ``select_one`` returns whichever appears first in the document -- on
     skill.jobs that was the "Position Summary" heading, on prace.cz an
-    employer blurb. A real detail page has one ``h1`` that names the job, so it
-    is preferred over the selector; ``og:title`` is the next best because the
-    site itself declares it.
+    employer blurb. The page's own metadata is tried first, then the ``h1``,
+    then ``<title>``, and the config selector last.
     """
-    h1 = _usable_title(_extract_text(soup.find("h1")))
-    if h1:
-        return h1, "h1"
-
-    og = _usable_title(_meta_title(soup))
+    og = _usable_title(_meta_title(soup), site_host=site_host)
     if og:
         return og, "og:title"
 
+    h1 = _usable_title(_extract_text(soup.find("h1")), site_host=site_host)
+    if h1:
+        return h1, "h1"
+
+    doc = _usable_title(_clean_doc_title(soup, site_host), site_host=site_host)
+    if doc:
+        return doc, "title-tag"
+
     for element in soup.select(selector) if selector else []:
-        candidate = _usable_title(_extract_text(element))
+        candidate = _usable_title(_extract_text(element), site_host=site_host)
         if candidate:
             return candidate, "selector"
 
@@ -177,9 +236,11 @@ def _resolve_title(
     url: str | None,
     title_hint: str | None,
     source_code: str,
+    *,
+    site_host: str = "",
 ) -> tuple[str, str]:
     """Title + where it came from. Raises when the page names nothing."""
-    title, source = _extract_title(soup, selector)
+    title, source = _extract_title(soup, selector, site_host=site_host)
     if title:
         return title, source
 
@@ -213,7 +274,14 @@ def parse_detail(
     soup = BeautifulSoup(html or "", "html.parser")
     sel = site_config.selectors
 
-    title, title_source = _resolve_title(soup, sel.job_title, url, title_hint, source_code)
+    title, title_source = _resolve_title(
+        soup,
+        sel.job_title,
+        url,
+        title_hint,
+        source_code,
+        site_host=urlparse(site_config.base_url).netloc if site_config.base_url else "",
+    )
 
     company_name = _extract_text(_select_one(soup, sel.company)) or "Unknown employer"
     description = _extract_text(_select_one(soup, sel.description))

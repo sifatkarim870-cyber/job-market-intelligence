@@ -11,6 +11,8 @@ Run with:  uv run pytest tests/unit/test_html_scraper_quality.py -q
 
 from __future__ import annotations
 
+from urllib.parse import urlparse
+
 import pytest
 
 from job_market_intel.validation.html_scraper_quality import reject_reason
@@ -49,19 +51,36 @@ DESCRIPTION = "We are hiring a senior engineer. " * 10
             "section path",
         ),
         # Nav furniture.
-        ("https://camhr.com/a/job", "Home", "navigation title"),
-        ("https://jobnet.dk/hjaelp-og-support", "Menu", "navigation title"),
+        ("https://camhr.com/a/job", "Home", "listing page"),
+        ("https://jobnet.dk/hjaelp-og-support", "Menu", "no job keyword"),
         ("https://zhipin.com/gongsi/job/abc.html", "安全验证", "navigation title"),
-        # Profile/social links.
-        ("https://www.linkedin.com/company/jobthai", "JobThai", "offsite link"),
         # A bare listing page is not a posting.
-        ("https://jobs.example.com/jobs/", "Jobs", "title"),
+        ("https://jobs.example.com/jobs/", "Jobs", "listing page"),
+        ("https://jobtiger.bg/obiavi-za-rabota", "Работа - JobTiger", "listing page"),
+        # General classifieds with no job vocabulary at all.
+        (
+            "https://willhaben.at/iad/kaufen-und-verkaufen/marktplatz/taschen-koffer/handtaschen-3484",
+            "Handtaschen | willhaben",
+            "no job keyword",
+        ),
     ],
 )
 def test_navigation_is_rejected(url: str, title: str, reason_fragment: str) -> None:
-    reason = reject_reason(url, title, DESCRIPTION, site_host="example.com")
+    reason = reject_reason(url, title, DESCRIPTION, site_host=urlparse(url).netloc)
     assert reason is not None, f"{url} should have been rejected"
     assert reason_fragment in reason, reason
+
+
+def test_link_to_another_site_is_rejected() -> None:
+    """The board is not a directory: a link to linkedin is not a posting."""
+    reason = reject_reason(
+        "https://www.linkedin.com/company/jobthai",
+        "JobThai",
+        DESCRIPTION,
+        site_host="jobthai.com",
+    )
+    assert reason is not None
+    assert "offsite link" in reason
 
 
 @pytest.mark.parametrize(
@@ -87,14 +106,34 @@ def test_missing_description_is_rejected() -> None:
     assert "no job description" in reason
 
 
-def test_offsite_non_social_link_is_kept() -> None:
-    """A board may host postings on an ATS; only the social blocklist is dropped."""
+def test_long_title_ending_in_jobs_is_kept() -> None:
+    """skill.jobs puts the board name in og:title; that is not a category page.
+
+    The first version of the category rule rejected all six real skill.jobs
+    postings because their title ends with "| Skill Jobs".
+    """
     assert (
         reject_reason(
-            "https://jobs.lever.co/acme/1234",
-            "Senior Engineer",
+            "https://skill.jobs/jobs/tele-sales-intern-female-lxhBGqsY",
+            "Tele Sales Intern at Skill Jobs | 104, Shukrabad, Dhanmondi, "
+            "Mirpur Road, Dhaka-1207 | Skill Jobs",
             DESCRIPTION,
-            site_host="acme.com",
         )
         is None
     )
+
+
+def test_offsite_link_is_rejected() -> None:
+    """A board's posting lives on its own host; off-site links are its nav.
+
+    This used to allow any non-social off-site host in case a board linked to
+    an ATS. bne.cl used that to store Chilean subsidy pages from sence.gob.cl.
+    """
+    reason = reject_reason(
+        "https://jobs.lever.co/acme/1234",
+        "Senior Engineer",
+        DESCRIPTION,
+        site_host="acme.com",
+    )
+    assert reason is not None
+    assert "offsite link" in reason

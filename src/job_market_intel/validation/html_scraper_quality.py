@@ -103,6 +103,8 @@ SECTION_FRAGMENTS: tuple[str, ...] = (
     "/job-category/",
     "/job-tag/",
     "/job-search/",
+    "/mot-cle",
+    "/categorie_",
     "/companies/",
     "/company/",
     "/employers/",
@@ -193,12 +195,53 @@ OFFSITE_HOSTS: tuple[str, ...] = (
     "x.com",
     "youtube.com",
     "apps.apple.com",
+    "itunes.apple.com",
+    "music.apple.com",
     "play.google.com",
     "t.me",
     "whatsapp.com",
 )
 
 DEFAULT_MIN_DESCRIPTION_CHARS = 80
+
+#: Path keywords that name a posting, across the languages in scope. Shared with
+#: the discovery pass so both agree on what looks like a job URL.
+JOB_PATH_KEYWORDS: tuple[str, ...] = (
+    "job",
+    "career",
+    "vacancy",
+    "vacante",
+    "position",
+    "opening",
+    "listing",
+    "offer",
+    "emploi",
+    "offre",
+    "trabajo",
+    "empleo",
+    "rabota",
+    "praca",
+    "prace",
+    "pracovni",
+    "posao",
+    "oglas",
+    "nabidka",
+    "vakansiya",
+    "vacature",
+    "stelle",
+    "lavoro",
+    "annonce",
+    "oferta",
+    "oferty",
+    "anuncio",
+    "convocatoria",
+    "arbs",
+    "darbs",
+    "darbo",
+    "skelbim",
+    "tyopaikat",
+    "tuyen-dung",
+)
 
 #: ``/2026/10/21/some-headline/`` is a news article on every CMS that uses it.
 DATED_ARTICLE_RE = re.compile(r"/\d{4}/\d{2}/\d{2}/")
@@ -210,44 +253,74 @@ def _host(url: str) -> str:
 
 
 def _same_site(host: str, site_host: str) -> bool:
+    host = _host(f"//{host}")
+    site_host = _host(f"//{site_host}")
     if not host or not site_host:
         return False
     return host == site_host or host.endswith("." + site_host)
+
+
+def has_job_keyword(path: str) -> bool:
+    """True when a path *word* is job vocabulary.
+
+    Substring matching was too loose: willhaben.at's ``/taschen-koffer/``
+    matched ``offer`` and the handbag category passed as a posting.
+    """
+    tokens = [token for token in re.split(r"[/\-_.]+", path) if token]
+    return any(token.startswith(keyword) for token in tokens for keyword in JOB_PATH_KEYWORDS)
 
 
 def _last_segment(path: str) -> str:
     return path.rstrip("/").rsplit("/", 1)[-1].lower()
 
 
-def _url_reason(url: str, site_host: str) -> str | None:
+def _url_reason(url: str, site_host: str, detail_pattern: str = "") -> str | None:
     """Reject when the URL names a section, an article, or another site."""
-    parsed = urlparse(url)
-    path = parsed.path.lower()
+    path = urlparse(url).path.lower()
     segments = [s for s in path.split("/") if s]
-
     if not segments:
         return "site root, not a posting"
 
     host = _host(url)
     if site_host and host and not _same_site(host, site_host):
-        if any(host == h or host.endswith("." + h) for h in OFFSITE_HOSTS):
-            return f"offsite link ({host})"
+        # Postings live on the board or its subdomains. Off-site links are the
+        # board pointing at a subsidy page, a news story, or a social profile.
+        return f"offsite link ({host})"
 
     for fragment in SECTION_FRAGMENTS:
         if fragment in path:
             return f"section path ({fragment.strip('/')})"
-
     if DATED_ARTICLE_RE.search(path):
         return "news article path (dated)"
 
-    last = _last_segment(path)
-    if any(seg in SECTION_SEGMENTS for seg in segments[:-1]) and last in SECTION_SEGMENTS:
-        return f"listing page (/{last})"
+    # A site that declares its detail URL shape has already answered the
+    # question the remaining heuristics guess at. kosovajob.com posts live at
+    # "/<company>/<slug>" with no job vocabulary anywhere in the path.
+    if detail_pattern and re.search(detail_pattern, path):
+        return None
 
+    # A posting URL says so in its own path. Without this, willhaben.at's
+    # handbag category and general classifieds pages pass every other check.
+    if not has_job_keyword(path):
+        return "path has no job keyword"
+
+    last = _last_segment(path)
+    if _is_listing_segment(last, segments):
+        return f"listing page (/{last})"
     # "/jobs/today", "/ikman.lk/en/ads/sri-lanka/driver-jobs"
     if last.endswith(("-jobs", "-job", "_jobs")) and last not in {"saved-jobs"}:
         return "category path (ends in -jobs)"
     return None
+
+
+def _is_listing_segment(last: str, segments: list[str]) -> bool:
+    """True for "/jobs", "/obiavi-za-rabota", "/fr-fr/emploi.html"."""
+    stem = last.rsplit(".", 1)[0] if "." in last else last
+    if stem in SECTION_SEGMENTS:
+        return True
+    if len(segments) == 1 and any(kw in stem for kw in JOB_PATH_KEYWORDS):
+        return True
+    return any(seg in SECTION_SEGMENTS for seg in segments[:-1]) and stem in SECTION_SEGMENTS
 
 
 def _text_reason(
@@ -261,7 +334,10 @@ def _text_reason(
     lowered = clean_title.lower().strip(" .:!-–—")
     if lowered in NAV_TITLES:
         return f"navigation title ({clean_title[:40]!r})"
-    if lowered.endswith(CATEGORY_TITLE_SUFFIXES):
+    # "Operations jobs in India" is a category. "Front Desk/ Admin Associate
+    # Jobs In Nepal | Kumari Job Pvt. Ltd." is a posting whose og:title ends
+    # with the site name, so the suffix rule only applies to short titles.
+    if len(clean_title) <= 60 and lowered.endswith(CATEGORY_TITLE_SUFFIXES):
         return f"category title ({clean_title[:40]!r})"
     if len(clean_title) < 3:
         return "title too short"
@@ -279,11 +355,14 @@ def reject_reason(
     *,
     site_host: str = "",
     min_description_chars: int = DEFAULT_MIN_DESCRIPTION_CHARS,
+    detail_pattern: str = "",
 ) -> str | None:
     """Return why this record is not a posting, or ``None`` when it looks like one."""
     if not url:
         return "no url"
-    return _url_reason(url, site_host) or _text_reason(title, description, min_description_chars)
+    return _url_reason(url, site_host, detail_pattern) or _text_reason(
+        title, description, min_description_chars
+    )
 
 
 def filter_postings(
@@ -291,6 +370,7 @@ def filter_postings(
     *,
     site_host: str = "",
     min_description_chars: int = DEFAULT_MIN_DESCRIPTION_CHARS,
+    detail_pattern: str = "",
 ):
     """Split parsed records into real postings and rejects.
 
@@ -306,6 +386,7 @@ def filter_postings(
             job.description,
             site_host=site_host,
             min_description_chars=min_description_chars,
+            detail_pattern=detail_pattern,
         )
         if reason is None:
             kept.append(job)

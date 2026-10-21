@@ -13,7 +13,12 @@ import requests
 from bs4 import BeautifulSoup
 from loguru import logger
 
-from .config import HtmlScraperSettings, SiteConfig, load_site_config
+from .config import (
+    GENERIC_LINK_SELECTOR,
+    HtmlScraperSettings,
+    SiteConfig,
+    load_site_config,
+)
 from .exceptions import HtmlScraperFetchError, HtmlScraperResponseError
 
 
@@ -31,69 +36,6 @@ def _extract_text(element) -> str | None:
         return None
     text = element.get_text(" ", strip=True)
     return text.strip() if text else None
-
-
-# URL path keywords that indicate a job detail page, across the languages the
-# source lists cover. Deliberately excludes very short tokens ("mes", "zis")
-# that matched unrelated words like "times".
-_JOB_PATH_KEYWORDS = (
-    "job",
-    "jobs",
-    "career",
-    "careers",
-    "vacancy",
-    "vacancies",
-    "vacante",
-    "vacantes",
-    "position",
-    "positions",
-    "opening",
-    "openings",
-    "listing",
-    "listings",
-    "offer",
-    "offers",
-    "emploi",
-    "emplois",
-    "offre",
-    "offres",
-    "trabajo",
-    "trabajos",
-    "empleo",
-    "empleos",
-    "rabota",
-    "praca",
-    "prace",
-    "pracovni",
-    "posao",
-    "oglas",
-    "oglasz",
-    "nabidka",
-    "nabidky",
-    "vakansiya",
-    "vakansiyalar",
-    "vacature",
-    "vacatures",
-    "stelle",
-    "stellen",
-    "stellenangebot",
-    "lavoro",
-    "lavori",
-    "annonce",
-    "annonces",
-    "oferta",
-    "oferty",
-    "anuncio",
-    "anuncios",
-    "convocatoria",
-    "arbs",
-    "darbs",
-    "darbo",
-    "skelbim",
-    "tyopaikat",
-    "tuyen-dung",
-    "tuyendung",
-)
 
 
 def _is_offsite_social(url: str) -> bool:
@@ -115,12 +57,13 @@ def _is_job_url(url: str) -> bool:
     from job_market_intel.validation.html_scraper_quality import (
         SECTION_FRAGMENTS,
         SECTION_SEGMENTS,
+        has_job_keyword,
     )
 
     path = urlparse(url).path.lower()
     if len(path) <= 1:  # just "/"
         return False
-    if not any(kw in path for kw in _JOB_PATH_KEYWORDS):
+    if not has_job_keyword(path):
         return False
     for fragment in SECTION_FRAGMENTS:
         if fragment in path:
@@ -237,6 +180,7 @@ class HtmlScraperClient:
 
         # Try configured CSS selector first
         link_els = self._select(soup, self._site_config.selectors.job_link)
+        generic_selector = self._site_config.selectors.job_link.strip() == GENERIC_LINK_SELECTOR
         jobs = []
         for el in link_els:
             link = _extract_attr(el, "href")
@@ -244,6 +188,12 @@ class HtmlScraperClient:
             if link:
                 link = urljoin(self._site_config.base_url, link)
                 if _is_offsite_social(link):
+                    continue
+                # Every auto-generated config carries the same guess
+                # ("a[href*='/job/']..."), and on most sites it matches the
+                # navigation (/careers, /vacancy-list). A guess does not get to
+                # skip the URL test that auto-detection must pass.
+                if generic_selector and not _is_job_url(link):
                     continue
                 jobs.append({"url": link, "title": title or ""})
 
