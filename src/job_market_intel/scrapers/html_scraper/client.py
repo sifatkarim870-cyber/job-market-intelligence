@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 import time
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -32,6 +32,65 @@ def _extract_text(element) -> str | None:
         return None
     text = element.get_text(" ", strip=True)
     return text.strip() if text else None
+
+
+# Common URL path keywords that indicate a job detail page across languages
+_JOB_PATH_KEYWORDS = (
+    "job", "jobs", "career", "careers", "vacancy", "vacancies",
+    "position", "positions", "listing", "listings", "offer", "offers",
+    "emploi", "emplois", "trabajo", "trabajos", "rabota", "praca",
+    "posao", "mes", "vacante", "vacantes", "annonce", "annonces",
+    "stelle", "stellen", "lavoro", "lavori", "vacature", "vacatures",
+    "meso", "mesos", "zis", "pracovni", "praca", "prace",
+)
+
+def _is_job_url(url: str) -> bool:
+    """Heuristic: does this URL look like a job detail page?"""
+    url_lower = url.lower()
+    # Must have a path component beyond just the domain
+    path = urlparse(url).path.lower()
+    if len(path) <= 1:  # just "/"
+        return False
+    # Must contain at least one job-related keyword
+    return any(kw in path for kw in _JOB_PATH_KEYWORDS)
+
+
+def _extract_links_from_html(html: str, base_url: str) -> list[dict]:
+    """Extract all job-looking links from HTML."""
+    from html.parser import HTMLParser
+
+    class LinkExtractor(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.links: list[tuple[str, str]] = []  # (url, text)
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "a":
+                href = None
+                text_parts: list[str] = []
+                for attr, value in attrs:
+                    if attr == "href":
+                        href = value
+                self._current_href = href
+                self._text_parts = []
+
+        def handle_data(self, data):
+            if hasattr(self, "_current_href") and self._current_href:
+                self._text_parts.append(data.strip())
+
+        def handle_endtag(self, tag):
+            if tag == "a" and hasattr(self, "_current_href") and self._current_href:
+                href = self._current_href
+                text = " ".join(self._text_parts).strip()
+                full_url = urljoin(base_url, href)
+                if _is_job_url(full_url):
+                    self.links.append((full_url, text))
+                self._current_href = None
+                self._text_parts = []
+
+    parser = LinkExtractor()
+    parser.feed(html)
+    return parser.links
 
 
 class HtmlScraperClient:
@@ -101,7 +160,7 @@ class HtmlScraperClient:
         html = self._get(self.listing_url(page))
         soup = BeautifulSoup(html, "html.parser")
 
-        # Find all job links on the page
+        # Try configured CSS selector first
         link_els = self._select(soup, self._site_config.selectors.job_link)
         jobs = []
         for el in link_els:
@@ -110,6 +169,11 @@ class HtmlScraperClient:
             if link:
                 link = urljoin(self._site_config.base_url, link)
                 jobs.append({"url": link, "title": title or ""})
+
+        # If selector found nothing, auto-extract all job-looking links
+        if not jobs:
+            raw_links = _extract_links_from_html(html, self._site_config.base_url)
+            jobs = [{"url": u, "title": t} for u, t in raw_links]
 
         # Deduplicate by URL
         seen = set()
