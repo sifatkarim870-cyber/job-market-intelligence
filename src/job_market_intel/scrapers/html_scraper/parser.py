@@ -6,12 +6,12 @@ custom Python needed per site.
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime
 from typing import Any
 
 from bs4 import BeautifulSoup
 from loguru import logger
-import re
 
 from .config import SiteConfig
 from .exceptions import HtmlScraperParseError
@@ -72,9 +72,6 @@ def _parse_date(text: str | None) -> date | None:
     return None
 
 
-import re  # noqa: E402
-
-
 def parse_detail(
     source_code: str,
     site_config: SiteConfig,
@@ -90,7 +87,8 @@ def parse_detail(
 
     title = _extract_text(_select_one(soup, sel.job_title)) or title_hint or ""
     if not title:
-        # Fallback: extract title from URL slug (e.g., "/jobs/senior-developer-role-123" -> "senior-developer-role-123")
+        # Fallback: derive a title from the URL slug before giving up, e.g.
+        # "/jobs/senior-developer-role-123" -> "Senior Developer Role".
         if url:
             last_segment = url.rsplit("/", 1)[-1]
             last_segment = last_segment.split("?")[0].split("#")[0]
@@ -106,19 +104,19 @@ def parse_detail(
     company_name = _extract_text(_select_one(soup, sel.company)) or "Unknown employer"
     description = _extract_text(_select_one(soup, sel.description))
     location = _extract_text(_select_one(soup, sel.location))
-    employment_type = _extract_text(_select_one(soup, sel.employment_type)) if sel.employment_type else None
+    employment_type = (
+        _extract_text(_select_one(soup, sel.employment_type)) if sel.employment_type else None
+    )
     salary = _extract_text(_select_one(soup, sel.salary)) if sel.salary else None
-    posted_date = _parse_date(_extract_text(_select_one(soup, sel.posted_date))) if sel.posted_date else None
+    posted_date = (
+        _parse_date(_extract_text(_select_one(soup, sel.posted_date))) if sel.posted_date else None
+    )
 
     # Extract skills as a list
     skills: list[str] = []
     if sel.skills:
         skill_elems = soup.select(sel.skills)
-        skills = [
-            _extract_text(el) or ""
-            for el in skill_elems
-            if _extract_text(el)
-        ]
+        skills = [_extract_text(el) or "" for el in skill_elems if _extract_text(el)]
 
     # Extract job ID from URL
     source_job_id = url.rsplit("/", 1)[-1] if url else ""
@@ -141,6 +139,7 @@ def parse_detail(
         },
         "page_bytes": len(html or ""),
         "url": url,
+        "skills": skills,
     }
     if salary:
         raw_payload["salary_raw"] = salary
@@ -177,9 +176,7 @@ class HtmlScraperParser:
         title_hint: str | None = None,
     ) -> RawHtmlScraperJob:
         if not html:
-            raise HtmlScraperParseError(
-                f"{self._source_code} posting {job_id} has no HTML."
-            )
+            raise HtmlScraperParseError(f"{self._source_code} posting {job_id} has no HTML.")
         return parse_detail(
             self._source_code,
             self._site_config,
@@ -189,9 +186,7 @@ class HtmlScraperParser:
             title_hint=title_hint,
         )
 
-    def parse_many(
-        self, records: list[dict]
-    ) -> tuple[list[RawHtmlScraperJob], list[str]]:
+    def parse_many(self, records: list[dict]) -> tuple[list[RawHtmlScraperJob], list[str]]:
         parsed: list[RawHtmlScraperJob] = []
         issues: list[str] = []
         for record in records:

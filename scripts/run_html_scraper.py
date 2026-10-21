@@ -12,11 +12,16 @@ import argparse
 import sys
 
 from job_market_intel.scrapers.html_scraper import HtmlScraperPipeline, HtmlScraperSettings
+from job_market_intel.scrapers.html_scraper.config import load_site_config
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Run the generic HTML scraper for a site.")
-    ap.add_argument("--source-code", required=True, help="Site source_code (matches sites/<code>.json).")
+    ap.add_argument(
+        "--source-code",
+        required=True,
+        help="Site source_code (matches sites/<code>.json).",
+    )
     ap.add_argument("--no-db", action="store_true", help="Fetch and report; do not persist.")
     ap.add_argument("--max-jobs", type=int, default=None, help="Max jobs fetched this run.")
     ap.add_argument("--max-pages", type=int, default=None, help="Max listing pages.")
@@ -24,16 +29,17 @@ def main() -> int:
     args = ap.parse_args()
 
     settings = HtmlScraperSettings()
+    site_config = load_site_config(args.source_code, settings.sites_dir)
     if args.max_pages is not None:
-        # Override per-site max_pages via env-like approach
-        pass
+        site_config = site_config.model_copy(update={"max_pages": args.max_pages})
     if args.delay is not None:
-        pass
+        site_config = site_config.model_copy(update={"inter_request_delay_seconds": args.delay})
 
     result = HtmlScraperPipeline(
         source_code=args.source_code,
         settings=settings,
-    ).run(store_db=not args.no_db)
+        site_config=site_config,
+    ).run(store_db=not args.no_db, max_jobs=args.max_jobs)
 
     print("\n" + "=" * 64)
     print(f"HTML SCRAPER - {args.source_code.upper()} - RUN SUMMARY")
@@ -55,6 +61,19 @@ def main() -> int:
         for issue in result.issues[:5]:
             print(f"  - {issue}")
     print("=" * 64)
+
+    # A run that persisted nothing while reporting a failed batch validation is
+    # broken, not quiet. Exiting 0 there is a green tick on a source that
+    # collected nothing. A run that persisted *some* rows stays green, because a
+    # degraded feed is still a working feed.
+    persisted = result.inserted_count + result.updated_count + result.unchanged_count
+    if not args.no_db and not result.validation_passed and persisted == 0:
+        print(
+            "\nERROR: the run persisted 0 rows and batch validation FAILED. "
+            "This is breakage, not a quiet board -- exiting non-zero so CI "
+            "cannot report success on a source that collected nothing."
+        )
+        return 1
 
     return 0
 

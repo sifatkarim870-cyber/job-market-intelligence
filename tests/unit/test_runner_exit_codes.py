@@ -31,6 +31,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 RUNNERS = [
     "scripts/run_vagas_com_br_scraper.py",
     "scripts/run_angola_emprego_scraper.py",
+    "scripts/run_html_scraper.py",
 ]
 
 

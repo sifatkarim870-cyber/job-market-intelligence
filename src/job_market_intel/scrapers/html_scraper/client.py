@@ -5,9 +5,8 @@ Uses plain HTTP (requests) + CSS selectors configured per site. No browser neede
 
 from __future__ import annotations
 
-import re
 import time
-from typing import Any
+from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -36,17 +35,47 @@ def _extract_text(element) -> str | None:
 
 # Common URL path keywords that indicate a job detail page across languages
 _JOB_PATH_KEYWORDS = (
-    "job", "jobs", "career", "careers", "vacancy", "vacancies",
-    "position", "positions", "listing", "listings", "offer", "offers",
-    "emploi", "emplois", "trabajo", "trabajos", "rabota", "praca",
-    "posao", "mes", "vacante", "vacantes", "annonce", "annonces",
-    "stelle", "stellen", "lavoro", "lavori", "vacature", "vacatures",
-    "meso", "mesos", "zis", "pracovni", "praca", "prace",
+    "job",
+    "jobs",
+    "career",
+    "careers",
+    "vacancy",
+    "vacancies",
+    "position",
+    "positions",
+    "listing",
+    "listings",
+    "offer",
+    "offers",
+    "emploi",
+    "emplois",
+    "trabajo",
+    "trabajos",
+    "rabota",
+    "praca",
+    "posao",
+    "mes",
+    "vacante",
+    "vacantes",
+    "annonce",
+    "annonces",
+    "stelle",
+    "stellen",
+    "lavoro",
+    "lavori",
+    "vacature",
+    "vacatures",
+    "meso",
+    "mesos",
+    "zis",
+    "pracovni",
+    "praca",
+    "prace",
 )
+
 
 def _is_job_url(url: str) -> bool:
     """Heuristic: does this URL look like a job detail page?"""
-    url_lower = url.lower()
     path = urlparse(url).path.lower()
     if len(path) <= 1:  # just "/"
         return False
@@ -65,40 +94,40 @@ def _is_job_url(url: str) -> bool:
     return True
 
 
-def _extract_links_from_html(html: str, base_url: str) -> list[dict]:
+class _LinkExtractor(HTMLParser):
+    """Collect every anchor whose URL looks like a job detail page."""
+
+    def __init__(self, base_url: str) -> None:
+        super().__init__()
+        self.base_url = base_url
+        self.links: list[tuple[str, str]] = []  # (url, text)
+        self._current_href: str | None = None
+        self._text_parts: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "a":
+            return
+        self._current_href = dict(attrs).get("href")
+        self._text_parts = []
+
+    def handle_data(self, data):
+        if self._current_href:
+            self._text_parts.append(data.strip())
+
+    def handle_endtag(self, tag):
+        if tag != "a" or not self._current_href:
+            return
+        full_url = urljoin(self.base_url, self._current_href)
+        text = " ".join(self._text_parts).strip()
+        if _is_job_url(full_url):
+            self.links.append((full_url, text))
+        self._current_href = None
+        self._text_parts = []
+
+
+def _extract_links_from_html(html: str, base_url: str) -> list[tuple[str, str]]:
     """Extract all job-looking links from HTML."""
-    from html.parser import HTMLParser
-
-    class LinkExtractor(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.links: list[tuple[str, str]] = []  # (url, text)
-
-        def handle_starttag(self, tag, attrs):
-            if tag == "a":
-                href = None
-                text_parts: list[str] = []
-                for attr, value in attrs:
-                    if attr == "href":
-                        href = value
-                self._current_href = href
-                self._text_parts = []
-
-        def handle_data(self, data):
-            if hasattr(self, "_current_href") and self._current_href:
-                self._text_parts.append(data.strip())
-
-        def handle_endtag(self, tag):
-            if tag == "a" and hasattr(self, "_current_href") and self._current_href:
-                href = self._current_href
-                text = " ".join(self._text_parts).strip()
-                full_url = urljoin(base_url, href)
-                if _is_job_url(full_url):
-                    self.links.append((full_url, text))
-                self._current_href = None
-                self._text_parts = []
-
-    parser = LinkExtractor()
+    parser = _LinkExtractor(base_url)
     parser.feed(html)
     return parser.links
 
@@ -113,9 +142,7 @@ class HtmlScraperClient:
         site_config: SiteConfig | None = None,
     ) -> None:
         self._settings = settings or HtmlScraperSettings()
-        self._site_config = site_config or load_site_config(
-            source_code, self._settings.sites_dir
-        )
+        self._site_config = site_config or load_site_config(source_code, self._settings.sites_dir)
         self._session = requests.Session()
         self._session.headers.update(
             {
@@ -134,14 +161,13 @@ class HtmlScraperClient:
 
     def detail_url(self, path_or_id: str) -> str:
         if self._site_config.detail_url_pattern:
-            return f"{self._site_config.base_url}{self._site_config.detail_url_pattern.format(id=path_or_id)}"
+            pattern = self._site_config.detail_url_pattern.format(id=path_or_id)
+            return f"{self._site_config.base_url}{pattern}"
         return f"{self._site_config.base_url}{path_or_id}"
 
     def _get(self, url: str) -> str:
         try:
-            resp = self._session.get(
-                url, timeout=self._site_config.request_timeout_seconds
-            )
+            resp = self._session.get(url, timeout=self._site_config.request_timeout_seconds)
             resp.raise_for_status()
             return resp.text
         except requests.RequestException as exc:
@@ -193,12 +219,12 @@ class HtmlScraperClient:
                 seen.add(j["url"])
                 unique_jobs.append(j)
 
-        logger.info(
-            "html_scraper listing page {}: {} job link(s)", page, len(unique_jobs)
-        )
+        logger.info("html_scraper listing page {}: {} job link(s)", page, len(unique_jobs))
         return html, unique_jobs
 
-    def discover_detail_paths(self, max_jobs: int | None = None) -> tuple[list[dict], dict[str, str]]:
+    def discover_detail_paths(
+        self, max_jobs: int | None = None
+    ) -> tuple[list[dict], dict[str, str]]:
         """Walk listing pages, collecting detail URLs."""
         found: list[dict] = []
         failures: dict[str, str] = {}
@@ -220,9 +246,7 @@ class HtmlScraperClient:
                     seen_urls.add(job["url"])
                     found.append(job)
                     new += 1
-            logger.info(
-                "html_scraper page {}: {} new ({} total)", page, new, len(found)
-            )
+            logger.info("html_scraper page {}: {} new ({} total)", page, new, len(found))
             if len(found) >= budget:
                 break
             time.sleep(self._site_config.inter_request_delay_seconds)
@@ -267,7 +291,5 @@ class HtmlScraperClient:
             raise HtmlScraperResponseError(
                 "discovery succeeded but every posting was dropped before fetching."
             )
-        logger.info(
-            "html_scraper: {} record(s), {} failure(s)", len(records), len(failures)
-        )
+        logger.info("html_scraper: {} record(s), {} failure(s)", len(records), len(failures))
         return records, failures

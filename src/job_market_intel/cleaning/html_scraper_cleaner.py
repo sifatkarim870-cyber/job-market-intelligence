@@ -30,7 +30,11 @@ def storable_closing_date(posted, closing):
     if closing is None:
         return None
     if posted is not None and closing < posted:
-        logger.warning("html_scraper: deadline {} predates posting date {} -- dropped", closing, posted)
+        logger.warning(
+            "html_scraper: deadline {} predates posting date {} -- dropped",
+            closing,
+            posted,
+        )
         return None
     return closing
 
@@ -53,6 +57,7 @@ def map_employment_type(value: str | None) -> str | None:
     if not value:
         return None
     import re
+
     key = re.sub(r"[^A-Z]+", "_", value.strip().upper()).strip("_")
     if key in _EMPLOYMENT_MAP:
         return _EMPLOYMENT_MAP[key]

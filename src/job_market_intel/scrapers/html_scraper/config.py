@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,7 +34,9 @@ class SiteConfig(BaseModel):
     listing_pagination: str = Field(default="?page={page}", description="Pagination URL pattern")
     max_pages: int = Field(default=10, ge=1, description="Max listing pages")
     max_jobs_per_run: int = Field(default=60, ge=1, description="Max jobs per run")
-    min_expected_jobs: int = Field(default=1, ge=1, description="Minimum expected jobs per run for validation")
+    min_expected_jobs: int = Field(
+        default=1, ge=1, description="Minimum expected jobs per run for validation"
+    )
     selectors: SelectorConfig = Field(default_factory=SelectorConfig)
     detail_url_pattern: str = Field(default="", description="Detail URL pattern")
     id_from_url: bool = Field(default=True, description="Extract job ID from URL")
@@ -50,8 +51,6 @@ class SiteConfig(BaseModel):
     country_fallback: str = Field(default="", description="Fallback country name")
 
 
-import os
-
 class HtmlScraperSettings(BaseSettings):
     """Global settings for the HTML scraper framework."""
 
@@ -60,11 +59,16 @@ class HtmlScraperSettings(BaseSettings):
     @property
     def sites_dir(self) -> str:
         """Absolute path to the sites config directory."""
-        project_root = Path(__file__).resolve().parents[4]  # scrapers/html_scraper -> job_market_intel -> src -> job-market-intel
-        return str(project_root / "src" / "job_market_intel" / "scrapers" / "html_scraper" / "sites")
+        # __file__ is scrapers/html_scraper/config.py; parents[4] is the project root.
+        project_root = Path(__file__).resolve().parents[4]
+        return str(
+            project_root / "src" / "job_market_intel" / "scrapers" / "html_scraper" / "sites"
+        )
 
 
-def load_site_config(source_code: str, sites_dir: str = "scrapers/html_scraper/sites") -> SiteConfig:
+def load_site_config(
+    source_code: str, sites_dir: str = "scrapers/html_scraper/sites"
+) -> SiteConfig:
     """Load a site config from JSON file."""
     config_path = Path(sites_dir) / f"{source_code}.json"
     if not config_path.exists():

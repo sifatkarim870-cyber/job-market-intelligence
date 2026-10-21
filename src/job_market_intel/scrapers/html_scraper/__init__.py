@@ -30,8 +30,13 @@ Config format:
 }
 """
 
+from job_market_intel.scrapers.html_scraper.config import (
+    HtmlScraperSettings,
+    SiteConfig,
+    list_available_sites,
+    load_site_config,
+)
 from job_market_intel.scrapers.html_scraper.pipeline import HtmlScraperPipeline
-from job_market_intel.scrapers.html_scraper.config import HtmlScraperSettings, SiteConfig, load_site_config, list_available_sites
 
 __all__ = [
     "HtmlScraperPipeline",

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -17,10 +17,6 @@ from job_market_intel.scrapers.html_scraper.config import (
 )
 from job_market_intel.scrapers.html_scraper.parser import HtmlScraperParser
 from job_market_intel.validation.html_scraper_validator import HtmlScraperBatchValidator
-
-if TYPE_CHECKING:
-    from job_market_intel.cleaning.html_scraper_cleaner import HtmlScraperCleaner
-    from job_market_intel.validation.html_scraper_validator import HtmlScraperValidationSettings
 
 
 class HtmlScraperPipelineRunResult(BaseModel):
@@ -46,10 +42,11 @@ class HtmlScraperPipeline:
         parser: HtmlScraperParser | None = None,
         validator: Any | None = None,
         cleaner: Any | None = None,
+        site_config: Any | None = None,
     ) -> None:
         self._settings = settings or HtmlScraperSettings()
         self._source_code = source_code
-        self._site_config = load_site_config(source_code, self._settings.sites_dir)
+        self._site_config = site_config or load_site_config(source_code, self._settings.sites_dir)
         self._validation_settings = validation_settings
         self._client = client or HtmlScraperClient(source_code, self._settings, self._site_config)
         self._parser = parser or HtmlScraperParser(self._site_config, source_code)
@@ -57,19 +54,24 @@ class HtmlScraperPipeline:
         if cleaner is not None:
             self._cleaner = cleaner
         else:
-            from job_market_intel.cleaning.html_scraper_cleaner import HtmlScraperCleaner as _Cleaner
+            from job_market_intel.cleaning.html_scraper_cleaner import (
+                HtmlScraperCleaner as _Cleaner,
+            )
 
             self._cleaner = _Cleaner()
 
-    def run(self, *, store_db: bool = True) -> HtmlScraperPipelineRunResult:
+    def run(
+        self, *, store_db: bool = True, max_jobs: int | None = None
+    ) -> HtmlScraperPipelineRunResult:
         from job_market_intel.db.job_repository import JobRepository
 
         logger.info(
-            "Starting HTML scraper pipeline for {} (store_db={}).",
+            "Starting HTML scraper pipeline for {} (store_db={}, max_jobs={}).",
             self._source_code,
             store_db,
+            max_jobs,
         )
-        raw_jobs, fetch_failures = self._client.fetch_raw_jobs()
+        raw_jobs, fetch_failures = self._client.fetch_raw_jobs(max_jobs=max_jobs)
         if fetch_failures:
             logger.warning(
                 "{} fetch failure(s) during the {} run: {}",
