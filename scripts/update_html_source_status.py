@@ -22,8 +22,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = ROOT / "config" / "sources.json"
+VERIFIED = ROOT / "config" / "html_verified_sources.json"
 TEST_RESULTS = ROOT / "reports" / "html_scraper_test_results.json"
 PERSIST_RESULTS = ROOT / "reports" / "html_scraper_persist_results.json"
+AUDIT_RESULTS = ROOT / "reports" / "html_scraper_audit_results.json"
 
 REASONS = {
     "NO_LINKS": "listing returned no job links with plain HTTP (client-rendered or wrong path)",
@@ -58,19 +60,38 @@ def verified_note(today: str, result: dict, row: dict) -> str:
     )
 
 
-def disabled_note(today: str, result: dict) -> str:
+def disabled_note(today: str, result: dict, audit: dict) -> str:
     reason = REASONS.get(result["status"], result["status"].lower())
     detail = (result.get("detail") or "").strip()
+    if result["status"] == "OK":
+        kept = int(audit.get("kept", 0))
+        first = audit.get("first_reason") or "no job posting among the rows stored"
+        reason = (
+            f"parsed records but the audit kept {kept} posting(s); examples rejected as {first}"
+        )
+        detail = ""
     if detail:
         reason = f"{reason}; observed: {detail[:120]}"
     return f"Disabled {today} after live sweep: {reason}."
 
 
 def apply_status(
-    data: dict, tests: dict[str, dict], persisted: dict[str, dict], today: str
+    data: dict,
+    tests: dict[str, dict],
+    persisted: dict[str, dict],
+    audit: dict[str, dict],
+    verified: set[str] | None,
+    today: str,
 ) -> tuple[list[tuple[str, str]], list[str]]:
-    """Rewrite enabled/notes in place. Returns (verified, disabled) code lists."""
-    verified: list[tuple[str, str]] = []
+    """Rewrite enabled/notes in place. Returns (verified, disabled) code lists.
+
+    A sweep that parsed records is not enough: the first sweep "parsed" 578
+    rows that turned out to be navigation links. A source is enabled only when
+    it is on the hand-checked list in ``config/html_verified_sources.json``
+    (each entry records the URL shape that was inspected) *and* the audit found
+    genuine postings among the rows it stored.
+    """
+    verified_out: list[tuple[str, str]] = []
     disabled: list[str] = []
     for entry in data["sources"]:
         code = entry.get("code")
@@ -78,17 +99,19 @@ def apply_status(
         if not result:
             continue
         notes = entry.get("notes", "").rstrip()
-        if result["status"] == "OK":
+        kept = int((audit.get(code) or {}).get("kept", 0))
+        allowed = verified is None or code in verified
+        if result["status"] == "OK" and allowed and kept > 0:
             note = verified_note(today, result, persisted.get(code, {}))
             entry["enabled"] = True
-            verified.append((code, note))
+            verified_out.append((code, note))
         else:
-            note = disabled_note(today, result)
+            note = disabled_note(today, result, audit.get(code) or {})
             entry["enabled"] = False
             disabled.append(code)
         if note not in notes:
             entry["notes"] = f"{notes} {note}".strip()
-    return verified, disabled
+    return verified_out, disabled
 
 
 def commit_for(code: str, note: str) -> bool:
@@ -129,9 +152,22 @@ def main() -> int:
     if not tests:
         print(f"no results at {TEST_RESULTS}")
         return 1
+    audit = json.loads(AUDIT_RESULTS.read_text(encoding="utf-8")) if AUDIT_RESULTS.exists() else {}
+    if not audit:
+        print(
+            f"no audit at {AUDIT_RESULTS}. Run scripts/prune_html_sweep_rows.py first: a "
+            "source is only verified when a real posting survived the quality gate."
+        )
+        return 1
+
+    verified_list = None
+    if VERIFIED.exists():
+        verified_list = set(json.loads(VERIFIED.read_text(encoding="utf-8")).get("sources", {}))
 
     data = json.loads(SOURCES.read_text(encoding="utf-8"))
-    verified, disabled = apply_status(data, tests, persisted, date.today().isoformat())
+    verified, disabled = apply_status(
+        data, tests, persisted, audit, verified_list, date.today().isoformat()
+    )
 
     if args.dry_run:
         for code, note in verified:

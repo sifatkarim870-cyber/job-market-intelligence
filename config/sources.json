@@ -305,8 +305,8 @@
       "script": "scripts/run_vagas_com_br_scraper.py",
       "timeout": 60,
       "max_env": "VAGAS_COM_BR_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "vagas.com.br - Brazil; Brazil had ZERO postings in the corpus before this (one of the largest general boards in the country). No key, no registration, no proxy. DISCOVERY: /vagas-de-emprego/ returns 40 links shaped /vagas/v<id>/<slug> and the pager is REAL - ?page=2 returned 40 new ids with zero overlap against page 1. ?pagina=2 also paginates; ?p=2 serves a 30KB page with 0 postings, so it is not the parameter. THREE TRAPS, each measured 2026-10-18: (1) addressCountry is the NAME 'Brasil', not the ISO code 'BR' - every other country-carrying source here emits an ISO code (PT, ZA) and geographic_resolution matches on ISO codes, so an unmapped 'Brasil' resolves to NO country and the row silently collapses onto the global-remote location; the cleaner normalizes it. (2) identifier is a PropertyValue whose 'value' is an INT (2831966), so str() is mandatory - the URL id matches it on 3 of 3 postings. (3) baseSalary nests unitText/minValue/maxValue FLAT under value - a SIXTH distinct layout in this codebase, alongside Wellfound (value.minValue), Careers24 (value.value scalar), Apna and Mustakbil (value.value.minValue band) and Alfred (none) - and a parser written for any of the others reads None and stores a salary of 0 without complaining. It is present on only 1 of 3 measured postings, so salary coverage is partial BY NATURE of the board. unitText is 'MONTH', so pay_period is monthly rather than the yearly default every other cleaner uses: storing a monthly figure as annual would overstate it twelvefold. ALSO MEASURED: no employmentType and no industry at all (0 of 3), so employment_type_code is honestly None; jobBenefits is a comma-separated STRING ('Vale-refeicao, Assistencia medica, Vale-transporte'), not an array; datePosted/validThrough are plain ISO dates; descriptions run 970-2834 chars in Portuguese, each opening with a literal 'Descricao:' label glued to the first word (stripped in the parser); addressLocality and addressRegion are both populated. The JSON-LD block is MALFORMED on some pages (raw control characters), so the parser attempts a strict json.loads first and falls back to strict=False. robots.txt is real text/plain, 689 bytes: the User-agent:* group disallows /auth/, /move_to, /servicos/, /v1/, /api/, /social/, /users/, /token/, /vagas/pesquisas, /suporte, /mapa-de-carreiras/cargo/ and /suporte-flix; the listing and /vagas/v<id>/<slug> are NOT disallowed and a Sitemap is nominated. Registered 2026-10-18."
+      "enabled": false,
+      "notes": "vagas.com.br - Brazil; Brazil had ZERO postings in the corpus before this (one of the largest general boards in the country). No key, no registration, no proxy. DISCOVERY: /vagas-de-emprego/ returns 40 links shaped /vagas/v<id>/<slug> and the pager is REAL - ?page=2 returned 40 new ids with zero overlap against page 1. ?pagina=2 also paginates; ?p=2 serves a 30KB page with 0 postings, so it is not the parameter. THREE TRAPS, each measured 2026-10-18: (1) addressCountry is the NAME 'Brasil', not the ISO code 'BR' - every other country-carrying source here emits an ISO code (PT, ZA) and geographic_resolution matches on ISO codes, so an unmapped 'Brasil' resolves to NO country and the row silently collapses onto the global-remote location; the cleaner normalizes it. (2) identifier is a PropertyValue whose 'value' is an INT (2831966), so str() is mandatory - the URL id matches it on 3 of 3 postings. (3) baseSalary nests unitText/minValue/maxValue FLAT under value - a SIXTH distinct layout in this codebase, alongside Wellfound (value.minValue), Careers24 (value.value scalar), Apna and Mustakbil (value.value.minValue band) and Alfred (none) - and a parser written for any of the others reads None and stores a salary of 0 without complaining. It is present on only 1 of 3 measured postings, so salary coverage is partial BY NATURE of the board. unitText is 'MONTH', so pay_period is monthly rather than the yearly default every other cleaner uses: storing a monthly figure as annual would overstate it twelvefold. ALSO MEASURED: no employmentType and no industry at all (0 of 3), so employment_type_code is honestly None; jobBenefits is a comma-separated STRING ('Vale-refeicao, Assistencia medica, Vale-transporte'), not an array; datePosted/validThrough are plain ISO dates; descriptions run 970-2834 chars in Portuguese, each opening with a literal 'Descricao:' label glued to the first word (stripped in the parser); addressLocality and addressRegion are both populated. The JSON-LD block is MALFORMED on some pages (raw control characters), so the parser attempts a strict json.loads first and falls back to strict=False. robots.txt is real text/plain, 689 bytes: the User-agent:* group disallows /auth/, /move_to, /servicos/, /v1/, /api/, /social/, /users/, /token/, /vagas/pesquisas, /suporte, /mapa-de-carreiras/cargo/ and /suporte-flix; the listing and /vagas/v<id>/<slug> are NOT disallowed and a Sitemap is nominated. Registered 2026-10-18. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "angola_emprego",
@@ -413,8 +413,8 @@
       "script": "scripts/run_jobsearch_az_scraper.py",
       "timeout": 60,
       "max_env": "JOBSEARCH_AZ_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "jobsearch.az - Azerbaijan; Azerbaijan had ZERO postings. No key, no registration, no proxy. FIRST HEADLESS-BROWSER SOURCE in this project: the site is a Nuxt SPA and plain HTTP returns 512 KB of bundle with zero anchors, so Playwright renders it and the listing resolves to 30 plain div.list__item cards shaped /vacancies/<slug>. A 'Daha etralli' ('Load more') control appends more; Playwright's own click times out on it (a sticky scroller intercepts the pointer event) so it is clicked with force=True. Hrefs are relative. robots.txt: User-agent: * / Allow: /. Traps, all measured 2026-10-18: (1) the first <h1> on the page is h1.company__title -- the EMPLOYER -- because the company block renders above the vacancy block; the job title is .vacancy__info h1.vacancy__title. (2) #content_block is 2,488 chars of real description against 5,849 chars of whole-page navigation chrome, so the description is scoped to that node. (3) the posting date is ONLY on the listing card and carries no year -- 'Bu gun' (today), 'Dunen' (yesterday), '16 okt' -- so the year is inferred and rolled back when it would land in the future. (4) the deadline is Azerbaijani: 'Son tarix 17 noy 2026'. (5) there is NO salary: every card renders a li.money but the figure is injected after the DOM snapshot and reads empty. (6) the related-jobs column renders first and carries its own deadline, so the deadline is scoped to .vacancy__info. Registered 2026-10-18.",
+      "enabled": false,
+      "notes": "jobsearch.az - Azerbaijan; Azerbaijan had ZERO postings. No key, no registration, no proxy. FIRST HEADLESS-BROWSER SOURCE in this project: the site is a Nuxt SPA and plain HTTP returns 512 KB of bundle with zero anchors, so Playwright renders it and the listing resolves to 30 plain div.list__item cards shaped /vacancies/<slug>. A 'Daha etralli' ('Load more') control appends more; Playwright's own click times out on it (a sticky scroller intercepts the pointer event) so it is clicked with force=True. Hrefs are relative. robots.txt: User-agent: * / Allow: /. Traps, all measured 2026-10-18: (1) the first <h1> on the page is h1.company__title -- the EMPLOYER -- because the company block renders above the vacancy block; the job title is .vacancy__info h1.vacancy__title. (2) #content_block is 2,488 chars of real description against 5,849 chars of whole-page navigation chrome, so the description is scoped to that node. (3) the posting date is ONLY on the listing card and carries no year -- 'Bu gun' (today), 'Dunen' (yesterday), '16 okt' -- so the year is inferred and rolled back when it would land in the future. (4) the deadline is Azerbaijani: 'Son tarix 17 noy 2026'. (5) there is NO salary: every card renders a li.money but the figure is injected after the DOM snapshot and reads empty. (6) the related-jobs column renders first and carries its own deadline, so the deadline is scoped to .vacancy__info. Registered 2026-10-18. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found.",
       "browser": true
     },
     {
@@ -489,7 +489,7 @@
       "timeout": 60,
       "max_env": "SKILLJOBS_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "skill.jobs - Bangladesh; Bangladesh had ZERO postings in the corpus before this. No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/skilljobs.json. Server-rendered HTML listing at /browse-jobs with ?page= pagination. Detail URL: /jobs/<slug>-<id>. Country: Bangladesh (BDT). Registered 2026-10-21."
+      "notes": "skill.jobs - Bangladesh; Bangladesh had ZERO postings in the corpus before this. No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/skilljobs.json. Server-rendered HTML listing at /browse-jobs with ?page= pagination. Detail URL: /jobs/<slug>-<id>. Country: Bangladesh (BDT). Registered 2026-10-21. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 6 row(s) inserted, 6 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 6 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "pracecz",
@@ -498,7 +498,7 @@
       "timeout": 60,
       "max_env": "PRACECZ_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "prace.cz - Czechia; Czechia had ZERO postings in the corpus before this. No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/pracecz.json. Server-rendered HTML listing at /nabidky/ with ?strana={page} pagination. Country: Czechia (CZK). Registered 2026-10-21."
+      "notes": "prace.cz - Czechia; Czechia had ZERO postings in the corpus before this. No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/pracecz.json. Server-rendered HTML listing at /nabidky/ with ?strana={page} pagination. Country: Czechia (CZK). Registered 2026-10-21. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 6 row(s) inserted, 6 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 1 row(s) inserted, 7 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "agenceemploijeunes",
@@ -506,8 +506,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "AGENCEEMPLOIJEUNES_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "agenceemploijeunes.ci - Côte d'Ivoire; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Côte d'Ivoire (XOF). Registered 2026-10-21."
+      "enabled": false,
+      "notes": "agenceemploijeunes.ci - Côte d'Ivoire; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Côte d'Ivoire (XOF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "alwatwan",
@@ -515,8 +515,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ALWATWAN_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "alwatwan.net - Comoros; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Comoros (KMF). Registered 2026-10-21."
+      "enabled": false,
+      "notes": "alwatwan.net - Comoros; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Comoros (KMF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "alwihdainfo",
@@ -524,8 +524,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ALWIHDAINFO_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "alwihdainfo.com - Chad; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Chad (XAF). Registered 2026-10-21."
+      "enabled": false,
+      "notes": "alwihdainfo.com - Chad; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Chad (XAF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "educarriere",
@@ -533,8 +533,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "EDUCARRIERE_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "educarriere.ci - Côte d'Ivoire; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Côte d'Ivoire (XOF). Registered 2026-10-21."
+      "enabled": false,
+      "notes": "educarriere.ci - Côte d'Ivoire; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Côte d'Ivoire (XOF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "ethiojobs",
@@ -542,8 +542,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ETHIOJOBS_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "ethiojobs.net - Ethiopia; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Ethiopia (ETB). Registered 2026-10-21."
+      "enabled": false,
+      "notes": "ethiojobs.net - Ethiopia; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Ethiopia (ETB). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "hellojob",
@@ -552,7 +552,7 @@
       "timeout": 60,
       "max_env": "HELLOJOB_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "hellojob.az - Azerbaijan; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Azerbaijan (AZN). Registered 2026-10-21."
+      "notes": "hellojob.az - Azerbaijan; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Azerbaijan (AZN). Registered 2026-10-21. Verified 2026-10-22: 2 posting(s) parsed over 3 fetched; 4 row(s) inserted, 8 row(s) now stored. Verified 2026-10-22: 2 posting(s) parsed over 3 fetched; 1 row(s) inserted, 9 row(s) now stored. Verified 2026-10-22: 2 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "hotnigerianjobs",
@@ -560,8 +560,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "HOTNIGERIANJOBS_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "hotnigerianjobs.com - Nigeria; Nigeria had ZERO postings in the corpus before this. No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Nigeria (NGN). Registered 2026-10-21."
+      "enabled": false,
+      "notes": "hotnigerianjobs.com - Nigeria; Nigeria had ZERO postings in the corpus before this. No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Nigeria (NGN). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:07.461\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "jobzella",
@@ -569,8 +569,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOBZELLA_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "jobzella.com - Egypt; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Egypt (EGP). Registered 2026-10-21."
+      "enabled": false,
+      "notes": "jobzella.com - Egypt; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Egypt (EGP). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:26.983\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "minajobs",
@@ -578,8 +578,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "MINAJOBS_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "minajobs.net - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Cameroon (XAF). Registered 2026-10-21."
+      "enabled": false,
+      "notes": "minajobs.net - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Cameroon (XAF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "emploipartner_com",
@@ -587,8 +587,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "EMPLOIPARTNER_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Emploi Partner (emploipartner.com) - Algeria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emploipartner_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Emploi Partner (emploipartner.com) - Algeria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emploipartner_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:57.465\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "burkina24_com",
@@ -596,8 +596,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "BURKINA24_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Burkina24 job ads (burkina24.com) - Burkina Faso; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/burkina24_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Burkina24 job ads (burkina24.com) - Burkina Faso; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/burkina24_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:46.917\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "iefp_cv",
@@ -606,7 +606,7 @@
       "timeout": 60,
       "max_env": "IEFP_CV_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "IEFP Cabo Verde – state (iefp.cv) - Cabo Verde; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/iefp_cv.json. Registered 2026-10-21."
+      "notes": "IEFP Cabo Verde – state (iefp.cv) - Cabo Verde; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/iefp_cv.json. Registered 2026-10-21. Verified 2026-10-22: 2 posting(s) parsed over 3 fetched; 5 row(s) inserted, 5 row(s) now stored. Verified 2026-10-22: 2 posting(s) parsed over 3 fetched; 0 row(s) inserted, 5 row(s) now stored. Verified 2026-10-22: 2 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "fne_cm",
@@ -614,8 +614,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "FNE_CM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "FNE – state agency (fne.cm) - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/fne_cm.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "FNE – state agency (fne.cm) - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/fne_cm.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:00:55.748\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
     },
     {
       "code": "jobwebkenya_com",
@@ -624,7 +624,7 @@
       "timeout": 60,
       "max_env": "JOBWEBKENYA_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "JobWebKenya (jobwebkenya.com) - Kenya; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobwebkenya_com.json. Registered 2026-10-21."
+      "notes": "JobWebKenya (jobwebkenya.com) - Kenya; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobwebkenya_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 6 row(s) inserted, 6 row(s) now stored."
     },
     {
       "code": "mwnation_com",
@@ -632,8 +632,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "MWNATION_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Nation Online classifieds (mwnation.com) - Malawi; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mwnation_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Nation Online classifieds (mwnation.com) - Malawi; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mwnation_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:56.429\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "ngcareers_com",
@@ -641,8 +641,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "NGCAREERS_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "NGCareers (ngcareers.com) - Nigeria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ngcareers_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "NGCareers (ngcareers.com) - Nigeria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ngcareers_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:54.499\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "mifotra_gov_rw",
@@ -650,8 +650,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "MIFOTRA_GOV_RW_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "MIFOTRA – state (mifotra.gov.rw) - Rwanda; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mifotra_gov_rw.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "MIFOTRA – state (mifotra.gov.rw) - Rwanda; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mifotra_gov_rw.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "emploidakar_com",
@@ -660,7 +660,7 @@
       "timeout": 60,
       "max_env": "EMPLOIDAKAR_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Emploi Dakar (emploidakar.com) - Senegal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emploidakar_com.json. Registered 2026-10-21."
+      "notes": "Emploi Dakar (emploidakar.com) - Senegal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emploidakar_com.json. Registered 2026-10-21. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 3 row(s) inserted, 13 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 10 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "brightermonday_co_tz",
@@ -668,8 +668,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "BRIGHTERMONDAY_CO_TZ_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "BrighterMonday Tanzania (brightermonday.co.tz) - Tanzania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/brightermonday_co_tz.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "BrighterMonday Tanzania (brightermonday.co.tz) - Tanzania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/brightermonday_co_tz.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "keejob_com",
@@ -677,8 +677,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "KEEJOB_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Keejob (keejob.com) - Tunisia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/keejob_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Keejob (keejob.com) - Tunisia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/keejob_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "careercenter_am",
@@ -686,8 +686,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "CAREERCENTER_AM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "CareerCenter (careercenter.am) - Armenia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/careercenter_am.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "CareerCenter (careercenter.am) - Armenia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/careercenter_am.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "lmra_gov_bh",
@@ -695,8 +695,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "LMRA_GOV_BH_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "LMRA – state (lmra.gov.bh) - Bahrain; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/lmra_gov_bh.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "LMRA – state (lmra.gov.bh) - Bahrain; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/lmra_gov_bh.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "kuenselonline_com",
@@ -704,8 +704,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "KUENSELONLINE_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Kuensel classifieds (kuenselonline.com) - Bhutan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kuenselonline_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Kuensel classifieds (kuenselonline.com) - Bhutan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kuenselonline_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "camhr_com",
@@ -713,8 +713,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "CAMHR_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "CamHR (camhr.com) - Cambodia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/camhr_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "CamHR (camhr.com) - Cambodia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/camhr_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "zhipin_com",
@@ -722,8 +722,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ZHIPIN_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Boss Zhipin (zhipin.com) - China; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/zhipin_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Boss Zhipin (zhipin.com) - China; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/zhipin_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "naukri_com",
@@ -731,8 +731,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "NAUKRI_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Naukri (naukri.com) - India; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/naukri_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Naukri (naukri.com) - India; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/naukri_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "karir_com",
@@ -740,8 +740,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "KARIR_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Karir.com (karir.com) - Indonesia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/karir_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Karir.com (karir.com) - Indonesia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/karir_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "jobs_id",
@@ -749,8 +749,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOBS_ID_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Jobs.id (jobs.id) - Indonesia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobs_id.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Jobs.id (jobs.id) - Indonesia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobs_id.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:01:19.449\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
     },
     {
       "code": "job_mynavi_jp",
@@ -758,8 +758,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOB_MYNAVI_JP_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Mynavi (job.mynavi.jp) - Japan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/job_mynavi_jp.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Mynavi (job.mynavi.jp) - Japan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/job_mynavi_jp.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "enbek_kz",
@@ -768,7 +768,7 @@
       "timeout": 60,
       "max_env": "ENBEK_KZ_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Enbek.kz – state (enbek.kz) - Kazakhstan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/enbek_kz.json. Registered 2026-10-21."
+      "notes": "Enbek.kz – state (enbek.kz) - Kazakhstan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/enbek_kz.json. Registered 2026-10-21. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 4 row(s) inserted, 5 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 4 row(s) inserted, 9 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "hiredly_com",
@@ -776,8 +776,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "HIREDLY_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Hiredly (hiredly.com) - Malaysia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hiredly_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Hiredly (hiredly.com) - Malaysia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hiredly_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "kumarijob_com",
@@ -786,7 +786,7 @@
       "timeout": 60,
       "max_env": "KUMARIJOB_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Kumari Job (kumarijob.com) - Nepal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kumarijob_com.json. Registered 2026-10-21."
+      "notes": "Kumari Job (kumarijob.com) - Nepal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kumarijob_com.json. Registered 2026-10-21. Verified 2026-10-22: 1 posting(s) parsed over 3 fetched; 4 row(s) inserted, 4 row(s) now stored. Verified 2026-10-22: 1 posting(s) parsed over 3 fetched; 0 row(s) inserted, 3 row(s) now stored. Verified 2026-10-22: 1 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "mol_gov_om",
@@ -794,8 +794,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "MOL_GOV_OM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Ministry of Labour portal (mol.gov.om) - Oman; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mol_gov_om.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Ministry of Labour portal (mol.gov.om) - Oman; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mol_gov_om.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:47.276\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "kalibrr_com",
@@ -804,7 +804,7 @@
       "timeout": 60,
       "max_env": "KALIBRR_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Kalibrr (kalibrr.com) - Philippines; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kalibrr_com.json. Registered 2026-10-21."
+      "notes": "Kalibrr (kalibrr.com) - Philippines; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kalibrr_com.json. Registered 2026-10-21. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 5 row(s) inserted, 5 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 1 row(s) inserted, 6 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "qatarliving_com",
@@ -812,8 +812,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "QATARLIVING_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Qatar Living Jobs (qatarliving.com) - Qatar; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/qatarliving_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Qatar Living Jobs (qatarliving.com) - Qatar; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/qatarliving_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:20.441\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "wanted_co_kr",
@@ -821,8 +821,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "WANTED_CO_KR_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Wanted (wanted.co.kr) - South Korea; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/wanted_co_kr.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Wanted (wanted.co.kr) - South Korea; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/wanted_co_kr.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:48.857\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "ikman_lk",
@@ -830,8 +830,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "IKMAN_LK_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Ikman Jobs (ikman.lk) - Sri Lanka; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ikman_lk.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Ikman Jobs (ikman.lk) - Sri Lanka; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ikman_lk.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:04.547\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "jobthai_com",
@@ -839,8 +839,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOBTHAI_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "JobThai (jobthai.com) - Thailand; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobthai_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "JobThai (jobthai.com) - Thailand; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobthai_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "iskur_gov_tr",
@@ -848,8 +848,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ISKUR_GOV_TR_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "İŞKUR – state (iskur.gov.tr) - Türkiye; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/iskur_gov_tr.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "İŞKUR – state (iskur.gov.tr) - Türkiye; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/iskur_gov_tr.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "dubizzle_com",
@@ -857,8 +857,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "DUBIZZLE_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Dubizzle Jobs (dubizzle.com) - United Arab Emirates; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/dubizzle_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Dubizzle Jobs (dubizzle.com) - United Arab Emirates; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/dubizzle_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "laimoon_com",
@@ -866,8 +866,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "LAIMOON_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Laimoon (laimoon.com) - United Arab Emirates; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/laimoon_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Laimoon (laimoon.com) - United Arab Emirates; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/laimoon_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "careerviet_vn",
@@ -875,8 +875,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "CAREERVIET_VN_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "CareerViet (careerviet.vn) - Vietnam; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/careerviet_vn.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "CareerViet (careerviet.vn) - Vietnam; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/careerviet_vn.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "punaime_al",
@@ -884,8 +884,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "PUNAIME_AL_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Punaime.al (punaime.al) - Albania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/punaime_al.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Punaime.al (punaime.al) - Albania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/punaime_al.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "ams_at",
@@ -893,8 +893,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "AMS_AT_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "AMS eJob-Room – state (ams.at) - Austria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ams_at.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "AMS eJob-Room – state (ams.at) - Austria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ams_at.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "willhaben_at",
@@ -902,8 +902,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "WILLHABEN_AT_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Willhaben Jobs (willhaben.at) - Austria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/willhaben_at.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Willhaben Jobs (willhaben.at) - Austria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/willhaben_at.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "praca_by",
@@ -912,7 +912,7 @@
       "timeout": 60,
       "max_env": "PRACA_BY_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Praca.by (praca.by) - Belarus; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/praca_by.json. Registered 2026-10-21."
+      "notes": "Praca.by (praca.by) - Belarus; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/praca_by.json. Registered 2026-10-21. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 6 row(s) inserted, 15 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 6 row(s) inserted, 21 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "leforem_be",
@@ -920,8 +920,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "LEFOREM_BE_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Le Forem – Wallonia (leforem.be) - Belgium; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/leforem_be.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Le Forem – Wallonia (leforem.be) - Belgium; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/leforem_be.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "mojposao_ba",
@@ -930,7 +930,7 @@
       "timeout": 60,
       "max_env": "MOJPOSAO_BA_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "MojPosao.ba (mojposao.ba) - Bosnia and Herzegovina; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mojposao_ba.json. Registered 2026-10-21."
+      "notes": "MojPosao.ba (mojposao.ba) - Bosnia and Herzegovina; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mojposao_ba.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Verified 2026-10-22: 2 posting(s) parsed over 2 fetched; 6 row(s) inserted, 6 row(s) now stored."
     },
     {
       "code": "zaplata_bg",
@@ -938,8 +938,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ZAPLATA_BG_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Zaplata.bg (zaplata.bg) - Bulgaria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/zaplata_bg.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Zaplata.bg (zaplata.bg) - Bulgaria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/zaplata_bg.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:31.471\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "jobtiger_bg",
@@ -948,7 +948,7 @@
       "timeout": 60,
       "max_env": "JOBTIGER_BG_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "JobTiger (jobtiger.bg) - Bulgaria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobtiger_bg.json. Registered 2026-10-21."
+      "notes": "JobTiger (jobtiger.bg) - Bulgaria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobtiger_bg.json. Registered 2026-10-21. Verified 2026-10-22: 2 posting(s) parsed over 3 fetched; 6 row(s) inserted, 7 row(s) now stored. Verified 2026-10-22: 2 posting(s) parsed over 3 fetched; 0 row(s) inserted, 5 row(s) now stored. Verified 2026-10-22: 2 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "posao_hr",
@@ -957,7 +957,7 @@
       "timeout": 60,
       "max_env": "POSAO_HR_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Posao.hr (posao.hr) - Croatia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/posao_hr.json. Registered 2026-10-21."
+      "notes": "Posao.hr (posao.hr) - Croatia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/posao_hr.json. Registered 2026-10-21. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 6 row(s) inserted, 12 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 2 row(s) inserted, 14 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "jobnet_dk",
@@ -965,8 +965,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOBNET_DK_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Jobnet – state (jobnet.dk) - Denmark; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobnet_dk.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Jobnet – state (jobnet.dk) - Denmark; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobnet_dk.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:20.249\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "tootukassa_ee",
@@ -974,8 +974,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "TOOTUKASSA_EE_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Töötukassa – state (tootukassa.ee) - Estonia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/tootukassa_ee.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Töötukassa – state (tootukassa.ee) - Estonia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/tootukassa_ee.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "tyopaikat_oikotie_fi",
@@ -983,8 +983,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "TYOPAIKAT_OIKOTIE_FI_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Oikotie Työpaikat (tyopaikat.oikotie.fi) - Finland; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/tyopaikat_oikotie_fi.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Oikotie Työpaikat (tyopaikat.oikotie.fi) - Finland; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/tyopaikat_oikotie_fi.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "hellowork_com",
@@ -992,8 +992,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "HELLOWORK_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "HelloWork (hellowork.com) - France; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hellowork_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "HelloWork (hellowork.com) - France; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hellowork_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "arbeitsagentur_de",
@@ -1001,8 +1001,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ARBEITSAGENTUR_DE_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Bundesagentur für Arbeit Jobbörse (arbeitsagentur.de) - Germany; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/arbeitsagentur_de.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Bundesagentur für Arbeit Jobbörse (arbeitsagentur.de) - Germany; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/arbeitsagentur_de.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "jobfind_gr",
@@ -1010,8 +1010,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOBFIND_GR_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Jobfind.gr (jobfind.gr) - Greece; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobfind_gr.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Jobfind.gr (jobfind.gr) - Greece; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobfind_gr.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "jobline_hu",
@@ -1019,8 +1019,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOBLINE_HU_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Jobline.hu (jobline.hu) - Hungary; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobline_hu.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Jobline.hu (jobline.hu) - Hungary; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobline_hu.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "cliclavoro_gov_it",
@@ -1028,8 +1028,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "CLICLAVORO_GOV_IT_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Cliclavoro – state (cliclavoro.gov.it) - Italy; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/cliclavoro_gov_it.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Cliclavoro – state (cliclavoro.gov.it) - Italy; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/cliclavoro_gov_it.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "kosovajob_com",
@@ -1038,7 +1038,7 @@
       "timeout": 60,
       "max_env": "KOSOVAJOB_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Kosovajob (kosovajob.com) - Kosovo; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kosovajob_com.json. Registered 2026-10-21."
+      "notes": "Kosovajob (kosovajob.com) - Kosovo; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kosovajob_com.json. Registered 2026-10-21. Verified 2026-10-22: 1 posting(s) parsed over 1 fetched; 5 row(s) inserted, 5 row(s) now stored. Verified 2026-10-22: 1 posting(s) parsed over 1 fetched; 0 row(s) inserted, 5 row(s) now stored. Verified 2026-10-22: 1 posting(s) parsed over 1 fetched; 0 row(s) inserted, 0 row(s) now stored."
     },
     {
       "code": "nva_gov_lv",
@@ -1046,8 +1046,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "NVA_GOV_LV_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "NVA – state (nva.gov.lv) - Latvia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/nva_gov_lv.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "NVA – state (nva.gov.lv) - Latvia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/nva_gov_lv.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:02:12.455\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
     },
     {
       "code": "vaterland_li",
@@ -1055,8 +1055,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "VATERLAND_LI_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Vaterland Stellenmarkt (vaterland.li) - Liechtenstein; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/vaterland_li.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Vaterland Stellenmarkt (vaterland.li) - Liechtenstein; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/vaterland_li.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "cv_lt",
@@ -1064,8 +1064,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "CV_LT_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "CV.lt (cv.lt) - Lithuania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/cv_lt.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "CV.lt (cv.lt) - Lithuania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/cv_lt.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "lucru_md",
@@ -1073,8 +1073,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "LUCRU_MD_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Lucru.md (lucru.md) - Moldova; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/lucru_md.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Lucru.md (lucru.md) - Moldova; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/lucru_md.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "arbeidsplassen_nav_no",
@@ -1082,8 +1082,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ARBEIDSPLASSEN_NAV_NO_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Arbeidsplassen – state (arbeidsplassen.nav.no) - Norway; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/arbeidsplassen_nav_no.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Arbeidsplassen – state (arbeidsplassen.nav.no) - Norway; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/arbeidsplassen_nav_no.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:40.860\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "jobbnorge_no",
@@ -1091,8 +1091,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOBBNORGE_NO_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Jobbnorge – public sector (jobbnorge.no) - Norway; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobbnorge_no.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Jobbnorge – public sector (jobbnorge.no) - Norway; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobbnorge_no.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:21.768\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "praca_pl",
@@ -1100,8 +1100,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "PRACA_PL_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Praca.pl (praca.pl) - Poland; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/praca_pl.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Praca.pl (praca.pl) - Poland; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/praca_pl.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:11.895\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "emprego_sapo_pt",
@@ -1109,8 +1109,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "EMPREGO_SAPO_PT_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Sapo Emprego (emprego.sapo.pt) - Portugal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emprego_sapo_pt.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Sapo Emprego (emprego.sapo.pt) - Portugal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emprego_sapo_pt.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:58.570\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "iefponline_iefp_pt",
@@ -1118,8 +1118,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "IEFPONLINE_IEFP_PT_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "IEFP – state (iefponline.iefp.pt) - Portugal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/iefponline_iefp_pt.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "IEFP – state (iefponline.iefp.pt) - Portugal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/iefponline_iefp_pt.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "bestjobs_eu",
@@ -1127,8 +1127,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "BESTJOBS_EU_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "BestJobs (bestjobs.eu) - Romania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bestjobs_eu.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "BestJobs (bestjobs.eu) - Romania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bestjobs_eu.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "superjob_ru",
@@ -1136,8 +1136,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "SUPERJOB_RU_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "SuperJob (superjob.ru) - Russia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/superjob_ru.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "SuperJob (superjob.ru) - Russia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/superjob_ru.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "helloworld_rs",
@@ -1145,8 +1145,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "HELLOWORLD_RS_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "HelloWorld.rs (helloworld.rs) - Serbia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/helloworld_rs.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "HelloWorld.rs (helloworld.rs) - Serbia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/helloworld_rs.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:00:59.409\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
     },
     {
       "code": "nsz_gov_rs",
@@ -1154,8 +1154,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "NSZ_GOV_RS_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "NSZ – state (nsz.gov.rs) - Serbia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/nsz_gov_rs.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "NSZ – state (nsz.gov.rs) - Serbia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/nsz_gov_rs.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:01:57.547\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
     },
     {
       "code": "kariera_sk",
@@ -1163,8 +1163,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "KARIERA_SK_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Kariera.sk (kariera.sk) - Slovakia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kariera_sk.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Kariera.sk (kariera.sk) - Slovakia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kariera_sk.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "upsvr_gov_sk",
@@ -1172,8 +1172,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "UPSVR_GOV_SK_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "ÚPSVaR – state (upsvr.gov.sk) - Slovakia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/upsvr_gov_sk.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "ÚPSVaR – state (upsvr.gov.sk) - Slovakia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/upsvr_gov_sk.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "optius_com",
@@ -1181,8 +1181,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "OPTIUS_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Optius (optius.com) - Slovenia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/optius_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Optius (optius.com) - Slovenia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/optius_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
       "code": "bumeran_com_ar",
@@ -1190,8 +1190,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "BUMERAN_COM_AR_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Bumeran (bumeran.com.ar) - Argentina; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bumeran_com_ar.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Bumeran (bumeran.com.ar) - Argentina; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bumeran_com_ar.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "zonajobs_com_ar",
@@ -1199,8 +1199,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ZONAJOBS_COM_AR_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "ZonaJobs (zonajobs.com.ar) - Argentina; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/zonajobs_com_ar.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "ZonaJobs (zonajobs.com.ar) - Argentina; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/zonajobs_com_ar.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "ar_computrabajo_com",
@@ -1208,8 +1208,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "AR_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo Argentina (ar.computrabajo.com) - Argentina; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ar_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo Argentina (ar.computrabajo.com) - Argentina; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ar_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "gupy_io",
@@ -1217,8 +1217,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "GUPY_IO_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Gupy (gupy.io) - Brazil; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/gupy_io.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Gupy (gupy.io) - Brazil; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/gupy_io.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "bne_cl",
@@ -1226,8 +1226,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "BNE_CL_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "BNE – state (bne.cl) - Chile; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bne_cl.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "BNE – state (bne.cl) - Chile; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bne_cl.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:50.397\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "co_computrabajo_com",
@@ -1235,8 +1235,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "CO_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo Colombia (co.computrabajo.com) - Colombia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/co_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo Colombia (co.computrabajo.com) - Colombia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/co_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "magneto365_com",
@@ -1244,8 +1244,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "MAGNETO365_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Magneto365 (magneto365.com) - Colombia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/magneto365_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Magneto365 (magneto365.com) - Colombia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/magneto365_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:14.597\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "empleos_net",
@@ -1253,8 +1253,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "EMPLEOS_NET_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Empleos.net (empleos.net) - Costa Rica; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/empleos_net.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Empleos.net (empleos.net) - Costa Rica; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/empleos_net.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:54.878\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
     },
     {
       "code": "do_computrabajo_com",
@@ -1262,8 +1262,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "DO_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo DO (do.computrabajo.com) - Dominican Republic; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/do_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo DO (do.computrabajo.com) - Dominican Republic; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/do_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "ec_computrabajo_com",
@@ -1271,8 +1271,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "EC_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo Ecuador (ec.computrabajo.com) - Ecuador; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ec_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo Ecuador (ec.computrabajo.com) - Ecuador; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ec_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "sv_computrabajo_com",
@@ -1280,8 +1280,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "SV_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo SV (sv.computrabajo.com) - El Salvador; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/sv_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo SV (sv.computrabajo.com) - El Salvador; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/sv_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "gt_computrabajo_com",
@@ -1289,8 +1289,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "GT_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo GT (gt.computrabajo.com) - Guatemala; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/gt_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo GT (gt.computrabajo.com) - Guatemala; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/gt_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "hn_computrabajo_com",
@@ -1298,8 +1298,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "HN_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo HN (hn.computrabajo.com) - Honduras; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hn_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo HN (hn.computrabajo.com) - Honduras; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hn_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "jamaica_gleaner_com",
@@ -1307,8 +1307,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JAMAICA_GLEANER_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Gleaner classifieds (jamaica-gleaner.com) - Jamaica; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jamaica_gleaner_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Gleaner classifieds (jamaica-gleaner.com) - Jamaica; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jamaica_gleaner_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "jamaicaobserver_com",
@@ -1316,8 +1316,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JAMAICAOBSERVER_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Observer classifieds (jamaicaobserver.com) - Jamaica; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jamaicaobserver_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Observer classifieds (jamaicaobserver.com) - Jamaica; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jamaicaobserver_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "mx_computrabajo_com",
@@ -1325,8 +1325,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "MX_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo México (mx.computrabajo.com) - Mexico; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mx_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo México (mx.computrabajo.com) - Mexico; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mx_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "empleo_gob_mx",
@@ -1334,8 +1334,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "EMPLEO_GOB_MX_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Portal del Empleo – state (empleo.gob.mx) - Mexico; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/empleo_gob_mx.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Portal del Empleo – state (empleo.gob.mx) - Mexico; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/empleo_gob_mx.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "ni_computrabajo_com",
@@ -1343,8 +1343,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "NI_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo NI (ni.computrabajo.com) - Nicaragua; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ni_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo NI (ni.computrabajo.com) - Nicaragua; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ni_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "pa_computrabajo_com",
@@ -1352,8 +1352,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "PA_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo Panamá (pa.computrabajo.com) - Panama; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/pa_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo Panamá (pa.computrabajo.com) - Panama; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/pa_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "py_computrabajo_com",
@@ -1361,8 +1361,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "PY_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo Paraguay (py.computrabajo.com) - Paraguay; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/py_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo Paraguay (py.computrabajo.com) - Paraguay; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/py_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "bumeran_com_pe",
@@ -1370,8 +1370,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "BUMERAN_COM_PE_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Bumeran Perú (bumeran.com.pe) - Peru; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bumeran_com_pe.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Bumeran Perú (bumeran.com.pe) - Peru; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bumeran_com_pe.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "aptitus_com",
@@ -1379,8 +1379,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "APTITUS_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Aptitus (aptitus.com) - Peru; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/aptitus_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Aptitus (aptitus.com) - Peru; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/aptitus_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "trinidadexpress_com",
@@ -1388,8 +1388,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "TRINIDADEXPRESS_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Express classifieds (trinidadexpress.com) - Trinidad and Tobago; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/trinidadexpress_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Express classifieds (trinidadexpress.com) - Trinidad and Tobago; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/trinidadexpress_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:02:37.018\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
     },
     {
       "code": "uy_computrabajo_com",
@@ -1397,8 +1397,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "UY_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo UY (uy.computrabajo.com) - Uruguay; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/uy_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo UY (uy.computrabajo.com) - Uruguay; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/uy_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "ve_computrabajo_com",
@@ -1406,8 +1406,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "VE_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Computrabajo Venezuela (ve.computrabajo.com) - Venezuela; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ve_computrabajo_com.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Computrabajo Venezuela (ve.computrabajo.com) - Venezuela; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ve_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
     },
     {
       "code": "workforceaustralia_gov_au",
@@ -1415,8 +1415,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "WORKFORCEAUSTRALIA_GOV_AU_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Workforce Australia – state (workforceaustralia.gov.au) - Australia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/workforceaustralia_gov_au.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Workforce Australia – state (workforceaustralia.gov.au) - Australia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/workforceaustralia_gov_au.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "workandincome_govt_nz",
@@ -1424,8 +1424,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "WORKANDINCOME_GOVT_NZ_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Work and Income – state (workandincome.govt.nz) - New Zealand; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/workandincome_govt_nz.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Work and Income – state (workandincome.govt.nz) - New Zealand; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/workandincome_govt_nz.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
       "code": "samoaobserver_ws",
@@ -1433,8 +1433,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "SAMOAOBSERVER_WS_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Samoa Observer classifieds (samoaobserver.ws) - Samoa; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/samoaobserver_ws.json. Registered 2026-10-21."
+      "enabled": false,
+      "notes": "Samoa Observer classifieds (samoaobserver.ws) - Samoa; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/samoaobserver_ws.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     }
   ]
 }

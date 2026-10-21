@@ -1,0 +1,62 @@
+{
+  "verified_on": "2026-10-22",
+  "method": "scripts/preview_html_records.py: live fetch -> parse -> quality gate, then the stored row set was read back with scripts/audit_html_rows.py and every source's titles and URLs inspected by hand. A source is listed here only if the pages are individual postings.",
+  "sources": {
+    "enbek_kz": {
+      "country": "Kazakhstan",
+      "evidence": "/kk/vacancy/<slug>~<id> detail pages with employer, salary and body text"
+    },
+    "hellojob": {
+      "country": "Azerbaijan",
+      "evidence": "/vakansiya/<slug> detail pages; nav links (/vakansiyalar, /hr/vacancies/create) rejected by the gate"
+    },
+    "emploidakar_com": {
+      "country": "Senegal",
+      "evidence": "/offre-demploi/<slug> detail pages after fixing the link selector; 5/5 real postings"
+    },
+    "iefp_cv": {
+      "country": "Cabo Verde",
+      "evidence": "/jobs/<slug> detail pages with a 250-600 char body"
+    },
+    "posao_hr": {
+      "country": "Croatia",
+      "evidence": "/oglasi/<slug>/<id>/ detail pages with employer in the title"
+    },
+    "praca_by": {
+      "country": "Belarus",
+      "evidence": "/vacancy/<id>/ detail pages with role and city in the title"
+    },
+    "pracecz": {
+      "country": "Czechia",
+      "evidence": "/nabidka/<uuid> and /firma/<slug>/nabidka/<uuid> detail pages, 4 KB bodies"
+    },
+    "kosovajob_com": {
+      "country": "Kosovo",
+      "evidence": "/<company>/<job-slug> detail pages"
+    },
+    "kalibrr_com": {
+      "country": "Philippines",
+      "evidence": "/c/<company>/jobs/<id>/<slug> detail pages"
+    },
+    "skilljobs": {
+      "country": "Bangladesh",
+      "evidence": "/jobs/<slug> detail pages; the long og:title ends with the board name"
+    },
+    "kumarijob_com": {
+      "country": "Nepal",
+      "evidence": "/<company>/<id>-<slug> detail pages"
+    },
+    "jobtiger_bg": {
+      "country": "Bulgaria",
+      "evidence": "/obiavi-za-rabota/<slug>-<id> detail pages; the listing path itself is rejected"
+    },
+    "jobwebkenya_com": {
+      "country": "Kenya",
+      "evidence": "/jobs/<slug>/ detail pages with full descriptions"
+    },
+    "mojposao_ba": {
+      "country": "Bosnia and Herzegovina",
+      "evidence": "/posao/<uuid>/<slug> detail pages with city and employer in the title"
+    }
+  }
+}

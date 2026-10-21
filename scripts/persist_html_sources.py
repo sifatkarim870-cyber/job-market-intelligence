@@ -110,10 +110,24 @@ def main() -> int:
     ap.add_argument("--timeout", type=int, default=300)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--resume", action="store_true")
+    ap.add_argument(
+        "--verified",
+        action="store_true",
+        help="persist only codes in config/html_verified_sources.json",
+    )
     args = ap.parse_args()
 
     if args.only:
         codes = args.only
+    elif args.verified:
+        verified = json.loads(
+            Path(__file__)
+            .resolve()
+            .parents[1]
+            .joinpath("config", "html_verified_sources.json")
+            .read_text(encoding="utf-8")
+        )
+        codes = list(verified["sources"])
     else:
         if not RESULTS.exists():
             print(f"missing {RESULTS}; run scripts/test_all_html_scrapers.py first")
