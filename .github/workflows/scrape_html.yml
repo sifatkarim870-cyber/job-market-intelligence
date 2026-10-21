@@ -143,7 +143,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
           CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
-        run: uv run python ${{ matrix.script }}
+        run: uv run python ${{ matrix.script }} --source-code ${{ matrix.code }}
 
       - name: Export new rows to a Hugging Face shard
         # See scrape_api.yml for why this exists and why it cannot fail the run.
