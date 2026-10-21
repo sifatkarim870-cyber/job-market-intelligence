@@ -1,0 +1,866 @@
+[
+  {
+    "code": "agenceemploijeunes",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 7.8,
+    "detail": "no postings found"
+  },
+  {
+    "code": "alwatwan",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 8.4,
+    "detail": "no postings found"
+  },
+  {
+    "code": "alwihdainfo",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.3,
+    "detail": "no postings found"
+  },
+  {
+    "code": "ams_at",
+    "status": "OK",
+    "fetched": 2,
+    "parsed": 2,
+    "seconds": 11.5,
+    "detail": ""
+  },
+  {
+    "code": "aptitus_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.6,
+    "detail": "no postings found"
+  },
+  {
+    "code": "ar_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.9,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "arbeidsplassen_nav_no",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 7.7,
+    "detail": "\u001b[32m2026-10-22 00:00:40.860\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "arbeitsagentur_de",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 1,
+    "seconds": 10.8,
+    "detail": ""
+  },
+  {
+    "code": "bestjobs_eu",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.1,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "bne_cl",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 14.1,
+    "detail": "\u001b[32m2026-10-22 00:00:50.397\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "brightermonday_co_tz",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 4.4,
+    "detail": "no postings found"
+  },
+  {
+    "code": "bumeran_com_ar",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.7,
+    "detail": "no postings found"
+  },
+  {
+    "code": "bumeran_com_pe",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.7,
+    "detail": "no postings found"
+  },
+  {
+    "code": "burkina24_com",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 5.7,
+    "detail": "\u001b[32m2026-10-22 00:00:46.917\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "camhr_com",
+    "status": "OK",
+    "fetched": 1,
+    "parsed": 1,
+    "seconds": 4.0,
+    "detail": ""
+  },
+  {
+    "code": "careercenter_am",
+    "status": "OK",
+    "fetched": 1,
+    "parsed": 1,
+    "seconds": 7.2,
+    "detail": ""
+  },
+  {
+    "code": "careerviet_vn",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 1,
+    "seconds": 6.8,
+    "detail": ""
+  },
+  {
+    "code": "cliclavoro_gov_it",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 2,
+    "seconds": 5.7,
+    "detail": ""
+  },
+  {
+    "code": "co_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.9,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "cv_lt",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 1,
+    "seconds": 8.1,
+    "detail": ""
+  },
+  {
+    "code": "do_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.4,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "dubizzle_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.9,
+    "detail": "no postings found"
+  },
+  {
+    "code": "ec_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.3,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "educarriere",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 1,
+    "seconds": 59.2,
+    "detail": ""
+  },
+  {
+    "code": "empleo_gob_mx",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.6,
+    "detail": "no postings found"
+  },
+  {
+    "code": "empleos_net",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 6.3,
+    "detail": "\u001b[32m2026-10-22 00:00:54.878\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "emploidakar_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 4.8,
+    "detail": ""
+  },
+  {
+    "code": "emploipartner_com",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 8.0,
+    "detail": "\u001b[32m2026-10-22 00:00:57.465\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "emprego_sapo_pt",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 8.7,
+    "detail": "\u001b[32m2026-10-22 00:00:58.570\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "enbek_kz",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 23.9,
+    "detail": ""
+  },
+  {
+    "code": "ethiojobs",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.5,
+    "detail": "no postings found"
+  },
+  {
+    "code": "fne_cm",
+    "status": "EMPTY",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.6,
+    "detail": "\u001b[32m2026-10-22 00:00:55.748\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36mdiscover_detail_paths\u001b[0m:\u001b[36m230\u001b[0m - \u001b[33m\u001b[1mhtml_scraper listing page 1 fai"
+  },
+  {
+    "code": "gt_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.7,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "gupy_io",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.5,
+    "detail": "no postings found"
+  },
+  {
+    "code": "hellojob",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 2,
+    "seconds": 16.1,
+    "detail": ""
+  },
+  {
+    "code": "hellowork_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 13.2,
+    "detail": ""
+  },
+  {
+    "code": "helloworld_rs",
+    "status": "EMPTY",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.3,
+    "detail": "\u001b[32m2026-10-22 00:00:59.409\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36mdiscover_detail_paths\u001b[0m:\u001b[36m230\u001b[0m - \u001b[33m\u001b[1mhtml_scraper listing page 1 fai"
+  },
+  {
+    "code": "hiredly_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.1,
+    "detail": "no postings found"
+  },
+  {
+    "code": "hn_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.1,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "hotnigerianjobs",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 9.0,
+    "detail": "\u001b[32m2026-10-22 00:01:07.461\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "iefp_cv",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 2,
+    "seconds": 24.8,
+    "detail": ""
+  },
+  {
+    "code": "iefponline_iefp_pt",
+    "status": "OK",
+    "fetched": 2,
+    "parsed": 2,
+    "seconds": 23.1,
+    "detail": ""
+  },
+  {
+    "code": "ikman_lk",
+    "status": "PARSE_FAIL",
+    "fetched": 1,
+    "parsed": 0,
+    "seconds": 4.3,
+    "detail": "\u001b[32m2026-10-22 00:01:04.547\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "iskur_gov_tr",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 7.2,
+    "detail": "no postings found"
+  },
+  {
+    "code": "jamaica_gleaner_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 28.7,
+    "detail": "no postings found"
+  },
+  {
+    "code": "jamaicaobserver_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 9.0,
+    "detail": "no postings found"
+  },
+  {
+    "code": "job_mynavi_jp",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.7,
+    "detail": "no postings found"
+  },
+  {
+    "code": "jobbnorge_no",
+    "status": "PARSE_FAIL",
+    "fetched": 2,
+    "parsed": 0,
+    "seconds": 10.1,
+    "detail": "\u001b[32m2026-10-22 00:01:21.768\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "jobfind_gr",
+    "status": "OK",
+    "fetched": 1,
+    "parsed": 1,
+    "seconds": 8.2,
+    "detail": ""
+  },
+  {
+    "code": "jobline_hu",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 1.8,
+    "detail": "no postings found"
+  },
+  {
+    "code": "jobnet_dk",
+    "status": "PARSE_FAIL",
+    "fetched": 1,
+    "parsed": 0,
+    "seconds": 4.1,
+    "detail": "\u001b[32m2026-10-22 00:01:20.249\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "jobs_id",
+    "status": "EMPTY",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 1.6,
+    "detail": "\u001b[32m2026-10-22 00:01:19.449\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36mdiscover_detail_paths\u001b[0m:\u001b[36m230\u001b[0m - \u001b[33m\u001b[1mhtml_scraper listing page 1 fai"
+  },
+  {
+    "code": "jobsearch_az",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.2,
+    "detail": "no postings found"
+  },
+  {
+    "code": "jobthai_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.2,
+    "detail": "no postings found"
+  },
+  {
+    "code": "jobtiger_bg",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 2,
+    "seconds": 9.2,
+    "detail": ""
+  },
+  {
+    "code": "jobwebkenya_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 15.4,
+    "detail": ""
+  },
+  {
+    "code": "jobzella",
+    "status": "PARSE_FAIL",
+    "fetched": 1,
+    "parsed": 0,
+    "seconds": 4.3,
+    "detail": "\u001b[32m2026-10-22 00:01:26.983\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "kalibrr_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 7.1,
+    "detail": ""
+  },
+  {
+    "code": "kariera_sk",
+    "status": "OK",
+    "fetched": 1,
+    "parsed": 1,
+    "seconds": 8.7,
+    "detail": ""
+  },
+  {
+    "code": "karir_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 1.8,
+    "detail": "no postings found"
+  },
+  {
+    "code": "keejob_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 2,
+    "seconds": 11.0,
+    "detail": ""
+  },
+  {
+    "code": "kosovajob_com",
+    "status": "OK",
+    "fetched": 1,
+    "parsed": 1,
+    "seconds": 10.2,
+    "detail": ""
+  },
+  {
+    "code": "kuenselonline_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 4.2,
+    "detail": "no postings found"
+  },
+  {
+    "code": "kumarijob_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 1,
+    "seconds": 7.5,
+    "detail": ""
+  },
+  {
+    "code": "laimoon_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.5,
+    "detail": "no postings found"
+  },
+  {
+    "code": "leforem_be",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 12.3,
+    "detail": ""
+  },
+  {
+    "code": "lmra_gov_bh",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.9,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "lucru_md",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 23.3,
+    "detail": ""
+  },
+  {
+    "code": "magneto365_com",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 37.8,
+    "detail": "\u001b[32m2026-10-22 00:02:14.597\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "mifotra_gov_rw",
+    "status": "OK",
+    "fetched": 1,
+    "parsed": 1,
+    "seconds": 10.0,
+    "detail": ""
+  },
+  {
+    "code": "minajobs",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 50.6,
+    "detail": ""
+  },
+  {
+    "code": "mojposao_ba",
+    "status": "OK",
+    "fetched": 2,
+    "parsed": 2,
+    "seconds": 10.2,
+    "detail": ""
+  },
+  {
+    "code": "mol_gov_om",
+    "status": "PARSE_FAIL",
+    "fetched": 1,
+    "parsed": 0,
+    "seconds": 8.7,
+    "detail": "\u001b[32m2026-10-22 00:01:47.276\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "mwnation_com",
+    "status": "PARSE_FAIL",
+    "fetched": 1,
+    "parsed": 0,
+    "seconds": 10.1,
+    "detail": "\u001b[32m2026-10-22 00:01:56.429\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "mx_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.9,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "naukri_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 1.9,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "ngcareers_com",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 7.2,
+    "detail": "\u001b[32m2026-10-22 00:01:54.499\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "ni_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.1,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "nsz_gov_rs",
+    "status": "EMPTY",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 8.4,
+    "detail": "\u001b[32m2026-10-22 00:01:57.547\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36mdiscover_detail_paths\u001b[0m:\u001b[36m230\u001b[0m - \u001b[33m\u001b[1mhtml_scraper listing page 1 fai"
+  },
+  {
+    "code": "nva_gov_lv",
+    "status": "EMPTY",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 22.6,
+    "detail": "\u001b[32m2026-10-22 00:02:12.455\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36mdiscover_detail_paths\u001b[0m:\u001b[36m230\u001b[0m - \u001b[33m\u001b[1mhtml_scraper listing page 1 fai"
+  },
+  {
+    "code": "optius_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 22.1,
+    "detail": ""
+  },
+  {
+    "code": "pa_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.0,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "posao_hr",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 11.7,
+    "detail": ""
+  },
+  {
+    "code": "praca_by",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 13.7,
+    "detail": ""
+  },
+  {
+    "code": "praca_pl",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 14.4,
+    "detail": "\u001b[32m2026-10-22 00:02:11.895\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "pracecz",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 9.9,
+    "detail": ""
+  },
+  {
+    "code": "punaime_al",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 5.2,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "py_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.7,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "qatarliving_com",
+    "status": "PARSE_FAIL",
+    "fetched": 1,
+    "parsed": 0,
+    "seconds": 9.2,
+    "detail": "\u001b[32m2026-10-22 00:02:20.441\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "samoaobserver_ws",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 6.9,
+    "detail": "no postings found"
+  },
+  {
+    "code": "skilljobs",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 5.1,
+    "detail": ""
+  },
+  {
+    "code": "superjob_ru",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.5,
+    "detail": "no postings found"
+  },
+  {
+    "code": "sv_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.5,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "tootukassa_ee",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.8,
+    "detail": "no postings found"
+  },
+  {
+    "code": "trinidadexpress_com",
+    "status": "EMPTY",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 22.3,
+    "detail": "\u001b[32m2026-10-22 00:02:37.018\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36mdiscover_detail_paths\u001b[0m:\u001b[36m230\u001b[0m - \u001b[33m\u001b[1mhtml_scraper listing page 1 fai"
+  },
+  {
+    "code": "tyopaikat_oikotie_fi",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.5,
+    "detail": "no postings found"
+  },
+  {
+    "code": "upsvr_gov_sk",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 2,
+    "seconds": 16.2,
+    "detail": ""
+  },
+  {
+    "code": "uy_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.3,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "vagas_com_br",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 3.9,
+    "detail": "no postings found"
+  },
+  {
+    "code": "vaterland_li",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 6.8,
+    "detail": "no postings found"
+  },
+  {
+    "code": "ve_computrabajo_com",
+    "status": "BLOCKED",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.7,
+    "detail": "403 Client Error"
+  },
+  {
+    "code": "wanted_co_kr",
+    "status": "PARSE_FAIL",
+    "fetched": 2,
+    "parsed": 0,
+    "seconds": 30.0,
+    "detail": "\u001b[32m2026-10-22 00:02:48.857\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "willhaben_at",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 4.3,
+    "detail": "no postings found"
+  },
+  {
+    "code": "workandincome_govt_nz",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 8.8,
+    "detail": "no postings found"
+  },
+  {
+    "code": "workforceaustralia_gov_au",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 6.0,
+    "detail": "no postings found"
+  },
+  {
+    "code": "zaplata_bg",
+    "status": "PARSE_FAIL",
+    "fetched": 3,
+    "parsed": 0,
+    "seconds": 6.9,
+    "detail": "\u001b[32m2026-10-22 00:02:31.471\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b[0m:\u001b[36m107\u001b[0m - \u001b[1m--no-db: skipping persistence\u001b[0m"
+  },
+  {
+    "code": "zhipin_com",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 6.9,
+    "detail": "no postings found"
+  },
+  {
+    "code": "zonajobs_com_ar",
+    "status": "NO_LINKS",
+    "fetched": 0,
+    "parsed": 0,
+    "seconds": 2.9,
+    "detail": "no postings found"
+  }
+]

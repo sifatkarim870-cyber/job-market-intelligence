@@ -1,0 +1,28 @@
+[
+  {
+    "code": "jobwebkenya_com",
+    "ok": true,
+    "inserted": 6,
+    "updated": 0,
+    "unchanged": 0,
+    "failed": 0,
+    "parsed": 6,
+    "seconds": 28.5,
+    "detail": "",
+    "rows_before": 0,
+    "rows_after": 6
+  },
+  {
+    "code": "mojposao_ba",
+    "ok": true,
+    "inserted": 6,
+    "updated": 0,
+    "unchanged": 0,
+    "failed": 0,
+    "parsed": 6,
+    "seconds": 44.1,
+    "detail": "",
+    "rows_before": 0,
+    "rows_after": 6
+  }
+]
