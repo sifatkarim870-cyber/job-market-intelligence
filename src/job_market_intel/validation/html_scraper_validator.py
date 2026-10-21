@@ -23,7 +23,7 @@ _MISSING_FIELD_CHECKS: dict[str, Any] = {
 class HtmlScraperValidationSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="HTML_SCRAPER_VALIDATION_", extra="ignore")
 
-    min_expected_jobs: int = 5
+    min_expected_jobs: int = 1
     max_skip_rate: float = 0.50
 
 

@@ -35,6 +35,7 @@ class SiteConfig(BaseModel):
     listing_pagination: str = Field(default="?page={page}", description="Pagination URL pattern")
     max_pages: int = Field(default=10, ge=1, description="Max listing pages")
     max_jobs_per_run: int = Field(default=60, ge=1, description="Max jobs per run")
+    min_expected_jobs: int = Field(default=1, ge=1, description="Minimum expected jobs per run for validation")
     selectors: SelectorConfig = Field(default_factory=SelectorConfig)
     detail_url_pattern: str = Field(default="", description="Detail URL pattern")
     id_from_url: bool = Field(default=True, description="Extract job ID from URL")
