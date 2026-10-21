@@ -105,10 +105,7 @@ def _extract_id(json_ld: dict[str, Any], url: str | None, ad_id: str) -> str:
 
 def _extract_company(json_ld: dict[str, Any]) -> str:
     hiring_org = json_ld.get("hiringOrganization") or {}
-    return (
-        str(hiring_org.get("name") if isinstance(hiring_org, dict) else "")
-        or "Unknown employer"
-    )
+    return str(hiring_org.get("name") if isinstance(hiring_org, dict) else "") or "Unknown employer"
 
 
 def _extract_description(json_ld: dict[str, Any]) -> str | None:

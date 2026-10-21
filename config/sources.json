@@ -546,15 +546,6 @@
       "notes": "ethiojobs.net - Ethiopia; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Ethiopia (ETB). Registered 2026-10-21."
     },
     {
-      "code": "fnecm",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "FNECM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "fne.cm - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Cameroon (XAF). Registered 2026-10-21."
-    },
-    {
       "code": "hellojob",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
@@ -600,15 +591,6 @@
       "notes": "Emploi Partner (emploipartner.com) - Algeria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emploipartner_com.json. Registered 2026-10-21."
     },
     {
-      "code": "angolaemprego_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "ANGOLAEMPREGO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Angola Emprego (angolaemprego.com) - Angola; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/angolaemprego_com.json. Registered 2026-10-21."
-    },
-    {
       "code": "burkina24_com",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
@@ -627,15 +609,6 @@
       "notes": "IEFP Cabo Verde – state (iefp.cv) - Cabo Verde; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/iefp_cv.json. Registered 2026-10-21."
     },
     {
-      "code": "minajobs_net",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "MINAJOBS_NET_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Minajobs (minajobs.net) - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/minajobs_net.json. Registered 2026-10-21."
-    },
-    {
       "code": "fne_cm",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
@@ -643,78 +616,6 @@
       "max_env": "FNE_CM_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "FNE – state agency (fne.cm) - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/fne_cm.json. Registered 2026-10-21."
-    },
-    {
-      "code": "alwihdainfo_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "ALWIHDAINFO_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Alwihda Info job ads (alwihdainfo.com) - Chad; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/alwihdainfo_com.json. Registered 2026-10-21."
-    },
-    {
-      "code": "alwatwan_net",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "ALWATWAN_NET_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Al-Watwan job ads (alwatwan.net) - Comoros; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/alwatwan_net.json. Registered 2026-10-21."
-    },
-    {
-      "code": "educarriere_ci",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "EDUCARRIERE_CI_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Educarriere (educarriere.ci) - Côte d'Ivoire; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/educarriere_ci.json. Registered 2026-10-21."
-    },
-    {
-      "code": "agenceemploijeunes_ci",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "AGENCEEMPLOIJEUNES_CI_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Agence Emploi Jeunes (agenceemploijeunes.ci) - Côte d'Ivoire; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/agenceemploijeunes_ci.json. Registered 2026-10-21."
-    },
-    {
-      "code": "jobzella_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "JOBZELLA_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Jobzella (jobzella.com) - Egypt; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobzella_com.json. Registered 2026-10-21."
-    },
-    {
-      "code": "ethiojobs_net",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "ETHIOJOBS_NET_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "EthioJobs (ethiojobs.net) - Ethiopia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ethiojobs_net.json. Registered 2026-10-21."
-    },
-    {
-      "code": "jobwebghana_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "JOBWEBGHANA_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "JobWebGhana (jobwebghana.com) - Ghana; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobwebghana_com.json. Registered 2026-10-21."
-    },
-    {
-      "code": "corporatestaffing_co_ke",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "CORPORATESTAFFING_CO_KE_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Corporate Staffing Services (corporatestaffing.co.ke) - Kenya; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/corporatestaffing_co_ke.json. Registered 2026-10-21."
     },
     {
       "code": "jobwebkenya_com",
@@ -733,15 +634,6 @@
       "max_env": "MWNATION_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Nation Online classifieds (mwnation.com) - Malawi; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mwnation_com.json. Registered 2026-10-21."
-    },
-    {
-      "code": "hotnigerianjobs_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "HOTNIGERIANJOBS_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Hotnigerianjobs (hotnigerianjobs.com) - Nigeria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hotnigerianjobs_com.json. Registered 2026-10-21."
     },
     {
       "code": "ngcareers_com",
@@ -771,24 +663,6 @@
       "notes": "Emploi Dakar (emploidakar.com) - Senegal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emploidakar_com.json. Registered 2026-10-21."
     },
     {
-      "code": "hiiraan_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "HIIRAAN_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Hiiraan job listings (hiiraan.com) - Somalia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hiiraan_com.json. Registered 2026-10-21."
-    },
-    {
-      "code": "careerjunction_co_za",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "CAREERJUNCTION_CO_ZA_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "CareerJunction (careerjunction.co.za) - South Africa; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/careerjunction_co_za.json. Registered 2026-10-21."
-    },
-    {
       "code": "brightermonday_co_tz",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
@@ -807,15 +681,6 @@
       "notes": "Keejob (keejob.com) - Tunisia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/keejob_com.json. Registered 2026-10-21."
     },
     {
-      "code": "acbar_org",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "ACBAR_ORG_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "ACBAR (acbar.org) - Afghanistan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/acbar_org.json. Registered 2026-10-21."
-    },
-    {
       "code": "careercenter_am",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
@@ -825,15 +690,6 @@
       "notes": "CareerCenter (careercenter.am) - Armenia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/careercenter_am.json. Registered 2026-10-21."
     },
     {
-      "code": "hellojob_az",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "HELLOJOB_AZ_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "HelloJob.az (hellojob.az) - Azerbaijan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hellojob_az.json. Registered 2026-10-21."
-    },
-    {
       "code": "lmra_gov_bh",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
@@ -841,15 +697,6 @@
       "max_env": "LMRA_GOV_BH_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "LMRA – state (lmra.gov.bh) - Bahrain; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/lmra_gov_bh.json. Registered 2026-10-21."
-    },
-    {
-      "code": "skill_jobs",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "SKILL_JOBS_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Skill.jobs (skill.jobs) - Bangladesh; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/skill_jobs.json. Registered 2026-10-21."
     },
     {
       "code": "kuenselonline_com",
@@ -886,15 +733,6 @@
       "max_env": "NAUKRI_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Naukri (naukri.com) - India; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/naukri_com.json. Registered 2026-10-21."
-    },
-    {
-      "code": "shine_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "SHINE_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Shine (shine.com) - India; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/shine_com.json. Registered 2026-10-21."
     },
     {
       "code": "karir_com",
@@ -951,15 +789,6 @@
       "notes": "Kumari Job (kumarijob.com) - Nepal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kumarijob_com.json. Registered 2026-10-21."
     },
     {
-      "code": "jobsnepal_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "JOBSNEPAL_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "JobsNepal (jobsnepal.com) - Nepal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobsnepal_com.json. Registered 2026-10-21."
-    },
-    {
       "code": "mol_gov_om",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
@@ -969,15 +798,6 @@
       "notes": "Ministry of Labour portal (mol.gov.om) - Oman; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mol_gov_om.json. Registered 2026-10-21."
     },
     {
-      "code": "mustakbil_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "MUSTAKBIL_COM_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Mustakbil (mustakbil.com) - Pakistan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/mustakbil_com.json. Registered 2026-10-21."
-    },
-    {
       "code": "kalibrr_com",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
@@ -985,15 +805,6 @@
       "max_env": "KALIBRR_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Kalibrr (kalibrr.com) - Philippines; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kalibrr_com.json. Registered 2026-10-21."
-    },
-    {
-      "code": "philjobnet_gov_ph",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "PHILJOBNET_GOV_PH_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "PhilJobNet – state (philjobnet.gov.ph) - Philippines; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/philjobnet_gov_ph.json. Registered 2026-10-21."
     },
     {
       "code": "qatarliving_com",
@@ -1149,15 +960,6 @@
       "notes": "Posao.hr (posao.hr) - Croatia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/posao_hr.json. Registered 2026-10-21."
     },
     {
-      "code": "prace_cz",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "PRACE_CZ_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Prace.cz (prace.cz) - Czech Republic; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/prace_cz.json. Registered 2026-10-21."
-    },
-    {
       "code": "jobnet_dk",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
@@ -1219,15 +1021,6 @@
       "max_env": "JOBLINE_HU_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Jobline.hu (jobline.hu) - Hungary; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobline_hu.json. Registered 2026-10-21."
-    },
-    {
-      "code": "jobsireland_ie",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "JOBSIRELAND_IE_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "JobsIreland – state (jobsireland.ie) - Ireland; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobsireland_ie.json. Registered 2026-10-21."
     },
     {
       "code": "cliclavoro_gov_it",
@@ -1624,15 +1417,6 @@
       "max_env": "WORKFORCEAUSTRALIA_GOV_AU_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Workforce Australia – state (workforceaustralia.gov.au) - Australia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/workforceaustralia_gov_au.json. Registered 2026-10-21."
-    },
-    {
-      "code": "fijisun_com_fj",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
-      "max_env": "FIJISUN_COM_FJ_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Fiji Sun classifieds (fijisun.com.fj) - Fiji; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/fijisun_com_fj.json. Registered 2026-10-21."
     },
     {
       "code": "workandincome_govt_nz",

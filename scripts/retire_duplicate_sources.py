@@ -94,16 +94,30 @@ def main() -> int:
             return 0
 
         with transaction(session):
-            for redundant in RETIRE:
+            for redundant, canonical in RETIRE.items():
                 if redundant not in counts:
                     continue
-                session.execute(
+                # Delete only rows that exist under the canonical code too:
+                # same source_job_id and posting_date is the natural key.
+                deleted = session.execute(
                     text(
-                        "DELETE FROM core.jobs WHERE source_id = "
-                        "(SELECT source_id FROM ref.sources WHERE source_code = :code)"
+                        """
+                        DELETE FROM core.jobs j
+                        USING ref.sources rs
+                        JOIN ref.sources cs ON cs.source_code = :canonical
+                        WHERE j.source_id = rs.source_id
+                          AND rs.source_code = :redundant
+                          AND EXISTS (
+                              SELECT 1 FROM core.jobs c
+                              WHERE c.source_id = cs.source_id
+                                AND c.source_job_id = j.source_job_id
+                                AND c.posting_date = j.posting_date
+                          )
+                        """
                     ),
-                    {"code": redundant},
-                )
+                    {"redundant": redundant, "canonical": canonical},
+                ).rowcount
+                print(f"{redundant}: deleted {deleted} duplicate row(s)")
                 session.execute(
                     text(
                         "UPDATE ref.sources SET is_active = false, updated_at = now() "
@@ -111,7 +125,6 @@ def main() -> int:
                     ),
                     {"code": redundant},
                 )
-            session.commit()
 
     retired = 0
     for redundant, _canonical in RETIRE.items():
