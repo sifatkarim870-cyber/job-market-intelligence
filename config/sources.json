@@ -438,6 +438,15 @@
       "notes": "jobs.ge - Georgia; a SECOND Georgian board (hrge is the public employment service, jobs.ge is advertising classifieds). No key, no registration, no proxy. THIRD headless-browser source. An earlier verdict on docs/source_registration_list.md called its /ge/?view=jobs&id=... links 'a locale prefix, not a posting path' -- that was wrong: the query string IS the ad id and the pages are postings. The decisive split for JS-rendered boards is Cloudflare-vs-not, not JS-vs-HTML; this one is unwalled. Traps, all measured 2026-10-18: (1) THE ENGLISH DETAIL PAGE IS A STUB -- /en/?view=jobs&id=N renders title, employer and one sentence then 'See full text of this announcement in Georgian.', 548 chars, while /ge/?view=jobs&id=N carries 4,421 chars for the same posting. So the listing and the English titles come from /en/ and the description from /ge/. (2) the ad id is a QUERY PARAMETER, not a path segment. (3) the listing is a plain HTML TABLE, not a card list, header '* | VIP Advertisements | | Provided By | Published | Deadline'; the site's CSS classes are unclassed apart from class=vip on the title anchor, so cell position and label prefixes are the only stable handles. (4) dates are GEORGIAN MONTH NAMES WITH NO YEAR on one line -- 'გამოქვეყნდა: 16 ოქტომბერი / ბოლო ვადა: 16 ნოემბერი' -- so the year is inferred and rolled back when it would land in the future. (5) the description is the LONGEST table row that is not a label: the same table holds nav chrome, a 'Forward Link' row, and repeats of the labelled rows. (6) NO SALARY FIELD: pay appears only in prose ('ხელფასი: 3400 ლარიდან' = 'salary: from 3400 lari') mixed with internship and trainee rates in the same ad, and is never parsed for digits. (7) NO LOCATION FIELD: Tbilisi appears inside the body text, never structured, so rows resolve to country-only Georgia. Pagination is ?page= only; page 1 had 308 ads and page 2 added 300 with no overlap. robots.txt: User-agent: * / Allow: /. Registered 2026-10-19."
     },
     {
+      "code": "shine",
+      "group": "html",
+      "script": "scripts/run_shine_scraper.py",
+      "timeout": 60,
+      "max_env": "SHINE_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "shine.com - India; India had ZERO postings in the corpus before this. No key, no registration, no proxy. Server-rendered HTML with JSON-LD JobPosting on detail pages -- no browser needed. Listing: /job-search/jobs-in-india with real ?page=N pagination (next link present). Detail URL: /jobs/<slug>/<company>/<numeric_id>. JSON-LD carries title, hiringOrganization, identifier.value (numeric job id), datePosted, validThrough (deadline), employmentType, experienceRequirements.monthsOfExperience, jobLocation (addressCountry ISO 'IN', addressLocality), skills list, industry. Salary Range reads \"INR 0+ (Annual)\" on measured postings; unitText MONTH means pay_period=monthly. robots.txt: User-agent: * / Allow: /"
+    },
+    {
       "code": "forasna",
       "group": "html",
       "script": "scripts/run_forasna_scraper.py",
