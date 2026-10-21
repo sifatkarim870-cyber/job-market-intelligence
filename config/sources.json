@@ -463,6 +463,33 @@
       "max_env": "JOBMAIL_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "jobmail.co.za - South Africa's largest job board. South Africa had 178 rows in the corpus, from two other boards, while this one holds AT LEAST 8,000 postings: the listing paginates to 400+ pages with 20 fresh postings on each and no end in sight (7,980 distinct ids at page 400). No key, no registration, no proxy, and NO BROWSER -- the site is server-rendered and serves both the listing and the detail page in a plain GET. robots.txt: User-agent: * with only /setup-alerts/* disallowed. Traps, all measured 2026-10-19: (1) 'MARKET RELATED' IS A SALARY THAT IS NOT A FIGURE -- the listing card's div.job-info holds either a rand range ('R20 000,00 - R30 000,00') or those words, which is the board saying a salary exists but is not published; parsing it for digits would invent one, so it is kept as a distinct salary_undisclosed flag. (2) Rand amounts use a SPACE for thousands and a COMMA for decimals ('R20 000,00'), and the separator is sometimes a NON-BREAKING SPACE. (3) The location's granularity VARIES: addressLocality is a city on some postings ('Pretoria') and a PROVINCE on others ('Western Cape', 'KwaZulu-Natal'), with addressRegion the same value -- so both are kept and joined as 'town, province' for the resolver. (4) The card's date may carry a non-breaking space ('04 September 2026'), and a three-letter month PREFIX is not accepted because it cannot tell the abbreviation 'Sept' from a truncated 'Septem'. (5) The id is in TWO places -- the card's id='results-item-7568798' and the link's '-id-7568798' slug -- so either is enough and the other confirms it. The detail page's schema.org JobPosting carries the body (1,432-5,510 characters measured), the employer's own posted and closing dates, the employment type, the employer name and URL, and on some postings a numeric baseSalary in ZAR per month. Registered 2026-10-20."
+    },
+    {
+      "code": "shine",
+      "group": "html",
+      "script": "scripts/run_shine_scraper.py",
+      "timeout": 60,
+      "max_env": "SHINE_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "shine.com - India; India had ZERO postings in the corpus before this. No key, no registration, no proxy. Server-rendered HTML with JSON-LD JobPosting on detail pages -- no browser needed. Listing: /job-search/jobs-in-india with real ?page=N pagination (next link present). Detail URL: /jobs/<slug>/<company>/<numeric_id>. JSON-LD carries title, hiringOrganization, identifier.value (numeric job id), datePosted, validThrough (deadline), employmentType, experienceRequirements.monthsOfExperience, jobLocation (addressCountry ISO 'IN', addressLocality), skills list, industry. Salary Range reads \"INR 0+ (Annual)\" on measured postings; unitText MONTH means pay_period=monthly. robots.txt: User-agent: * / Allow: /"
+    },
+    {
+      "code": "skilljobs",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 60,
+      "max_env": "SKILLJOBS_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "skill.jobs - Bangladesh; Bangladesh had ZERO postings in the corpus before this. No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/skilljobs.json. Server-rendered HTML listing at /browse-jobs with ?page= pagination. Detail URL: /jobs/<slug>-<id>. Country: Bangladesh (BDT). Registered 2026-10-21."
+    },
+    {
+      "code": "pracecz",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 60,
+      "max_env": "PRACECZ_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "prace.cz - Czechia; Czechia had ZERO postings in the corpus before this. No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/pracecz.json. Server-rendered HTML listing at /nabidky/ with ?strana={page} pagination. Country: Czechia (CZK). Registered 2026-10-21."
     }
   ]
 }

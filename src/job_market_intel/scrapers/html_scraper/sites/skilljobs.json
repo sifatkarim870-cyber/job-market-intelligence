@@ -1,0 +1,29 @@
+{
+  "source_code": "skilljobs",
+  "source_name": "Skill.jobs",
+  "country": "Bangladesh",
+  "base_url": "https://skill.jobs",
+  "listing_path": "/browse-jobs",
+  "listing_pagination": "?page={page}",
+  "max_pages": 10,
+  "max_jobs_per_run": 60,
+  "selectors": {
+    "job_card": "article",
+    "job_link": "a[href*='/jobs/']",
+    "job_title": "h2, h3, .job-title",
+    "company": ".company, .employer, [class*='company']",
+    "location": ".location, [class*='location'], [class*='place']",
+    "description": ".job-description, .description, [class*='description']",
+    "posted_date": "[class*='date'], [class*='posted'], time",
+    "salary": "[class*='salary'], [class*='pay']",
+    "skills": "[class*='skill'], [class*='tag']"
+  },
+  "detail_url_pattern": "",
+  "id_from_url": true,
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 2.0,
+  "currency_iso_code": "BDT",
+  "pay_period": "monthly",
+  "country_fallback": "Bangladesh"
+}

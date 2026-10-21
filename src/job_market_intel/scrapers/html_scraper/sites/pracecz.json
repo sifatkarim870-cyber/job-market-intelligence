@@ -1,0 +1,29 @@
+{
+  "source_code": "pracecz",
+  "source_name": "Prace.cz",
+  "country": "Czechia",
+  "base_url": "https://www.prace.cz",
+  "listing_path": "/nabidky/",
+  "listing_pagination": "?strana={page}",
+  "max_pages": 10,
+  "max_jobs_per_run": 60,
+  "selectors": {
+    "job_card": ".job-item, .job-card, article.job, div.job-item",
+    "job_link": "a[href*='/praca/'], a[href*='/job/'], a[href*='/nabidka/']",
+    "job_title": "h2, h3, .job-title, [class*='title']",
+    "company": ".company, .employer, [class*='company'], [class*='employer']",
+    "location": ".location, [class*='location'], [class*='place'], [class*='misto']",
+    "description": ".job-description, .description, [class*='description'], [class*='popis']",
+    "posted_date": "[class*='date'], [class*='posted'], [class*='datum'], time",
+    "salary": "[class*='salary'], [class*='pay'], [class*='plat']",
+    "skills": "[class*='skill'], [class*='tag'], [class*='dovednost']"
+  },
+  "detail_url_pattern": "",
+  "id_from_url": true,
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 2.0,
+  "currency_iso_code": "CZK",
+  "pay_period": "monthly",
+  "country_fallback": "Czechia"
+}
