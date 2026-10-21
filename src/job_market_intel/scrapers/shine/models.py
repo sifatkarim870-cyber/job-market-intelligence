@@ -67,6 +67,7 @@ class RawShineJob(BaseModel):
     experience_months: int | None = Field(
         default=None, description="monthsOfExperience from JSON-LD."
     )
+    skills: list[str] = Field(default_factory=list, description="Skills from JSON-LD.")
 
     posted_date: date | None = Field(default=None)
     closing_date: date | None = Field(default=None)

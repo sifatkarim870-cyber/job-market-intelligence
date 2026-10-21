@@ -72,6 +72,7 @@ __all__ = [
     "ShineClient",
     "ShineError",
     "ShineFetchError",
+    "ShineParseError",
     "ShineParser",
     "ShinePipeline",
     "ShinePipelineRunResult",

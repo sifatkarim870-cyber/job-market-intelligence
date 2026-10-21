@@ -1,0 +1,27 @@
+Add Shine.com (India) -- server-rendered HTML with JSON-LD, no browser
+
+India had ZERO postings in the corpus. Shine.com is a large Indian job
+board with no Cloudflare, no registration wall, and no proxy requirement,
+so it sits in the buildable set.
+
+## What was verified
+
+- **Probed 2026-10-20**: server-rendered HTML, real `rel="next"` pagination
+  on `/job-search/jobs-in-india`, detail URL `/jobs/<slug>/<company>/<id>`.
+- **JSON-LD JobPosting** on every detail page: title, company, numeric id,
+  datePosted, validThrough (deadline), employmentType, experience months,
+  jobLocation (ISO 'IN'), skills list, industry.
+- **No browser** needed -- plain HTTP returns full markup.
+- **Dry-run**: 10 fetched, 10 parsed, 10 cleaned, validation PASSED.
+- **Live run**: 10 inserted, 0 failed. Geographic resolution works
+  (Bangalore/Pune/Hyderabad city_exact; All India/Mumbai City/Noida/
+  Chennai fallback_unmatched).
+
+## Checklist
+
+- [x] `register_source.py --code shine` -- source_id=926
+- [x] `export_state_snapshot.py` -- HF state snapshot republished
+- [x] `--no-db` dry run: 10/10 parsed, validation PASSED
+- [x] Live DB run: 10 inserted, 0 failed
+- [x] `ruff format . && ruff check .`
+- [x] `pytest tests`

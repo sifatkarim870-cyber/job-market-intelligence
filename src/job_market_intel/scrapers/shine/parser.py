@@ -78,6 +78,80 @@ def _parse_iso_date(value: str | None) -> date | None:
     return None
 
 
+def _extract_skills(json_ld: dict[str, Any]) -> list[str]:
+    """Extract the skills list from a JobPosting JSON-LD block."""
+    raw_skills = json_ld.get("skills") or []
+    if isinstance(raw_skills, list):
+        return [str(s).strip() for s in raw_skills if str(s).strip()]
+    return []
+
+
+def _extract_id(json_ld: dict[str, Any], url: str | None, ad_id: str) -> str:
+    """Resolve the source job id, cross-checking URL against JSON-LD."""
+    url_id: str | None = None
+    if url:
+        match = _JOB_ID_FROM_URL_RE.search(url)
+        if match:
+            url_id = match.group(1)
+    ld_id = (
+        str(json_ld.get("identifier", {}).get("value", ""))
+        if isinstance(json_ld.get("identifier"), dict)
+        else str(json_ld.get("identifier", ""))
+    )
+    if url_id and ld_id and url_id != ld_id:
+        logger.warning("shine id mismatch: URL {!r} vs JSON-LD {!r} for {}", url_id, ld_id, ad_id)
+    return ld_id or ad_id
+
+
+def _extract_company(json_ld: dict[str, Any]) -> str:
+    hiring_org = json_ld.get("hiringOrganization") or {}
+    return (
+        str(hiring_org.get("name") if isinstance(hiring_org, dict) else "")
+        or "Unknown employer"
+    )
+
+
+def _extract_description(json_ld: dict[str, Any]) -> str | None:
+    description = json_ld.get("description") or None
+    if description and not description.strip():
+        return None
+    return description
+
+
+def _extract_dates(json_ld: dict[str, Any]) -> tuple[date | None, date | None]:
+    return _parse_iso_date(json_ld.get("datePosted")), _parse_iso_date(json_ld.get("validThrough"))
+
+
+def _extract_employment_type(json_ld: dict[str, Any]) -> str | None:
+    return json_ld.get("employment_type") or json_ld.get("employmentType")
+
+
+def _extract_experience_months(json_ld: dict[str, Any]) -> int | None:
+    exp_req = json_ld.get("experienceRequirements") or {}
+    if isinstance(exp_req, dict):
+        months = exp_req.get("monthsOfExperience")
+        if months is not None:
+            try:
+                return int(months)
+            except (TypeError, ValueError):
+                return None
+    return None
+
+
+def _extract_location(json_ld: dict[str, Any]) -> str | None:
+    job_locations = json_ld.get("jobLocation") or []
+    if isinstance(job_locations, list) and job_locations:
+        first = job_locations[0]
+        if isinstance(first, dict):
+            address = first.get("address") or {}
+            if isinstance(address, dict):
+                loc = address.get("addressLocality")
+                if loc:
+                    return loc
+    loc = json_ld.get("jobLocation")
+    return loc if isinstance(loc, str) else None
+
+
 def parse_detail(
     ad_id: str,
     html: str,
@@ -97,75 +171,31 @@ def parse_detail(
             "that is not a vacancy."
         )
 
-    # Cross-check the id from the URL against identifier.value.
-    url_id: str | None = None
-    if url:
-        match = _JOB_ID_FROM_URL_RE.search(url)
-        if match:
-            url_id = match.group(1)
-    ld_id = str(json_ld.get("identifier", {}).get("value", "")) if isinstance(
-        json_ld.get("identifier"), dict
-    ) else str(json_ld.get("identifier", ""))
-    if url_id and ld_id and url_id != ld_id:
-        logger.warning(
-            "shine id mismatch: URL {!r} vs JSON-LD {!r} for {}", url_id, ld_id, ad_id
-        )
-    source_job_id = ld_id or ad_id
+    source_job_id = _extract_id(json_ld, url, ad_id)
 
-    title = json_ld.get("title") or ""
+    title = str(json_ld.get("title") or "").strip()
     if not title:
         raise ShineParseError(f"shine posting {ad_id} has no title in JSON-LD.")
 
-    hiring_org = json_ld.get("hiringOrganization") or {}
-    company_name = (
-        hiring_org.get("name") if isinstance(hiring_org, dict) else ""
-    ) or "Unknown employer"
-
-    description = json_ld.get("description") or None
-    if description and not description.strip():
-        description = None
-
-    posted_date = _parse_iso_date(json_ld.get("datePosted"))
-    closing_date = _parse_iso_date(json_ld.get("validThrough"))
-
-    employment_type = json_ld.get("employment_type") or json_ld.get("employmentType")
-
-    exp_req = json_ld.get("experienceRequirements") or {}
-    experience_months = None
-    if isinstance(exp_req, dict):
-        months = exp_req.get("monthsOfExperience")
-        if months is not None:
-            try:
-                experience_months = int(months)
-            except (TypeError, ValueError):
-                experience_months = None
-
-    location = None
-    job_locations = json_ld.get("jobLocation") or []
-    if isinstance(job_locations, list) and job_locations:
-        first = job_locations[0]
-        if isinstance(first, dict):
-            address = first.get("address") or {}
-            if isinstance(address, dict):
-                location = address.get("addressLocality")
-    if not location:
-        location = json_ld.get("jobLocation") if isinstance(json_ld.get("jobLocation"), str) else None
-
-    skills: list[str] = []
-    raw_skills = json_ld.get("skills") or []
-    if isinstance(raw_skills, list):
-        skills = [str(s).strip() for s in raw_skills if str(s).strip()]
+    company_name = _extract_company(json_ld)
+    description = _extract_description(json_ld)
+    posted_date, closing_date = _extract_dates(json_ld)
+    employment_type = _extract_employment_type(json_ld)
+    experience_months = _extract_experience_months(json_ld)
+    location = _extract_location(json_ld)
+    skills = _extract_skills(json_ld)
 
     raw_payload: dict[str, Any] = {
         "json_ld": json_ld,
         "page_bytes": len(html or ""),
         "url": url,
+        "skills": skills,
     }
 
     return RawShineJob(
         source_job_id=str(source_job_id),
-        title=str(title).strip(),
-        company_name=str(company_name).strip(),
+        title=title,
+        company_name=company_name,
         description=description,
         location=location,
         country="India",
@@ -194,9 +224,7 @@ class ShineParser:
             raise ShineParseError(
                 f"shine posting {job_id} has no rendered HTML; the detail page was not fetched."
             )
-        return parse_detail(
-            job_id, html, url=url, listing_page=listing_page, today=today
-        )
+        return parse_detail(job_id, html, url=url, listing_page=listing_page, today=today)
 
     def parse_many(
         self, records: list[dict], today: date | None = None

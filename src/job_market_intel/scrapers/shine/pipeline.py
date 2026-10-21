@@ -38,11 +38,11 @@ class ShinePipeline:
     def __init__(
         self,
         settings: ShineSettings | None = None,
-        validation_settings: Any | None = None,
+        validation_settings: ShineValidationSettings | None = None,
         client: ShineClient | None = None,
         parser: ShineParser | None = None,
-        validator: Any | None = None,
-        cleaner: Any | None = None,
+        validator: ShineBatchValidator | None = None,
+        cleaner: ShineCleaner | None = None,
         source_code: str = "shine",
     ) -> None:
         self._settings = settings or ShineSettings()

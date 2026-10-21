@@ -61,9 +61,7 @@ class ShineClient:
         self._settings = settings or ShineSettings()
 
     def _get(self, url: str) -> str:
-        req = urllib.request.Request(
-            url, headers={"User-Agent": self._settings.user_agent}
-        )
+        req = urllib.request.Request(url, headers={"User-Agent": self._settings.user_agent})
         try:
             with urllib.request.urlopen(
                 req, timeout=self._settings.request_timeout_seconds
@@ -96,9 +94,7 @@ class ShineClient:
         """Render one listing page. Returns ``(html, [job_urls])``."""
         html = self._get(self.listing_url(page))
         links = self._extract_links(html)
-        logger.info(
-            "shine listing page {}: {} job link(s)", page, len(links)
-        )
+        logger.info("shine listing page {}: {} job link(s)", page, len(links))
         return html, links
 
     def discover_detail_paths(self) -> tuple[list[str], dict[str, str]]:
