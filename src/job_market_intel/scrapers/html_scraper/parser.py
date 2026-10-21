@@ -11,6 +11,7 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 from loguru import logger
+import re
 
 from .config import SiteConfig
 from .exceptions import HtmlScraperParseError
@@ -89,9 +90,18 @@ def parse_detail(
 
     title = _extract_text(_select_one(soup, sel.job_title)) or title_hint or ""
     if not title:
-        raise HtmlScraperParseError(
-            f"{source_code} posting has no title. The detail page markup may have changed."
-        )
+        # Fallback: extract title from URL slug (e.g., "/jobs/senior-developer-role-123" -> "senior-developer-role-123")
+        if url:
+            last_segment = url.rsplit("/", 1)[-1]
+            last_segment = last_segment.split("?")[0].split("#")[0]
+            # Remove trailing numeric ID and hyphens
+            slug = re.sub(r"-\d+$", "", last_segment)
+            if slug and len(slug) > 3:
+                title = slug.replace("-", " ").replace("_", " ").title()
+        if not title:
+            raise HtmlScraperParseError(
+                f"{source_code} posting has no title. The detail page markup may have changed."
+            )
 
     company_name = _extract_text(_select_one(soup, sel.company)) or "Unknown employer"
     description = _extract_text(_select_one(soup, sel.description))

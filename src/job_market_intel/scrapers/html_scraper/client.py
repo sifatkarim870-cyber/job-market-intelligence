@@ -47,12 +47,22 @@ _JOB_PATH_KEYWORDS = (
 def _is_job_url(url: str) -> bool:
     """Heuristic: does this URL look like a job detail page?"""
     url_lower = url.lower()
-    # Must have a path component beyond just the domain
     path = urlparse(url).path.lower()
     if len(path) <= 1:  # just "/"
         return False
     # Must contain at least one job-related keyword
-    return any(kw in path for kw in _JOB_PATH_KEYWORDS)
+    if not any(kw in path for kw in _JOB_PATH_KEYWORDS):
+        return False
+    # Filter out category/listing pages (URLs that are just "/jobs" or similar)
+    # A detail page should have a slug or id after the job keyword
+    path_parts = [p for p in path.split("/") if p]
+    if len(path_parts) <= 1:
+        return False  # Just "/jobs" or "/careers" - category page, not detail
+    # The last path segment should be longer than just "jobs" (likely a slug or id)
+    last_segment = path_parts[-1]
+    if last_segment in ("jobs", "careers", "vacancy", "vacancies", "listing", "listings"):
+        return False
+    return True
 
 
 def _extract_links_from_html(html: str, base_url: str) -> list[dict]:

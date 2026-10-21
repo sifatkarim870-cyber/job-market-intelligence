@@ -3,7 +3,7 @@
   "source_name": "EthioJobs",
   "country": "Ethiopia",
   "base_url": "https://www.ethiojobs.net",
-  "listing_path": "/",
+  "listing_path": "/jobs/",
   "listing_pagination": "?page={page}",
   "max_pages": 10,
   "max_jobs_per_run": 60,

@@ -43,7 +43,7 @@ class SiteConfig(BaseModel):
         description="Identifying UA",
     )
     request_timeout_seconds: int = Field(default=30, ge=1)
-    inter_request_delay_seconds: float = Field(default=2.0, ge=0.0)
+    inter_request_delay_seconds: float = Field(default=0.1, ge=0.0)
     currency_iso_code: str = Field(default="USD", description="Default currency")
     pay_period: str = Field(default="monthly", description="Default pay period")
     country_fallback: str = Field(default="", description="Fallback country name")
