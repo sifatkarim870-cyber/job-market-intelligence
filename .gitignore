@@ -116,3 +116,6 @@ data/raw/
 data/processed/
 
 diagnostics/
+
+# seleniumbase downloads its own Chrome for Testing here (~300 MB, machine-specific)
+downloaded_files/

@@ -102,7 +102,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: uv sync --extra dev --extra test
+        # The browser framework drives Chrome through seleniumbase, which is an
+        # optional extra: `uv sync --extra dev --extra test` does not install
+        # it, and the job fails at import time without it.
+        run: uv sync --extra dev --extra test --extra selenium
 
       - name: Seed the ephemeral database from the HF state snapshot
         env:
@@ -136,6 +139,10 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
           CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          # The source code travels as an environment variable: the browser
+          # runner reads SOURCE_CODE, and the bespoke runners in this group
+          # take no argument at all.
+          SOURCE_CODE: ${{ matrix.code }}
         run: uv run python ${{ matrix.script }}
 
       - name: Export new rows to a Hugging Face shard
