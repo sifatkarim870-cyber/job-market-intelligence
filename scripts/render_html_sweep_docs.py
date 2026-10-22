@@ -20,6 +20,7 @@ DOC = ROOT / "docs" / "source_registration_list.md"
 RESULTS = ROOT / "reports" / "html_scraper_test_results.json"
 PERSIST = ROOT / "reports" / "html_scraper_persist_results.json"
 BROWSER_RESULTS = ROOT / "reports" / "browser_scraper_test_results.json"
+PROBE_VERDICTS = ROOT / "reports" / "browser_probe_verdicts.json"
 
 START = "<!-- html-sweep:start -->"
 END = "<!-- html-sweep:end -->"
@@ -172,6 +173,23 @@ def render_browser(results: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def render_browser_rejects(verdicts: list[dict]) -> str:
+    """The candidates that were rendered in a browser and still did not work."""
+    lines = [
+        "### Rendered in a browser and still not usable",
+        "",
+        "Every remaining candidate from the list was opened in the same browser",
+        "before it was written off. The reason is measured, not assumed:",
+        "",
+        "| Source | URL | Verdict | Why |",
+        "| --- | --- | --- | --- |",
+    ]
+    for row in verdicts:
+        lines.append(f"| `{row['code']}` | {row['url']} | {row['verdict']} | {row['reason']} |")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def main() -> int:
     results = load(RESULTS)
     if not results:
@@ -191,6 +209,11 @@ def main() -> int:
     browser_results = load(BROWSER_RESULTS)
     if browser_results:
         browser_block = render_browser(browser_results)
+        if PROBE_VERDICTS.exists():
+            probe = json.loads(PROBE_VERDICTS.read_text(encoding="utf-8"))
+            browser_block = browser_block.replace(
+                BROWSER_END, render_browser_rejects(probe.get("verdicts", [])) + BROWSER_END
+            )
         if BROWSER_START in text and BROWSER_END in text:
             head, _, rest = text.partition(BROWSER_START)
             _, _, tail = rest.partition(BROWSER_END)

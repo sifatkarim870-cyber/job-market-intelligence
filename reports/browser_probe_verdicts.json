@@ -1,0 +1,114 @@
+{
+  "probed_on": "2026-10-22",
+  "method": "scripts/probe_browser_sites.py: each URL rendered in a real Chrome, then the title, the anchor count, whether a challenge was served and the links that look like postings were read",
+  "verdicts": [
+    {
+      "code": "zhipin_com",
+      "url": "https://www.zhipin.com/",
+      "verdict": "CHALLENGE",
+      "reason": "served the security-check page (安全验证) even to a real browser"
+    },
+    {
+      "code": "superjob_ru",
+      "url": "https://superjob.ru/",
+      "verdict": "CHALLENGE",
+      "reason": "served a captcha page with zero links"
+    },
+    {
+      "code": "jobnet_dk",
+      "url": "https://job.jobnet.dk/CV/FindWork/Search",
+      "verdict": "NEEDS_LOGIN",
+      "reason": "the job search is behind a MitID login"
+    },
+    {
+      "code": "gupy_io",
+      "url": "https://gupy.io/en/jobs",
+      "verdict": "NOT_A_BOARD",
+      "reason": "an HR platform, not a public job board; 404 on /en/jobs and no posting links"
+    },
+    {
+      "code": "jobline_hu",
+      "url": "https://www.jobline.hu/",
+      "verdict": "DEAD",
+      "reason": "redirects to hvg.hu, three anchors, no jobs"
+    },
+    {
+      "code": "kuenselonline_com",
+      "url": "https://www.kuenselonline.com/jobs",
+      "verdict": "TLS_ERROR",
+      "reason": "the site's certificate fails privacy checks in the browser"
+    },
+    {
+      "code": "jobs_id",
+      "url": "https://www.jobs.id/",
+      "verdict": "TLS_ERROR",
+      "reason": "the site's certificate fails privacy checks in the browser"
+    },
+    {
+      "code": "tyopaikat_oikotie_fi",
+      "url": "https://www.tyopaikat.oikotie.fi/",
+      "verdict": "DNS_FAIL",
+      "reason": "the host did not resolve"
+    },
+    {
+      "code": "ikman_lk",
+      "url": "https://www.ikman.lk/jobs",
+      "verdict": "NO_POSTINGS",
+      "reason": "classifieds, not a job board; the ad list renders 29 anchors and no posting links"
+    },
+    {
+      "code": "jobbnorge_no",
+      "url": "https://www.jobbnorge.no/search",
+      "verdict": "NO_POSTINGS",
+      "reason": "the search result list is built after load and never appeared"
+    },
+    {
+      "code": "tootukassa_ee",
+      "url": "https://www.tootukassa.ee/et/jalus",
+      "verdict": "NO_POSTINGS",
+      "reason": "the vacancy list is a widget that did not render; only service links"
+    },
+    {
+      "code": "iskur_gov_tr",
+      "url": "https://www.iskur.gov.tr/",
+      "verdict": "NO_POSTINGS",
+      "reason": "428 links on the homepage, none of them postings; the job-list path errors"
+    },
+    {
+      "code": "mol_gov_om",
+      "url": "https://www.mol.gov.om/manpoweralleservices/",
+      "verdict": "NOT_POSTINGS",
+      "reason": "a government service portal; the links are services, not vacancies"
+    },
+    {
+      "code": "brightermonday_co_tz",
+      "url": "https://www.brightermonday.co.tz/",
+      "verdict": "NOT_POSTINGS",
+      "reason": "a company blog; every link is a /discover/ article"
+    },
+    {
+      "code": "laimoon_com",
+      "url": "https://www.laimoon.com/jobs",
+      "verdict": "NOT_POSTINGS",
+      "reason": "a training-course marketplace, not a job board"
+    },
+    {
+      "code": "dubizzle_com",
+      "url": "https://www.dubizzle.com/",
+      "verdict": "NOT_POSTINGS",
+      "reason": "classifieds; the job links are per-city category pages, not postings"
+    },
+    {
+      "code": "jobzella",
+      "url": "https://www.jobzella.com/",
+      "verdict": "NO_POSTINGS",
+      "reason": "the listing is /search/jobs and the homepage carries no posting links"
+    },
+    {
+      "code": "job_mynavi_jp",
+      "url": "https://job.mynavi.jp/pc/jobs",
+      "verdict": "NO_POSTINGS",
+      "reason": "404; the student portal's routes did not resolve"
+    }
+  ]
+}

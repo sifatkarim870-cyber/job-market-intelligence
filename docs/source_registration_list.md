@@ -444,3 +444,55 @@ pages, and were deleted before anything was published.
 | `trinidadexpress_com` | [32m2026-10-22 00:02:37.018[0m / [33m[1mWARNING [0m / [36mjob_market_intel.scrapers.html_scraper.client[0m:[36mdiscover_detail_paths |
 
 <!-- html-sweep:end -->
+
+<!-- browser-sweep:start -->
+
+## G. Browser (Selenium) sources measured 2026-10-22
+
+The boards in section F that failed over plain HTTP because their
+listings are rendered by JavaScript were rebuilt on the browser
+framework (`src/job_market_intel/scrapers/browser_scraper/`): a real
+Chrome in undetected mode, the rendered page read after the page has
+finished running its scripts, and the same parser, quality gate and
+persistence path as the HTML framework.
+
+The table is generated from `reports/browser_scraper_test_results.json`.
+
+**5 configs tested** -- OK: 5
+
+### Verified in a real browser: postings stored (5)
+
+| Source | Rendered | Parsed | Seconds |
+| --- | --- | --- | --- |
+| `bumeran_com_ar` | 4 | 4 | 49.9  |
+| `bumeran_com_pe` | 4 | 4 | 49.2  |
+| `ethiojobs` | 4 | 4 | 31.7  |
+| `minajobs` | 4 | 4 | 89.1  |
+| `ngcareers_com` | 4 | 4 | 47.9  |
+
+### Rendered in a browser and still not usable
+
+Every remaining candidate from the list was opened in the same browser
+before it was written off. The reason is measured, not assumed:
+
+| Source | URL | Verdict | Why |
+| --- | --- | --- | --- |
+| `zhipin_com` | https://www.zhipin.com/ | CHALLENGE | served the security-check page (安全验证) even to a real browser |
+| `superjob_ru` | https://superjob.ru/ | CHALLENGE | served a captcha page with zero links |
+| `jobnet_dk` | https://job.jobnet.dk/CV/FindWork/Search | NEEDS_LOGIN | the job search is behind a MitID login |
+| `gupy_io` | https://gupy.io/en/jobs | NOT_A_BOARD | an HR platform, not a public job board; 404 on /en/jobs and no posting links |
+| `jobline_hu` | https://www.jobline.hu/ | DEAD | redirects to hvg.hu, three anchors, no jobs |
+| `kuenselonline_com` | https://www.kuenselonline.com/jobs | TLS_ERROR | the site's certificate fails privacy checks in the browser |
+| `jobs_id` | https://www.jobs.id/ | TLS_ERROR | the site's certificate fails privacy checks in the browser |
+| `tyopaikat_oikotie_fi` | https://www.tyopaikat.oikotie.fi/ | DNS_FAIL | the host did not resolve |
+| `ikman_lk` | https://www.ikman.lk/jobs | NO_POSTINGS | classifieds, not a job board; the ad list renders 29 anchors and no posting links |
+| `jobbnorge_no` | https://www.jobbnorge.no/search | NO_POSTINGS | the search result list is built after load and never appeared |
+| `tootukassa_ee` | https://www.tootukassa.ee/et/jalus | NO_POSTINGS | the vacancy list is a widget that did not render; only service links |
+| `iskur_gov_tr` | https://www.iskur.gov.tr/ | NO_POSTINGS | 428 links on the homepage, none of them postings; the job-list path errors |
+| `mol_gov_om` | https://www.mol.gov.om/manpoweralleservices/ | NOT_POSTINGS | a government service portal; the links are services, not vacancies |
+| `brightermonday_co_tz` | https://www.brightermonday.co.tz/ | NOT_POSTINGS | a company blog; every link is a /discover/ article |
+| `laimoon_com` | https://www.laimoon.com/jobs | NOT_POSTINGS | a training-course marketplace, not a job board |
+| `dubizzle_com` | https://www.dubizzle.com/ | NOT_POSTINGS | classifieds; the job links are per-city category pages, not postings |
+| `jobzella` | https://www.jobzella.com/ | NO_POSTINGS | the listing is /search/jobs and the homepage carries no posting links |
+| `job_mynavi_jp` | https://job.mynavi.jp/pc/jobs | NO_POSTINGS | 404; the student portal's routes did not resolve |
+<!-- browser-sweep:end -->
