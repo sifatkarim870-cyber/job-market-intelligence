@@ -574,12 +574,12 @@
     },
     {
       "code": "minajobs",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
+      "group": "browser",
+      "script": "scripts/run_browser_scraper.py",
+      "timeout": 45,
       "max_env": "MINAJOBS_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "minajobs.net - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Cameroon (XAF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
+      "enabled": true,
+      "notes": "minajobs.net - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Cameroon (XAF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored. Browser-scraped (Selenium, undetected Chrome): client-side rendered: the job list is built by JavaScript. Verified 2026-10-22: 4 posting(s) parsed over 4 rendered page(s)."
     },
     {
       "code": "emploipartner_com",
