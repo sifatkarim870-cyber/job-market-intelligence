@@ -538,12 +538,12 @@
     },
     {
       "code": "ethiojobs",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
+      "group": "browser",
+      "script": "scripts/run_browser_scraper.py",
+      "timeout": 45,
       "max_env": "ETHIOJOBS_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "ethiojobs.net - Ethiopia; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Ethiopia (ETB). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "enabled": true,
+      "notes": "ethiojobs.net - Ethiopia; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Ethiopia (ETB). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found. Browser-scraped (Selenium, undetected Chrome): client-side rendered: plain HTTP returns the shell, the job list only exists after the page's JavaScript runs. Verified 2026-10-22: 4 posting(s) parsed over 4 rendered page(s)."
     },
     {
       "code": "hellojob",
