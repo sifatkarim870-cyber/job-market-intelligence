@@ -143,7 +143,13 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
           CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
-        run: uv run python ${{ matrix.script }} --source-code ${{ matrix.code }}
+          # The source code travels as an environment variable, not as a
+          # command-line argument. Thirty-one bespoke runners in this group
+          # take no --source-code and fail with exit code 2 when given one;
+          # the framework runners (run_html_scraper.py, run_browser_scraper.py)
+          # read SOURCE_CODE when their own flag is absent.
+          SOURCE_CODE: ${{ matrix.code }}
+        run: uv run python ${{ matrix.script }}
 
       - name: Export new rows to a Hugging Face shard
         # See scrape_api.yml for why this exists and why it cannot fail the run.

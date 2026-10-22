@@ -45,6 +45,15 @@ class SiteConfig(BaseModel):
         default=1, ge=1, description="Minimum expected jobs per run for validation"
     )
     selectors: SelectorConfig = Field(default_factory=SelectorConfig)
+    #: Which title source to trust, most-trusted first. "h1" is the job's name
+    #: on a rendered posting page; "og:title" is the SEO string, which on
+    #: some boards is the *posting's* title and on others is a category
+    #: heading with the site name appended. A site that knows which is which
+    #: says so here.
+    title_priority: str = Field(
+        default="h1,og:title,title-tag,selector",
+        description="Comma-separated title sources, most trusted first.",
+    )
     detail_url_pattern: str = Field(default="", description="Detail URL pattern")
     id_from_url: bool = Field(default=True, description="Extract job ID from URL")
     user_agent: str = Field(

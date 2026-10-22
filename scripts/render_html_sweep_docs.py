@@ -19,9 +19,12 @@ ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "docs" / "source_registration_list.md"
 RESULTS = ROOT / "reports" / "html_scraper_test_results.json"
 PERSIST = ROOT / "reports" / "html_scraper_persist_results.json"
+BROWSER_RESULTS = ROOT / "reports" / "browser_scraper_test_results.json"
 
 START = "<!-- html-sweep:start -->"
 END = "<!-- html-sweep:end -->"
+BROWSER_START = "<!-- browser-sweep:start -->"
+BROWSER_END = "<!-- browser-sweep:end -->"
 
 HEADINGS = {
     "OK": "Verified: postings stored",
@@ -33,6 +36,20 @@ HEADINGS = {
     "ERROR": "Unexpected error",
     "NO_CONFIG": "No site config",
     "EMPTY": "Listing request failed (server error, TLS, timeout)",
+}
+
+BROWSER_HEADINGS = {
+    "OK": "Verified in a real browser: postings stored",
+    "PARSE_FAIL": "Rendered, but no posting survived the quality gate",
+    "CHALLENGE": "Served a bot challenge even to a real browser",
+    "NO_LINKS": "Rendered, but the page has no job links",
+    "BLOCKED": "Refused the request (403 / WAF)",
+    "SESSION_FAIL": "The browser session died before the listing loaded",
+    "DNS_FAIL": "Host does not resolve",
+    "TIMEOUT": "Exceeded the test timeout",
+    "ERROR": "Unexpected error",
+    "NO_CONFIG": "No site config",
+    "EMPTY": "The listing request failed",
 }
 
 
@@ -100,6 +117,61 @@ def render(results: list[dict], persisted: dict[str, dict]) -> str:
     return "\n".join(lines)
 
 
+def render_browser(results: list[dict]) -> str:
+    lines = [
+        BROWSER_START,
+        "",
+        "## G. Browser (Selenium) sources measured 2026-10-22",
+        "",
+        "The boards in section F that failed over plain HTTP because their",
+        "listings are rendered by JavaScript were rebuilt on the browser",
+        "framework (`src/job_market_intel/scrapers/browser_scraper/`): a real",
+        "Chrome in undetected mode, the rendered page read after the page has",
+        "finished running its scripts, and the same parser, quality gate and",
+        "persistence path as the HTML framework.",
+        "",
+        "The table is generated from `reports/browser_scraper_test_results.json`.",
+        "",
+    ]
+    counts: dict[str, int] = {}
+    for row in results:
+        counts[row["status"]] = counts.get(row["status"], 0) + 1
+    summary = " | ".join(f"{k}: {v}" for k, v in counts.items())
+    lines.append(f"**{len(results)} configs tested** -- {summary}")
+    lines.append("")
+
+    for status in (
+        "OK",
+        "PARSE_FAIL",
+        "CHALLENGE",
+        "NO_LINKS",
+        "BLOCKED",
+        "SESSION_FAIL",
+        "DNS_FAIL",
+        "TIMEOUT",
+        "ERROR",
+        "NO_CONFIG",
+        "EMPTY",
+    ):
+        rows = [r for r in results if r["status"] == status]
+        if not rows:
+            continue
+        lines.append(f"### {BROWSER_HEADINGS.get(status, status)} ({len(rows)})")
+        lines.append("")
+        lines.append("| Source | Rendered | Parsed | Seconds |")
+        lines.append("| --- | --- | --- | --- |")
+        for row in sorted(rows, key=lambda r: r["code"]):
+            reason = (row.get("detail") or "").replace("|", "/")[:120]
+            lines.append(
+                f"| `{row['code']}` | {row['fetched']} | {row['parsed']} | "
+                f"{row['seconds']} {reason} |"
+            )
+        lines.append("")
+
+    lines.append(BROWSER_END)
+    return "\n".join(lines)
+
+
 def main() -> int:
     results = load(RESULTS)
     if not results:
@@ -115,8 +187,19 @@ def main() -> int:
         text = head + block + tail
     else:
         text = text.rstrip() + "\n\n" + block + "\n"
+
+    browser_results = load(BROWSER_RESULTS)
+    if browser_results:
+        browser_block = render_browser(browser_results)
+        if BROWSER_START in text and BROWSER_END in text:
+            head, _, rest = text.partition(BROWSER_START)
+            _, _, tail = rest.partition(BROWSER_END)
+            text = head + browser_block + tail
+        else:
+            text = text.rstrip() + "\n\n" + browser_block + "\n"
+
     DOC.write_text(text, encoding="utf-8")
-    print(f"wrote {DOC} ({len(results)} rows)")
+    print(f"wrote {DOC} ({len(results)} html rows, {len(browser_results)} browser rows)")
     return 0
 
 

@@ -150,32 +150,45 @@ def _clean_doc_title(soup: BeautifulSoup, site_host: str) -> str | None:
 
 
 def _extract_title(
-    soup: BeautifulSoup, selector: str, *, site_host: str = ""
+    soup: BeautifulSoup, selector: str, *, site_host: str = "", priority: str = ""
 ) -> tuple[str | None, str]:
     """Pick the most trustworthy title on the page.
+
+    The default order is ``h1`` first because on a rendered posting page it is
+    the job's name: ethiojobs.net's ``og:title`` is the SEO string "Event
+    Organizer Jobs and Vacancies in Ethiopia | Ethiojobs." while its ``h1`` is
+    "Event Organizer". minajobs.net is the opposite -- its ``h1`` is the
+    category heading "OFFRES D'EMPLOIS" and its ``og:title`` is the posting's
+    own title -- so the order is configurable per site.
 
     The generic configs use ``h1, h2, h3, [class*='title']``, and
     ``select_one`` returns whichever appears first in the document -- on
     skill.jobs that was the "Position Summary" heading, on prace.cz an
-    employer blurb. The page's own metadata is tried first, then the ``h1``,
-    then ``<title>``, and the config selector last.
+    employer blurb.
+
+    Titles that are page furniture ("Choose language:", "0 €") are filtered
+    out before any of this, so a wrong heading falls through instead of being
+    stored.
     """
-    og = _usable_title(_meta_title(soup), site_host=site_host)
-    if og:
-        return og, "og:title"
+    order = [part.strip() for part in (priority or "h1,og:title,title-tag,selector").split(",")]
 
-    h1 = _usable_title(_extract_text(soup.find("h1")), site_host=site_host)
-    if h1:
-        return h1, "h1"
-
-    doc = _usable_title(_clean_doc_title(soup, site_host), site_host=site_host)
-    if doc:
-        return doc, "title-tag"
-
-    for element in soup.select(selector) if selector else []:
-        candidate = _usable_title(_extract_text(element), site_host=site_host)
+    for source in order:
+        if source == "h1":
+            candidate = _usable_title(_extract_text(soup.find("h1")), site_host=site_host)
+        elif source == "og:title":
+            candidate = _usable_title(_meta_title(soup), site_host=site_host)
+        elif source == "title-tag":
+            candidate = _usable_title(_clean_doc_title(soup, site_host), site_host=site_host)
+        elif source == "selector":
+            candidate = None
+            for element in soup.select(selector) if selector else []:
+                candidate = _usable_title(_extract_text(element), site_host=site_host)
+                if candidate:
+                    break
+        else:
+            continue
         if candidate:
-            return candidate, "selector"
+            return candidate, source
 
     return None, ""
 
@@ -238,9 +251,10 @@ def _resolve_title(
     source_code: str,
     *,
     site_host: str = "",
+    priority: str = "",
 ) -> tuple[str, str]:
     """Title + where it came from. Raises when the page names nothing."""
-    title, source = _extract_title(soup, selector, site_host=site_host)
+    title, source = _extract_title(soup, selector, site_host=site_host, priority=priority)
     if title:
         return title, source
 
@@ -281,6 +295,7 @@ def parse_detail(
         title_hint,
         source_code,
         site_host=urlparse(site_config.base_url).netloc if site_config.base_url else "",
+        priority=site_config.title_priority,
     )
 
     company_name = _extract_text(_select_one(soup, sel.company)) or "Unknown employer"

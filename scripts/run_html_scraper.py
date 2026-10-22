@@ -4,11 +4,13 @@
 Usage:
     uv run python scripts/run_html_scraper.py --source-code skilljobs --max-jobs 30
     uv run python scripts/run_html_scraper.py --source-code skilljobs --no-db --max-jobs 10
+    SOURCE_CODE=skilljobs uv run python scripts/run_html_scraper.py --no-db
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 from job_market_intel.scrapers.html_scraper import HtmlScraperPipeline, HtmlScraperSettings
@@ -19,14 +21,17 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Run the generic HTML scraper for a site.")
     ap.add_argument(
         "--source-code",
-        required=True,
-        help="Site source_code (matches sites/<code>.json).",
+        default=os.environ.get("SOURCE_CODE", ""),
+        help="Site source_code (matches sites/<code>.json). Defaults to $SOURCE_CODE.",
     )
     ap.add_argument("--no-db", action="store_true", help="Fetch and report; do not persist.")
     ap.add_argument("--max-jobs", type=int, default=None, help="Max jobs fetched this run.")
     ap.add_argument("--max-pages", type=int, default=None, help="Max listing pages.")
     ap.add_argument("--delay", type=float, default=None, help="Seconds between requests.")
     args = ap.parse_args()
+
+    if not args.source_code:
+        ap.error("--source-code is required (or set SOURCE_CODE in the environment)")
 
     settings = HtmlScraperSettings()
     site_config = load_site_config(args.source_code, settings.sites_dir)
