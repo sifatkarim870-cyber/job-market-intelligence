@@ -125,8 +125,8 @@
       "script": "scripts/run_jobinja_scraper.py",
       "timeout": 45,
       "max_env": "JOBINJA_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "listing pages + detail pages; backfill through page 840 completed 2026-10-09"
+      "enabled": false,
+      "notes": "listing pages + detail pages; backfill through page 840 completed 2026-10-09 Disabled 2026-10-22 after the live CI run: jobinja.ir answers HTTP 403 with a Cloudflare error page to plain requests and to a real Chrome alike, from the runner IP and from a home connection. The block is on the address, not on the client, so browser mode does not reach it. The 18,869 rows already collected stay in the corpus; re-enable when the egress address is one the site accepts."
     },
     {
       "code": "jobmaster",
