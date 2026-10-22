@@ -458,17 +458,20 @@ persistence path as the HTML framework.
 
 The table is generated from `reports/browser_scraper_test_results.json`.
 
-**5 configs tested** -- OK: 5
+**8 configs tested** -- OK: 8
 
-### Verified in a real browser: postings stored (5)
+### Verified in a real browser: postings stored (8)
 
 | Source | Rendered | Parsed | Seconds |
 | --- | --- | --- | --- |
-| `bumeran_com_ar` | 4 | 4 | 49.9  |
-| `bumeran_com_pe` | 4 | 4 | 49.2  |
-| `ethiojobs` | 4 | 4 | 31.7  |
-| `minajobs` | 4 | 4 | 89.1  |
-| `ngcareers_com` | 4 | 4 | 47.9  |
+| `arbeidsplassen_nav_no` | 4 | 4 | 58.6  |
+| `bumeran_com_ar` | 4 | 4 | 50.8  |
+| `bumeran_com_pe` | 4 | 4 | 50.0  |
+| `careercenter_am` | 4 | 2 | 57.4  |
+| `ethiojobs` | 4 | 4 | 34.1  |
+| `keejob_com` | 4 | 2 | 101.4  |
+| `minajobs` | 4 | 4 | 76.0  |
+| `ngcareers_com` | 4 | 4 | 47.0  |
 
 ### Rendered in a browser and still not usable
 
@@ -495,4 +498,11 @@ before it was written off. The reason is measured, not assumed:
 | `dubizzle_com` | https://www.dubizzle.com/ | NOT_POSTINGS | classifieds; the job links are per-city category pages, not postings |
 | `jobzella` | https://www.jobzella.com/ | NO_POSTINGS | the listing is /search/jobs and the homepage carries no posting links |
 | `job_mynavi_jp` | https://job.mynavi.jp/pc/jobs | NO_POSTINGS | 404; the student portal's routes did not resolve |
+| `jobfind_gr` | https://www.jobfind.gr/JobAdsSearch/GR/Theseis_Ergasias | NO_POSTINGS | 170 links under /JobAds/ are city filters, not postings; the ads themselves are not links in the rendered page |
+| `lucru_md` | https://lucru.md/ro/posturi-vacante | NO_POSTINGS | the rendered page carries only categories and navigation; individual vacancies are not anchors |
+| `bne_cl` | https://bne.cl/ofertas?mostrar=empleo | NO_POSTINGS | the offer list is fetched after load and never appeared; the only job-shaped links are off-site sence.gob.cl pages |
+| `aptitus_com` | https://www.aptitus.com/ | DUPLICATE | serves the Bumeran Peru board (page title 'Trabajos - Empleos | Bumeran Peru'); retired in favour of bumeran_com_pe |
+| `alwihdainfo` | https://www.alwihdainfo.com/ | NOT_POSTINGS | a news site; every link is a tag or an article |
+| `alwatwan` | https://www.alwatwan.net/ | NOT_POSTINGS | a Comorian newspaper; sections are politics, economy, sport, culture |
+| `agenceemploijeunes` | https://agenceemploijeunes.civ/ | DNS_FAIL | the host did not resolve |
 <!-- browser-sweep:end -->
