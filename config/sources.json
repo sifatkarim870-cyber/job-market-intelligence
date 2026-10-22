@@ -1069,12 +1069,12 @@
     },
     {
       "code": "arbeidsplassen_nav_no",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
+      "group": "browser",
+      "script": "scripts/run_browser_scraper.py",
+      "timeout": 45,
       "max_env": "ARBEIDSPLASSEN_NAV_NO_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Arbeidsplassen – state (arbeidsplassen.nav.no) - Norway; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/arbeidsplassen_nav_no.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:40.860\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Arbeidsplassen – state (arbeidsplassen.nav.no) - Norway; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/arbeidsplassen_nav_no.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:40.860\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b. Browser-scraped (Selenium, undetected Chrome): client-side rendered: the vacancy list is built by JavaScript. Verified 2026-10-22: 4 posting(s) parsed over 4 rendered page(s)."
     },
     {
       "code": "jobbnorge_no",
