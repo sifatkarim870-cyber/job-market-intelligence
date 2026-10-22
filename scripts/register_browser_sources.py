@@ -45,6 +45,11 @@ MOVES: dict[str, str] = {
     "bumeran_com_pe": "client-side rendered: the job list is built by JavaScript",
     "minajobs": "client-side rendered: the job list is built by JavaScript",
     "ngcareers_com": ("client-side rendered: jobberman.com returns an empty shell to plain HTTP"),
+    "keejob_com": "client-side rendered: the job list is built by JavaScript",
+    "careercenter_am": "client-side rendered: the job list is built by JavaScript",
+    "arbeidsplassen_nav_no": (
+        "client-side rendered: the vacancy list is built by JavaScript"
+    ),
 }
 
 

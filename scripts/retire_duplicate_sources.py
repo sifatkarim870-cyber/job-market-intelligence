@@ -59,6 +59,11 @@ RETIRE = {
     "minajobs_net": "minajobs",
     "prace_cz": "pracecz",
     "skill_jobs": "skilljobs",
+    # aptitus.com serves the Bumeran Peru board: the browser probe of
+    # https://www.aptitus.com/ returned the page title "Trabajos - Empleos |
+    # Bumeran Peru" and the same /empleos/ links, and the site is a Bumeran
+    # property. Two codes for one board store every posting twice.
+    "aptitus_com": "bumeran_com_pe",
 }
 
 

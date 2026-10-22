@@ -109,6 +109,48 @@
       "url": "https://job.mynavi.jp/pc/jobs",
       "verdict": "NO_POSTINGS",
       "reason": "404; the student portal's routes did not resolve"
+    },
+    {
+      "code": "jobfind_gr",
+      "url": "https://www.jobfind.gr/JobAdsSearch/GR/Theseis_Ergasias",
+      "verdict": "NO_POSTINGS",
+      "reason": "170 links under /JobAds/ are city filters, not postings; the ads themselves are not links in the rendered page"
+    },
+    {
+      "code": "lucru_md",
+      "url": "https://lucru.md/ro/posturi-vacante",
+      "verdict": "NO_POSTINGS",
+      "reason": "the rendered page carries only categories and navigation; individual vacancies are not anchors"
+    },
+    {
+      "code": "bne_cl",
+      "url": "https://bne.cl/ofertas?mostrar=empleo",
+      "verdict": "NO_POSTINGS",
+      "reason": "the offer list is fetched after load and never appeared; the only job-shaped links are off-site sence.gob.cl pages"
+    },
+    {
+      "code": "aptitus_com",
+      "url": "https://www.aptitus.com/",
+      "verdict": "DUPLICATE",
+      "reason": "serves the Bumeran Peru board (page title 'Trabajos - Empleos | Bumeran Peru'); retired in favour of bumeran_com_pe"
+    },
+    {
+      "code": "alwihdainfo",
+      "url": "https://www.alwihdainfo.com/",
+      "verdict": "NOT_POSTINGS",
+      "reason": "a news site; every link is a tag or an article"
+    },
+    {
+      "code": "alwatwan",
+      "url": "https://www.alwatwan.net/",
+      "verdict": "NOT_POSTINGS",
+      "reason": "a Comorian newspaper; sections are politics, economy, sport, culture"
+    },
+    {
+      "code": "agenceemploijeunes",
+      "url": "https://agenceemploijeunes.civ/",
+      "verdict": "DNS_FAIL",
+      "reason": "the host did not resolve"
     }
   ]
 }

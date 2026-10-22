@@ -1,10 +1,18 @@
 [
   {
+    "code": "arbeidsplassen_nav_no",
+    "status": "OK",
+    "fetched": 4,
+    "parsed": 4,
+    "seconds": 58.6,
+    "detail": ""
+  },
+  {
     "code": "bumeran_com_ar",
     "status": "OK",
     "fetched": 4,
     "parsed": 4,
-    "seconds": 49.9,
+    "seconds": 50.8,
     "detail": ""
   },
   {
@@ -12,7 +20,15 @@
     "status": "OK",
     "fetched": 4,
     "parsed": 4,
-    "seconds": 49.2,
+    "seconds": 50.0,
+    "detail": ""
+  },
+  {
+    "code": "careercenter_am",
+    "status": "OK",
+    "fetched": 4,
+    "parsed": 2,
+    "seconds": 57.4,
     "detail": ""
   },
   {
@@ -20,7 +36,15 @@
     "status": "OK",
     "fetched": 4,
     "parsed": 4,
-    "seconds": 31.7,
+    "seconds": 34.1,
+    "detail": ""
+  },
+  {
+    "code": "keejob_com",
+    "status": "OK",
+    "fetched": 4,
+    "parsed": 2,
+    "seconds": 101.4,
     "detail": ""
   },
   {
@@ -28,7 +52,7 @@
     "status": "OK",
     "fetched": 4,
     "parsed": 4,
-    "seconds": 89.1,
+    "seconds": 76.0,
     "detail": ""
   },
   {
@@ -36,7 +60,7 @@
     "status": "OK",
     "fetched": 4,
     "parsed": 4,
-    "seconds": 47.9,
+    "seconds": 47.0,
     "detail": ""
   }
 ]
