@@ -113,17 +113,27 @@ def main() -> int:
         preview = json.loads(SOURCES.read_text(encoding="utf-8"))
         note = apply_move(preview, code, MOVES[code], results)
         write_sources(preview)
+        # The accumulated state has to follow the commits: the file written
+        # after the loop must be the one the last commit contains, not the
+        # state the loop started from.
+        data = preview
 
         old_html_config = HTML_SITES / f"{code}.json"
-        if old_html_config.exists():
+        had_html_config = old_html_config.exists()
+        if had_html_config:
             old_html_config.unlink()
-            git("rm", "--cached", str(old_html_config.relative_to(ROOT)).replace("\\", "/"))
 
         if args.commit_each:
             git("add", "config/sources.json")
-            git("add", "-A", str(BROWSER_SITES))
-            if old_html_config.exists():
-                git("add", "-A", str(old_html_config))
+            # One source per commit: only this source's own config, so the
+            # history reads as one commit per board.
+            git("add", str((BROWSER_SITES / f"{code}.json").relative_to(ROOT)).replace("\\", "/"))
+            if had_html_config:
+                git(
+                    "add",
+                    "-A",
+                    str(old_html_config.relative_to(ROOT)).replace("\\", "/"),
+                )
             if not git("diff", "--cached", "--name-only").stdout.strip():
                 print(f"no change {code}")
                 continue

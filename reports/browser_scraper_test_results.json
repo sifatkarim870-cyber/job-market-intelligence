@@ -1,0 +1,42 @@
+[
+  {
+    "code": "bumeran_com_ar",
+    "status": "OK",
+    "fetched": 4,
+    "parsed": 4,
+    "seconds": 49.9,
+    "detail": ""
+  },
+  {
+    "code": "bumeran_com_pe",
+    "status": "OK",
+    "fetched": 4,
+    "parsed": 4,
+    "seconds": 49.2,
+    "detail": ""
+  },
+  {
+    "code": "ethiojobs",
+    "status": "OK",
+    "fetched": 4,
+    "parsed": 4,
+    "seconds": 31.7,
+    "detail": ""
+  },
+  {
+    "code": "minajobs",
+    "status": "OK",
+    "fetched": 4,
+    "parsed": 4,
+    "seconds": 89.1,
+    "detail": ""
+  },
+  {
+    "code": "ngcareers_com",
+    "status": "OK",
+    "fetched": 4,
+    "parsed": 4,
+    "seconds": 47.9,
+    "detail": ""
+  }
+]

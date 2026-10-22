@@ -1,0 +1,114 @@
+[
+  {
+    "code": "enbek_kz",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 23.4,
+    "detail": ""
+  },
+  {
+    "code": "hellojob",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 2,
+    "seconds": 11.7,
+    "detail": ""
+  },
+  {
+    "code": "emploidakar_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 4.0,
+    "detail": ""
+  },
+  {
+    "code": "iefp_cv",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 2,
+    "seconds": 25.1,
+    "detail": ""
+  },
+  {
+    "code": "posao_hr",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 20.8,
+    "detail": ""
+  },
+  {
+    "code": "praca_by",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 7.7,
+    "detail": ""
+  },
+  {
+    "code": "pracecz",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 6.8,
+    "detail": ""
+  },
+  {
+    "code": "kosovajob_com",
+    "status": "OK",
+    "fetched": 1,
+    "parsed": 1,
+    "seconds": 7.2,
+    "detail": ""
+  },
+  {
+    "code": "kalibrr_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 5.7,
+    "detail": ""
+  },
+  {
+    "code": "skilljobs",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 3.5,
+    "detail": ""
+  },
+  {
+    "code": "kumarijob_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 1,
+    "seconds": 4.5,
+    "detail": ""
+  },
+  {
+    "code": "jobtiger_bg",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 2,
+    "seconds": 8.5,
+    "detail": ""
+  },
+  {
+    "code": "jobwebkenya_com",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 7.1,
+    "detail": ""
+  },
+  {
+    "code": "mojposao_ba",
+    "status": "OK",
+    "fetched": 3,
+    "parsed": 3,
+    "seconds": 10.0,
+    "detail": ""
+  }
+]
