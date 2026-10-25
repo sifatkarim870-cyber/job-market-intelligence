@@ -64,11 +64,24 @@ class SiteConfig(BaseModel):
     listing_json_path: str = Field(
         default="", description="Dotted path to the job list inside __NEXT_DATA__"
     )
+    listing_json_url: str = Field(
+        default="", description="Absolute JSON endpoint that returns the job list"
+    )
     listing_json_id_field: str = Field(
         default="id", description="Dotted field in each JSON job that holds its ID"
     )
     listing_json_url_template: str = Field(
         default="", description="Detail URL template for JSON jobs, e.g. /jobs/{id}"
+    )
+    #: Some boards only serve a detail page as JSON. When set, the client fetches
+    #: this template (``{id}`` substituted) and renders the mapped fields as a
+    #: minimal HTML document, so the existing parser and validator keep working.
+    detail_json_url: str = Field(
+        default="", description="Absolute JSON detail URL template, e.g. https://api/jobs/{id}"
+    )
+    detail_json_map: dict[str, str | list[str]] = Field(
+        default_factory=dict,
+        description="Output field -> dotted JSON path (or list of paths to concatenate)",
     )
     user_agent: str = Field(
         default="job-market-intel-research (research@example.org)",

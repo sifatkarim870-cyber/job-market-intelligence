@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import time
+from html import escape
 from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urljoin, urlparse
@@ -188,28 +189,11 @@ class HtmlScraperClient:
             node = node.get(key)
         return node
 
-    def _json_listing_jobs(self, html: str) -> list[dict]:
-        """Read a job list out of the listing page's embedded Next.js JSON.
-
-        Next.js boards such as Jobzella render the list client-side but ship
-        the same records inside ``<script id="__NEXT_DATA__">``. The CSS link
-        selector sees no anchors there, so this opt-in path is the only way to
-        discover postings without a browser.
-        """
+    def _jobs_from_payload(self, payload: Any) -> list[dict]:
+        """Turn the JSON job list into discovery records with detail URLs."""
         path = self._site_config.listing_json_path.strip()
         template = self._site_config.listing_json_url_template.strip()
         if not path or not template:
-            return []
-
-        soup = BeautifulSoup(html, "html.parser")
-        script = soup.find("script", id="__NEXT_DATA__")
-        if script is None or not script.string:
-            logger.warning("html_scraper listing JSON missing (__NEXT_DATA__)")
-            return []
-        try:
-            payload = json.loads(script.string)
-        except json.JSONDecodeError as exc:
-            logger.warning("html_scraper listing JSON is not valid JSON: {}", exc)
             return []
 
         items = self._dotted(payload, path)
@@ -228,15 +212,85 @@ class HtmlScraperClient:
             url = urljoin(self._site_config.base_url, template.format(id=job_id))
             if _is_offsite_social(url):
                 continue
-            jobs.append({"url": url, "title": ""})
+            jobs.append({"url": url, "title": "", "id": job_id})
         return jobs
 
-    def fetch_listing_page(self, page: int = 1) -> tuple[str, list[dict]]:
-        """Fetch one listing page. Returns (html, [job_links_with_titles])."""
-        html = self._get(self.listing_url(page))
-        soup = BeautifulSoup(html, "html.parser")
+    def _json_listing_jobs(self, html: str) -> list[dict]:
+        """Read a job list out of the listing page's embedded Next.js JSON.
 
+        Next.js boards such as Jobzella render the list client-side but ship
+        the same records inside ``<script id="__NEXT_DATA__">``. The CSS link
+        selector sees no anchors there, so this opt-in path is the only way to
+        discover postings without a browser.
+        """
+        if not self._site_config.listing_json_path.strip():
+            return []
+
+        soup = BeautifulSoup(html, "html.parser")
+        script = soup.find("script", id="__NEXT_DATA__")
+        if script is None or not script.string:
+            logger.warning("html_scraper listing JSON missing (__NEXT_DATA__)")
+            return []
+        try:
+            payload = json.loads(script.string)
+        except json.JSONDecodeError as exc:
+            logger.warning("html_scraper listing JSON is not valid JSON: {}", exc)
+            return []
+
+        return self._jobs_from_payload(payload)
+
+    def listing_data_url(self, page: int = 1) -> str:
+        """The JSON listing endpoint for a 1-based page number."""
+        base = self._site_config.listing_json_url.strip()
+        if "{page}" in base:
+            return base.format(page=page)
+        if page <= 1:
+            return base
+        return base + self._site_config.listing_pagination.format(page=page)
+
+    def _json_detail_as_html(self, payload: Any, url: str) -> str:
+        """Render mapped JSON fields into the minimal HTML the parser expects.
+
+        EmploiPartner serves its job page only to a browser; the data lives at
+        an API endpoint. Rendering the mapped fields keeps the parser,
+        quality filter and validator on one path instead of growing a second
+        JSON-to-model mapper.
+        """
+        mapping = self._site_config.detail_json_map
+        if not mapping:
+            return ""
+
+        def text_of(value: str | list[str]) -> str:
+            paths = value if isinstance(value, list) else [value]
+            parts = []
+            for path in paths:
+                found = self._dotted(payload, path)
+                if found not in (None, ""):
+                    parts.append(str(found))
+            return "\n".join(parts)
+
+        title = escape(text_of(mapping.get("title", "")))
+        company = escape(text_of(mapping.get("company", "")))
+        location = escape(text_of(mapping.get("location", "")))
+        description = text_of(mapping.get("description", ""))
+        posted_date = escape(text_of(mapping.get("posted_date", "")))
+        salary = escape(text_of(mapping.get("salary", "")))
+        return (
+            "<html><body>"
+            f"<h1>{title}</h1>"
+            f"<div id='company'>{company}</div>"
+            f"<div id='location'>{location}</div>"
+            f"<div id='description'>{description}</div>"
+            f"<div id='posted_date'>{posted_date}</div>"
+            f"<div id='salary'>{salary}</div>"
+            f"<a href='{escape(url)}'>apply</a>"
+            "</body></html>"
+        )
+
+    def _html_listing_jobs(self, html: str, soup: BeautifulSoup) -> list[dict]:
+        """Discover links on a server-rendered listing page."""
         jobs: list[dict] = []
+
         if self._site_config.listing_json_path.strip():
             jobs = self._json_listing_jobs(html)
 
@@ -262,6 +316,23 @@ class HtmlScraperClient:
         if not jobs:
             raw_links = _extract_links_from_html(html, self._site_config.base_url)
             jobs = [{"url": u, "title": t} for u, t in raw_links if not _is_offsite_social(u)]
+        return jobs
+
+    def fetch_listing_page(self, page: int = 1) -> tuple[str, list[dict]]:
+        """Fetch one listing page. Returns (html, [job_links_with_titles])."""
+        if self._site_config.listing_json_url.strip():
+            html = self._get(self.listing_data_url(page))
+            try:
+                payload = json.loads(html)
+            except json.JSONDecodeError as exc:
+                raise HtmlScraperResponseError(
+                    f"listing JSON endpoint returned non-JSON for page {page}: {exc}"
+                ) from exc
+            jobs = self._jobs_from_payload(payload)
+        else:
+            html = self._get(self.listing_url(page))
+            soup = BeautifulSoup(html, "html.parser")
+            jobs = self._html_listing_jobs(html, soup)
 
         # Deduplicate by URL
         seen = set()
@@ -322,7 +393,22 @@ class HtmlScraperClient:
         records = []
         for job in selected:
             try:
-                html = self.fetch_detail(job["url"])
+                if self._site_config.detail_json_url.strip():
+                    job_id = job.get("id") or job["url"].rsplit("/", 1)[-1]
+                    detail_url = self._site_config.detail_json_url.format(id=job_id)
+                    try:
+                        payload = json.loads(self._get(detail_url))
+                    except json.JSONDecodeError as exc:
+                        raise HtmlScraperFetchError(
+                            f"detail JSON endpoint returned non-JSON for {detail_url}: {exc}"
+                        ) from exc
+                    html = self._json_detail_as_html(payload, job["url"])
+                    if not html:
+                        raise HtmlScraperFetchError(
+                            f"detail_json_map is empty for {self._site_config.source_code}"
+                        )
+                else:
+                    html = self.fetch_detail(job["url"])
                 records.append(
                     {
                         "job_id": job["url"].rsplit("/", 1)[-1]

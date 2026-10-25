@@ -73,3 +73,57 @@ def test_json_listing_returns_nothing_when_the_path_is_wrong() -> None:
     html = _listing_html({"props": {"pageProps": {"other": []}}})
 
     assert _client()._json_listing_jobs(html) == []
+
+
+def test_external_json_listing_uses_hydra_member() -> None:
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "listing_json_path": "hydra:member",
+                "listing_json_url": "https://api.example.invalid/api/jobs",
+            }
+        ),
+    )
+
+    jobs = client._jobs_from_payload(
+        {"hydra:member": [{"id": 54482}, {"id": 54483}, {"no_id": True}]}
+    )
+
+    assert [job["url"] for job in jobs] == [
+        "https://example.invalid/jobs/54482",
+        "https://example.invalid/jobs/54483",
+    ]
+
+
+def test_json_detail_renders_mapped_fields_as_html() -> None:
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "detail_json_map": {
+                    "title": "title",
+                    "company": "companyName",
+                    "location": "region.fullName",
+                    "description": ["mission", "profile"],
+                    "posted_date": "publishedDate",
+                }
+            }
+        ),
+    )
+    payload = {
+        "title": "Architect <senior>",
+        "companyName": "ACME",
+        "region": {"fullName": "Alger, Algérie"},
+        "mission": "<p>Build things</p>",
+        "profile": "<p>Five years</p>",
+        "publishedDate": "2026-10-22T00:00:00+01:00",
+    }
+
+    html = client._json_detail_as_html(payload, "https://example.invalid/jobs/1")
+
+    assert "<h1>Architect &lt;senior&gt;</h1>" in html
+    assert "<div id='company'>ACME</div>" in html
+    assert "<div id='location'>Alger, Algérie</div>" in html
+    assert "<p>Build things</p>" in html
+    assert "2026-10-22T00:00:00+01:00" in html

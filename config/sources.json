@@ -578,8 +578,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "EMPLOIPARTNER_COM_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Emploi Partner (emploipartner.com) - Algeria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emploipartner_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:57.465\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Emploi Partner (emploipartner.com) - Algeria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emploipartner_com.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: the site is a React Router SPA whose job list and detail pages are JSON at api-v4.emploipartner.com/api/jobs (hydra:member, 1,106 active postings); the framework now reads that endpoint and maps the detail JSON (title, companyName, region.fullName, mission/profile/other descriptions, publishedDate) into the parser. Verified 2026-10-25: 10 posting(s) parsed over 10 fetched, batch validation PASSED, with title, company, location, date and a 800-3,000 char description."
     },
     {
       "code": "burkina24_com",
