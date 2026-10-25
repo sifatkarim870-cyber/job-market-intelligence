@@ -1326,7 +1326,7 @@
       "timeout": 60,
       "max_env": "EMPLEO_GOB_MX_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Portal del Empleo – state (empleo.gob.mx) - Mexico; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/empleo_gob_mx.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "Portal del Empleo (empleo.gob.mx) - Mexico; No key, no registration, no proxy. Registered 2026-10-21. Investigated again 2026-10-25 and kept disabled: the portal is an Angular single-page app whose data is not reachable without authentication. Every path (/ , /busco-empleo, /ofertas, and unknown ones) returns the same 10.6 KB shell with an empty <app-root> and no anchors, and the shell's own main bundle main-es2015.567219167c3b4d1395de.js answers HTTP 403 (179 bytes for the research UA, 581 bytes with a desktop Chrome UA, which then blocks scripts.*.js too), so the app cannot boot in a browser either - the page logs 'Failed to load resource: 403' and stays blank. The data API sits behind that same gate: /api/* returns 'Acceso no autorizado' and every /portal/api/* path (ofertas, vacantes, ofertas/buscar, public/ofertas, even auth/login) returns 401 {'error':'Unauthorized','message':'Access Denied 1'}. There is no robots.txt (the path serves the shell). A source that needs an account, and whose public front end is currently broken, cannot be scraped without credentials, so it stays off."
     },
     {
       "code": "ni_computrabajo_com",
