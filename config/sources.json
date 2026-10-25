@@ -768,7 +768,7 @@
       "timeout": 60,
       "max_env": "HIREDLY_COM_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Hiredly (hiredly.com) - Malaysia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hiredly_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "Hiredly (hiredly.com) - Malaysia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hiredly_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path). Reconciled 2026-10-25 and kept disabled as a DUPLICATE, not a broken source: https://hiredly.com/ 301s to https://my.hiredly.com and https://hiredly.com/jobs 302s to https://my.hiredly.com/jobs/?signup=false, which is exactly the board the ENABLED dedicated source `hiredly` already scrapes (scripts/run_hiredly_scraper.py, 30 postings a page from __NEXT_DATA__). Both hosts serve the same ads: my.hiredly.com page 1 and page 2 each carry 30 __NEXT_DATA__ postings with distinct UUIDs (measured 2026-10-25). Enabling this auto-generated twin would store every Malaysian ad twice under a second source code, so the registry keeps one source for this board."
     },
     {
       "code": "kumarijob_com",
