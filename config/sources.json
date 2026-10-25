@@ -660,7 +660,7 @@
       "timeout": 60,
       "max_env": "BRIGHTERMONDAY_CO_TZ_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "BrighterMonday Tanzania (brightermonday.co.tz) - Tanzania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/brightermonday_co_tz.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "BrighterMonday Tanzania (brightermonday.co.tz) - Tanzania; No key, no registration, no proxy. Registered 2026-10-21. Investigated again 2026-10-25 and kept disabled: the Tanzanian job board no longer exists. Every path on the domain (/ , /jobs, /jobs?page=2, /robots.txt) answers HTTP 301 to the parent company site https://www.tatcafrica.com/, whose 'Our brands' list covers jobberman.com (Nigeria), jobberman.com.gh (Ghana), brightermonday.co.ke (Kenya) and brightermonday.co.ug (Uganda) but has no Tanzania entry. There is no listing, detail page or robots.txt left to scrape, so the source stays off; the Kenya board is a separate, still-live site."
     },
     {
       "code": "keejob_com",
