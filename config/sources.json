@@ -1235,8 +1235,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "MAGNETO365_COM_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Magneto365 (magneto365.com) - Colombia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/magneto365_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:14.597\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Magneto365 (magneto365.com) - Colombia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/magneto365_com.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: /co/trabajos/buscar is server-rendered but ignores its own ?paginator[page]=N query, so the scraper uses the public catalogue API the page itself calls, GET https://api.magneto365.com/jobs/v1/public/jobs/search?device=desktop&paginator[pageSize]=60&order[field]=publish_date&order[order]=DESC&paginator[page]=N (no auth), which returns 34,180 active ads and the full posting - title, employer, cities, publish date and body - so no per-ad page fetch is needed. Page sizes above 60 and other sort field names are rejected by the API; 20/30/60 and _score|salary_show|publish_date|experience_months_number|education_level_id are the supported values. www.magneto365.com/robots.txt allows / and disallows query URLs except those carrying paginator[page] (i.e. paging is explicitly allowed), while api.magneto365.com is a separate API host that serves no robots.txt; stored ad URLs are the queryless canonical /co/empleos/<slug>-<id>. Verified 2026-10-25: 10 posting(s) parsed over 10 fetched, 0 failures, batch validation PASSED, each with title, employer, city, publication date and a 2.4k-3.9k char description; feed page 2 holds 60 different ads."
     },
     {
       "code": "empleos_net",
