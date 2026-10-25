@@ -274,7 +274,8 @@ class HtmlScraperClient:
         """Turn the JSON job list into discovery records with detail URLs."""
         path = self._site_config.listing_json_path.strip()
         template = self._site_config.listing_json_url_template.strip()
-        if not template:
+        url_field = self._site_config.listing_json_url_field.strip()
+        if not template and not url_field:
             return []
 
         # Some public APIs (Jobbnorge) return a bare array instead of wrapping
@@ -292,7 +293,13 @@ class HtmlScraperClient:
             job_id = self._dotted(item, field)
             if job_id in (None, ""):
                 continue
-            url = urljoin(self._site_config.base_url, template.format(id=job_id))
+            if url_field:
+                detail = self._dotted(item, url_field)
+                if detail in (None, ""):
+                    continue
+                url = urljoin(self._site_config.base_url, str(detail))
+            else:
+                url = urljoin(self._site_config.base_url, template.format(id=job_id))
             if _is_offsite_social(url):
                 continue
             job = {"url": url, "title": "", "id": job_id, "listing": item}
@@ -325,6 +332,37 @@ class HtmlScraperClient:
             logger.warning("html_scraper listing JSON is not valid JSON: {}", exc)
             return []
 
+        return self._jobs_from_payload(payload)
+
+    def _embedded_json_jobs(self, html: str) -> list[dict]:
+        """Read listing records from a JSON attribute on a custom element.
+
+        Sapo Emprego renders the list client-side but ships the same 11 records
+        in ``<search-results-component :offers='[...]'>``. Missing or malformed
+        JSON is an error here, not an empty page, so a layout change is visible
+        instead of silently producing zero postings.
+        """
+        selector = self._site_config.listing_json_selector.strip()
+        attr = self._site_config.listing_json_attr.strip()
+        soup = BeautifulSoup(html, "html.parser")
+        element = self._select_one(soup, selector)
+        if element is None:
+            raise HtmlScraperResponseError(
+                f"embedded listing element {selector} is missing from the page"
+            )
+        raw = element.get(attr)
+        if isinstance(raw, list):
+            raw = next((value for value in raw if value), None)
+        if not raw:
+            raise HtmlScraperResponseError(
+                f"embedded listing attribute {attr} is empty on {selector}"
+            )
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise HtmlScraperResponseError(
+                f"embedded listing JSON on {selector} is invalid: {exc}"
+            ) from exc
         return self._jobs_from_payload(payload)
 
     def listing_data_url(self, page: int = 1) -> str:
@@ -442,6 +480,12 @@ class HtmlScraperClient:
                     f"listing JSON endpoint returned non-JSON for page {page}: {exc}"
                 ) from exc
             jobs = self._jobs_from_payload(payload)
+        elif (
+            self._site_config.listing_json_selector.strip()
+            and self._site_config.listing_json_attr.strip()
+        ):
+            html = self._get(self.listing_url(page))
+            jobs = self._embedded_json_jobs(html)
         else:
             html = self._get(self.listing_url(page))
             soup = BeautifulSoup(html, "html.parser")

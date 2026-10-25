@@ -80,6 +80,21 @@ class SiteConfig(BaseModel):
     listing_json_url_template: str = Field(
         default="", description="Detail URL template for JSON jobs, e.g. /jobs/{id}"
     )
+    #: Some pages embed the listing as a JSON attribute on a custom element
+    #: instead of shipping anchors or a ``__NEXT_DATA__`` script (Sapo Emprego:
+    #: ``<search-results-component :offers='[...]'>``). This selector names
+    #: that element and :attr:`listing_json_attr` the attribute holding JSON.
+    listing_json_selector: str = Field(
+        default="", description="CSS selector for an element carrying embedded listing JSON"
+    )
+    listing_json_attr: str = Field(
+        default="", description="Attribute on listing_json_selector that holds the JSON"
+    )
+    #: A feed that already carries an absolute detail URL (``link``) needs no
+    #: template. When set, this dotted field is used verbatim.
+    listing_json_url_field: str = Field(
+        default="", description="Dotted field in each JSON job holding its detail URL"
+    )
     #: JSON APIs often page by offset rather than page number. When
     #: ``listing_pagination`` contains ``{offset}``, the client substitutes
     #: ``(page - 1) * listing_page_size`` instead of ``{page}``.

@@ -1100,8 +1100,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "EMPREGO_SAPO_PT_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Sapo Emprego (emprego.sapo.pt) - Portugal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emprego_sapo_pt.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:58.570\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Sapo Emprego (emprego.sapo.pt) - Portugal; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/emprego_sapo_pt.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: /offers renders no ad anchors server-side, but the page ships the same 9 ads in <search-results-component :offers='[...]'>, paged as ?pagina=N (page 2 returns 9 different ads). Each ad page at /offers/<slug>?id=<uuid> publishes a schema.org JobPosting inside its ld+json list with the full description (the listing feed truncates it at 250 chars). robots.txt allows /offers and /offers/; it disallows /offers/search and /api/, which are not used. Verified 2026-10-25: 10 posting(s) parsed over 10 fetched, 0 failures, batch validation PASSED, each with title, employer, town, posting date and a 1,000-1,300 char description."
     },
     {
       "code": "iefponline_iefp_pt",

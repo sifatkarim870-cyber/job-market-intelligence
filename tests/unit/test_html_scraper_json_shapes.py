@@ -1,18 +1,24 @@
 """Public JSON feeds that split an ad across records and languages.
 
 Jobbnorge publishes a bare array of jobs from one host, the ad body as a list of
-components from another, and each ad in only one of four languages. Those three
-shapes are generic enough to support in the framework rather than in a
-site-specific scraper, so they get tests here.
+components from another, and each ad in only one of four languages. Sapo Emprego
+embeds its listing in an HTML attribute instead of serving anchors. Those shapes
+are generic enough to support in the framework rather than in a site-specific
+scraper, so they get tests here.
 
 Run with:  uv run pytest tests/unit/test_html_scraper_json_shapes.py -q
 """
 
 from __future__ import annotations
 
+import pytest
+
 from job_market_intel.scrapers.html_scraper.client import HtmlScraperClient
 from job_market_intel.scrapers.html_scraper.config import SiteConfig
-from job_market_intel.scrapers.html_scraper.exceptions import HtmlScraperFetchError
+from job_market_intel.scrapers.html_scraper.exceptions import (
+    HtmlScraperFetchError,
+    HtmlScraperResponseError,
+)
 
 
 def _site_config(**overrides) -> SiteConfig:
@@ -103,3 +109,42 @@ def test_detail_languages_are_tried_in_order(monkeypatch) -> None:
         "https://api.example.invalid/jobs/310556?lang=2",
         "https://api.example.invalid/jobs/310556?lang=3",
     ]
+
+
+def test_embedded_json_attribute_uses_the_items_own_link() -> None:
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config(
+            listing_json_path="$",
+            listing_json_selector="search-results-component",
+            listing_json_attr=":offers",
+            listing_json_url_field="link",
+        ),
+    )
+    html = (
+        "<html><body><search-results-component "
+        ':offers=\'[{"id": "abc", "link": '
+        '"https://example.invalid/offers/gestor?id=abc"}]\'>'
+        "</search-results-component></body></html>"
+    )
+
+    jobs = client._embedded_json_jobs(html)
+
+    assert len(jobs) == 1
+    assert jobs[0]["url"] == "https://example.invalid/offers/gestor?id=abc"
+    assert jobs[0]["id"] == "abc"
+
+
+def test_missing_embedded_json_element_is_an_error() -> None:
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config(
+            listing_json_path="$",
+            listing_json_selector="search-results-component",
+            listing_json_attr=":offers",
+            listing_json_url_field="link",
+        ),
+    )
+
+    with pytest.raises(HtmlScraperResponseError):
+        client._embedded_json_jobs("<html><body>no records</body></html>")
