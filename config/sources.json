@@ -588,7 +588,7 @@
       "timeout": 60,
       "max_env": "BURKINA24_COM_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Burkina24 job ads (burkina24.com) - Burkina Faso; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/burkina24_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:46.917\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "notes": "Burkina24 job ads (burkina24.com) - Burkina Faso; No key, no registration, no proxy. Registered 2026-10-21. Investigated again 2026-10-25 and kept disabled: burkina24.com is a general news site, not a job board. Its /category/emploi/ archive is employment news (training, recruitment policy, ministry communiques), not open postings. The WordPress REST search for \"offre d'emploi\" returns 70 items, of which 12 are actual ads spread over 2015-2026 (last real ad 2026-07-03) and one is a 2015 news piece about Pole emploi. Enabling it would inject news and stale press releases into the corpus, so it stays off until the site publishes a real, current job-ad feed."
     },
     {
       "code": "iefp_cv",
