@@ -1,29 +1,40 @@
 {
   "source_code": "ikman_lk",
-  "source_name": "Ikman Jobs (ikman.lk)",
+  "source_name": "ikman jobs (ikman.lk)",
   "country": "Sri Lanka",
   "base_url": "https://ikman.lk",
-  "listing_path": "/",
+  "listing_path": "/en/ads/sri-lanka/jobs",
   "listing_pagination": "?page={page}",
   "max_pages": 10,
   "max_jobs_per_run": 60,
   "selectors": {
-    "job_card": "article, div.job-card, div.job-item, .vacancy-card, .listing-item, .card",
-    "job_link": "a[href*='/job/'], a[href*='/vacancy/'], a[href*='/listing/'], a[href*='/career/']",
-    "job_title": "h1, h2, h3, .job-title, [class*='title']",
-    "company": ".company, .employer, [class*='company'], [class*='employer']",
-    "location": ".location, [class*='location'], [class*='city'], [class*='place']",
-    "description": ".job-description, .description, [class*='description'], .job-body",
-    "posted_date": "[class*='date'], [class*='posted'], [class*='time'], time",
-    "salary": "[class*='salary'], [class*='pay']",
-    "skills": "[class*='skill'], [class*='tag']"
+    "job_card": "",
+    "job_link": "a[href*='/en/ad/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": ""
   },
-  "detail_url_pattern": "",
+  "detail_url_pattern": "/en/ad/[a-z0-9-]+$",
   "id_from_url": true,
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": "jobLocation.address.addressLocality",
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "salary": "baseSalary.value.minValue"
+  },
   "user_agent": "job-market-intel-research (research@example.org)",
   "request_timeout_seconds": 30,
   "inter_request_delay_seconds": 2.0,
-  "currency_iso_code": "USD",
+  "currency_iso_code": "LKR",
   "pay_period": "monthly",
   "country_fallback": "Sri Lanka"
 }

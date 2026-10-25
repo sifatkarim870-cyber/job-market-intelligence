@@ -821,8 +821,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "IKMAN_LK_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Ikman Jobs (ikman.lk) - Sri Lanka; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ikman_lk.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:04.547\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Ikman Jobs (ikman.lk) - Sri Lanka; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ikman_lk.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: the jobs listing is /en/ads/sri-lanka/jobs (server-rendered, ?page=N paging, 28 ads per page, 9,279 active ads) with /en/ad/<slug> detail pages; details come from each page's schema.org JobPosting block (title, hiringOrganization.name, jobLocation, datePosted, description). The client now decodes pages that omit a charset as UTF-8, which fixes Sinhala titles arriving as mojibake. Verified 2026-10-25: 11 posting(s) parsed over 12 fetched, batch validation PASSED; the one miss is an ad page that publishes no JobPosting block."
     },
     {
       "code": "jobthai_com",

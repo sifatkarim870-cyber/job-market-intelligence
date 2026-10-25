@@ -146,6 +146,25 @@ def _extract_links_from_html(html: str, base_url: str) -> list[tuple[str, str]]:
     return parser.links
 
 
+def _response_text(resp: requests.Response) -> str:
+    """Decode a response, defaulting undeclared modern pages to UTF-8.
+
+    ikman.lk returns ``Content-Type: text/html`` with no charset and no meta
+    charset, so requests falls back to ISO-8859-1 and Sinhala titles arrive as
+    mojibake. Override that fallback only when the bytes really are UTF-8, so a
+    page that is genuinely Latin-1 is left alone.
+    """
+    ctype = resp.headers.get("content-type", "").lower()
+    if "charset=" not in ctype and (resp.encoding or "").lower() == "iso-8859-1":
+        try:
+            resp.content.decode("utf-8")
+        except UnicodeDecodeError:
+            pass
+        else:
+            resp.encoding = "utf-8"
+    return resp.text
+
+
 class HtmlScraperClient:
     """Fetches postings using plain HTTP and CSS selectors."""
 
@@ -183,7 +202,7 @@ class HtmlScraperClient:
         try:
             resp = self._session.get(url, timeout=self._site_config.request_timeout_seconds)
             resp.raise_for_status()
-            return resp.text
+            return _response_text(resp)
         except requests.RequestException as exc:
             raise HtmlScraperFetchError(f"HTTP request failed for {url}: {exc}") from exc
 
