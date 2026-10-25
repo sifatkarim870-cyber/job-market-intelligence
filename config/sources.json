@@ -1091,8 +1091,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "PRACA_PL_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Praca.pl (praca.pl) - Poland; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/praca_pl.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:11.895\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Praca.pl (praca.pl) - Poland; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/praca_pl.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: the old guess matched only navigation, while the server-rendered listing at /oferty-pracy.html carries ~42-47 ads per page in li.listing-v2__item cards and pages as /oferty-pracy_2.html, _3.html... Ad pages live at /<slug>_<id>.html and publish a schema.org JobPosting inside an @graph block with title, hiringOrganization, jobLocation, datePosted and the full description. robots.txt allows both routes (it disallows /api/, which is not used). Verified 2026-10-25: 10 posting(s) parsed over 10 fetched, 0 failures, batch validation PASSED, each with title, employer, date and a 600-2,000 char description; listing page 2 returned 47 ads with no overlap."
     },
     {
       "code": "emprego_sapo_pt",
