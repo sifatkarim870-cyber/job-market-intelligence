@@ -507,7 +507,7 @@
       "timeout": 60,
       "max_env": "ALWATWAN_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "alwatwan.net - Comoros; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Comoros (KMF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "Al-Watwan (alwatwan.net) - Comoros; No key, no registration, no proxy. Registered 2026-10-21. Investigated again 2026-10-25 and kept disabled: alwatwan.net is the Comoros daily newspaper, not a job board. Its navigation has only the news sections (Politique, Economie, Societe, Sante, Sports, Culture, Education, Arabic edition) plus an 'Annonces' menu item whose href is literally '#', and the candidate classified paths (/annonces/, /annonce/, /annonces.html, /annonces-emploi/, /petites-annonces/, /emploi, /emploi.html) all answer 404 with the homepage. There is no search endpoint (/recherche?q=, /?s=). A scan of the seven category archives for 'recrut', 'offre d'emploi', 'appel a candidature' and 'avis de recrutement' found zero postings - the closest matches were sports transfer news ('trois nouvelles recrues') and education news. robots.txt is only 'crawl-delay: 10'. Enabling it would inject news into the corpus, so it stays off until the paper publishes a real job-ad or classifieds feed."
     },
     {
       "code": "alwihdainfo",
