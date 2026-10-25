@@ -516,7 +516,7 @@
       "timeout": 60,
       "max_env": "ALWIHDAINFO_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "alwihdainfo.com - Chad; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Chad (XAF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "Alwihda Info (alwihdainfo.com) - Chad; No key, no registration, no proxy. Registered 2026-10-21. Investigated again 2026-10-25 and kept disabled: alwihdainfo.com is a Ghost-based Chadian news site, not a job board. Its tags are news sections (Tchad, International, Afrique, Economie et Finances, Sports, Culture, Politique, Societe); /emploi, /offres-emploi and tags /tag/emploi, /tag/recrutement, /tag/offres-demploi all answer 404, and sitemap.xml only lists pages, posts, authors and tags. The one relevant channel is /tag/annonces/, a press-release stream of 24 recent items in which roughly half are procurement notices (appels d'offres for school furniture, vehicles, electricity meters, solar kits) and consultancy calls, not jobs. The genuine recruitment notices are mostly a sentence pointing at a PDF attachment: four sampled ad pages carry 128-422 characters of body ('Veuillez telecharger en piece jointe...'), only one had full text (1,918 chars), and none publishes employer, location or salary fields. Enabling the tag would inject tenders and PDF stubs into the corpus, so it stays off until the site publishes a structured job-ad feed. robots.txt disallows only /ghost/, /email/, /r/, /webmentions/ and analytics."
     },
     {
       "code": "educarriere",
