@@ -173,3 +173,19 @@ def test_json_ld_reads_job_posting_from_a_graph_and_a_list() -> None:
 def test_json_ld_returns_none_without_a_job_posting() -> None:
     assert _json_ld_job_posting("<html><body>no scripts</body></html>") is None
     assert _json_ld_job_posting(_ld_html({"@type": "BreadcrumbList"})) is None
+
+
+def test_offset_pagination_uses_page_size() -> None:
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "listing_json_url": "https://api.example.invalid/jobs?limit=20",
+                "listing_pagination": "&offset={offset}",
+                "listing_page_size": 20,
+            }
+        ),
+    )
+
+    assert client.listing_data_url(1) == "https://api.example.invalid/jobs?limit=20"
+    assert client.listing_data_url(3) == "https://api.example.invalid/jobs?limit=20&offset=40"

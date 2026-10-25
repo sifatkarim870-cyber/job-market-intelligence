@@ -73,6 +73,12 @@ class SiteConfig(BaseModel):
     listing_json_url_template: str = Field(
         default="", description="Detail URL template for JSON jobs, e.g. /jobs/{id}"
     )
+    #: JSON APIs often page by offset rather than page number. When
+    #: ``listing_pagination`` contains ``{offset}``, the client substitutes
+    #: ``(page - 1) * listing_page_size`` instead of ``{page}``.
+    listing_page_size: int = Field(
+        default=20, ge=1, description="Items per page, used to compute {offset}"
+    )
     #: Some boards only serve a detail page as JSON. When set, the client fetches
     #: this template (``{id}`` substituted) and renders the mapped fields as a
     #: minimal HTML document, so the existing parser and validator keep working.

@@ -812,8 +812,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "WANTED_CO_KR_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Wanted (wanted.co.kr) - South Korea; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/wanted_co_kr.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:48.857\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Wanted (wanted.co.kr) - South Korea; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/wanted_co_kr.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: /wdlist renders no job anchors server-side, so discovery reads the site's own public JSON feed /api/v4/jobs?country=kr (data[], offset paging via &offset=20 steps, 20 per page) and detail pages are the public /wd/<id> pages, whose schema.org JobPosting block supplies title, company, district, datePosted and description. Verified 2026-10-25: 12 posting(s) parsed over 12 fetched across 3 listing pages, 0 failures, batch validation PASSED. Note: robots.txt and sitemap.xml return HTTP 403 from CloudFront on this host while the public pages themselves return 200; requests use a 2s delay."
     },
     {
       "code": "ikman_lk",

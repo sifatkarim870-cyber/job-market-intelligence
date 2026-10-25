@@ -275,7 +275,11 @@ class HtmlScraperClient:
             return base.format(page=page)
         if page <= 1:
             return base
-        return base + self._site_config.listing_pagination.format(page=page)
+        pagination = self._site_config.listing_pagination
+        if "{offset}" in pagination:
+            offset = (page - 1) * self._site_config.listing_page_size
+            return base + pagination.format(offset=offset)
+        return base + pagination.format(page=page)
 
     def _json_detail_as_html(self, payload: Any, url: str) -> str:
         """Render mapped JSON fields into the minimal HTML the parser expects.
