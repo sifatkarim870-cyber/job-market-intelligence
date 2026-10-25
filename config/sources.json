@@ -929,8 +929,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "ZAPLATA_BG_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Zaplata.bg (zaplata.bg) - Bulgaria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/zaplata_bg.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:31.471\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Zaplata.bg (zaplata.bg) - Bulgaria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/zaplata_bg.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: the sitewide listing is the server-rendered search route /search/?go=1 (&page=N, 20 ads per page) with ad cards in <item> elements and detail pages shaped /<category>/<city>/<id>/<slug>/; each detail page publishes a schema.org JobPosting block with title, hiringOrganization, jobLocation, datePosted, baseSalary and description. Ad URLs contain no job vocabulary, so the config declares their shape (detail_url_pattern) to pass the posting filter, and id_url_regex takes the stable numeric ad ID rather than the slug that repeats across cities. Verified 2026-10-25: 12 posting(s) parsed over 12 fetched, 0 failures, batch validation PASSED, each with title, company, location, date and a full description."
     },
     {
       "code": "jobtiger_bg",

@@ -56,6 +56,13 @@ class SiteConfig(BaseModel):
     )
     detail_url_pattern: str = Field(default="", description="Detail URL pattern")
     id_from_url: bool = Field(default=True, description="Extract job ID from URL")
+    #: Boards such as zaplata.bg put the stable numeric ID before a free-form
+    #: slug (``/<category>/<city>/703291/servizen-tehnik/``). The last URL
+    #: segment is empty for trailing-slash URLs and the slug repeats across
+    #: cities, so this regex's first group is used as the job ID when set.
+    id_url_regex: str = Field(
+        default="", description="Regex whose first group is the job ID in a detail URL"
+    )
     #: Next.js boards embed the rendered job list in the page's
     #: ``__NEXT_DATA__`` JSON while rendering zero anchors server-side. When
     #: set, this dotted path (e.g. ``props.pageProps.jobs``) is read from that

@@ -6,6 +6,7 @@ Uses plain HTTP (requests) + CSS selectors configured per site. No browser neede
 from __future__ import annotations
 
 import json
+import re
 import time
 from html import escape
 from html.parser import HTMLParser
@@ -197,6 +198,20 @@ class HtmlScraperClient:
             pattern = self._site_config.detail_url_pattern.format(id=path_or_id)
             return f"{self._site_config.base_url}{pattern}"
         return f"{self._site_config.base_url}{path_or_id}"
+
+    def _job_id_from_url(self, url: str) -> str:
+        """Stable job ID for a detail URL.
+
+        Trailing-slash URLs would otherwise yield an empty ID, and slug-only
+        IDs repeat across categories on boards such as zaplata.bg, so a
+        configured ``id_url_regex`` wins when it matches.
+        """
+        pattern = self._site_config.id_url_regex.strip()
+        if pattern:
+            match = re.search(pattern, url)
+            if match:
+                return match.group(1)
+        return url.rstrip("/").rsplit("/", 1)[-1]
 
     def _get(self, url: str) -> str:
         try:
@@ -446,7 +461,7 @@ class HtmlScraperClient:
         for job in selected:
             try:
                 if self._site_config.detail_json_url.strip():
-                    job_id = job.get("id") or job["url"].rsplit("/", 1)[-1]
+                    job_id = job.get("id") or self._job_id_from_url(job["url"])
                     detail_url = self._site_config.detail_json_url.format(id=job_id)
                     try:
                         payload = json.loads(self._get(detail_url))
@@ -473,7 +488,7 @@ class HtmlScraperClient:
                     html = self.fetch_detail(job["url"])
                 records.append(
                     {
-                        "job_id": job["url"].rsplit("/", 1)[-1]
+                        "job_id": self._job_id_from_url(job["url"])
                         if self._site_config.id_from_url
                         else job["url"],
                         "html": html,
