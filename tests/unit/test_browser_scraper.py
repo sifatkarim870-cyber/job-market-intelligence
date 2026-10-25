@@ -130,3 +130,64 @@ def test_a_dead_browser_is_recognised() -> None:
     assert _is_dead_session(NoSuchWindowException("no such window")) is True
     assert _is_dead_session(TargetClosedError("target window already closed")) is True
     assert _is_dead_session(SomeOtherError("nope")) is False
+
+
+JOB_POSTING_PAGE = """
+<html><body><h1>Accounts Assistant</h1>
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "JobPosting",
+ "title": "Accounts Assistant",
+ "description": "<p>Maintain ledgers and reconcile bank statements.</p>",
+ "datePosted": "2026-10-24",
+ "hiringOrganization": {"@type": "Organization", "name": "Acme LLC"},
+ "jobLocation": {"@type": "Place",
+                 "address": {"@type": "PostalAddress", "addressLocality": "Dubai"}}}
+</script></body></html>
+"""
+
+
+def test_detail_html_is_left_alone_without_json_ld() -> None:
+    client = _StubClient(_config())
+    assert client._detail_html(JOB_POSTING_PAGE, "https://example.com/jobs/1") == JOB_POSTING_PAGE
+
+
+def test_detail_json_ld_is_mapped_from_the_rendered_page() -> None:
+    """The browser framework inherited ``detail_json_ld`` but ignored it.
+
+    A rendered page is already in hand, so mapping it needs no second fetch;
+    before this the option silently did nothing and the posting was parsed
+    from markup that carried no body.
+    """
+    client = _StubClient(
+        _config(
+            detail_json_ld=True,
+            detail_json_map={
+                "title": "title",
+                "company": "hiringOrganization.name",
+                "location": "jobLocation.address.addressLocality",
+                "description": "description",
+                "posted_date": "datePosted",
+            },
+        )
+    )
+
+    html = client._detail_html(JOB_POSTING_PAGE, "https://example.com/jobs/1")
+
+    assert "<h1>Accounts Assistant</h1>" in html
+    assert "Acme LLC" in html
+    assert "Dubai" in html
+    assert "reconcile bank statements" in html
+    assert "2026-10-24" in html
+
+
+def test_detail_page_without_json_ld_falls_back_to_the_markup() -> None:
+    """Some ads on a board publish no JobPosting block; the CSS selectors do.
+
+    dubizzle's older ads have no block at all. Raising here would discard an ad
+    whose rendered page still carries title, employer and body; the quality
+    gate is what rejects a page that truly has nothing.
+    """
+    page = "<html><body><h1>No block here</h1></body></html>"
+    client = _StubClient(_config(detail_json_ld=True, detail_json_map={"title": "title"}))
+
+    assert client._detail_html(page, "https://example.com/jobs/1") == page

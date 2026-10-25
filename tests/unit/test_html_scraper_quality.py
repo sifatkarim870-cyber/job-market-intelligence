@@ -99,6 +99,30 @@ def test_real_detail_urls_are_kept(url: str) -> None:
     assert reject_reason(url, "Senior Engineer", DESCRIPTION) is None
 
 
+def test_declared_detail_shape_beats_the_dated_article_rule() -> None:
+    """dubizzle.com files ads under a date, like a news archive does.
+
+    The URL carries ``/jobs/<category>/2026/10/24/<slug>---<uuid>/``, so the
+    dated-article rule rejected real postings until the site's own declared
+    detail shape was allowed to answer first. A dated URL that does *not*
+    match a declared shape is still a news article.
+    """
+    ad = (
+        "https://uae.dubizzle.com/jobs/accounting-finance/2026/10/24/"
+        "accounts-assistant-2-444---6eb90d0777b44db797b5d2d89c91fdc3/"
+    )
+    assert (
+        reject_reason(
+            ad,
+            "Accounts Assistant",
+            DESCRIPTION,
+            detail_pattern=r"/jobs/.+---[0-9a-f]+/?$",
+        )
+        is None
+    )
+    assert "news article" in (reject_reason(ad, "Accounts Assistant", DESCRIPTION) or "")
+
+
 def test_missing_description_is_rejected() -> None:
     """A page with no body is a nav link even when the URL looks right."""
     reason = reject_reason("https://example.com/jobs/senior-engineer-12345", "Senior Engineer", "")

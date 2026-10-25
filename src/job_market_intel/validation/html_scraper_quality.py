@@ -290,14 +290,16 @@ def _url_reason(url: str, site_host: str, detail_pattern: str = "") -> str | Non
     for fragment in SECTION_FRAGMENTS:
         if fragment in path:
             return f"section path ({fragment.strip('/')})"
-    if DATED_ARTICLE_RE.search(path):
-        return "news article path (dated)"
-
     # A site that declares its detail URL shape has already answered the
     # question the remaining heuristics guess at. kosovajob.com posts live at
-    # "/<company>/<slug>" with no job vocabulary anywhere in the path.
+    # "/<company>/<slug>" with no job vocabulary anywhere in the path, and
+    # dubizzle.com files ads under "/jobs/<category>/<year>/<month>/<day>/<slug>---<uuid>/",
+    # which the dated-article rule would otherwise reject as a news story.
     if detail_pattern and re.search(detail_pattern, path):
         return None
+
+    if DATED_ARTICLE_RE.search(path):
+        return "news article path (dated)"
 
     # A posting URL says so in its own path. Without this, willhaben.at's
     # handbag category and general classifieds pages pass every other check.

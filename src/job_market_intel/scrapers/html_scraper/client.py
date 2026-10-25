@@ -207,6 +207,69 @@ def _response_text(resp: requests.Response) -> str:
     return resp.text
 
 
+def mapped_json_html(
+    site_config: SiteConfig, payload: Any, url: str, listing: dict | None = None
+) -> str:
+    """Render mapped JSON fields into the minimal HTML the parser expects.
+
+    Two frameworks reach this point: the HTTP client when a board's data lives
+    at an API or in an attribute, and the browser client when the rendered page
+    publishes a schema.org ``JobPosting`` block instead of usable markup.
+    Rendering the mapped fields keeps the parser, quality filter and validator
+    on one path instead of growing a second JSON-to-model mapper.
+    """
+    mapping = site_config.detail_json_map
+    if not mapping:
+        return ""
+
+    def text_of(value: str | list[str]) -> str:
+        paths = value if isinstance(value, list) else [value]
+        parts = []
+        for path in paths:
+            found = _mapped_value(payload, path, listing)
+            if isinstance(found, list):
+                parts.extend(str(item) for item in found if item not in (None, ""))
+            elif found not in (None, ""):
+                parts.append(str(found))
+        return "\n".join(parts)
+
+    # Feeds often deliver already HTML-escaped text ("Copiap&oacute;");
+    # unescape first, then escape for the wrapper, so the parser sees the
+    # real character instead of a literal entity.
+    def plain(value: str | list[str]) -> str:
+        return escape(unescape(text_of(value)))
+
+    title = plain(mapping.get("title", ""))
+    company = plain(mapping.get("company", ""))
+    location = plain(mapping.get("location", ""))
+    description = text_of(mapping.get("description", ""))
+    posted_date = plain(mapping.get("posted_date", ""))
+    salary = plain(mapping.get("salary", ""))
+    return (
+        "<html><body>"
+        f"<h1>{title}</h1>"
+        f"<div id='company'>{company}</div>"
+        f"<div id='location'>{location}</div>"
+        f"<div id='description'>{description}</div>"
+        f"<div id='posted_date'>{posted_date}</div>"
+        f"<div id='salary'>{salary}</div>"
+        f"<a href='{escape(url)}'>apply</a>"
+        "</body></html>"
+    )
+
+
+def _mapped_value(payload: Any, path: str, listing: dict | None) -> Any:
+    """Resolve a ``detail_json_map`` path, allowing ``listing.`` fields.
+
+    APIs that keep the posting body separate from its metadata (Jobbnorge
+    sends employer and place in the search feed but the ad body from
+    another host) need both payloads in one record.
+    """
+    if path.startswith("listing.") and listing is not None:
+        return HtmlScraperClient._dotted(listing, path[len("listing.") :])
+    return HtmlScraperClient._dotted(payload, path)
+
+
 class HtmlScraperClient:
     """Fetches postings using plain HTTP and CSS selectors."""
 
@@ -462,62 +525,12 @@ class HtmlScraperClient:
         return base + pagination.format(page=page)
 
     def _mapped_value(self, payload: Any, path: str, listing: dict | None) -> Any:
-        """Resolve a ``detail_json_map`` path, allowing ``listing.`` fields.
-
-        APIs that keep the posting body separate from its metadata (Jobbnorge
-        sends employer and place in the search feed but the ad body from
-        another host) need both payloads in one record.
-        """
-        if path.startswith("listing.") and listing is not None:
-            return self._dotted(listing, path[len("listing.") :])
-        return self._dotted(payload, path)
+        """Resolve a ``detail_json_map`` path, allowing ``listing.`` fields."""
+        return _mapped_value(payload, path, listing)
 
     def _json_detail_as_html(self, payload: Any, url: str, listing: dict | None = None) -> str:
-        """Render mapped JSON fields into the minimal HTML the parser expects.
-
-        EmploiPartner serves its job page only to a browser; the data lives at
-        an API endpoint. Rendering the mapped fields keeps the parser,
-        quality filter and validator on one path instead of growing a second
-        JSON-to-model mapper.
-        """
-        mapping = self._site_config.detail_json_map
-        if not mapping:
-            return ""
-
-        def text_of(value: str | list[str]) -> str:
-            paths = value if isinstance(value, list) else [value]
-            parts = []
-            for path in paths:
-                found = self._mapped_value(payload, path, listing)
-                if isinstance(found, list):
-                    parts.extend(str(item) for item in found if item not in (None, ""))
-                elif found not in (None, ""):
-                    parts.append(str(found))
-            return "\n".join(parts)
-
-        # Feeds often deliver already HTML-escaped text ("Copiap&oacute;");
-        # unescape first, then escape for the wrapper, so the parser sees the
-        # real character instead of a literal entity.
-        def plain(value: str | list[str]) -> str:
-            return escape(unescape(text_of(value)))
-
-        title = plain(mapping.get("title", ""))
-        company = plain(mapping.get("company", ""))
-        location = plain(mapping.get("location", ""))
-        description = text_of(mapping.get("description", ""))
-        posted_date = plain(mapping.get("posted_date", ""))
-        salary = plain(mapping.get("salary", ""))
-        return (
-            "<html><body>"
-            f"<h1>{title}</h1>"
-            f"<div id='company'>{company}</div>"
-            f"<div id='location'>{location}</div>"
-            f"<div id='description'>{description}</div>"
-            f"<div id='posted_date'>{posted_date}</div>"
-            f"<div id='salary'>{salary}</div>"
-            f"<a href='{escape(url)}'>apply</a>"
-            "</body></html>"
-        )
+        """Render mapped JSON fields into the minimal HTML the parser expects."""
+        return mapped_json_html(self._site_config, payload, url, listing)
 
     def _html_listing_jobs(self, html: str, soup: BeautifulSoup) -> list[dict]:
         """Discover links on a server-rendered listing page."""

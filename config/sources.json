@@ -844,12 +844,12 @@
     },
     {
       "code": "dubizzle_com",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
+      "group": "browser",
+      "script": "scripts/run_browser_scraper.py",
       "timeout": 60,
       "max_env": "DUBIZZLE_COM_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Dubizzle Jobs (dubizzle.com) - United Arab Emirates; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/dubizzle_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "Dubizzle Jobs (uae.dubizzle.com) - United Arab Emirates; No key, no registration, no proxy. Registered 2026-10-21. Investigated again 2026-10-25 and kept disabled, because the site cannot be scraped reliably by an unattended run. Plain HTTP is hard-blocked: dubizzle.com and uae.dubizzle.com answer HTTP 200 with a 1.1 KB 'Request unsuccessful. Incapsula incident ID ...' page on every path (/ , /jobs/, /jobs/search/, and ad pages), with the research user agent and with a desktop Chrome user agent alike. The real board is https://uae.dubizzle.com/jobs/search/ (?page=N, 25 ads per page, about 1,700 open ads); ads live at /jobs/<category>/<year>/<month>/<day>/<slug>---<uuid>/ and their pages publish a schema.org JobPosting (title, description, datePosted, hiringOrganization.name, jobLocation.address.addressLocality) plus stable data-testid hooks (job-title, compnay-name [sic], location, salary, job-posted-date, description); robots.txt allows /jobs/ and disallows only account, chat, /api/, /sitemap-* and report paths. A real Chrome does reach it, so a browser config exists at scrapers/browser_scraper/sites/dubizzle_com.json, but in live testing on 2026-10-25 the undetected-Chrome session was served the Incapsula challenge in most attempts: 6 headless runs out of 7 were blocked on the listing itself (one got 25 links, 2 records, 1 of them parsed), and headful Chrome passed the listing in only 2 of 5 runs, with ad pages also intermittently challenged. The scheduled browser workflow runs headless on ubuntu-latest without a virtual display, so a source that only works headful and only sometimes would fail nearly every day. Enable again if the site's bot defence is relaxed or a virtual display is added to the runner."
     },
     {
       "code": "laimoon_com",

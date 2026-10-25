@@ -24,6 +24,8 @@ from loguru import logger
 from job_market_intel.scrapers.html_scraper.client import (
     _extract_links_from_html,
     _is_offsite_social,
+    _json_ld_job_posting,
+    mapped_json_html,
 )
 from job_market_intel.validation.html_scraper_quality import (
     SECTION_FRAGMENTS,
@@ -410,6 +412,25 @@ class BrowserScraperClient:
             f"{last_error}"
         )
 
+    def _detail_html(self, html: str, url: str) -> str:
+        """The HTML the parser reads for one rendered posting.
+
+        The rendered page is already in hand, so a site that declares
+        ``detail_json_ld`` is mapped from the page itself rather than fetched
+        again over HTTP -- the browser framework exists precisely because plain
+        HTTP does not get through on these boards. Not every ad publishes the
+        block (dubizzle's older ads do not), so a missing block falls back to
+        the rendered markup and its CSS selectors; the quality gate then drops
+        the record if that markup has no body either.
+        """
+        if not self._site_config.detail_json_ld:
+            return html
+        payload = _json_ld_job_posting(html)
+        if payload is None:
+            logger.warning("browser_scraper: no JobPosting JSON-LD on {}, using markup", url)
+            return html
+        return mapped_json_html(self._site_config, payload, url)
+
     def _collect(self, budget: int) -> tuple[list[dict], dict[str, str]]:
         records: list[dict] = []
         failures: dict[str, str] = {}
@@ -421,6 +442,7 @@ class BrowserScraperClient:
                 try:
                     html = self._render_detail(job["url"])
                     self._check_challenge(html, job["url"])
+                    html = self._detail_html(html, job["url"])
                 except BrowserChallengeError as exc:
                     failures[job["url"]] = str(exc)
                     logger.warning("browser_scraper {}", exc)
