@@ -137,6 +137,33 @@ def test_json_detail_renders_mapped_fields_as_html() -> None:
     assert "2026-10-22T00:00:00+01:00" in html
 
 
+def test_json_detail_joins_location_parts_with_a_comma() -> None:
+    """Gupy splits the place into city and state fields, which are one line."""
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "detail_json_map": {
+                    "location": ["city", "state"],
+                    "description": ["body", "duties"],
+                }
+            }
+        ),
+    )
+    payload = {
+        "city": "Curitiba",
+        "state": "Paraná",
+        "body": "<p>First block</p>",
+        "duties": "<p>Second block</p>",
+    }
+
+    html = client._json_detail_as_html(payload, "https://example.invalid/jobs/1")
+
+    assert "<div id='location'>Curitiba, Paraná</div>" in html
+    # A multi-part description keeps its block separator instead of commas.
+    assert "<p>First block</p>\n<p>Second block</p>" in html
+
+
 def _ld_html(*blocks: object) -> str:
     scripts = "".join(
         f"<script type='application/ld+json'>{json.dumps(block)}</script>" for block in blocks

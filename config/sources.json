@@ -1208,8 +1208,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "GUPY_IO_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Gupy (gupy.io) - Brazil; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/gupy_io.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "enabled": true,
+      "notes": "Gupy (gupy.io) - Brazil; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/gupy_io.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path). Re-enabled and fixed 2026-10-25: the portal renders its list client-side, but its own front end calls GET https://portal.gupy.io/api/job-search/jobs?limit=100&offset=N&sortBy=publishedDate, which returns 200 application/json without auth; data[] holds ~83,000 active ads with the full description, employer (careerPageName), city/state, publishedDate and an absolute jobUrl on the employer's *.gupy.io subdomain. The record is built from the listing item (no detail fetch); base_url is https://gupy.io so those subdomains pass the same-site check. portal.gupy.io/robots.txt is Allow: /. A few ads (2 of 200 sampled) point at the vaga-ja.com aggregator and are dropped as offsite. Verified 2026-10-25: 10 posting(s) parsed over 10 fetched, 0 failures, batch validation PASSED, each with ad title, employer, 'City, State', posting date and a 2,000+ char description; page 2 of the feed returns different ads (offset paging works, and its pagination.total misleadingly reports the page size)."
     },
     {
       "code": "bne_cl",

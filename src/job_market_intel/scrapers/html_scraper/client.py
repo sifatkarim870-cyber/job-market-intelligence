@@ -233,6 +233,13 @@ def mapped_json_html(
                 parts.append(str(found))
         return "\n".join(parts)
 
+    # A feed that splits the place into fields (Gupy sends ``city`` and
+    # ``state``) still means one location line, so its parts are comma-joined;
+    # a multi-part description stays a sequence of blocks separated by newlines.
+    def location_of(value: str | list[str]) -> str:
+        parts = [part.strip() for part in text_of(value).split("\n") if part.strip()]
+        return ", ".join(parts)
+
     # Feeds often deliver already HTML-escaped text ("Copiap&oacute;");
     # unescape first, then escape for the wrapper, so the parser sees the
     # real character instead of a literal entity.
@@ -241,7 +248,7 @@ def mapped_json_html(
 
     title = plain(mapping.get("title", ""))
     company = plain(mapping.get("company", ""))
-    location = plain(mapping.get("location", ""))
+    location = escape(unescape(location_of(mapping.get("location", ""))))
     description = text_of(mapping.get("description", ""))
     posted_date = plain(mapping.get("posted_date", ""))
     salary = plain(mapping.get("salary", ""))
