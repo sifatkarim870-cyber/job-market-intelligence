@@ -79,6 +79,35 @@ def _is_job_url(url: str) -> bool:
     return not (last.endswith(("-jobs", "-job")) or "-jobs-in-" in last)
 
 
+def _json_ld_job_posting(html: str) -> dict | None:
+    """Return the schema.org ``JobPosting`` block embedded in a detail page.
+
+    Boards such as Qatar Living render the visible page as unlabelled layout
+    divs but publish the same record in ``<script type="application/ld+json">``.
+    The block can be a dict, a list of dicts, or a ``@graph`` container, so all
+    three shapes are accepted.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    for script in soup.find_all("script", type="application/ld+json"):
+        raw = script.string or script.get_text()
+        if not raw or not raw.strip():
+            continue
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+
+        candidates: list = []
+        if isinstance(payload, dict):
+            candidates = payload.get("@graph") or [payload]
+        elif isinstance(payload, list):
+            candidates = payload
+        for item in candidates:
+            if isinstance(item, dict) and item.get("@type") == "JobPosting":
+                return item
+    return None
+
+
 class _LinkExtractor(HTMLParser):
     """Collect every anchor whose URL looks like a job detail page."""
 
@@ -402,6 +431,16 @@ class HtmlScraperClient:
                         raise HtmlScraperFetchError(
                             f"detail JSON endpoint returned non-JSON for {detail_url}: {exc}"
                         ) from exc
+                    html = self._json_detail_as_html(payload, job["url"])
+                    if not html:
+                        raise HtmlScraperFetchError(
+                            f"detail_json_map is empty for {self._site_config.source_code}"
+                        )
+                elif self._site_config.detail_json_ld:
+                    page = self.fetch_detail(job["url"])
+                    payload = _json_ld_job_posting(page)
+                    if payload is None:
+                        raise HtmlScraperFetchError(f"no JobPosting JSON-LD on {job['url']}")
                     html = self._json_detail_as_html(payload, job["url"])
                     if not html:
                         raise HtmlScraperFetchError(

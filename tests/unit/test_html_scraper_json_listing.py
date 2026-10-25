@@ -7,6 +7,11 @@ anchors and reported "no job links" on a page that was not empty. The
 job IDs; this test pins the extraction so a page with no anchors still yields
 postings.
 
+Qatar Living is the mirror case on the detail side: the visible page is
+unlabelled MUI layout divs, while a schema.org ``JobPosting`` block carries
+title, company, location, date and the full description. ``detail_json_ld``
+reads that block.
+
 Run with:  uv run pytest tests/unit/test_html_scraper_json_listing.py -q
 """
 
@@ -14,7 +19,10 @@ from __future__ import annotations
 
 import json
 
-from job_market_intel.scrapers.html_scraper.client import HtmlScraperClient
+from job_market_intel.scrapers.html_scraper.client import (
+    HtmlScraperClient,
+    _json_ld_job_posting,
+)
 from job_market_intel.scrapers.html_scraper.config import SiteConfig
 
 
@@ -127,3 +135,41 @@ def test_json_detail_renders_mapped_fields_as_html() -> None:
     assert "<div id='location'>Alger, Algérie</div>" in html
     assert "<p>Build things</p>" in html
     assert "2026-10-22T00:00:00+01:00" in html
+
+
+def _ld_html(*blocks: object) -> str:
+    scripts = "".join(
+        f"<script type='application/ld+json'>{json.dumps(block)}</script>" for block in blocks
+    )
+    return f"<html><head>{scripts}</head><body><h1>Job</h1></body></html>"
+
+
+def test_json_ld_reads_job_posting_beside_breadcrumbs() -> None:
+    html = _ld_html(
+        {"@type": "BreadcrumbList", "itemListElement": []},
+        {
+            "@type": "JobPosting",
+            "title": "Architect",
+            "hiringOrganization": {"name": "ACME"},
+            "jobLocation": {"address": {"addressLocality": "Doha"}},
+            "datePosted": "2026-10-20T06:02:00.727Z",
+        },
+    )
+
+    payload = _json_ld_job_posting(html)
+
+    assert payload is not None
+    assert payload["title"] == "Architect"
+
+
+def test_json_ld_reads_job_posting_from_a_graph_and_a_list() -> None:
+    in_graph = _ld_html({"@graph": [{"@type": "JobPosting", "title": "In graph"}]})
+    in_list = _ld_html([{"@type": "WebSite"}, {"@type": "JobPosting", "title": "In list"}])
+
+    assert _json_ld_job_posting(in_graph)["title"] == "In graph"
+    assert _json_ld_job_posting(in_list)["title"] == "In list"
+
+
+def test_json_ld_returns_none_without_a_job_posting() -> None:
+    assert _json_ld_job_posting("<html><body>no scripts</body></html>") is None
+    assert _json_ld_job_posting(_ld_html({"@type": "BreadcrumbList"})) is None

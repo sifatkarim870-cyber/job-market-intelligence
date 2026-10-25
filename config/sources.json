@@ -803,8 +803,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "QATARLIVING_COM_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Qatar Living Jobs (qatarliving.com) - Qatar; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/qatarliving_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:02:20.441\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Qatar Living Jobs (qatarliving.com) - Qatar; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/qatarliving_com.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: the jobs board moved to /en/jobs/jobs/list with ?page=N pagination and /en/jobs/jobs/profile/<slug> detail pages; the visible detail markup is unlabelled MUI layout divs, so the framework now reads the page's schema.org JobPosting JSON-LD (title, hiringOrganization.name, jobLocation, datePosted, full description). Verified 2026-10-25: 12 posting(s) parsed over 12 fetched on 1 listing page, 0 failures, batch validation PASSED, each with title, company, location, date and a 400-2,000 char description."
     },
     {
       "code": "wanted_co_kr",

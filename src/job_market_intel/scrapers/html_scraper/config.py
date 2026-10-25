@@ -79,6 +79,13 @@ class SiteConfig(BaseModel):
     detail_json_url: str = Field(
         default="", description="Absolute JSON detail URL template, e.g. https://api/jobs/{id}"
     )
+    #: Many boards publish a schema.org ``JobPosting`` block in the detail page's
+    #: ``application/ld+json`` script, while the visible markup wraps the same
+    #: fields in unlabelled layout divs. When set, the client reads that block and
+    #: maps it through :attr:`detail_json_map` instead of using CSS selectors.
+    detail_json_ld: bool = Field(
+        default=False, description="Read the detail page's JobPosting JSON-LD block"
+    )
     detail_json_map: dict[str, str | list[str]] = Field(
         default_factory=dict,
         description="Output field -> dotted JSON path (or list of paths to concatenate)",
