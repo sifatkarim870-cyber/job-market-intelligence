@@ -128,6 +128,19 @@ class SiteConfig(BaseModel):
         default_factory=list,
         description="Language IDs tried in order when detail_json_url has {language}",
     )
+    #: Laravel/Inertia apps render nothing server-side but carry the whole page
+    #: payload as JSON in an attribute (``<div id="app" data-page='{...}'>``).
+    #: This selector/attribute pair names that element, and
+    #: :attr:`detail_json_path` the dotted path to the posting object inside it.
+    detail_json_selector: str = Field(
+        default="", description="CSS selector for an element carrying embedded detail JSON"
+    )
+    detail_json_attr: str = Field(
+        default="", description="Attribute on detail_json_selector that holds the JSON"
+    )
+    detail_json_path: str = Field(
+        default="", description="Dotted path inside the embedded detail JSON, e.g. props.offre"
+    )
     #: Many boards publish a schema.org ``JobPosting`` block in the detail page's
     #: ``application/ld+json`` script, while the visible markup wraps the same
     #: fields in unlabelled layout divs. When set, the client reads that block and

@@ -375,6 +375,31 @@ class HtmlScraperClient:
 
         return self._jobs_from_payload(payload)
 
+    def _embedded_json_payload(self, html: str, selector: str, attr: str, label: str) -> Any:
+        """Parse the JSON an element carries in one of its attributes."""
+        soup = BeautifulSoup(html, "html.parser")
+        element = self._select_one(soup, selector)
+        if element is None:
+            raise HtmlScraperResponseError(
+                f"embedded {label} element {selector} is missing from the page"
+            )
+        raw = element.get(attr)
+        if isinstance(raw, list):
+            raw = next((value for value in raw if value), None)
+        if not raw:
+            raise HtmlScraperResponseError(
+                f"embedded {label} attribute {attr} is empty on {selector}"
+            )
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            try:
+                return json.loads(raw, strict=False)
+            except json.JSONDecodeError as exc:
+                raise HtmlScraperResponseError(
+                    f"embedded {label} JSON on {selector} is invalid: {exc}"
+                ) from exc
+
     def _embedded_json_jobs(self, html: str) -> list[dict]:
         """Read listing records from a JSON attribute on a custom element.
 
@@ -383,28 +408,37 @@ class HtmlScraperClient:
         JSON is an error here, not an empty page, so a layout change is visible
         instead of silently producing zero postings.
         """
-        selector = self._site_config.listing_json_selector.strip()
-        attr = self._site_config.listing_json_attr.strip()
-        soup = BeautifulSoup(html, "html.parser")
-        element = self._select_one(soup, selector)
-        if element is None:
-            raise HtmlScraperResponseError(
-                f"embedded listing element {selector} is missing from the page"
-            )
-        raw = element.get(attr)
-        if isinstance(raw, list):
-            raw = next((value for value in raw if value), None)
-        if not raw:
-            raise HtmlScraperResponseError(
-                f"embedded listing attribute {attr} is empty on {selector}"
-            )
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise HtmlScraperResponseError(
-                f"embedded listing JSON on {selector} is invalid: {exc}"
-            ) from exc
+        payload = self._embedded_json_payload(
+            html,
+            self._site_config.listing_json_selector.strip(),
+            self._site_config.listing_json_attr.strip(),
+            "listing",
+        )
         return self._jobs_from_payload(payload)
+
+    def _embedded_detail_json(self, html: str) -> Any:
+        """Read a posting object from JSON carried by the detail page itself.
+
+        Laravel/Inertia boards such as agenceemploijeunes.ci render the page
+        only in the browser but ship the whole payload in
+        ``<div id="app" data-page='{"props": {...}}'>``. Missing or malformed
+        JSON is an error so a layout change is visible rather than silent.
+        """
+        payload = self._embedded_json_payload(
+            html,
+            self._site_config.detail_json_selector.strip(),
+            self._site_config.detail_json_attr.strip(),
+            "detail",
+        )
+        path = self._site_config.detail_json_path.strip()
+        if not path:
+            return payload
+        found = self._dotted(payload, path)
+        if found in (None, ""):
+            raise HtmlScraperResponseError(
+                f"embedded detail JSON path {path} is missing from the page"
+            )
+        return found
 
     def listing_data_url(self, page: int = 1) -> str:
         """The JSON listing endpoint for a 1-based page number."""
@@ -630,6 +664,13 @@ class HtmlScraperClient:
         if self._site_config.detail_json_url.strip():
             job_id = job.get("id") or self._job_id_from_url(job["url"])
             payload = self._detail_json_payload(job_id)
+            return self._mapped_json_html(payload, job["url"], job.get("listing"))
+        if (
+            self._site_config.detail_json_selector.strip()
+            and self._site_config.detail_json_attr.strip()
+        ):
+            page = self.fetch_detail(job["url"])
+            payload = self._embedded_detail_json(page)
             return self._mapped_json_html(payload, job["url"], job.get("listing"))
         if self._site_config.detail_json_ld:
             page = self.fetch_detail(job["url"])

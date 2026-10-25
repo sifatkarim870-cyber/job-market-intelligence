@@ -497,8 +497,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "AGENCEEMPLOIJEUNES_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "agenceemploijeunes.ci - Côte d'Ivoire; No key, no registration, no proxy. Uses the generic HTML scraper framework. Server-rendered HTML listing. Country: Côte d'Ivoire (XOF). Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "enabled": true,
+      "notes": "agenceemploijeunes.ci - Côte d'Ivoire; No key, no registration, no proxy. Uses the generic HTML scraper framework. Country: Côte d'Ivoire (XOF). Registered 2026-10-21. Re-enabled and fixed 2026-10-25: the site is a Laravel/Inertia app, so every page is an empty <div id=\"app\"> plus one data-page JSON attribute - there are no anchors to discover and no markup to select. The real listing is /offres-emploi?show_all=1 (without show_all the route renders a category explorer and ships no offers), whose props.offres.data carries 456 ads, 12 per page over 38 pages, with title, employer, region, contract type and publication/expiry dates. Ad pages at /offres-emploi/<reference> ship props.offre with the full body (description, description_taches, profil, connaissances), which the framework now reads through the reusable detail_json_selector/detail_json_attr/detail_json_path options and maps with detail_json_map; the publication date is not on the ad object, so it is taken from the listing item. robots.txt is 'User-agent: * / Disallow:' (everything allowed). www.agenceemploijeunes.ci redirects to the apex host. Verified 2026-10-25: 10 posting(s) parsed over 10 fetched, 0 failures, batch validation PASSED, each with title, employer, town, publication date and a 200-4,800 char description; feed page 2 holds 12 different ads."
     },
     {
       "code": "alwatwan",
