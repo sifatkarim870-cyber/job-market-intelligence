@@ -1217,8 +1217,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "BNE_CL_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "BNE – state (bne.cl) - Chile; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bne_cl.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:50.397\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "BNE – state (bne.cl) - Chile; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/bne_cl.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: /ofertas renders no ads server-side, but its own search endpoint GET /data/ofertas/buscarListas?mostrar=empleo&numResultadosPorPagina=100&numPaginaRecuperar=N&clasificarYPaginar=true returns paginaOfertas.resultados with 8,841 active ads (89 pages of 100). Ad pages at /oferta/<codigo> publish a schema.org JobPosting whose description is the full ad; the title there is the occupation category, so the record takes its title from the feed's titulo (HTML-escaped, now unescaped by the framework). robots.txt is Allow: /. Verified 2026-10-25: 10 posting(s) parsed over 10 fetched, 0 failures, batch validation PASSED, each with ad title, employer, town, posting date and a 1,100+ char description; page 2 of the feed has different ads."
     },
     {
       "code": "co_computrabajo_com",

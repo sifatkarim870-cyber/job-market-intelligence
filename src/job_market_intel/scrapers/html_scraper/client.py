@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import re
 import time
-from html import escape
+from html import escape, unescape
 from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urljoin, urlparse
@@ -96,7 +96,13 @@ def _json_ld_job_posting(html: str) -> dict | None:
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError:
-            continue
+            # Some boards (Chile's BNE) emit raw line breaks inside the
+            # description string, which strict JSON rejects. Keep the record
+            # instead of discarding the only structured copy of the ad.
+            try:
+                payload = json.loads(raw, strict=False)
+            except json.JSONDecodeError:
+                continue
 
         candidates: list = []
         if isinstance(payload, dict):
@@ -420,12 +426,18 @@ class HtmlScraperClient:
                     parts.append(str(found))
             return "\n".join(parts)
 
-        title = escape(text_of(mapping.get("title", "")))
-        company = escape(text_of(mapping.get("company", "")))
-        location = escape(text_of(mapping.get("location", "")))
+        # Feeds often deliver already HTML-escaped text ("Copiap&oacute;");
+        # unescape first, then escape for the wrapper, so the parser sees the
+        # real character instead of a literal entity.
+        def plain(value: str | list[str]) -> str:
+            return escape(unescape(text_of(value)))
+
+        title = plain(mapping.get("title", ""))
+        company = plain(mapping.get("company", ""))
+        location = plain(mapping.get("location", ""))
         description = text_of(mapping.get("description", ""))
-        posted_date = escape(text_of(mapping.get("posted_date", "")))
-        salary = escape(text_of(mapping.get("salary", "")))
+        posted_date = plain(mapping.get("posted_date", ""))
+        salary = plain(mapping.get("salary", ""))
         return (
             "<html><body>"
             f"<h1>{title}</h1>"
