@@ -103,6 +103,17 @@ class SiteConfig(BaseModel):
         default_factory=dict,
         description="Output field -> dotted JSON path (or list of paths to concatenate)",
     )
+    #: Some feeds return the complete posting in the listing payload, so the
+    #: detail page adds nothing. When set, each listing item is mapped through
+    #: :attr:`detail_json_map` directly instead of being fetched again.
+    detail_json_from_listing: bool = Field(
+        default=False, description="Build the record from the listing JSON item"
+    )
+    #: Extra request headers, for APIs that require a custom token or flag
+    #: (Jobnet's BFF rejects requests without ``x-csrf``).
+    extra_headers: dict[str, str] = Field(
+        default_factory=dict, description="Extra HTTP headers sent with every request"
+    )
     user_agent: str = Field(
         default="job-market-intel-research (research@example.org)",
         description="Identifying UA",

@@ -183,6 +183,7 @@ class HtmlScraperClient:
                 "User-Agent": self._site_config.user_agent,
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.9",
+                **self._site_config.extra_headers,
             }
         )
 
@@ -275,7 +276,12 @@ class HtmlScraperClient:
             url = urljoin(self._site_config.base_url, template.format(id=job_id))
             if _is_offsite_social(url):
                 continue
-            jobs.append({"url": url, "title": "", "id": job_id})
+            job = {"url": url, "title": "", "id": job_id}
+            # Some feeds (the Danish Jobnet BFF among them) return the whole
+            # posting, description included, so the detail page is redundant.
+            if self._site_config.detail_json_from_listing:
+                job["payload"] = item
+            jobs.append(job)
         return jobs
 
     def _json_listing_jobs(self, html: str) -> list[dict]:
@@ -451,6 +457,37 @@ class HtmlScraperClient:
         """Fetch one detail page HTML."""
         return self._get(url)
 
+    def _mapped_json_html(self, payload: Any, url: str) -> str:
+        """Render a mapped JSON payload, refusing an empty field map."""
+        html = self._json_detail_as_html(payload, url)
+        if not html:
+            raise HtmlScraperFetchError(
+                f"detail_json_map is empty for {self._site_config.source_code}"
+            )
+        return html
+
+    def _detail_html(self, job: dict) -> str:
+        """The HTML the parser reads for one discovered posting."""
+        if self._site_config.detail_json_from_listing and job.get("payload"):
+            return self._mapped_json_html(job["payload"], job["url"])
+        if self._site_config.detail_json_url.strip():
+            job_id = job.get("id") or self._job_id_from_url(job["url"])
+            detail_url = self._site_config.detail_json_url.format(id=job_id)
+            try:
+                payload = json.loads(self._get(detail_url))
+            except json.JSONDecodeError as exc:
+                raise HtmlScraperFetchError(
+                    f"detail JSON endpoint returned non-JSON for {detail_url}: {exc}"
+                ) from exc
+            return self._mapped_json_html(payload, job["url"])
+        if self._site_config.detail_json_ld:
+            page = self.fetch_detail(job["url"])
+            payload = _json_ld_job_posting(page)
+            if payload is None:
+                raise HtmlScraperFetchError(f"no JobPosting JSON-LD on {job['url']}")
+            return self._mapped_json_html(payload, job["url"])
+        return self.fetch_detail(job["url"])
+
     def fetch_raw_jobs(self, max_jobs: int | None = None) -> tuple[list[dict], dict[str, str]]:
         """Discover and fetch postings."""
         budget = self._site_config.max_jobs_per_run if max_jobs is None else max_jobs
@@ -460,32 +497,7 @@ class HtmlScraperClient:
         records = []
         for job in selected:
             try:
-                if self._site_config.detail_json_url.strip():
-                    job_id = job.get("id") or self._job_id_from_url(job["url"])
-                    detail_url = self._site_config.detail_json_url.format(id=job_id)
-                    try:
-                        payload = json.loads(self._get(detail_url))
-                    except json.JSONDecodeError as exc:
-                        raise HtmlScraperFetchError(
-                            f"detail JSON endpoint returned non-JSON for {detail_url}: {exc}"
-                        ) from exc
-                    html = self._json_detail_as_html(payload, job["url"])
-                    if not html:
-                        raise HtmlScraperFetchError(
-                            f"detail_json_map is empty for {self._site_config.source_code}"
-                        )
-                elif self._site_config.detail_json_ld:
-                    page = self.fetch_detail(job["url"])
-                    payload = _json_ld_job_posting(page)
-                    if payload is None:
-                        raise HtmlScraperFetchError(f"no JobPosting JSON-LD on {job['url']}")
-                    html = self._json_detail_as_html(payload, job["url"])
-                    if not html:
-                        raise HtmlScraperFetchError(
-                            f"detail_json_map is empty for {self._site_config.source_code}"
-                        )
-                else:
-                    html = self.fetch_detail(job["url"])
+                html = self._detail_html(job)
                 records.append(
                     {
                         "job_id": self._job_id_from_url(job["url"])

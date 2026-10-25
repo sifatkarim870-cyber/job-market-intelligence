@@ -956,8 +956,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOBNET_DK_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Jobnet – state (jobnet.dk) - Denmark; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobnet_dk.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:20.249\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Jobnet – state (jobnet.dk) - Denmark; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobnet_dk.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: /find-job is a Next.js shell with no server-rendered ads; the site's own public BFF answers /bff/FindJob/Search?resultsPerPage=20&pageNumber=N with the complete posting (title, hiringOrgName, description HTML, publicationDate, applicationDeadline) and reports 21,951 active ads. The call requires an x-csrf: 1 header, which site configs can now supply. One request per 20 postings is enough, so no detail fetch happens; individual ad pages (/jobannonce/{id}) and even robots.txt redirect to MitID, so the public search feed is the only open surface and requests use a 2s delay. Verified 2026-10-25: 22 posting(s) parsed over 22 fetched across 2 listing pages, 0 failures, batch validation PASSED, each with title, company, date and a 1,200-6,600 char description (the feed only carries a street address for a few ads, so most records have no location)."
     },
     {
       "code": "tootukassa_ee",
