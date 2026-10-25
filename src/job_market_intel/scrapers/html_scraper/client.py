@@ -5,8 +5,10 @@ Uses plain HTTP (requests) + CSS selectors configured per site. No browser neede
 
 from __future__ import annotations
 
+import json
 import time
 from html.parser import HTMLParser
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -173,15 +175,74 @@ class HtmlScraperClient:
         except Exception:
             return None
 
+    @staticmethod
+    def _dotted(value: Any, path: str) -> Any:
+        """Walk a dotted ``a.b.c`` path through nested dicts."""
+        node = value
+        for key in path.split("."):
+            key = key.strip()
+            if not key:
+                continue
+            if not isinstance(node, dict):
+                return None
+            node = node.get(key)
+        return node
+
+    def _json_listing_jobs(self, html: str) -> list[dict]:
+        """Read a job list out of the listing page's embedded Next.js JSON.
+
+        Next.js boards such as Jobzella render the list client-side but ship
+        the same records inside ``<script id="__NEXT_DATA__">``. The CSS link
+        selector sees no anchors there, so this opt-in path is the only way to
+        discover postings without a browser.
+        """
+        path = self._site_config.listing_json_path.strip()
+        template = self._site_config.listing_json_url_template.strip()
+        if not path or not template:
+            return []
+
+        soup = BeautifulSoup(html, "html.parser")
+        script = soup.find("script", id="__NEXT_DATA__")
+        if script is None or not script.string:
+            logger.warning("html_scraper listing JSON missing (__NEXT_DATA__)")
+            return []
+        try:
+            payload = json.loads(script.string)
+        except json.JSONDecodeError as exc:
+            logger.warning("html_scraper listing JSON is not valid JSON: {}", exc)
+            return []
+
+        items = self._dotted(payload, path)
+        if not isinstance(items, list):
+            logger.warning("html_scraper listing JSON path {} is not a list", path)
+            return []
+
+        field = self._site_config.listing_json_id_field.strip() or "id"
+        jobs = []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            job_id = self._dotted(item, field)
+            if job_id in (None, ""):
+                continue
+            url = urljoin(self._site_config.base_url, template.format(id=job_id))
+            if _is_offsite_social(url):
+                continue
+            jobs.append({"url": url, "title": ""})
+        return jobs
+
     def fetch_listing_page(self, page: int = 1) -> tuple[str, list[dict]]:
         """Fetch one listing page. Returns (html, [job_links_with_titles])."""
         html = self._get(self.listing_url(page))
         soup = BeautifulSoup(html, "html.parser")
 
+        jobs: list[dict] = []
+        if self._site_config.listing_json_path.strip():
+            jobs = self._json_listing_jobs(html)
+
         # Try configured CSS selector first
-        link_els = self._select(soup, self._site_config.selectors.job_link)
+        link_els = [] if jobs else self._select(soup, self._site_config.selectors.job_link)
         generic_selector = self._site_config.selectors.job_link.strip() == GENERIC_LINK_SELECTOR
-        jobs = []
         for el in link_els:
             link = _extract_attr(el, "href")
             title = _extract_text(el)

@@ -56,6 +56,20 @@ class SiteConfig(BaseModel):
     )
     detail_url_pattern: str = Field(default="", description="Detail URL pattern")
     id_from_url: bool = Field(default=True, description="Extract job ID from URL")
+    #: Next.js boards embed the rendered job list in the page's
+    #: ``__NEXT_DATA__`` JSON while rendering zero anchors server-side. When
+    #: set, this dotted path (e.g. ``props.pageProps.jobs``) is read from that
+    #: JSON instead of the CSS link selector, and each item is turned into a
+    #: detail URL by :attr:`listing_json_url_template`.
+    listing_json_path: str = Field(
+        default="", description="Dotted path to the job list inside __NEXT_DATA__"
+    )
+    listing_json_id_field: str = Field(
+        default="id", description="Dotted field in each JSON job that holds its ID"
+    )
+    listing_json_url_template: str = Field(
+        default="", description="Detail URL template for JSON jobs, e.g. /jobs/{id}"
+    )
     user_agent: str = Field(
         default="job-market-intel-research (research@example.org)",
         description="Identifying UA",
