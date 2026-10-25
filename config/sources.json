@@ -1244,8 +1244,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "EMPLEOS_NET_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Empleos.net (empleos.net) - Costa Rica; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/empleos_net.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:00:54.878\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Empleos.net (empleos.net) - Costa Rica; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/empleos_net.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: /vacantes is server-rendered but its ad links are /puesto/<id>_<slug>, which the auto-generated selector (a[href*='/job/'], /vacancy/, ...) never matched, and it pages as ?pagelocales=N rather than ?page=N (37 pages of 20 local ads; page 2 has 20 different ads). Each ad page carries no JSON-LD, so title, employer, published date, the 'Ubicación del Puesto' value and the 'Acerca de la vacante' body are read with CSS. Two reusable options came out of this site: title_strip_selector removes the 'Vacante Fresca' badge that Empleos.net puts inside the <h3>, and posted_date_regex pulls '23-10-2026' out of 'Publicado el: 23-10-2026, por <empresa>.'. The page also sends 'Content-Type: text/html; charset=' (empty), which requests decoded as ASCII and turned every accent into '?', so the framework now honours the document's own <meta charset> when the header declares none. robots.txt only disallows /cgi-bin/ and /tmp/. Verified 2026-10-25: 10 posting(s) parsed over 10 fetched, 0 failures, batch validation PASSED, each with ad title, employer, town, posting date and a 500-2,100 char description."
     },
     {
       "code": "do_computrabajo_com",

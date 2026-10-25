@@ -5,6 +5,7 @@ Uses plain HTTP (requests) + CSS selectors configured per site. No browser neede
 
 from __future__ import annotations
 
+import codecs
 import json
 import re
 import time
@@ -153,8 +154,33 @@ def _extract_links_from_html(html: str, base_url: str) -> list[tuple[str, str]]:
     return parser.links
 
 
+_META_CHARSET = re.compile(
+    rb"""<meta[^>]+charset\s*=\s*["']?([-\w.:]+)""",
+    re.IGNORECASE,
+)
+
+
+def _document_charset(content: bytes) -> str | None:
+    """The charset a page declares about itself in its ``<meta>`` tags.
+
+    Empleos.net sends ``Content-Type: text/html; charset=`` (note the empty
+    value), which requests treats as a real but empty encoding and decodes as
+    ASCII, turning every Spanish accent into ``?``. The document itself says
+    ``<meta charset="windows-1252">``, so read that instead.
+    """
+    match = _META_CHARSET.search(content[:4096])
+    if not match:
+        return None
+    name = match.group(1).decode("ascii", "ignore").strip().lower()
+    try:
+        codecs.lookup(name)
+    except LookupError:
+        return None
+    return name
+
+
 def _response_text(resp: requests.Response) -> str:
-    """Decode a response, defaulting undeclared modern pages to UTF-8.
+    """Decode a response, honouring the page's own charset declaration.
 
     ikman.lk returns ``Content-Type: text/html`` with no charset and no meta
     charset, so requests falls back to ISO-8859-1 and Sinhala titles arrive as
@@ -162,13 +188,22 @@ def _response_text(resp: requests.Response) -> str:
     page that is genuinely Latin-1 is left alone.
     """
     ctype = resp.headers.get("content-type", "").lower()
-    if "charset=" not in ctype and (resp.encoding or "").lower() == "iso-8859-1":
-        try:
-            resp.content.decode("utf-8")
-        except UnicodeDecodeError:
-            pass
-        else:
-            resp.encoding = "utf-8"
+    declared = ""
+    if "charset=" in ctype:
+        declared = ctype.split("charset=", 1)[1].split(";")[0].strip(" '\"")
+    encoding = (resp.encoding or "").strip()
+    if not declared or not encoding:
+        document = _document_charset(resp.content)
+        if document:
+            resp.encoding = document
+        elif not encoding or encoding.lower() == "iso-8859-1":
+            try:
+                resp.content.decode("utf-8")
+            except UnicodeDecodeError:
+                if not encoding:
+                    resp.encoding = resp.apparent_encoding
+            else:
+                resp.encoding = "utf-8"
     return resp.text
 
 

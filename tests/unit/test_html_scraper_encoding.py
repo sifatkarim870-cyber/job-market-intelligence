@@ -31,3 +31,13 @@ def test_non_utf8_bytes_keep_the_server_encoding() -> None:
     resp = _response(b"caf\xe9", "text/html", "ISO-8859-1")
 
     assert _response_text(resp) == "café"
+
+
+def test_blank_header_charset_falls_back_to_the_meta_declaration() -> None:
+    """Empleos.net sends ``charset=`` (empty) and declares windows-1252 in HTML."""
+    from job_market_intel.scrapers.html_scraper.client import _response_text
+
+    body = '<meta charset="windows-1252"><p>promoción</p>'.encode("cp1252")
+    resp = _response(body, "text/html; charset=", "")
+
+    assert "promoción" in _response_text(resp)

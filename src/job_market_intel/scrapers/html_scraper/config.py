@@ -54,6 +54,19 @@ class SiteConfig(BaseModel):
         default="h1,og:title,title-tag,selector",
         description="Comma-separated title sources, most trusted first.",
     )
+    #: Some boards put a badge inside the heading itself (Empleos.net renders
+    #: ``<h3>Contador <small>Vacante Fresca</small></h3>``), which would end up
+    #: in the stored title. Elements matching this selector are removed from
+    #: the heading before its text is read.
+    title_strip_selector: str = Field(
+        default="", description="Child elements to remove from the title heading"
+    )
+    #: Some boards print a label and the date in one node ("Publicado el:
+    #: 23-10-2026,"), which no CSS selector can split. When set, this regex's
+    #: first match inside the posted-date text is the part to parse.
+    posted_date_regex: str = Field(
+        default="", description="Regex whose match inside the date text is the date"
+    )
     detail_url_pattern: str = Field(default="", description="Detail URL pattern")
     id_from_url: bool = Field(default=True, description="Extract job ID from URL")
     #: Boards such as zaplata.bg put the stable numeric ID before a free-form

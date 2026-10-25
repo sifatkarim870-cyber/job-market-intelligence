@@ -149,8 +149,21 @@ def _clean_doc_title(soup: BeautifulSoup, site_host: str) -> str | None:
     return text
 
 
+def _strip_children(element, selector: str) -> None:
+    """Drop badge/chip elements from a heading before its text is read."""
+    if element is None or not selector:
+        return
+    for child in element.select(selector):
+        child.decompose()
+
+
 def _extract_title(
-    soup: BeautifulSoup, selector: str, *, site_host: str = "", priority: str = ""
+    soup: BeautifulSoup,
+    selector: str,
+    *,
+    site_host: str = "",
+    priority: str = "",
+    strip_selector: str = "",
 ) -> tuple[str | None, str]:
     """Pick the most trustworthy title on the page.
 
@@ -174,7 +187,9 @@ def _extract_title(
 
     for source in order:
         if source == "h1":
-            candidate = _usable_title(_extract_text(soup.find("h1")), site_host=site_host)
+            heading = soup.find("h1")
+            _strip_children(heading, strip_selector)
+            candidate = _usable_title(_extract_text(heading), site_host=site_host)
         elif source == "og:title":
             candidate = _usable_title(_meta_title(soup), site_host=site_host)
         elif source == "title-tag":
@@ -182,6 +197,7 @@ def _extract_title(
         elif source == "selector":
             candidate = None
             for element in soup.select(selector) if selector else []:
+                _strip_children(element, strip_selector)
                 candidate = _usable_title(_extract_text(element), site_host=site_host)
                 if candidate:
                     break
@@ -252,9 +268,16 @@ def _resolve_title(
     *,
     site_host: str = "",
     priority: str = "",
+    strip_selector: str = "",
 ) -> tuple[str, str]:
     """Title + where it came from. Raises when the page names nothing."""
-    title, source = _extract_title(soup, selector, site_host=site_host, priority=priority)
+    title, source = _extract_title(
+        soup,
+        selector,
+        site_host=site_host,
+        priority=priority,
+        strip_selector=strip_selector,
+    )
     if title:
         return title, source
 
@@ -296,6 +319,7 @@ def parse_detail(
         source_code,
         site_host=urlparse(site_config.base_url).netloc if site_config.base_url else "",
         priority=site_config.title_priority,
+        strip_selector=site_config.title_strip_selector,
     )
 
     company_name = _extract_text(_select_one(soup, sel.company)) or "Unknown employer"
@@ -307,9 +331,13 @@ def parse_detail(
         _extract_text(_select_one(soup, sel.employment_type)) if sel.employment_type else None
     )
     salary = _extract_text(_select_one(soup, sel.salary)) if sel.salary else None
-    posted_date = (
-        _parse_date(_extract_text(_select_one(soup, sel.posted_date))) if sel.posted_date else None
+    posted_date_text = (
+        _extract_text(_select_one(soup, sel.posted_date)) if sel.posted_date else None
     )
+    if posted_date_text and site_config.posted_date_regex:
+        match = re.search(site_config.posted_date_regex, posted_date_text)
+        posted_date_text = match.group(0) if match else posted_date_text
+    posted_date = _parse_date(posted_date_text)
 
     # Extract skills as a list
     skills: list[str] = []
