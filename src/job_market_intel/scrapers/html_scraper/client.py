@@ -242,25 +242,44 @@ class HtmlScraperClient:
 
     @staticmethod
     def _dotted(value: Any, path: str) -> Any:
-        """Walk a dotted ``a.b.c`` path through nested dicts."""
-        node = value
-        for key in path.split("."):
-            key = key.strip()
-            if not key:
-                continue
-            if not isinstance(node, dict):
+        """Walk a dotted ``a.b.c`` path through nested dicts.
+
+        A segment ending in ``[]`` maps the rest of the path over a list, so
+        ``components[].text`` returns the text of every component. This is how
+        feeds that split an ad into blocks (Jobbnorge) expose one description.
+        """
+        keys = [key.strip() for key in path.split(".") if key.strip()]
+        return HtmlScraperClient._walk_dotted(value, keys)
+
+    @staticmethod
+    def _walk_dotted(node: Any, keys: list[str]) -> Any:
+        if not keys:
+            return node
+        key, rest = keys[0], keys[1:]
+        if key.endswith("[]"):
+            key = key[:-2]
+            if key:
+                if not isinstance(node, dict):
+                    return None
+                node = node.get(key)
+            if not isinstance(node, list):
                 return None
-            node = node.get(key)
-        return node
+            values = [HtmlScraperClient._walk_dotted(item, rest) for item in node]
+            return [value for value in values if value not in (None, "")]
+        if not isinstance(node, dict):
+            return None
+        return HtmlScraperClient._walk_dotted(node.get(key), rest)
 
     def _jobs_from_payload(self, payload: Any) -> list[dict]:
         """Turn the JSON job list into discovery records with detail URLs."""
         path = self._site_config.listing_json_path.strip()
         template = self._site_config.listing_json_url_template.strip()
-        if not path or not template:
+        if not template:
             return []
 
-        items = self._dotted(payload, path)
+        # Some public APIs (Jobbnorge) return a bare array instead of wrapping
+        # it in an object, which leaves no path to point at.
+        items = payload if path in ("", "$") else self._dotted(payload, path)
         if not isinstance(items, list):
             logger.warning("html_scraper listing JSON path {} is not a list", path)
             return []
@@ -276,7 +295,7 @@ class HtmlScraperClient:
             url = urljoin(self._site_config.base_url, template.format(id=job_id))
             if _is_offsite_social(url):
                 continue
-            job = {"url": url, "title": "", "id": job_id}
+            job = {"url": url, "title": "", "id": job_id, "listing": item}
             # Some feeds (the Danish Jobnet BFF among them) return the whole
             # posting, description included, so the detail page is redundant.
             if self._site_config.detail_json_from_listing:
@@ -311,6 +330,14 @@ class HtmlScraperClient:
     def listing_data_url(self, page: int = 1) -> str:
         """The JSON listing endpoint for a 1-based page number."""
         base = self._site_config.listing_json_url.strip()
+        # A few APIs number their first page zero (Jobbnorge's Jobs endpoint).
+        if "{zero_page}" in base:
+            return base.format(zero_page=page - 1)
+        # Some APIs page from zero; ``{offset}`` keeps the framework's 1-based
+        # page numbers and lets the site describe its own numbering.
+        if "{offset}" in base:
+            offset = (page - 1) * self._site_config.listing_page_size
+            return base.format(offset=offset)
         if "{page}" in base:
             return base.format(page=page)
         if page <= 1:
@@ -321,7 +348,18 @@ class HtmlScraperClient:
             return base + pagination.format(offset=offset)
         return base + pagination.format(page=page)
 
-    def _json_detail_as_html(self, payload: Any, url: str) -> str:
+    def _mapped_value(self, payload: Any, path: str, listing: dict | None) -> Any:
+        """Resolve a ``detail_json_map`` path, allowing ``listing.`` fields.
+
+        APIs that keep the posting body separate from its metadata (Jobbnorge
+        sends employer and place in the search feed but the ad body from
+        another host) need both payloads in one record.
+        """
+        if path.startswith("listing.") and listing is not None:
+            return self._dotted(listing, path[len("listing.") :])
+        return self._dotted(payload, path)
+
+    def _json_detail_as_html(self, payload: Any, url: str, listing: dict | None = None) -> str:
         """Render mapped JSON fields into the minimal HTML the parser expects.
 
         EmploiPartner serves its job page only to a browser; the data lives at
@@ -337,8 +375,10 @@ class HtmlScraperClient:
             paths = value if isinstance(value, list) else [value]
             parts = []
             for path in paths:
-                found = self._dotted(payload, path)
-                if found not in (None, ""):
+                found = self._mapped_value(payload, path, listing)
+                if isinstance(found, list):
+                    parts.extend(str(item) for item in found if item not in (None, ""))
+                elif found not in (None, ""):
                     parts.append(str(found))
             return "\n".join(parts)
 
@@ -457,35 +497,55 @@ class HtmlScraperClient:
         """Fetch one detail page HTML."""
         return self._get(url)
 
-    def _mapped_json_html(self, payload: Any, url: str) -> str:
+    def _mapped_json_html(self, payload: Any, url: str, listing: dict | None = None) -> str:
         """Render a mapped JSON payload, refusing an empty field map."""
-        html = self._json_detail_as_html(payload, url)
+        html = self._json_detail_as_html(payload, url, listing)
         if not html:
             raise HtmlScraperFetchError(
                 f"detail_json_map is empty for {self._site_config.source_code}"
             )
         return html
 
+    def _load_json(self, url: str) -> Any:
+        """Fetch one JSON document, keeping the error message specific."""
+        try:
+            return json.loads(self._get(url))
+        except json.JSONDecodeError as exc:
+            raise HtmlScraperFetchError(
+                f"detail JSON endpoint returned non-JSON for {url}: {exc}"
+            ) from exc
+
+    def _detail_json_payload(self, job_id: Any) -> Any:
+        """Fetch a posting's JSON, trying each configured language."""
+        template = self._site_config.detail_json_url.strip()
+        languages = self._site_config.detail_json_languages
+        if "{language}" not in template or not languages:
+            return self._load_json(template.format(id=job_id))
+
+        failure: HtmlScraperFetchError | None = None
+        for language in languages:
+            try:
+                return self._load_json(template.format(id=job_id, language=language))
+            except HtmlScraperFetchError as exc:
+                failure = exc
+        if failure is not None:
+            raise failure
+        raise HtmlScraperFetchError(f"no language configured for {template}")
+
     def _detail_html(self, job: dict) -> str:
         """The HTML the parser reads for one discovered posting."""
         if self._site_config.detail_json_from_listing and job.get("payload"):
-            return self._mapped_json_html(job["payload"], job["url"])
+            return self._mapped_json_html(job["payload"], job["url"], job.get("listing"))
         if self._site_config.detail_json_url.strip():
             job_id = job.get("id") or self._job_id_from_url(job["url"])
-            detail_url = self._site_config.detail_json_url.format(id=job_id)
-            try:
-                payload = json.loads(self._get(detail_url))
-            except json.JSONDecodeError as exc:
-                raise HtmlScraperFetchError(
-                    f"detail JSON endpoint returned non-JSON for {detail_url}: {exc}"
-                ) from exc
-            return self._mapped_json_html(payload, job["url"])
+            payload = self._detail_json_payload(job_id)
+            return self._mapped_json_html(payload, job["url"], job.get("listing"))
         if self._site_config.detail_json_ld:
             page = self.fetch_detail(job["url"])
             payload = _json_ld_job_posting(page)
             if payload is None:
                 raise HtmlScraperFetchError(f"no JobPosting JSON-LD on {job['url']}")
-            return self._mapped_json_html(payload, job["url"])
+            return self._mapped_json_html(payload, job["url"], job.get("listing"))
         return self.fetch_detail(job["url"])
 
     def fetch_raw_jobs(self, max_jobs: int | None = None) -> tuple[list[dict], dict[str, str]]:

@@ -1082,8 +1082,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "JOBBNORGE_NO_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Jobbnorge – public sector (jobbnorge.no) - Norway; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobbnorge_no.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: pages fetched but no posting could be parsed; observed: \u001b[32m2026-10-22 00:01:21.768\u001b[0m | \u001b[1mINFO    \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.pipeline\u001b[0m:\u001b[36mrun\u001b."
+      "enabled": true,
+      "notes": "Jobbnorge – public sector (jobbnorge.no) - Norway; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobbnorge_no.json. Registered 2026-10-21. Re-enabled and fixed 2026-10-25: /search is a JavaScript shell with no ads in the HTML, but the site publishes a documented public API at https://publicapi.jobbnorge.no/v1/Jobs (Swagger at /swagger) listing 2,048 active ads, paged from zero (results=50&page=0,1,...), and each ad body comes from https://id.jobbnorge.no/api/joblisting?jobId=N&languageId=L as a list of components. The body host returns HTTP 500 when asked for text/html, so the config sends Accept: application/json; each ad exists in only one of nb/en/nn/se, so languages 1-4 are tried in order. robots.txt only disallows /ledige-stillinger/joblisting/pdf/. Verified 2026-10-25: 12 posting(s) parsed over 12 fetched, 0 failures, batch validation PASSED, each with title, employer, municipality and a 2,700-11,800 char description; page 2 of the feed returns 50 different ads (no overlap)."
     },
     {
       "code": "praca_pl",

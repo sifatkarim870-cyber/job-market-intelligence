@@ -92,6 +92,14 @@ class SiteConfig(BaseModel):
     detail_json_url: str = Field(
         default="", description="Absolute JSON detail URL template, e.g. https://api/jobs/{id}"
     )
+    #: Some APIs address a posting in one language and answer 404 for another
+    #: (Jobbnorge publishes each ad in only one of nb/en/nn/se). When set, and
+    #: :attr:`detail_json_url` includes ``{language}``, these IDs are tried in
+    #: order until one returns a payload.
+    detail_json_languages: list[int] = Field(
+        default_factory=list,
+        description="Language IDs tried in order when detail_json_url has {language}",
+    )
     #: Many boards publish a schema.org ``JobPosting`` block in the detail page's
     #: ``application/ld+json`` script, while the visible markup wraps the same
     #: fields in unlabelled layout divs. When set, the client reads that block and
