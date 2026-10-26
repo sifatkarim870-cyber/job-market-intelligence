@@ -137,27 +137,38 @@ def check_sources_have_shards(files: list[str], report: Report) -> None:
 def check_shard_schema(files: list[str], report: Report, token: str | None) -> int:
     """Every shard must carry exactly the exporter's column list.
 
-    Metadata only -- pyarrow reads the Parquet footer, so this costs a range
-    request per file rather than a full download.
+    Metadata only -- pyarrow reads the Parquet footer in parallel threads,
+    so this costs a range request per file rather than a full download.
     """
+    import concurrent.futures
+
     expected = expected_columns()
     fs = HfFileSystem(token=token)
     shards = sorted(f for f in files if f.startswith("shards/") and f.endswith(".parquet"))
     bad: list[str] = []
     total = 0
-    for path in shards:
+
+    def _check_one(path: str) -> tuple[str, int, list[str] | None, Exception | None]:
         try:
             with fs.open(f"datasets/{REPO}/{path}", "rb") as fh:
                 pf = pq.ParquetFile(fh)
-                names = list(pf.schema_arrow.names)
-                total += pf.metadata.num_rows
-        except Exception as exc:  # noqa: BLE001 - a broken shard IS the finding
+                return path, pf.metadata.num_rows, list(pf.schema_arrow.names), None
+        except Exception as exc:  # noqa: BLE001
+            return path, 0, None, exc
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
+        results = list(ex.map(_check_one, shards))
+
+    for path, rows, names, exc in results:
+        if exc is not None:
             bad.append(f"{path}: unreadable ({type(exc).__name__})")
             continue
+        total += rows
         if names != expected:
             missing = [c for c in expected if c not in names]
-            extra = [c for c in names if c not in expected]
+            extra = [c for c in (names or []) if c not in expected]
             bad.append(f"{path}: missing={missing} extra={extra}")
+
     report.add(
         "shard schema matches exporter",
         not bad,
@@ -255,29 +266,41 @@ def check_no_duplicate_identities(files: list[str], report: Report, token: str |
     the limit means the nightly merge has stopped running entirely -- which is
     the single point of failure this project has no other way to detect.
     """
+    import concurrent.futures
+
     fs = HfFileSystem(token=token)
     shards = sorted(f for f in files if f.startswith("shards/") and f.endswith(".parquet"))
-    total = 0
-    keys: set[tuple[str, str, str]] = set()
-    for path in shards:
+
+    def _read_keys(path: str) -> tuple[str, int, set[tuple[str, str, str]], Exception | None]:
         try:
             with fs.open(f"datasets/{REPO}/{path}", "rb") as fh:
                 table = pq.read_table(fh, columns=["source_job_id", "posting_date"])
+            source = path.split("source=", 1)[1].split("/", 1)[0]
+            local_keys = set()
+            for sid, pdate in zip(
+                table.column("source_job_id").to_pylist(),
+                table.column("posting_date").to_pylist(),
+                strict=False,
+            ):
+                local_keys.add((source, str(sid), str(pdate)[:10]))
+            return path, table.num_rows, local_keys, None
         except Exception as exc:  # noqa: BLE001
+            return path, 0, set(), exc
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
+        results = list(ex.map(_read_keys, shards))
+
+    for path, _, _, exc in results:
+        if exc is not None:
             report.add(
                 "natural key ~unique across shards",
                 False,
                 f"{path} unreadable: {type(exc).__name__}",
             )
             return
-        total += table.num_rows
-        source = path.split("source=", 1)[1].split("/", 1)[0]
-        for sid, pdate in zip(
-            table.column("source_job_id").to_pylist(),
-            table.column("posting_date").to_pylist(),
-            strict=False,
-        ):
-            keys.add((source, str(sid), str(pdate)[:10]))
+
+    total = sum(r[1] for r in results)
+    keys: set[tuple[str, str, str]] = set().union(*(r[2] for r in results))
 
     extra = total - len(keys)
     ratio = extra / total if total else 0.0
