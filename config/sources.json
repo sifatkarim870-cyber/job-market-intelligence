@@ -479,7 +479,7 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "SKILLJOBS_MAX_JOBS_PER_RUN",
-      "enabled": false,
+      "enabled": true,
       "notes": "skill.jobs - Bangladesh; Bangladesh had ZERO postings in the corpus before this. No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/skilljobs.json. Server-rendered HTML listing at /browse-jobs with ?page= pagination. Detail URL: /jobs/<slug>-<id>. Country: Bangladesh (BDT). Registered 2026-10-21. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 6 row(s) inserted, 6 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 6 row(s) now stored. Verified 2026-10-22: 3 posting(s) parsed over 3 fetched; 0 row(s) inserted, 0 row(s) now stored. Verified locally 2026-10-22 (real postings, clean titles) but disabled: listing/detail pages return HTTP 403 from GitHub Actions runner IPs, so the source cannot be refreshed in CI. Re-enable if a residential IP or proxy becomes available."
     },
     {
