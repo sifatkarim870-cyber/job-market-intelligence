@@ -1289,8 +1289,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "HN_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Computrabajo HN (hn.computrabajo.com) - Honduras; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hn_computrabajo_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
+      "enabled": true,
+      "notes": "Computrabajo HN (hn.computrabajo.com) - Honduras; No key, no registration, no proxy. Uses the generic HTML scraper framework. Registered 2026-10-21. Fixed 2026-10-26: HTTP 403 was caused by default bot user agent; updated to standard browser UA, listing_path=/empleos-en-cortes, pagination=?p={page}, currency=HNL. Verified 2026-10-26: 10/10 fetched, 10 parsed, batch validation PASSED."
     },
     {
       "code": "jamaica_gleaner_com",
