@@ -1154,7 +1154,7 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "KARIERA_SK_MAX_JOBS_PER_RUN",
-      "enabled": false,
+      "enabled": true,
       "notes": "Kariera.sk (kariera.sk) - Slovakia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kariera_sk.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
@@ -1419,4 +1419,4 @@
       "notes": "Samoa Observer classifieds (samoaobserver.ws) - Samoa; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/samoaobserver_ws.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     }
   ]
-}
+}
