@@ -983,7 +983,7 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "HELLOWORK_COM_MAX_JOBS_PER_RUN",
-      "enabled": false,
+      "enabled": true,
       "notes": "HelloWork (hellowork.com) - France; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hellowork_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
     },
     {
