@@ -893,7 +893,7 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "WILLHABEN_AT_MAX_JOBS_PER_RUN",
-      "enabled": false,
+      "enabled": true,
       "notes": "Willhaben Jobs (willhaben.at) - Austria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/willhaben_at.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     },
     {
