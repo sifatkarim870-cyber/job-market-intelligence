@@ -287,16 +287,21 @@ def _url_reason(url: str, site_host: str, detail_pattern: str = "") -> str | Non
         # board pointing at a subsidy page, a news story, or a social profile.
         return f"offsite link ({host})"
 
-    for fragment in SECTION_FRAGMENTS:
-        if fragment in path:
-            return f"section path ({fragment.strip('/')})"
     # A site that declares its detail URL shape has already answered the
     # question the remaining heuristics guess at. kosovajob.com posts live at
-    # "/<company>/<slug>" with no job vocabulary anywhere in the path, and
-    # dubizzle.com files ads under "/jobs/<category>/<year>/<month>/<day>/<slug>---<uuid>/",
+    # "/<company>/<slug>" with no job vocabulary anywhere in the path,
+    # jobthai.com posts live at "/th/company/job/<id>" which contains "/company/",
+    # and dubizzle.com files ads under "/jobs/<category>/<year>/<month>/<day>/<slug>---<uuid>/",
     # which the dated-article rule would otherwise reject as a news story.
-    if detail_pattern and re.search(detail_pattern, path):
+    if detail_pattern and (
+        re.search(detail_pattern, path, re.IGNORECASE)
+        or re.search(detail_pattern, url, re.IGNORECASE)
+    ):
         return None
+
+    for fragment in SECTION_FRAGMENTS:
+        if fragment in path:
+            return f"section path ({fragment.strip('/')})" 
 
     if DATED_ARTICLE_RE.search(path):
         return "news article path (dated)"

@@ -161,3 +161,22 @@ def test_offsite_link_is_rejected() -> None:
     )
     assert reason is not None
     assert "offsite link" in reason
+
+
+def test_detail_pattern_overrides_section_fragment() -> None:
+    """detail_pattern takes precedence when a posting path contains section words.
+
+    jobthai.com posts live at '/th/company/job/<id>' which contains '/company/'.
+    """
+    url = "https://www.jobthai.com/th/company/job/1234567"
+    assert (
+        reject_reason(
+            url,
+            "Senior Python Developer",
+            DESCRIPTION,
+            site_host="jobthai.com",
+            detail_pattern=r".*/th/company/job/[0-9]+.*",
+        )
+        is None
+    )
+
