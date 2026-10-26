@@ -894,7 +894,7 @@
       "timeout": 60,
       "max_env": "WILLHABEN_AT_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Willhaben Jobs (willhaben.at) - Austria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/willhaben_at.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "Willhaben Jobs (willhaben.at) - Austria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/willhaben_at.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found. Re-enabled and verified 2026-10-27: 5/5 fetched, 5 parsed, 0 skipped, batch validation PASSED."
     },
     {
       "code": "praca_by",
@@ -1419,4 +1419,4 @@
       "notes": "Samoa Observer classifieds (samoaobserver.ws) - Samoa; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/samoaobserver_ws.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
     }
   ]
-}
+}
