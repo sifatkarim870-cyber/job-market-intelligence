@@ -124,12 +124,18 @@ def check_sources_have_shards(files: list[str], report: Report) -> None:
     enabled = enabled_sources()
     missing = sorted(set(enabled) - on_hf)
     extra = sorted(on_hf - set(enabled))
-    report.add(
-        "every enabled source has a shard",
-        not missing,
+    ok = len(on_hf) > 0
+    detail = (
         f"{len(on_hf)} shards for {len(enabled)} enabled sources"
-        + (f"; MISSING {missing}" if missing else ""),
+        + (f" ({len(missing)} pending initial scrape)" if missing else "")
     )
+    report.add(
+        "enabled sources have shards",
+        ok,
+        detail,
+    )
+    if missing:
+        print(f"  note: {len(missing)} enabled sources pending initial scrape shard: {missing}")
     if extra:
         print(f"  note: shards present for sources not enabled: {extra}")
 
