@@ -67,6 +67,13 @@ class SiteConfig(BaseModel):
     posted_date_regex: str = Field(
         default="", description="Regex whose match inside the date text is the date"
     )
+    #: Classifieds boards let an advertiser publish without a title; the page
+    #: then has an empty heading and the URL slug names nothing ("-Recruitment
+    #: 29693"). When set, the opening sentence of the description is used as the
+    #: title instead of that slug.
+    title_from_description: bool = Field(
+        default=False, description="Use the description's first sentence when no title exists"
+    )
     detail_url_pattern: str = Field(default="", description="Detail URL pattern")
     id_from_url: bool = Field(default=True, description="Extract job ID from URL")
     #: Boards such as zaplata.bg put the stable numeric ID before a free-form

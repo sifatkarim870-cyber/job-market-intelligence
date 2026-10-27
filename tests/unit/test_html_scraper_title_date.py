@@ -90,3 +90,80 @@ def test_label_without_the_regex_yields_no_date() -> None:
     job = _parse(_site_config())
 
     assert job.posted_date is None
+
+
+# --- Gleaner Classifieds: untitled ads, and a date kept in an attribute -------
+
+GLEANER_HTML = """
+<html><body>
+  <div class="middlebar" id="details">
+    <div class="panel-heading">
+      <h1><span class="sr_ad_title" itemprop="name">
+        <a href="/marketplace/advert/-Recruitment_29693"></a>
+      </span></h1>
+    </div>
+    <div class="linkify adDescDetails">
+      Seeking fulltime Goat Farmer in Portmore area. 876-356-8185
+    </div>
+    <span class="time-stamp">
+      <time datetime="2026-10-25 00:00:00.0">Post Date: 10/25 12:00 AM</time>
+    </span>
+  </div>
+</body></html>
+"""
+
+
+def _gleaner_config(**overrides) -> SiteConfig:
+    selectors = {
+        "job_title": "h1 .sr_ad_title",
+        "description": ".adDescDetails",
+        "posted_date": ".time-stamp time@datetime",
+    }
+    return SiteConfig(
+        source_code="jamaica_gleaner_com",
+        source_name="Gleaner Classifieds",
+        country="Jamaica",
+        base_url="https://www.gleanerclassifieds.com",
+        listing_path="/marketplace/category/020-vacancies/022-vacancies-general",
+        selectors=selectors,
+        detail_url_pattern=r"/marketplace/advert/[^/]+$",
+        **overrides,
+    )
+
+
+def _parse_gleaner(config: SiteConfig):
+    return HtmlScraperParser(config, "jamaica_gleaner_com").parse(
+        "-Recruitment_29693",
+        GLEANER_HTML,
+        url="https://www.gleanerclassifieds.com/marketplace/advert/-Recruitment_29693",
+    )
+
+
+def test_attribute_selector_reads_the_time_datetime() -> None:
+    job = _parse_gleaner(_gleaner_config())
+
+    assert job.posted_date == date(2026, 10, 25)
+
+
+def test_time_element_text_alone_carries_no_year() -> None:
+    text_only = _gleaner_config()
+    text_only.selectors.posted_date = ".time-stamp time"
+
+    job = _parse_gleaner(text_only)
+
+    # The visible label is "Post Date: 10/25 12:00 AM", which has no year; the
+    # datetime attribute read above is what makes the date parseable.
+    assert job.posted_date is None
+
+
+def test_untitled_ad_falls_back_to_url_slug_by_default() -> None:
+    job = _parse_gleaner(_gleaner_config())
+
+    # The slug names nothing useful here, which is why the site opts in below.
+    assert job.title == "Recruitment 29693"
+
+
+def test_title_from_description_names_an_untitled_ad() -> None:
+    job = _parse_gleaner(_gleaner_config(title_from_description=True))
+
+    assert job.title == "Seeking fulltime Goat Farmer in Portmore area"

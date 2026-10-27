@@ -43,6 +43,32 @@ def _extract_text(element) -> str | None:
     return text.strip() if text else None
 
 
+def _split_attr(selector: str) -> tuple[str, str]:
+    """Split ``"css@attr"`` into the CSS selector and the attribute to read.
+
+    Some boards keep the machine-readable value in an attribute rather than the
+    element's text: gleanerclassifieds prints "Post Date: 10/27 12:00 AM" but
+    puts the full date in ``<time datetime="2026-10-27 00:00:00.0">``. A
+    trailing ``@attribute`` lets a site config read that value without a
+    per-site parser.
+    """
+    css, separator, attr = selector.rpartition("@")
+    if not separator or not css.strip():
+        return selector, ""
+    return css.strip(), attr.strip()
+
+
+def _extract_field(soup: BeautifulSoup, selector: str) -> str | None:
+    """Read a configured selector: its text, or the attribute after ``@``."""
+    if not selector:
+        return None
+    css, attr = _split_attr(selector)
+    element = _select_one(soup, css)
+    if attr:
+        return _select_attr(element, attr)
+    return _extract_text(element)
+
+
 def _parse_date(text: str | None) -> date | None:
     """Best-effort date parsing from various formats."""
     if not text:
@@ -259,6 +285,23 @@ def _fallback_description(soup: BeautifulSoup, min_chars: int = 200) -> str | No
     return best[:20000] or None
 
 
+def _first_sentence(text: str | None, max_len: int = 80) -> str | None:
+    """The opening clause of a body, used as a label when a board has no title.
+
+    Classifieds sites let the advertiser skip the title field; the ad body then
+    opens with the role ("Seeking fulltime Goat Farmer in Portmore area."). The
+    alternative fallbacks on such a page are the URL slug ("-Recruitment 29693")
+    or the site's reference number, neither of which names the job.
+    """
+    if not text:
+        return None
+    head = re.split(r"(?<=[.!?])\s|\n", text.strip(), maxsplit=1)[0]
+    head = head.strip(" -–—:;,.|")
+    if len(head) > max_len:
+        head = head[:max_len].rsplit(" ", 1)[0].rstrip(" ,;:-–—")
+    return head if len(head) >= 3 else None
+
+
 def _resolve_title(
     soup: BeautifulSoup,
     selector: str,
@@ -269,6 +312,7 @@ def _resolve_title(
     site_host: str = "",
     priority: str = "",
     strip_selector: str = "",
+    description: str | None = None,
 ) -> tuple[str, str]:
     """Title + where it came from. Raises when the page names nothing."""
     title, source = _extract_title(
@@ -284,6 +328,12 @@ def _resolve_title(
     hint = _usable_title(title_hint)
     if hint:
         return hint, "listing"
+
+    # Only boards that opt in (``title_from_description``) reach this: their
+    # ads may carry no title at all, while the body still opens with the role.
+    label = _first_sentence(description)
+    if label:
+        return label, "description"
 
     # Fallback: derive a title from the URL slug before giving up, e.g.
     # "/jobs/senior-developer-role-123" -> "Senior Developer Role".
@@ -312,6 +362,12 @@ def parse_detail(
     soup = BeautifulSoup(html or "", "html.parser")
     sel = site_config.selectors
 
+    # The body is read before the title because a board whose ads may omit the
+    # title can name the posting from its opening sentence instead.
+    description = _extract_field(soup, sel.description)
+    if not description or len(description) < 200:
+        description = _fallback_description(soup) or description
+
     title, title_source = _resolve_title(
         soup,
         sel.job_title,
@@ -321,20 +377,14 @@ def parse_detail(
         site_host=urlparse(site_config.base_url).netloc if site_config.base_url else "",
         priority=site_config.title_priority,
         strip_selector=site_config.title_strip_selector,
+        description=description if site_config.title_from_description else None,
     )
 
-    company_name = _extract_text(_select_one(soup, sel.company)) or "Unknown employer"
-    description = _extract_text(_select_one(soup, sel.description))
-    if not description or len(description) < 200:
-        description = _fallback_description(soup) or description
-    location = _extract_text(_select_one(soup, sel.location))
-    employment_type = (
-        _extract_text(_select_one(soup, sel.employment_type)) if sel.employment_type else None
-    )
-    salary = _extract_text(_select_one(soup, sel.salary)) if sel.salary else None
-    posted_date_text = (
-        _extract_text(_select_one(soup, sel.posted_date)) if sel.posted_date else None
-    )
+    company_name = _extract_field(soup, sel.company) or "Unknown employer"
+    location = _extract_field(soup, sel.location)
+    employment_type = _extract_field(soup, sel.employment_type) if sel.employment_type else None
+    salary = _extract_field(soup, sel.salary) if sel.salary else None
+    posted_date_text = _extract_field(soup, sel.posted_date) if sel.posted_date else None
     if posted_date_text and site_config.posted_date_regex:
         match = re.search(site_config.posted_date_regex, posted_date_text)
         posted_date_text = match.group(0) if match else posted_date_text
@@ -351,7 +401,9 @@ def parse_detail(
         source_job_id = job_id
     elif site_config.id_url_regex and url:
         match = re.search(site_config.id_url_regex.strip(), url)
-        source_job_id = match.group(1) if match else url.rsplit("/", 1)[-1].split("?")[0].split("#")[0]
+        source_job_id = (
+            match.group(1) if match else url.rsplit("/", 1)[-1].split("?")[0].split("#")[0]
+        )
     else:
         source_job_id = url.rsplit("/", 1)[-1] if url else ""
         if source_job_id and "/" in source_job_id:
