@@ -304,6 +304,7 @@ def parse_detail(
     html: str,
     *,
     url: str | None = None,
+    job_id: str | None = None,
     title_hint: str | None = None,
     listing_page: int | None = None,
 ) -> RawHtmlScraperJob:
@@ -345,14 +346,20 @@ def parse_detail(
         skill_elems = soup.select(sel.skills)
         skills = [_extract_text(el) or "" for el in skill_elems if _extract_text(el)]
 
-    # Extract job ID from URL
-    source_job_id = url.rsplit("/", 1)[-1] if url else ""
-    if source_job_id and "/" in source_job_id:
-        source_job_id = source_job_id.split("/")[-1]
-    # Clean up: remove file extensions, query strings
-    source_job_id = source_job_id.split("?")[0].split("#")[0]
-    if not source_job_id:
-        source_job_id = url or ""
+    # Extract job ID
+    if job_id:
+        source_job_id = job_id
+    elif site_config.id_url_regex and url:
+        match = re.search(site_config.id_url_regex.strip(), url)
+        source_job_id = match.group(1) if match else url.rsplit("/", 1)[-1].split("?")[0].split("#")[0]
+    else:
+        source_job_id = url.rsplit("/", 1)[-1] if url else ""
+        if source_job_id and "/" in source_job_id:
+            source_job_id = source_job_id.split("/")[-1]
+        # Clean up: remove file extensions, query strings
+        source_job_id = source_job_id.split("?")[0].split("#")[0]
+        if not source_job_id:
+            source_job_id = url or ""
 
     raw_payload: dict[str, Any] = {
         "selectors_used": {
@@ -410,6 +417,7 @@ class HtmlScraperParser:
             self._site_config,
             html,
             url=url,
+            job_id=job_id,
             listing_page=listing_page,
             title_hint=title_hint,
         )
