@@ -605,8 +605,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "FNE_CM_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "FNE – state agency (fne.cm) - Cameroon; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/fne_cm.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:00:55.748\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
+      "enabled": true,
+      "notes": "FNE (emploi.fnecm.org) - Cameroon state agency; updated base_url to emploi.fnecm.org, listing_path to /offres, and currency to XAF."
     },
     {
       "code": "jobwebkenya_com",
