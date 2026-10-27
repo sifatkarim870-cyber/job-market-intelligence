@@ -746,11 +746,11 @@
     {
       "code": "job_mynavi_jp",
       "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
+      "script": "scripts/run_mynavi_scraper.py",
+      "timeout": 75,
       "max_env": "JOB_MYNAVI_JP_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Mynavi (job.mynavi.jp) - Japan; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/job_mynavi_jp.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "enabled": true,
+      "notes": "Mynavi (job.mynavi.jp) - Japan; No key, no registration, no proxy. Uses the shared HTML scraper pipeline with a dedicated discovery client (scrapers/mynavi.py) plus CSS selectors from scrapers/html_scraper/sites/job_mynavi_jp.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found. Re-enabled and fixed 2026-10-27: there is no crawlable listing at all -- robots.txt sets Disallow: /*? for User-agent: * (plus Crawl-delay: 120), which rules out every /pc/search/...?query URL the site's own search uses, so the generic listing path can never see a posting. What robots.txt does allow is the published company sitemap: sitemap_2027_corp_employment.xml lists 32,341 company pages at /27/pc/search/corp<id>/employment.html, each showing that company's recruitment courses. Course detail pages are query-free (/27/pc/search/corp<id>/recruiting_course<courseId>/recruiting_course.html) and carry the full ad: course name (#courseTitle td.sameSize span.title), company (h1), work description (#shokushu td.sameSize p), location (#workLocation td.sameSize), employment type (#employmentStatus .c-label), salary left empty because #startSalary is a per-education table, and 最終更新日 (#updateDate, e.g. 2026/3/11) read through posted_date_regex. title_priority is selector,h1 because the h1 is the company name, not the role. The 2028 sitemap (36,719 companies) is already published but its cycle is not live: its company pages 302 to /28/pc/corpinfo/displayPrevRecruitingCourseList/index?corpId=... and the course paths 404, so discovery probes the first company page of each year and walks only a cycle that serves its own employment.html (2027 today). Each run starts at an hour-derived offset into the 32k company list, so successive runs cover different employers. Live-verified 2026-10-27: 3 fetched, 3 parsed, 0 failures, batch validation PASSED; spot check stored title カーライフアドバイザー, company 徳島三菱自動車販売(株), employment type 正社員 and a 2026-08-20 update date. The declared Crawl-delay of 120 seconds caps a run at about 12 ads in ~40 minutes, which is why the per-source timeout is 75 minutes."
     },
     {
       "code": "enbek_kz",
