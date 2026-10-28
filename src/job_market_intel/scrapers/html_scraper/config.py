@@ -127,6 +127,15 @@ class SiteConfig(BaseModel):
     listing_json_url_field: str = Field(
         default="", description="Dotted field in each JSON job holding its detail URL"
     )
+    #: Some gateways ship their JSON compressed, as an index-addressed zlib
+    #: envelope (``{"_data_": {"0": 120, "1": 156, ...}}``) that the board's own
+    #: bundle inflates with pako before parsing. When set, such a payload is
+    #: inflated and parsed instead of being mapped as-is; a payload that is not
+    #: that envelope is left untouched.
+    json_inflate: bool = Field(
+        default=False,
+        description='Inflate a {"_data_": {index: byte}} zlib envelope before mapping',
+    )
     #: JSON APIs often page by offset rather than page number. When
     #: ``listing_pagination`` contains ``{offset}``, the client substitutes
     #: ``(page - 1) * listing_page_size`` instead of ``{page}``.

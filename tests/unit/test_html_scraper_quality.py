@@ -123,6 +123,20 @@ def test_declared_detail_shape_beats_the_dated_article_rule() -> None:
     assert "news article" in (reject_reason(ad, "Accounts Assistant", DESCRIPTION) or "")
 
 
+def test_a_board_that_lists_every_ad_on_one_page_is_kept() -> None:
+    """MIFOTRA has no per-advertisement page; the ads live under
+    ``/applicant/advertisements``. The word "advertisements" is job
+    vocabulary, so the record is not mistaken for a navigation link."""
+    assert (
+        reject_reason(
+            "https://recruitment.mifotra.gov.rw/applicant/advertisements",
+            "Storekeeper",
+            DESCRIPTION,
+        )
+        is None
+    )
+
+
 def test_missing_description_is_rejected() -> None:
     """A page with no body is a nav link even when the URL looks right."""
     reason = reject_reason("https://example.com/jobs/senior-engineer-12345", "Senior Engineer", "")
@@ -179,4 +193,3 @@ def test_detail_pattern_overrides_section_fragment() -> None:
         )
         is None
     )
-

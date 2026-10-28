@@ -9,6 +9,7 @@ import codecs
 import json
 import re
 import time
+import zlib
 from html import escape, unescape
 from html.parser import HTMLParser
 from typing import Any
@@ -326,6 +327,45 @@ def _fill_json_template(payload: Any, template: str, listing: dict | None) -> st
     return rendered
 
 
+def _discovery_key(job: dict) -> str:
+    """The identity two discovered records are compared on.
+
+    Listings are normally deduplicated by URL, but a board with no per-posting
+    page gives every record the same URL (MIFOTRA lists all open ads on one
+    screen), so identity there is the posting id the feed carries. It is also
+    the record's ``source_job_id``, which is what the database dedupes on.
+    """
+    job_id = job.get("id")
+    if job_id not in (None, ""):
+        return f"id:{job_id}"
+    return f"url:{job.get('url', '')}"
+
+
+def _inflate_indexed_zlib(payload: Any) -> Any:
+    """Decode a ``{"_data_": {"0": 120, "1": 156, ...}}`` zlib envelope.
+
+    The Rwandan e-recruitment API ships its JSON compressed: each byte of a
+    zlib stream becomes one value keyed by its position, and the board's own
+    bundle reassembles and inflates the bytes with pako before parsing. A
+    payload that is not that envelope is returned untouched, so the option
+    stays harmless on boards that compress only some responses.
+    """
+    if not isinstance(payload, dict) or set(payload) != {"_data_"}:
+        return payload
+    data = payload["_data_"]
+    if not isinstance(data, dict) or not data:
+        return payload
+    try:
+        raw = bytes(int(data[str(index)]) for index in range(len(data)))
+    except (KeyError, TypeError, ValueError):
+        return payload
+    try:
+        return json.loads(zlib.decompress(raw))
+    except (zlib.error, json.JSONDecodeError, UnicodeDecodeError):
+        logger.warning("html_scraper: _data_ envelope did not inflate to JSON")
+        return payload
+
+
 class HtmlScraperClient:
     """Fetches postings using plain HTTP and CSS selectors."""
 
@@ -482,6 +522,10 @@ class HtmlScraperClient:
             if _is_offsite_social(url):
                 continue
             job = {"url": url, "title": "", "id": job_id, "listing": item}
+            # The URL was built from the feed's own id, so that id — not a
+            # regex over the URL — names the posting. It is also the only
+            # identity a board with no per-posting page can offer.
+            job["url_from_id"] = not url_field
             # Some feeds (the Danish Jobnet BFF among them) return the whole
             # posting, description included, so the detail page is redundant.
             if self._site_config.detail_json_from_listing:
@@ -669,7 +713,7 @@ class HtmlScraperClient:
             else:
                 html = self._get(url)
             try:
-                payload = json.loads(html)
+                payload = self._maybe_inflate(json.loads(html))
             except json.JSONDecodeError as exc:
                 raise HtmlScraperResponseError(
                     f"listing JSON endpoint returned non-JSON for page {page}: {exc}"
@@ -686,12 +730,14 @@ class HtmlScraperClient:
             soup = BeautifulSoup(html, "html.parser")
             jobs = self._html_listing_jobs(html, soup)
 
-        # Deduplicate by URL
+        # Deduplicate by posting identity: the URL where the board has one
+        # per posting, the feed's id where it does not.
         seen = set()
         unique_jobs = []
         for j in jobs:
-            if j["url"] not in seen:
-                seen.add(j["url"])
+            key = _discovery_key(j)
+            if key not in seen:
+                seen.add(key)
                 unique_jobs.append(j)
 
         logger.info("html_scraper listing page {}: {} job link(s)", page, len(unique_jobs))
@@ -703,7 +749,7 @@ class HtmlScraperClient:
         """Walk listing pages, collecting detail URLs."""
         found: list[dict] = []
         failures: dict[str, str] = {}
-        seen_urls: set[str] = set()
+        seen_keys: set[str] = set()
         budget = max_jobs or self._site_config.max_jobs_per_run
 
         for page in range(1, self._site_config.max_pages + 1):
@@ -717,8 +763,9 @@ class HtmlScraperClient:
                 break
             new = 0
             for job in jobs:
-                if job["url"] not in seen_urls:
-                    seen_urls.add(job["url"])
+                key = _discovery_key(job)
+                if key not in seen_keys:
+                    seen_keys.add(key)
                     found.append(job)
                     new += 1
             logger.info("html_scraper page {}: {} new ({} total)", page, new, len(found))
@@ -745,10 +792,16 @@ class HtmlScraperClient:
             )
         return html
 
+    def _maybe_inflate(self, payload: Any) -> Any:
+        """Inflate a board's ``_data_`` envelope, leaving other payloads alone."""
+        if not self._site_config.json_inflate:
+            return payload
+        return _inflate_indexed_zlib(payload)
+
     def _load_json(self, url: str) -> Any:
         """Fetch one JSON document, keeping the error message specific."""
         try:
-            return json.loads(self._get(url))
+            return self._maybe_inflate(json.loads(self._get(url)))
         except json.JSONDecodeError as exc:
             raise HtmlScraperFetchError(
                 f"detail JSON endpoint returned non-JSON for {url}: {exc}"
@@ -819,11 +872,15 @@ class HtmlScraperClient:
             try:
                 html, canonical = self._detail_page(job)
                 url = canonical or job["url"]
+                if job.get("url_from_id"):
+                    job_id = str(job["id"])
+                elif self._site_config.id_from_url:
+                    job_id = self._job_id_from_url(url)
+                else:
+                    job_id = url
                 records.append(
                     {
-                        "job_id": self._job_id_from_url(url)
-                        if self._site_config.id_from_url
-                        else url,
+                        "job_id": job_id,
                         "html": html,
                         "url": url,
                         "title_hint": job.get("title", ""),

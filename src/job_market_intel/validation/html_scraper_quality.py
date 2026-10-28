@@ -215,6 +215,7 @@ JOB_PATH_KEYWORDS: tuple[str, ...] = (
     "opening",
     "listing",
     "offer",
+    "advert",
     "emploi",
     "offre",
     "trabajo",
@@ -301,7 +302,7 @@ def _url_reason(url: str, site_host: str, detail_pattern: str = "") -> str | Non
 
     for fragment in SECTION_FRAGMENTS:
         if fragment in path:
-            return f"section path ({fragment.strip('/')})" 
+            return f"section path ({fragment.strip('/')})"
 
     if DATED_ARTICLE_RE.search(path):
         return "news article path (dated)"
