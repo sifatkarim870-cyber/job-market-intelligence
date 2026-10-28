@@ -134,10 +134,20 @@ class JobSearchAzClient:
         So the description node is waited for explicitly, and its absence after
         a full timeout is an error rather than a short page. A posting with no
         description is not worth a row, and half of one is worse than none.
+
+        The navigation itself waits for ``domcontentloaded``, not
+        ``networkidle``. Measured again on 2026-10-28, ``networkidle`` never
+        fired on any of four sampled postings: some connection stays open, so
+        every fetch burned the full 60-second load timeout and two attempts
+        before being recorded as a failure -- a 30-posting run could not
+        finish. With ``domcontentloaded`` the same four pages reported
+        ``#content_block`` after 6.8-12.6 seconds and carried the description,
+        so the selector is the real readiness signal and the navigation only
+        needs the document.
         """
         view.goto(
             url,
-            wait_until="networkidle",
+            wait_until="domcontentloaded",
             timeout=self._settings.page_load_timeout_seconds * 1000,
         )
         view.wait_for_selector(

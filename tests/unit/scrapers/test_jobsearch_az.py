@@ -369,6 +369,39 @@ class TestClientContract:
         assert found == {}
         assert "page=1" in failures
 
+    def test_detail_navigation_waits_for_the_document_not_networkidle(self):
+        """Measured 2026-10-28: ``networkidle`` never fires on the live detail
+        pages (a connection stays open), so a run burned two 60-second load
+        timeouts per posting and could not finish 30 of them. With
+        ``domcontentloaded`` the description selector was already attached
+        after 6.8-12.6 seconds, so the selector -- not networkidle -- is the
+        readiness signal."""
+        from job_market_intel.scrapers.jobsearch_az.client import JobSearchAzClient
+
+        client = JobSearchAzClient(JobSearchAzSettings())
+
+        calls: list[tuple] = []
+
+        class FakeView:
+            def goto(self, url, **kwargs):
+                calls.append(("goto", url, kwargs))
+
+            def wait_for_selector(self, selector, **kwargs):
+                calls.append(("wait_for_selector", selector, kwargs))
+
+            def content(self):
+                return DETAIL
+
+        html = client._render_one(FakeView(), "https://jobsearch.az/vacancies/x")
+
+        assert html == DETAIL
+        kind, url, kwargs = calls[0]
+        assert kind == "goto"
+        assert kwargs["wait_until"] == "domcontentloaded"
+        kind, selector, kwargs = calls[1]
+        assert (kind, selector) == ("wait_for_selector", "#content_block")
+        assert kwargs["state"] == "attached"
+
 
 class TestFetchRawJobs:
     """The browser is never touched here; ``_render_many`` is stubbed out."""
