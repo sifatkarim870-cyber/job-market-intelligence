@@ -126,7 +126,7 @@
       "timeout": 45,
       "max_env": "JOBINJA_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "listing pages + detail pages; backfill through page 840 completed 2026-10-09 Disabled 2026-10-22 after the live CI run: jobinja.ir answers HTTP 403 with a Cloudflare error page to plain requests and to a real Chrome alike, from the runner IP and from a home connection. The block is on the address, not on the client, so browser mode does not reach it. The 18,869 rows already collected stay in the corpus; re-enable when the egress address is one the site accepts."
+      "notes": "listing pages + detail pages; backfill through page 840 completed 2026-10-09 Disabled 2026-10-22 after the live CI run: jobinja.ir answers HTTP 403 with a Cloudflare error page to plain requests and to a real Chrome alike, from the runner IP and from a home connection. The block is on the address, not on the client, so browser mode does not reach it. The 18,869 rows already collected stay in the corpus; re-enable when the egress address is one the site accepts. Re-checked 2026-10-29 with curl_cffi chrome impersonation (the transport that unblocks bestjobs): /jobs?page=1 and /robots.txt both still return 403, confirming the block is address-based and no client change reaches it."
     },
     {
       "code": "jobmaster",
