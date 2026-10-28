@@ -858,7 +858,7 @@
       "timeout": 60,
       "max_env": "LAIMOON_COM_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Laimoon (laimoon.com) - United Arab Emirates; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/laimoon_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "Laimoon (laimoon.com) - United Arab Emirates; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/laimoon_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found. Re-inspected 2026-10-28 and confirmed the job board is retired: www.laimoon.com now serves the course catalogue (title 'Find virtual classes, online certification and training courses for your career'), laimoon.com's unknown paths 301 to courses.laimoon.com, and the old jobs host answers EVERY path - /, /uae, /uae/Employee-Recruitment, /united-states/new-york, even /sitemap.xml - with the same 1,219-byte 404 that reads 'Laimoon Jobs - Coming Soon' and offers only a link back to the course catalogue. The URL shapes Google still indexes (jobs.laimoon.com/united-states/new-york) are cached, not live. There is no listing to scrape, so the source stays disabled and its config now points at the dead jobs host rather than the paginated laimoon.com/ it never had."
     },
     {
       "code": "careerviet_vn",
