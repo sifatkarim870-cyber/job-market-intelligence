@@ -60,7 +60,10 @@ class HtmlScraperPipeline:
                 HtmlScraperCleaner as _Cleaner,
             )
 
-            self._cleaner = _Cleaner()
+            self._cleaner = _Cleaner(
+                currency_iso_code=self._site_config.currency_iso_code,
+                pay_period=self._site_config.pay_period,
+            )
 
     def run(
         self, *, store_db: bool = True, max_jobs: int | None = None

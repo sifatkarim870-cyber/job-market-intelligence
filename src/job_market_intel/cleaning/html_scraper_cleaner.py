@@ -65,7 +65,17 @@ def map_employment_type(value: str | None) -> str | None:
 
 
 class HtmlScraperCleaner:
-    """Turns ``RawHtmlScraperJob`` records into ``CleanedJob``."""
+    """Turns ``RawHtmlScraperJob`` records into ``CleanedJob``.
+
+    Currency and pay period are per-board facts carried by the site config.
+    The framework serves boards in dozens of countries, and a hard-coded
+    USD/monthly stamped a New Zealand hourly rate as US dollars a month
+    (2026-10-28).
+    """
+
+    def __init__(self, currency_iso_code: str = "USD", pay_period: str = "monthly") -> None:
+        self._currency_iso_code = currency_iso_code
+        self._pay_period = pay_period
 
     def clean_job(self, raw_job: RawHtmlScraperJob) -> CleanedJob:
         body = clean_html_text(raw_job.description) or ""
@@ -108,8 +118,8 @@ class HtmlScraperCleaner:
             ),
             data_quality_score=self._quality_score(raw_job, body, skills),
             raw_payload=payload,
-            currency_iso_code="USD",
-            pay_period="monthly",
+            currency_iso_code=self._currency_iso_code,
+            pay_period=self._pay_period,
             employment_type_code=map_employment_type(raw_job.employment_type),
         )
 
