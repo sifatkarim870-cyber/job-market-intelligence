@@ -171,6 +171,17 @@ class SiteConfig(BaseModel):
         default_factory=dict,
         description="Output field -> dotted JSON path (or list of paths to concatenate)",
     )
+    #: Some boards print each fact as a label beside its value in an unlabelled
+    #: container (``<li><span>Töökoha asukoht</span><span>Harju maakond</span></li>``
+    #: or ``<dt>Location</dt><dd>Tallinn</dd>``), which no CSS selector can
+    #: address without pinning Tailwind class names that change on every deploy.
+    #: This maps a field name (company, location, employment_type, salary,
+    #: posted_date) to the visible label whose sibling carries the value, and is
+    #: consulted only when the normal selector produced nothing.
+    detail_label_map: dict[str, str] = Field(
+        default_factory=dict,
+        description="Output field -> visible label whose sibling holds the value",
+    )
     #: Some feeds return the complete posting in the listing payload, so the
     #: detail page adds nothing. When set, each listing item is mapped through
     #: :attr:`detail_json_map` directly instead of being fetched again.

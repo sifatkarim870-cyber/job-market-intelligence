@@ -961,12 +961,12 @@
     },
     {
       "code": "tootukassa_ee",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
+      "group": "browser",
+      "script": "scripts/run_browser_scraper.py",
+      "timeout": 75,
       "max_env": "TOOTUKASSA_EE_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "Töötukassa – state (tootukassa.ee) - Estonia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/tootukassa_ee.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "enabled": true,
+      "notes": "Töötukassa – state (tootukassa.ee) - Estonia; No key, no registration, no proxy. Uses the generic browser (Selenium) framework with CSS selectors from scrapers/browser_scraper/sites/tootukassa_ee.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found. Re-inspected 2026-10-28 and re-enabled: the board is an Angular SPA (tk-root, tk-search-page, tk-joboffer-list-block) that ships a 140 KB JS shell to requests, and a rendered Chrome shows 20 cards immediately plus a 'Laadi veel' control that appends 20 more (1586 open offers). Listing waits for a[href*='/et/toopakkumised/'] and presses tk-load-more span.load-more once; the JS click on span.load-more is what works - a Selenium click on the outer [role='button'] left the page at 20 links. Detail pages render in stages, so detail_settle_seconds=6 keeps the employer block from being read half-rendered. Facts come from div.page-content (h1 title, .flex-1 > h2 employer, .mt-2.text-base 'Avaldati: dd.mm.yyyy') plus a detail_label_map for Töökoha asukoht (location), Töötasu (bruto) (salary) and Tööaeg (employment type), which no CSS selector can address without pinning Tailwind classes. Live run 2026-10-28: 40 fetched / 40 parsed / 0 failures, batch validation PASSED, spot checks correct on title, employer, county-level location, employment type and EUR salary; ads that publish no pay stay null. robots.txt allows the clean /et/toopakkumised path (Disallow covers only the query-string form) with Crawl-delay: 10, which the 10 s inter-request delay honours. The /web/graphql endpoint it renders from is robots-disallowed and is deliberately not called."
     },
     {
       "code": "tyopaikat_oikotie_fi",

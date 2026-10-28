@@ -238,7 +238,43 @@ class BrowserScraperClient:
                 break
             time.sleep(self._site_config.scroll_pause_seconds)
 
+        self._click_load_more()
+
         return self._driver.page_source
+
+    def _click_load_more(self) -> None:
+        """Press the listing's "load more" control, if it declares one.
+
+        A "load more" board renders one screenful and stops; the rest arrives
+        only when the control is pressed, and each press appends another page
+        (Töötukassa: 20 more ads per press). The press is done through
+        ``arguments[0].click()`` rather than Selenium's ``click`` so an overlay
+        or a cookie banner sitting on top of the button does not turn into a
+        silently empty listing -- measured on 2026-10-28, where a plain click
+        returned 20 links and the JavaScript click returned 40.
+        """
+        selector = self._site_config.listing_more_selector.strip()
+        clicks = self._site_config.listing_more_clicks
+        if not selector or clicks <= 0:
+            return
+        for attempt in range(1, clicks + 1):
+            try:
+                elements = self._driver.find_elements("css selector", selector)
+            except Exception:  # noqa: BLE001 - a dead session is retried by the caller
+                break
+            if not elements:
+                logger.info(
+                    "browser_scraper: no '{}' after {} click(s); listing is as long as it gets",
+                    selector,
+                    attempt - 1,
+                )
+                break
+            try:
+                self._driver.execute_script("arguments[0].click();", elements[0])
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("browser_scraper: load-more click {} failed: {}", attempt, exc)
+                break
+            time.sleep(self._site_config.listing_more_pause_seconds)
 
     def _check_challenge(self, html: str, url: str) -> None:
         """Raise when the rendered page is a bot challenge rather than content."""
@@ -369,14 +405,21 @@ class BrowserScraperClient:
                         "css selector", self._site_config.detail_ready_selector
                     )
                     if element is not None:
-                        return html
+                        return self._settle_then_read()
                 except Exception:  # noqa: BLE001 - not there yet
                     pass
             elif _looks_rendered(html):
-                return html
+                return self._settle_then_read()
             if time.monotonic() >= deadline:
                 return html
             time.sleep(0.5)
+
+    def _settle_then_read(self) -> str:
+        """Wait out the settle window, then take the finished page source."""
+        seconds = self._site_config.detail_settle_seconds
+        if seconds > 0:
+            time.sleep(seconds)
+        return self._driver.page_source if self._driver is not None else ""
 
     # -- the interface the HTML pipeline calls --------------------------
 

@@ -191,3 +191,114 @@ def test_detail_page_without_json_ld_falls_back_to_the_markup() -> None:
     client = _StubClient(_config(detail_json_ld=True, detail_json_map={"title": "title"}))
 
     assert client._detail_html(page, "https://example.com/jobs/1") == page
+
+
+class _FakeDriver:
+    """Just enough driver for the load-more and settle paths."""
+
+    def __init__(self, rounds: list[list[str]], page_source: str = "<html>loaded</html>"):
+        self._rounds = list(rounds)
+        self.clicked: list[str] = []
+        self.scripts: list[str] = []
+        self.page_source = page_source
+
+    def find_elements(self, by: str, selector: str) -> list[str]:
+        return self._rounds.pop(0) if self._rounds else []
+
+    def execute_script(self, script: str, *args):
+        self.scripts.append(script)
+        if args:
+            self.clicked.append(args[0])
+        return None
+
+
+def _no_sleep(monkeypatch) -> list[float]:
+    calls: list[float] = []
+    monkeypatch.setattr("job_market_intel.scrapers.browser_scraper.client.time.sleep", calls.append)
+    return calls
+
+
+def test_load_more_is_pressed_until_the_control_disappears(monkeypatch) -> None:
+    """Töötukassa renders 20 ads and waits for "Laadi veel" (2026-10-28).
+
+    The control is pressed through ``arguments[0].click()`` because a plain
+    Selenium click on the wrapper ``[role='button']`` left the listing at 20
+    links while the inner ``span.load-more`` doubled it.
+    """
+    sleeps = _no_sleep(monkeypatch)
+    client = _StubClient(
+        _config(
+            listing_more_selector="tk-load-more span.load-more",
+            listing_more_clicks=3,
+            listing_more_pause_seconds=7.0,
+        )
+    )
+    driver = _FakeDriver([["first"], ["second"], []])
+    client._driver = driver
+
+    client._click_load_more()
+
+    assert driver.clicked == ["first", "second"]
+    assert driver.scripts == ["arguments[0].click();", "arguments[0].click();"]
+    assert sleeps == [7.0, 7.0]
+
+
+def test_load_more_stops_at_the_declared_click_budget(monkeypatch) -> None:
+    _no_sleep(monkeypatch)
+    client = _StubClient(_config(listing_more_selector=".more", listing_more_clicks=2))
+    driver = _FakeDriver([["a"], ["b"], ["c"], ["d"]])
+    client._driver = driver
+
+    client._click_load_more()
+
+    assert driver.clicked == ["a", "b"]
+
+
+def test_load_more_does_nothing_when_the_site_declares_none() -> None:
+    client = _StubClient(_config())
+    driver = _FakeDriver([["a"]])
+    client._driver = driver
+
+    client._click_load_more()
+
+    assert driver.clicked == []
+    assert driver.scripts == []
+
+
+def test_a_failing_load_more_click_does_not_lose_the_listing(monkeypatch) -> None:
+    """A stale element is a short listing, not a failed run."""
+    _no_sleep(monkeypatch)
+    client = _StubClient(_config(listing_more_selector=".more", listing_more_clicks=2))
+
+    class _BrokenDriver(_FakeDriver):
+        def execute_script(self, script: str, *args):
+            raise RuntimeError("stale element reference")
+
+    driver = _BrokenDriver([["a"], ["b"]])
+    client._driver = driver
+
+    client._click_load_more()  # must not raise
+
+
+def test_detail_settle_waits_before_reading_the_page(monkeypatch) -> None:
+    """A detail selector is only the first fragment on an Angular page.
+
+    Measured on Töötukassa (2026-10-28): the title was in the DOM while the
+    employer block and requirements were still rendering, so reading at the
+    first match stored an employer of "Tööülesanded" and a half-length body.
+    """
+    sleeps = _no_sleep(monkeypatch)
+    client = _StubClient(_config(detail_settle_seconds=6.0))
+    client._driver = _FakeDriver([], page_source="<html>finished</html>")
+
+    assert client._settle_then_read() == "<html>finished</html>"
+    assert sleeps == [6.0]
+
+
+def test_detail_settle_of_zero_reads_immediately(monkeypatch) -> None:
+    sleeps = _no_sleep(monkeypatch)
+    client = _StubClient(_config())
+    client._driver = _FakeDriver([], page_source="<html>finished</html>")
+
+    assert client._settle_then_read() == "<html>finished</html>"
+    assert sleeps == []

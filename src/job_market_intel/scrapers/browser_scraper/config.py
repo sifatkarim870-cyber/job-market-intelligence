@@ -41,10 +41,25 @@ class BrowserSiteConfig(SiteConfig):
     #: reading a detail page.
     detail_ready_selector: str = Field(default="")
     detail_wait_seconds: int = Field(default=10, ge=1, le=180)
+    #: Extra seconds to wait after the detail selector appears but before the
+    #: page is read. A selector is only the *first* fragment to arrive on an
+    #: Angular/React page: measured on Töötukassa (2026-10-28), the title was
+    #: present while the employer block and the requirements section were still
+    #: rendering, so half an ad was captured. Zero keeps the old behaviour.
+    detail_settle_seconds: float = Field(default=0.0, ge=0.0, le=60.0)
     #: Scroll the listing to the bottom this many times before reading it.
     #: Many boards render the first screenful and load the rest on scroll.
     scroll_count: int = Field(default=0, ge=0, le=20)
     scroll_pause_seconds: float = Field(default=1.5, ge=0.0, le=30.0)
+    #: Boards with a "load more" button render 20 ads and then wait for a click
+    #: (Töötukassa's "Laadi veel"). When set, this selector is clicked
+    #: :attr:`listing_more_clicks` times, waiting :attr:`listing_more_pause_seconds`
+    #: after each click, before the page source is read.
+    listing_more_selector: str = Field(
+        default="", description="CSS selector for a 'load more' control on the listing"
+    )
+    listing_more_clicks: int = Field(default=0, ge=0, le=20)
+    listing_more_pause_seconds: float = Field(default=3.0, ge=0.0, le=30.0)
     #: Undetected-Chrome mode (seleniumbase). On by default: a plainly
     #: fingerprinted WebDriver is refused by most of the boards this framework
     #: exists for.

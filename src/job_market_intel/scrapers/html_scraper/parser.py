@@ -80,6 +80,7 @@ def _parse_date(text: str | None) -> date | None:
         "%Y/%m/%d",
         "%d-%m-%Y",
         "%d/%m/%Y",
+        "%d.%m.%Y",
         "%b %d, %Y",
         "%B %d, %Y",
         "%d %b %Y",
@@ -348,6 +349,80 @@ def _resolve_title(
     )
 
 
+_LABEL_FIELDS = ("company", "location", "employment_type", "salary", "posted_date")
+
+#: Elements that plausibly carry a form-style label. Kept narrow on purpose:
+#: a bare ``div`` holding the word "Location" is usually a heading, while a
+#: ``span``/``dt``/``th`` beside the value is the label. ``p`` and ``strong``
+#: appear on boards that bold the label inside a paragraph.
+_LABEL_TAGS = ("span", "dt", "th", "label", "strong", "b", "p", "div")
+
+
+def _normalise_label(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip().casefold().rstrip(":")
+
+
+def _label_value(soup: BeautifulSoup, label: str) -> str | None:
+    """The value printed beside ``label`` on a detail page.
+
+    Three shapes are measured in the wild and all three are handled:
+
+    * ``<li><span>Töökoha asukoht</span><div><p>Harju maakond</p></div></li>``
+    * ``<li><span>Töötasu (bruto)</span><span>alates 1970 EUR</span></li>``
+    * ``<dt>Location</dt><dd>Tallinn</dd>``
+
+    The label must be the element's *own* text, so a container that happens to
+    hold the label plus the value does not match itself. When the label's next
+    sibling is empty (a wrapper around a nested value), the *parent's* next
+    sibling is tried, which covers ``<div><span>Location</span></div><div>...``.
+    """
+    wanted = _normalise_label(label)
+    if not wanted:
+        return None
+    for node in soup.find_all(_LABEL_TAGS):
+        own = " ".join(string for string in node.find_all(string=True, recursive=False))
+        if _normalise_label(own) != wanted:
+            continue
+        sibling = node.find_next_sibling()
+        if sibling is not None:
+            text = _extract_text(sibling)
+            if text:
+                return text
+        parent = node.parent
+        if parent is not None:
+            sibling = parent.find_next_sibling()
+            if sibling is not None:
+                text = _extract_text(sibling)
+                if text:
+                    return text
+    return None
+
+
+def _fill_from_labels(
+    soup: BeautifulSoup,
+    label_map: dict[str, str],
+    values: dict[str, str | None],
+) -> dict[str, str | None]:
+    """Fill empty fields from label/value rows (see ``detail_label_map``).
+
+    Only gaps are filled: a selector that already produced a value wins,
+    because it was written for this site and a label can appear twice on one
+    page (salary in the ad body and again in the summary table).
+    """
+    if not label_map:
+        return values
+    for field, label in label_map.items():
+        if field not in _LABEL_FIELDS or not label:
+            continue
+        current = values.get(field)
+        if current and not (field == "company" and current == "Unknown employer"):
+            continue
+        found = _label_value(soup, label)
+        if found:
+            values[field] = found
+    return values
+
+
 def parse_detail(
     source_code: str,
     site_config: SiteConfig,
@@ -385,6 +460,26 @@ def parse_detail(
     employment_type = _extract_field(soup, sel.employment_type) if sel.employment_type else None
     salary = _extract_field(soup, sel.salary) if sel.salary else None
     posted_date_text = _extract_field(soup, sel.posted_date) if sel.posted_date else None
+
+    # Label/value rows (see ``detail_label_map``), for boards whose facts sit
+    # beside a visible label rather than under a stable class name.
+    values = _fill_from_labels(
+        soup,
+        site_config.detail_label_map,
+        {
+            "company": company_name,
+            "location": location,
+            "employment_type": employment_type,
+            "salary": salary,
+            "posted_date": posted_date_text,
+        },
+    )
+    company_name = values["company"] or company_name
+    location = values["location"]
+    employment_type = values["employment_type"]
+    salary = values["salary"]
+    posted_date_text = values["posted_date"]
+
     if posted_date_text and site_config.posted_date_regex:
         match = re.search(site_config.posted_date_regex, posted_date_text)
         posted_date_text = match.group(0) if match else posted_date_text
