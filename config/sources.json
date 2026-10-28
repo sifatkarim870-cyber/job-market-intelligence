@@ -885,7 +885,7 @@
       "timeout": 60,
       "max_env": "AMS_AT_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "AMS eJob-Room – state (ams.at) - Austria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ams_at.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as source not verified by the sweep audit. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored."
+      "notes": "AMS eJob-Room – state (ams.at) - Austria; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ams_at.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: parsed records but the audit kept 0 posting(s); examples rejected as no job posting among the rows stored. Investigated again 2026-10-28 and left disabled: the postings are not on ams.at at all. ams.at/ejobroom redirects to an information page about the eJob-Room, and the search itself is the Angular app at https://jobs.ams.at/public/emps/ (19.8 KB shell, zero anchors server-side). That host's robots.txt is 'user-agent: * / Allow: /public/emps/$ / Disallow: /public/emps/': the only path allowed for a crawler is the bare landing page, while every search, API and detail URL under /public/emps/ is disallowed (only LinkedInBot is exempt). Scraping the postings would mean fetching a path the operator explicitly closed to us, so this source stays off; www.ams.at/robots.txt does not help either, since that site only carries advice pages, not the listings."
     },
     {
       "code": "willhaben_at",
