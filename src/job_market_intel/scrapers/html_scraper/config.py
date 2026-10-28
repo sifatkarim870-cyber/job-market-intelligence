@@ -180,6 +180,17 @@ class SiteConfig(BaseModel):
         default_factory=dict,
         description="Output field -> dotted JSON path (or list of paths to concatenate)",
     )
+    #: A schema.org ``baseSalary`` is structured -- a currency, a unit and a
+    #: min/max or single value -- while :attr:`detail_json_map` can only render
+    #: text, so a JSON-LD board's pay read as "not disclosed" even when the ad
+    #: published a number. This maps the logical parts (``currency``, ``min``,
+    #: ``max``, ``value``, ``unit``) to their dotted paths: the client puts them
+    #: on the rendered ``#salary`` node as ``data-salary-*`` attributes and the
+    #: parser lifts them into the raw record, keeping the salary numeric.
+    detail_json_salary: dict[str, str] = Field(
+        default_factory=dict,
+        description="currency/min/max/value/unit -> dotted path in the payload",
+    )
     #: Some detail payloads carry the posting's canonical page URL, while the
     #: listing API only knows its numeric id (Navent boards build a
     #: ``/empleos/<slug>-<id>.html`` link the listing never sees). When set, the

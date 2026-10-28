@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -53,14 +54,47 @@ _EMPLOYMENT_MAP = {
 }
 
 
-def map_employment_type(value: str | None) -> str | None:
+#: ``unitText`` of a schema.org ``baseSalary`` -> ``salary.job_salaries``
+#: period. The board's config carries a default for ads that publish no unit.
+_PAY_PERIOD_BY_UNIT = {
+    "HOUR": "hourly",
+    "DAY": "daily",
+    "WEEK": "weekly",
+    "MONTH": "monthly",
+    "YEAR": "yearly",
+}
+
+
+def _employment_candidates(value: str) -> list[str]:
+    """The strings to try as one employment type, best guess first.
+
+    A feed may list more than one type (``["FULL_TIME", "TEMPORARY"]``), and
+    the first element is the primary. The page's own text often joins them, so
+    each part and each word is also tried on its own -- in the order the board
+    wrote them, which is what makes ``"FULL_TIME TEMPORARY"`` a full-time job
+    rather than the last code it happens to contain.
+    """
+    parts = [part for part in re.split(r"[\n,;/|]+", value) if part.strip()]
+    candidates: list[str] = []
+    for part in parts:
+        candidates.append(part)
+        candidates.extend(part.split())
+    return candidates
+
+
+def map_employment_type(value: str | list[str] | None) -> str | None:
+    """schema.org ``employmentType`` -> ``ref.employment_types.code``.
+
+    Unknown values stay ``None`` rather than being guessed at.
+    """
     if not value:
         return None
-    import re
-
-    key = re.sub(r"[^A-Z]+", "_", value.strip().upper()).strip("_")
-    if key in _EMPLOYMENT_MAP:
-        return _EMPLOYMENT_MAP[key]
+    items = value if isinstance(value, list) else [value]
+    for item in items:
+        for candidate in _employment_candidates(str(item)):
+            key = re.sub(r"[^A-Z]+", "_", candidate.strip().upper()).strip("_")
+            if key in _EMPLOYMENT_MAP:
+                return _EMPLOYMENT_MAP[key]
     return None
 
 
@@ -70,7 +104,9 @@ class HtmlScraperCleaner:
     Currency and pay period are per-board facts carried by the site config.
     The framework serves boards in dozens of countries, and a hard-coded
     USD/monthly stamped a New Zealand hourly rate as US dollars a month
-    (2026-10-28).
+    (2026-10-28). An ad that publishes its own rate (a schema.org
+    ``baseSalary`` unit and currency, kept in the raw record) overrides the
+    board's default for that record.
     """
 
     def __init__(self, currency_iso_code: str = "USD", pay_period: str = "monthly") -> None:
@@ -85,7 +121,24 @@ class HtmlScraperCleaner:
         raw = dict(raw_job.raw or {})
         salary_min = raw.get("salary_min")
         salary_max = raw.get("salary_max")
+        if salary_min is not None and salary_max is not None and salary_min > salary_max:
+            salary_min, salary_max = salary_max, salary_min
         salary_disclosed = bool(salary_min is not None or salary_max is not None)
+
+        # A board's ads can publish pay at different rates (an hourly wage on
+        # one, a yearly salary on the next), so the unit the ad itself states
+        # wins over the site's default whenever there is a salary to stamp.
+        currency_iso_code = self._currency_iso_code
+        pay_period = self._pay_period
+        if salary_disclosed:
+            unit_period = _PAY_PERIOD_BY_UNIT.get(
+                str(raw.get("salary_unit_text") or "").strip().upper()
+            )
+            if unit_period:
+                pay_period = unit_period
+            published_currency = str(raw.get("salary_currency") or "").strip().upper()
+            if re.fullmatch(r"[A-Z]{3}", published_currency):
+                currency_iso_code = published_currency
 
         skills = list(raw.get("skills", []) or [])
 
@@ -118,8 +171,8 @@ class HtmlScraperCleaner:
             ),
             data_quality_score=self._quality_score(raw_job, body, skills),
             raw_payload=payload,
-            currency_iso_code=self._currency_iso_code,
-            pay_period=self._pay_period,
+            currency_iso_code=currency_iso_code,
+            pay_period=pay_period,
             employment_type_code=map_employment_type(raw_job.employment_type),
         )
 

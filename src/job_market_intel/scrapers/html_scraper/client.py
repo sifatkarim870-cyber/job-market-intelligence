@@ -254,6 +254,9 @@ def mapped_json_html(
     description = text_of(mapping.get("description", ""))
     posted_date = plain(mapping.get("posted_date", ""))
     salary = plain(mapping.get("salary", ""))
+    salary_attrs, salary_text = _structured_salary_html(site_config, payload, listing)
+    if not salary:
+        salary = salary_text
     return (
         "<html><body>"
         f"<h1>{title}</h1>"
@@ -262,10 +265,98 @@ def mapped_json_html(
         f"<div id='employment_type'>{employment_type}</div>"
         f"<div id='description'>{description}</div>"
         f"<div id='posted_date'>{posted_date}</div>"
-        f"<div id='salary'>{salary}</div>"
+        f"<div id='salary'{salary_attrs}>{salary}</div>"
         f"<a href='{escape(url)}'>apply</a>"
         "</body></html>"
     )
+
+
+def _structured_salary_html(
+    site_config: SiteConfig, payload: Any, listing: dict | None
+) -> tuple[str, str]:
+    """Render a mapped ``baseSalary`` as node attributes plus readable text.
+
+    The framework hands the parser text, so a numeric salary would otherwise
+    reach the cleaner as an unparsed string. Boards that declare
+    ``detail_json_salary`` get the numbers back as ``data-salary-*`` attributes
+    on the ``#salary`` node, which the parser lifts into the raw record; the
+    text beside them is what a human reading the rendered page sees.
+    """
+    mapping = site_config.detail_json_salary
+    if not mapping:
+        return "", ""
+    band = _salary_band(mapping, payload, listing)
+    if band is None:
+        return "", ""
+    currency, unit, minimum, maximum = band
+
+    attributes = []
+    if currency:
+        attributes.append(("data-salary-currency", currency))
+    attributes.append(("data-salary-min", f"{minimum:g}"))
+    attributes.append(("data-salary-max", f"{maximum:g}"))
+    if unit:
+        attributes.append(("data-salary-unit", unit))
+    rendered = "".join(f" {name}='{escape(value)}'" for name, value in attributes)
+
+    if minimum == maximum:
+        band_text = f"{minimum:g}"
+    else:
+        band_text = f"{minimum:g} - {maximum:g}"
+    text = " ".join(part for part in (currency, band_text, unit) if part)
+    return rendered, escape(text)
+
+
+def _salary_band(
+    mapping: dict[str, str], payload: Any, listing: dict | None
+) -> tuple[str, str, float, float] | None:
+    """Resolve a mapped salary to ``(currency, unit, min, max)``.
+
+    ``baseSalary`` carries a min/max pair on most ads and a single ``value`` on
+    the rest, and the two are levelled here so the caller sees one shape.
+    ``None`` means the payload published no usable figure.
+    """
+
+    def part(name: str) -> str:
+        path = mapping.get(name, "")
+        if not path.strip():
+            return ""
+        return _string_of(_mapped_value(payload, path, listing))
+
+    def number(name: str) -> float | None:
+        return _as_number(_mapped_value(payload, mapping.get(name, ""), listing))
+
+    minimum = number("min")
+    maximum = number("max")
+    if minimum is None and maximum is None:
+        minimum = maximum = number("value")
+    if minimum is None or maximum is None:
+        return None
+    if minimum > maximum:
+        minimum, maximum = maximum, minimum
+    return part("currency"), part("unit"), minimum, maximum
+
+
+def _string_of(value: Any) -> str:
+    """One resolved value as text; a list is flattened, as the mapper does."""
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value if item not in (None, ""))
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return "" if value in (None, "") else str(value)
+
+
+def _as_number(value: Any) -> float | None:
+    """A payload value as a finite float, or ``None`` when it is not one."""
+    if value in (None, "") or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
 
 
 def _mapped_value(payload: Any, path: str, listing: dict | None) -> Any:
@@ -481,8 +572,13 @@ class HtmlScraperClient:
                 if not isinstance(node, dict):
                     return None
                 node = node.get(key)
-            if not isinstance(node, list):
+            if node is None:
                 return None
+            # ``jobLocation`` is a list on most ads of a board and a single
+            # object on the rest (Bundesagentur für Arbeit), and the mapping
+            # should not have to guess which one this ad used.
+            if not isinstance(node, list):
+                node = [node]
             values = [HtmlScraperClient._walk_dotted(item, rest) for item in node]
             return [value for value in values if value not in (None, "")]
         if not isinstance(node, dict):

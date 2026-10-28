@@ -423,6 +423,45 @@ def _fill_from_labels(
     return values
 
 
+def _structured_salary(soup: BeautifulSoup) -> dict[str, float | str]:
+    """The ``data-salary-*`` facts a JSON mapping left on the salary node.
+
+    ``baseSalary`` in a schema.org posting is a currency, a unit and a
+    min/max (or single) value. :func:`mapped_json_html` renders it as text and
+    keeps the numbers in attributes, because the cleaner stores a salary only
+    when it has bounds -- otherwise a disclosed hourly rate is reported as
+    "not disclosed" and the analytics lose it.
+    """
+    node = soup.select_one("#salary")
+    if node is None:
+        return {}
+    facts: dict[str, float | str] = {}
+    for name in ("min", "max"):
+        number = _as_number(node.get(f"data-salary-{name}"))
+        if number is not None:
+            facts[f"salary_{name}"] = number
+    currency = (node.get("data-salary-currency") or "").strip().upper()
+    if re.fullmatch(r"[A-Z]{3}", currency):
+        facts["salary_currency"] = currency
+    unit = (node.get("data-salary-unit") or "").strip()
+    if unit:
+        facts["salary_unit_text"] = unit
+    return facts
+
+
+def _as_number(value: Any) -> float | None:
+    """A rendered attribute as a finite float, or ``None``."""
+    if value in (None, "") or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
 def parse_detail(
     source_code: str,
     site_config: SiteConfig,
@@ -480,6 +519,10 @@ def parse_detail(
     salary = values["salary"]
     posted_date_text = values["posted_date"]
 
+    # A structured salary (schema.org ``baseSalary``) survives as attributes on
+    # the node the JSON mapping rendered, so the number is not lost to text.
+    salary_facts = _structured_salary(soup)
+
     if posted_date_text and site_config.posted_date_regex:
         match = re.search(site_config.posted_date_regex, posted_date_text)
         posted_date_text = match.group(0) if match else posted_date_text
@@ -525,6 +568,9 @@ def parse_detail(
     }
     if salary:
         raw_payload["salary_raw"] = salary
+    if salary_facts:
+        raw_payload["salary_raw_structured"] = salary_facts
+        raw_payload.update(salary_facts)
 
     return RawHtmlScraperJob(
         source_job_id=source_job_id,

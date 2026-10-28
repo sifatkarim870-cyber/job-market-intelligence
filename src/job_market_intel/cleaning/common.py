@@ -78,7 +78,9 @@ class CleanedJob(BaseModel):
             resolving this to ``ref.locations`` is Step 28.
         salary_min: Cleaned salary lower bound, in the source's original
             currency. Swapped with ``salary_max`` if the source had them
-            reversed; otherwise unchanged.
+            reversed; otherwise unchanged. A fraction is kept: an hourly
+            wage of 18.40 is what the ad offered, and
+            ``salary.job_salaries.salary_min`` is ``NUMERIC(12,2)``.
         salary_max: See ``salary_min``.
         salary_disclosed: ``True`` if either salary bound is present.
             Pre-derived here because it maps directly onto
@@ -168,8 +170,8 @@ class CleanedJob(BaseModel):
     company_logo_url: str | None
     skills: list[str]
     location_cleaned: str | None
-    salary_min: int | None
-    salary_max: int | None
+    salary_min: int | float | None
+    salary_max: int | float | None
     salary_disclosed: bool
     description_clean: str | None
     word_count: int

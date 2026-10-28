@@ -2,28 +2,52 @@
   "source_code": "arbeitsagentur_de",
   "source_name": "Bundesagentur für Arbeit Jobbörse (arbeitsagentur.de)",
   "country": "Germany",
-  "base_url": "https://arbeitsagentur.de",
-  "listing_path": "/",
-  "listing_pagination": "?page={page}",
+  "base_url": "https://www.arbeitsagentur.de",
+  "listing_path": "/jobsuche/suche?angebotsart=1",
+  "listing_pagination": "&page={page}",
   "max_pages": 10,
   "max_jobs_per_run": 60,
   "selectors": {
-    "job_card": "article, div.job-card, div.job-item, .vacancy-card, .listing-item, .card",
-    "job_link": "a[href*='/job/'], a[href*='/vacancy/'], a[href*='/listing/'], a[href*='/career/']",
-    "job_title": "h1, h2, h3, .job-title, [class*='title']",
-    "company": ".company, .employer, [class*='company'], [class*='employer']",
-    "location": ".location, [class*='location'], [class*='city'], [class*='place']",
-    "description": ".job-description, .description, [class*='description'], .job-body",
-    "posted_date": "[class*='date'], [class*='posted'], [class*='time'], time",
-    "salary": "[class*='salary'], [class*='pay']",
-    "skills": "[class*='skill'], [class*='tag']"
+    "job_card": "",
+    "job_link": "a[href*='/jobsuche/jobdetail/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "employment_type": "#employment_type",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": ""
   },
-  "detail_url_pattern": "",
+  "detail_url_pattern": "/jobsuche/jobdetail/[^/]+$",
   "id_from_url": true,
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": "jobLocation[].address.addressLocality",
+    "employment_type": "employmentType",
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted"
+  },
+  "detail_json_salary": {
+    "currency": "baseSalary.currency",
+    "min": "baseSalary.value.minValue",
+    "max": "baseSalary.value.maxValue",
+    "value": "baseSalary.value.value",
+    "unit": "baseSalary.value.unitText"
+  },
   "user_agent": "job-market-intel-research (research@example.org)",
-  "request_timeout_seconds": 30,
+  "extra_headers": {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
+    "Referer": "https://www.arbeitsagentur.de/jobsuche/"
+  },
+  "request_timeout_seconds": 45,
   "inter_request_delay_seconds": 2.0,
-  "currency_iso_code": "USD",
+  "currency_iso_code": "EUR",
   "pay_period": "monthly",
   "country_fallback": "Germany"
 }
