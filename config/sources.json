@@ -1416,7 +1416,7 @@
       "timeout": 60,
       "max_env": "SAMOAOBSERVER_WS_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Samoa Observer classifieds (samoaobserver.ws) - Samoa; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/samoaobserver_ws.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "Samoa Observer (samoaobserver.ws) - Samoa; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/samoaobserver_ws.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found. Re-inspected 2026-10-28 and confirmed the paper publishes no classifieds or jobs section at all: the homepage nav lists only news categories (Samoa, World, Sport, Opinion, Editorial, Letters, Cartoon, Op-Ed, Columns, Contributors, Between the Lines, Think a Minute, Sponsored, Today's Paper, Daily Quiz) with no classifieds/jobs/vacancy link, /category/classifieds, /classifieds, /category/jobs, /category/vacancies and /category/advertorial all return the site's 1,722-byte 404, and classifieds./jobs.samoaobserver.ws do not resolve; there is no sitemap.xml, and /search?q=vacancy and q=job return news search results only. With no listing to walk the source stays disabled; its config no longer claims a ?page=N pagination that does not exist."
     }
   ]
 }
