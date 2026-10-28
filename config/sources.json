@@ -975,7 +975,7 @@
       "timeout": 60,
       "max_env": "TYOPAIKAT_OIKOTIE_FI_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Oikotie Työpaikat (tyopaikat.oikotie.fi) - Finland; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/tyopaikat_oikotie_fi.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found."
+      "notes": "Oikotie Työpaikat (tyopaikat.oikotie.fi) - Finland; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/tyopaikat_oikotie_fi.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing returned no job links with plain HTTP (client-rendered or wrong path); observed: no postings found. Re-inspected 2026-10-28 and confirmed the board is permanently shut down: every path on the host - /, /tyopaikat and even /robots.txt - returns the same 17,499-byte page whose headline reads 'Oikotie Työpaikat on sulkeutunut' ('Oikotie Jobs has closed') with a thank-you note to jobseekers, companies and partners. The page belongs to the Vend group's housing portal: its only links go to asunnot.oikotie.fi, toimitilat.oikotie.fi, tuki.oikotie.fi and sibling consumer sites, and www.oikotie.fi/tyopaikat now 404s. There is no vacancy listing, no archive and no redirect to a successor board, so the source stays disabled; its config now names the real (closure) page, drops the imaginary ?page=N pagination and uses EUR instead of the placeholder USD."
     },
     {
       "code": "hellowork_com",
