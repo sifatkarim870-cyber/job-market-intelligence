@@ -249,6 +249,7 @@ def mapped_json_html(
     title = plain(mapping.get("title", ""))
     company = plain(mapping.get("company", ""))
     location = escape(unescape(location_of(mapping.get("location", ""))))
+    employment_type = plain(mapping.get("employment_type", ""))
     description = text_of(mapping.get("description", ""))
     posted_date = plain(mapping.get("posted_date", ""))
     salary = plain(mapping.get("salary", ""))
@@ -257,6 +258,7 @@ def mapped_json_html(
         f"<h1>{title}</h1>"
         f"<div id='company'>{company}</div>"
         f"<div id='location'>{location}</div>"
+        f"<div id='employment_type'>{employment_type}</div>"
         f"<div id='description'>{description}</div>"
         f"<div id='posted_date'>{posted_date}</div>"
         f"<div id='salary'>{salary}</div>"
@@ -332,6 +334,25 @@ class HtmlScraperClient:
             return _response_text(resp)
         except requests.RequestException as exc:
             raise HtmlScraperFetchError(f"HTTP request failed for {url}: {exc}") from exc
+
+    def _post_json(self, url: str, body: str) -> str:
+        """POST a JSON body and return the response text.
+
+        Search gateways that answer 405 to every GET (Karir's
+        ``/v2/search/opportunities``) still return the listing to a POST, so
+        the fetch has to carry a body rather than query parameters.
+        """
+        try:
+            resp = self._session.post(
+                url,
+                data=body.encode("utf-8"),
+                headers={"Content-Type": "application/json", "Accept": "application/json"},
+                timeout=self._site_config.request_timeout_seconds,
+            )
+            resp.raise_for_status()
+            return _response_text(resp)
+        except requests.RequestException as exc:
+            raise HtmlScraperFetchError(f"HTTP POST failed for {url}: {exc}") from exc
 
     def _select(self, soup: BeautifulSoup, selector: str) -> list:
         """Run a CSS selector, returning elements."""
@@ -456,6 +477,10 @@ class HtmlScraperClient:
         raw = element.get(attr)
         if isinstance(raw, list):
             raw = next((value for value in raw if value), None)
+        # Next.js ships the payload as the *text* of
+        # ``<script id="__NEXT_DATA__">`` rather than as an attribute.
+        if not raw and attr.strip().lower() in {"text", "string"}:
+            raw = element.string or element.get_text()
         if not raw:
             raise HtmlScraperResponseError(
                 f"embedded {label} attribute {attr} is empty on {selector}"
@@ -531,6 +556,24 @@ class HtmlScraperClient:
             return base + pagination.format(offset=offset)
         return base + pagination.format(page=page)
 
+    def _listing_body(self, page: int) -> str:
+        """Render the JSON body for a POST listing endpoint.
+
+        Substituted textually rather than with ``str.format`` because the body
+        is itself JSON: ``{"limit":{limit},...}`` has to keep every brace that
+        is not a placeholder.
+        """
+        template = self._site_config.listing_json_body
+        if not template:
+            return ""
+        offset = (page - 1) * self._site_config.listing_page_size
+        return (
+            template.replace("{limit}", str(self._site_config.listing_page_size))
+            .replace("{offset}", str(offset))
+            .replace("{zero_page}", str(page - 1))
+            .replace("{page}", str(page))
+        )
+
     def _mapped_value(self, payload: Any, path: str, listing: dict | None) -> Any:
         """Resolve a ``detail_json_map`` path, allowing ``listing.`` fields."""
         return _mapped_value(payload, path, listing)
@@ -573,7 +616,11 @@ class HtmlScraperClient:
     def fetch_listing_page(self, page: int = 1) -> tuple[str, list[dict]]:
         """Fetch one listing page. Returns (html, [job_links_with_titles])."""
         if self._site_config.listing_json_url.strip():
-            html = self._get(self.listing_data_url(page))
+            url = self.listing_data_url(page)
+            if self._site_config.listing_json_method.strip().upper() == "POST":
+                html = self._post_json(url, self._listing_body(page))
+            else:
+                html = self._get(url)
             try:
                 payload = json.loads(html)
             except json.JSONDecodeError as exc:

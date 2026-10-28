@@ -94,6 +94,18 @@ class SiteConfig(BaseModel):
     listing_json_url: str = Field(
         default="", description="Absolute JSON endpoint that returns the job list"
     )
+    #: Some gateways answer a search only to POST (Karir's
+    #: ``/v2/search/opportunities`` returns 405 for every GET). When this is
+    #: ``POST``, :attr:`listing_json_body` is sent as the JSON request body.
+    listing_json_method: str = Field(
+        default="GET", description="HTTP method for listing_json_url (GET or POST)"
+    )
+    #: JSON body for a POST listing endpoint. ``{limit}``, ``{offset}``,
+    #: ``{zero_page}`` and ``{page}`` are substituted textually, so the body's
+    #: own braces stay part of the JSON.
+    listing_json_body: str = Field(
+        default="", description="JSON template sent to a POST listing endpoint"
+    )
     listing_json_id_field: str = Field(
         default="id", description="Dotted field in each JSON job that holds its ID"
     )

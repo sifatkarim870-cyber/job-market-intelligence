@@ -216,3 +216,92 @@ def test_offset_pagination_uses_page_size() -> None:
 
     assert client.listing_data_url(1) == "https://api.example.invalid/jobs?limit=20"
     assert client.listing_data_url(3) == "https://api.example.invalid/jobs?limit=20&offset=40"
+
+
+# --- Karir: a search gateway that answers only POST ---------------------------
+
+
+def _post_client(**overrides) -> HtmlScraperClient:
+    config = _site_config().model_copy(
+        update={
+            "listing_json_url": "https://api.example.invalid/v2/search/opportunities",
+            "listing_json_method": "POST",
+            "listing_json_body": (
+                '{"limit":{limit},"offset":{offset},"sort_order":"newest","is_opportunity":true}'
+            ),
+            "listing_page_size": 20,
+            "listing_json_path": "data.opportunities",
+            **overrides,
+        }
+    )
+    return HtmlScraperClient("unit_test", site_config=config)
+
+
+def test_post_listing_body_keeps_its_json_braces() -> None:
+    """The placeholders are substituted textually; the JSON's own braces are not."""
+    client = _post_client()
+
+    body = client._listing_body(3)
+
+    assert json.loads(body) == {
+        "limit": 20,
+        "offset": 40,
+        "sort_order": "newest",
+        "is_opportunity": True,
+    }
+
+
+def test_post_listing_sends_the_body_and_reads_the_records(monkeypatch) -> None:
+    client = _post_client()
+    sent: list[tuple[str, str]] = []
+
+    def fake_post(url: str, body: str) -> str:
+        sent.append((url, body))
+        return json.dumps({"data": {"opportunities": [{"id": 1401601}, {"id": 1401517}]}})
+
+    monkeypatch.setattr(client, "_post_json", fake_post)
+
+    _, jobs = client.fetch_listing_page(2)
+
+    assert sent and sent[0][0].startswith("https://api.example.invalid/v2/search")
+    assert json.loads(sent[0][1])["offset"] == 20
+    assert [job["url"] for job in jobs] == [
+        "https://example.invalid/jobs/1401601",
+        "https://example.invalid/jobs/1401517",
+    ]
+
+
+def test_embedded_detail_json_can_be_the_text_of_a_script() -> None:
+    """Next.js ships the payload as the script's text, not as an attribute."""
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "detail_json_selector": "script#__NEXT_DATA__",
+                "detail_json_attr": "text",
+                "detail_json_path": "props.pageProps.responseData",
+            }
+        ),
+    )
+    html = (
+        "<html><body><script id='__NEXT_DATA__' type='application/json'>"
+        '{"props":{"pageProps":{"responseData":{"id":1401601,"job_position":"Admin Staff"}}}}'
+        "</script></body></html>"
+    )
+
+    payload = client._embedded_detail_json(html)
+
+    assert payload["job_position"] == "Admin Staff"
+
+
+def test_mapped_json_html_carries_the_employment_type() -> None:
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={"detail_json_map": {"employment_type": "job_type"}}
+        ),
+    )
+
+    html = client._json_detail_as_html({"job_type": "Purna Waktu"}, "https://example.invalid/1")
+
+    assert "<div id='employment_type'>Purna Waktu</div>" in html
