@@ -164,6 +164,80 @@ def test_json_detail_joins_location_parts_with_a_comma() -> None:
     assert "<p>First block</p>\n<p>Second block</p>" in html
 
 
+def test_json_detail_template_joins_pay_parts_into_one_line() -> None:
+    """MSD publishes pay as a rate type plus a bare number (2026-10-28).
+
+    ``minimumPay`` alone renders "30.0" and ``payType`` alone drops the number,
+    so a ``{path}`` template is the only way to get the ad's own wording.
+    """
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "detail_json_map": {
+                    "title": "results.vacancyDetails.vacancyTitle",
+                    "salary": (
+                        "{results.vacancyDetails.payType} {results.vacancyDetails.minimumPay}"
+                    ),
+                }
+            }
+        ),
+    )
+    payload = {
+        "results": {
+            "vacancyDetails": {
+                "vacancyTitle": "Cleaner/Janitor",
+                "payType": "Hourly rate",
+                "minimumPay": 29.68,
+            }
+        }
+    }
+
+    html = client._json_detail_as_html(payload, "https://example.invalid/jobs/1")
+
+    assert "<div id='salary'>Hourly rate 29.68</div>" in html
+
+
+def test_json_detail_template_renders_a_whole_number_without_the_decimal() -> None:
+    """JSON has no integers, so 25 arrives as 25.0 and the ad says 25."""
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "detail_json_map": {
+                    "salary": "{payType} {minimumPay}",
+                }
+            }
+        ),
+    )
+    payload = {"payType": "Hourly rate", "minimumPay": 25.0}
+
+    html = client._json_detail_as_html(payload, "https://example.invalid/jobs/1")
+
+    assert "<div id='salary'>Hourly rate 25</div>" in html
+
+
+def test_an_unmapped_json_field_does_not_render_the_whole_payload() -> None:
+    """A field a board does not publish is written as "" in the map.
+
+    A blank path walks the payload with no keys and returns all of it, which
+    put MSD's entire API response into the company div and the parser stored it
+    as the employer name (2026-10-28).
+    """
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={"detail_json_map": {"title": "title", "company": ""}}
+        ),
+    )
+    payload = {"title": "Cleaner/Janitor", "results": {"vacancyDetails": {"pay": 29.68}}}
+
+    html = client._json_detail_as_html(payload, "https://example.invalid/jobs/1")
+
+    assert "<div id='company'></div>" in html
+    assert "vacancyDetails" not in html
+
+
 def _ld_html(*blocks: object) -> str:
     scripts = "".join(
         f"<script type='application/ld+json'>{json.dumps(block)}</script>" for block in blocks

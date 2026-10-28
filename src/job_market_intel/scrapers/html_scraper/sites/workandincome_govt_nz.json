@@ -1,29 +1,56 @@
 {
   "source_code": "workandincome_govt_nz",
-  "source_name": "Work and Income – state (workandincome.govt.nz)",
+  "source_name": "Work and Income – MyMSD Jobs (new.my.msd.govt.nz)",
   "country": "New Zealand",
-  "base_url": "https://workandincome.govt.nz",
-  "listing_path": "/",
-  "listing_pagination": "?page={page}",
-  "max_pages": 10,
-  "max_jobs_per_run": 60,
-  "selectors": {
-    "job_card": "article, div.job-card, div.job-item, .vacancy-card, .listing-item, .card",
-    "job_link": "a[href*='/job/'], a[href*='/vacancy/'], a[href*='/listing/'], a[href*='/career/']",
-    "job_title": "h1, h2, h3, .job-title, [class*='title']",
-    "company": ".company, .employer, [class*='company'], [class*='employer']",
-    "location": ".location, [class*='location'], [class*='city'], [class*='place']",
-    "description": ".job-description, .description, [class*='description'], .job-body",
-    "posted_date": "[class*='date'], [class*='posted'], [class*='time'], time",
-    "salary": "[class*='salary'], [class*='pay']",
-    "skills": "[class*='skill'], [class*='tag']"
+  "base_url": "https://new.my.msd.govt.nz",
+  "listing_path": "/en/jobs/search",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 120,
+  "listing_json_url": "https://new.my.msd.govt.nz/bin/sep/vacancies/search",
+  "listing_json_method": "POST",
+  "listing_json_body": "{\"filters\":{\"occupationGroups\":[\"BLD\",\"BAO\",\"CRE\",\"EDU\",\"HSC\",\"MFG\",\"RSH\",\"SEA\",\"SEC\",\"TLW\"]}}",
+  "listing_json_path": "results.suitableVacancies",
+  "listing_json_id_field": "vacancyId",
+  "listing_json_url_template": "/en/jobs/vacancy/{id}",
+  "detail_json_url": "https://new.my.msd.govt.nz/bin/sep/vacancies/details?vacancyId={id}",
+  "detail_json_map": {
+    "title": "results.vacancyDetails.vacancyTitle",
+    "location": [
+      "results.vacancyDetails.locations[].suburb.value",
+      "results.vacancyDetails.locations[].district.value",
+      "results.vacancyDetails.locations[].region.value"
+    ],
+    "employment_type": [
+      "results.vacancyDetails.fullPartTime",
+      "results.vacancyDetails.vacancyType"
+    ],
+    "description": "results.vacancyDetails.vacancyDescription",
+    "posted_date": "results.vacancyDetails.vacancyPosting.startDate",
+    "salary": "{results.vacancyDetails.payType} {results.vacancyDetails.minimumPay}"
   },
-  "detail_url_pattern": "",
+  "selectors": {
+    "job_card": "",
+    "job_link": "",
+    "job_title": "#main-content h1, h1",
+    "company": "",
+    "location": "#location",
+    "employment_type": "#employment_type",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": ""
+  },
+  "title_priority": "selector",
+  "detail_url_pattern": "/en/jobs/vacancy/\\d+$",
   "id_from_url": true,
   "user_agent": "job-market-intel-research (research@example.org)",
-  "request_timeout_seconds": 30,
+  "extra_headers": {
+    "Accept": "application/json, text/html;q=0.9"
+  },
+  "request_timeout_seconds": 45,
   "inter_request_delay_seconds": 2.0,
-  "currency_iso_code": "USD",
-  "pay_period": "monthly",
+  "currency_iso_code": "NZD",
+  "pay_period": "hourly",
   "country_fallback": "New Zealand"
 }

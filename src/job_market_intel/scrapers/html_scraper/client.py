@@ -273,10 +273,44 @@ def _mapped_value(payload: Any, path: str, listing: dict | None) -> Any:
     APIs that keep the posting body separate from its metadata (Jobbnorge
     sends employer and place in the search feed but the ad body from
     another host) need both payloads in one record.
+
+    A path holding ``{...}`` placeholders is a template: each placeholder is
+    resolved like a path and the result is one string. Feeds that split pay
+    into ``minimumPay`` and ``payType`` (MSD) have no single field a map entry
+    could point at, and "30.0 Hourly rate" is what the ad itself says.
     """
+    # An unmapped field is written as an empty string in the site config, and
+    # a blank path walks into ``_dotted`` with no keys, which returns the whole
+    # payload. That put the entire API response into MSD's ``company`` div and
+    # the parser stored it as the employer name.
+    if not path.strip():
+        return None
+    if "{" in path and "}" in path:
+        return _fill_json_template(payload, path, listing)
     if path.startswith("listing.") and listing is not None:
         return HtmlScraperClient._dotted(listing, path[len("listing.") :])
     return HtmlScraperClient._dotted(payload, path)
+
+
+def _fill_json_template(payload: Any, template: str, listing: dict | None) -> str:
+    """Render ``{dotted.path}`` placeholders against a JSON payload."""
+
+    def resolve(path: str) -> str:
+        if not path.strip():
+            return ""
+        if path.startswith("listing."):
+            found = HtmlScraperClient._dotted(listing or {}, path[len("listing.") :])
+        else:
+            found = HtmlScraperClient._dotted(payload, path)
+        if isinstance(found, list):
+            return ", ".join(str(item) for item in found if item not in (None, ""))
+        if isinstance(found, float) and found.is_integer():
+            # JSON has no integers, so a rate of 25 arrives as 25.0 and would
+            # render "Hourly rate 25.0" where the ad says 25.
+            return str(int(found))
+        return "" if found in (None, "") else str(found)
+
+    return re.sub(r"\{([^{}]+)\}", lambda match: resolve(match.group(1).strip()), template)
 
 
 class HtmlScraperClient:
