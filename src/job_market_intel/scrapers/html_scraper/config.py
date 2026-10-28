@@ -136,6 +136,28 @@ class SiteConfig(BaseModel):
         default=False,
         description='Inflate a {"_data_": {index: byte}} zlib envelope before mapping',
     )
+    #: Most boards answer plain ``requests`` fine, but a few sit behind an edge
+    #: that rejects its TLS/HTTP2 fingerprint whatever the User-Agent (BestJobs
+    #: answers 403 to every plain-``requests`` call, its own robots.txt
+    #: included, while a browser is served normally). When this names a
+    #: ``curl_cffi`` impersonation profile (``"chrome"``), the board's requests
+    #: go through curl_cffi with that browser profile -- the same fix jobam's
+    #: own client uses for its Cloudflare challenge.
+    impersonate: str = Field(default="", description="curl_cffi impersonation profile, e.g. chrome")
+    #: Boards that page by cursor (BestJobs puts ``nextCursor`` beside the
+    #: cards) cannot be walked with ``{page}``. This names the dotted path to
+    #: that cursor; put ``{cursor}`` in :attr:`listing_pagination` and the
+    #: client carries the value from one response into the next request.
+    listing_json_cursor_path: str = Field(
+        default="", description="Dotted path to the listing payload's next-page cursor"
+    )
+    #: Next.js boards render the posting in the browser but ship the whole
+    #: record inside ``<script id="__NEXT_DATA__">``. When set,
+    #: :attr:`detail_json_path` is read from that script instead of from an
+    #: element attribute (:attr:`detail_json_selector`/``attr``).
+    detail_json_next_data: bool = Field(
+        default=False, description="Read detail_json_path from the __NEXT_DATA__ script"
+    )
     #: JSON APIs often page by offset rather than page number. When
     #: ``listing_pagination`` contains ``{offset}``, the client substitutes
     #: ``(page - 1) * listing_page_size`` instead of ``{page}``.
@@ -190,6 +212,16 @@ class SiteConfig(BaseModel):
     detail_json_salary: dict[str, str] = Field(
         default_factory=dict,
         description="currency/min/max/value/unit -> dotted path in the payload",
+    )
+    #: A board that prints pay as one string ("800 - 850 EUR/luna") publishes no
+    #: numeric field, so the cleaner (which stores a salary only from
+    #: ``salary_min``/``salary_max``) reads the ad as "not disclosed". This
+    #: regex is applied to the mapped salary text and may name the groups
+    #: ``min``, ``max``, ``currency`` and ``unit`` (schema.org's HOUR/YEAR/...);
+    #: whatever it captures lands in the raw record, where the cleaner's
+    #: per-record unit and currency already apply.
+    salary_text_regex: str = Field(
+        default="", description="Regex with min/max/currency/unit named groups over salary text"
     )
     #: Some detail payloads carry the posting's canonical page URL, while the
     #: listing API only knows its numeric id (Navent boards build a

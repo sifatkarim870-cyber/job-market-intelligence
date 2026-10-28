@@ -13,10 +13,12 @@ import zlib
 from html import escape, unescape
 from html.parser import HTMLParser
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from curl_cffi import requests as curl_requests
+from curl_cffi.requests import exceptions as curl_exceptions
 from loguru import logger
 
 from .config import (
@@ -26,6 +28,15 @@ from .config import (
     load_site_config,
 )
 from .exceptions import HtmlScraperFetchError, HtmlScraperResponseError
+
+#: Both HTTP libraries raise their own transport error, and curl_cffi's
+#: ``CurlError`` is not a ``RequestException``, so a fetch that may go through
+#: either transport has to catch both (see jobam's client for the MRO note).
+_FETCH_ERRORS = (
+    requests.RequestException,
+    curl_exceptions.RequestException,
+    curl_exceptions.CurlError,
+)
 
 
 def _extract_attr(element, attr: str) -> str | None:
@@ -468,6 +479,7 @@ class HtmlScraperClient:
     ) -> None:
         self._settings = settings or HtmlScraperSettings()
         self._site_config = site_config or load_site_config(source_code, self._settings.sites_dir)
+        self._listing_cursor = ""
         self._session = requests.Session()
         self._session.headers.update(
             {
@@ -482,7 +494,14 @@ class HtmlScraperClient:
         base = f"{self._site_config.base_url}{self._site_config.listing_path}"
         if page <= 1:
             return base
-        page_str = self._site_config.listing_pagination.format(page=page)
+        pagination = self._site_config.listing_pagination
+        if "{cursor}" in pagination:
+            # A cursor board has no page numbers: the next page is whatever the
+            # previous response's cursor names, and there is none until then.
+            if not self._listing_cursor:
+                return base
+            return base + pagination.replace("{cursor}", quote(self._listing_cursor, safe=""))
+        page_str = pagination.format(page=page)
         return base + page_str
 
     def detail_url(self, path_or_id: str) -> str:
@@ -505,12 +524,38 @@ class HtmlScraperClient:
                 return match.group(1)
         return url.rstrip("/").rsplit("/", 1)[-1]
 
+    def _transport(self, method: str, url: str, headers: dict[str, str] | None = None, data=None):
+        """Send one request through the board's transport.
+
+        Every source gets plain ``requests`` unless the site config names a
+        ``curl_cffi`` impersonation profile (see :attr:`SiteConfig.impersonate`),
+        in which case the request is re-sent with a real browser's TLS/HTTP2
+        fingerprint.
+        """
+        impersonate = self._site_config.impersonate.strip()
+        timeout = self._site_config.request_timeout_seconds
+        request_headers = dict(self._session.headers)
+        if headers:
+            request_headers.update(headers)
+        if impersonate:
+            return curl_requests.request(
+                method,
+                url,
+                impersonate=impersonate,
+                headers=request_headers,
+                data=data,
+                timeout=timeout,
+            )
+        if method == "POST":
+            return self._session.post(url, headers=request_headers, data=data, timeout=timeout)
+        return self._session.get(url, headers=request_headers, timeout=timeout)
+
     def _get(self, url: str) -> str:
         try:
-            resp = self._session.get(url, timeout=self._site_config.request_timeout_seconds)
+            resp = self._transport("GET", url)
             resp.raise_for_status()
             return _response_text(resp)
-        except requests.RequestException as exc:
+        except _FETCH_ERRORS as exc:
             raise HtmlScraperFetchError(f"HTTP request failed for {url}: {exc}") from exc
 
     def _post_json(self, url: str, body: str) -> str:
@@ -521,15 +566,15 @@ class HtmlScraperClient:
         the fetch has to carry a body rather than query parameters.
         """
         try:
-            resp = self._session.post(
+            resp = self._transport(
+                "POST",
                 url,
-                data=body.encode("utf-8"),
                 headers={"Content-Type": "application/json", "Accept": "application/json"},
-                timeout=self._site_config.request_timeout_seconds,
+                data=body.encode("utf-8"),
             )
             resp.raise_for_status()
             return _response_text(resp)
-        except requests.RequestException as exc:
+        except _FETCH_ERRORS as exc:
             raise HtmlScraperFetchError(f"HTTP POST failed for {url}: {exc}") from exc
 
     def _select(self, soup: BeautifulSoup, selector: str) -> list:
@@ -651,7 +696,20 @@ class HtmlScraperClient:
             logger.warning("html_scraper listing JSON is not valid JSON: {}", exc)
             return []
 
+        self._remember_listing_cursor(payload)
         return self._jobs_from_payload(payload)
+
+    def _remember_listing_cursor(self, payload: Any) -> None:
+        """Keep the payload's next-page cursor for the following request.
+
+        Cursor boards (BestJobs) answer page 2 to the same URL plus the cursor
+        the previous response carried; ``listing_json_cursor_path`` names it.
+        """
+        path = self._site_config.listing_json_cursor_path.strip()
+        if not path:
+            return
+        found = self._dotted(payload, path)
+        self._listing_cursor = "" if found in (None, "") else str(found)
 
     def _embedded_json_payload(self, html: str, selector: str, attr: str, label: str) -> Any:
         """Parse the JSON an element carries in one of its attributes."""
@@ -719,6 +777,36 @@ class HtmlScraperClient:
         if found in (None, ""):
             raise HtmlScraperResponseError(
                 f"embedded detail JSON path {path} is missing from the page"
+            )
+        return found
+
+    def _next_data_detail_json(self, html: str) -> Any:
+        """Read a posting object from the page's Next.js ``__NEXT_DATA__``.
+
+        The mirror of :meth:`_json_listing_jobs` for a detail page: boards such
+        as BestJobs render the ad in the browser but ship the whole record in
+        ``<script id="__NEXT_DATA__">``, addressed by :attr:`detail_json_path`.
+        Missing or malformed JSON is an error so a layout change is visible.
+        """
+        soup = BeautifulSoup(html or "", "html.parser")
+        script = soup.find("script", id="__NEXT_DATA__")
+        if script is None or not script.string:
+            raise HtmlScraperResponseError(
+                f"{self._site_config.source_code} detail page has no __NEXT_DATA__"
+            )
+        try:
+            payload = json.loads(script.string)
+        except json.JSONDecodeError as exc:
+            raise HtmlScraperResponseError(
+                f"{self._site_config.source_code} __NEXT_DATA__ is not valid JSON: {exc}"
+            ) from exc
+        path = self._site_config.detail_json_path.strip()
+        if not path:
+            return payload
+        found = self._dotted(payload, path)
+        if found in (None, ""):
+            raise HtmlScraperResponseError(
+                f"__NEXT_DATA__ path {path} is missing from the detail page"
             )
         return found
 
@@ -814,6 +902,7 @@ class HtmlScraperClient:
                 raise HtmlScraperResponseError(
                     f"listing JSON endpoint returned non-JSON for page {page}: {exc}"
                 ) from exc
+            self._remember_listing_cursor(payload)
             jobs = self._jobs_from_payload(payload)
         elif (
             self._site_config.listing_json_selector.strip()
@@ -866,6 +955,11 @@ class HtmlScraperClient:
                     new += 1
             logger.info("html_scraper page {}: {} new ({} total)", page, new, len(found))
             if len(found) >= budget:
+                break
+            if new == 0:
+                # A page that adds nothing means the listing is repeating
+                # itself -- an exhausted cursor, or a pager that ignores its
+                # own parameter -- and later pages would only re-read it.
                 break
             time.sleep(self._site_config.inter_request_delay_seconds)
 
@@ -948,6 +1042,10 @@ class HtmlScraperClient:
         ):
             page = self.fetch_detail(job["url"])
             payload = self._embedded_detail_json(page)
+            return finish(self._mapped_json_html(payload, job["url"], job.get("listing")), payload)
+        if self._site_config.detail_json_next_data:
+            page = self.fetch_detail(job["url"])
+            payload = self._next_data_detail_json(page)
             return finish(self._mapped_json_html(payload, job["url"], job.get("listing")), payload)
         if self._site_config.detail_json_ld:
             page = self.fetch_detail(job["url"])

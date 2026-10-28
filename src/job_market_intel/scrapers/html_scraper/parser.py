@@ -423,6 +423,45 @@ def _fill_from_labels(
     return values
 
 
+def _salary_from_text(pattern: str, text: str | None) -> dict[str, float | str]:
+    """Salary bounds read out of mapped salary text (``salary_text_regex``).
+
+    The framework hands the parser text, so a board that prints "800 - 850
+    EUR/luna" in one field has no number anywhere. The site config supplies a
+    regex whose named groups (``min``, ``max``, ``currency``, ``unit``) tell
+    the parser which part is which.
+    """
+    if not pattern or not text:
+        return {}
+    try:
+        match = re.search(pattern, text)
+    except re.error as exc:
+        logger.warning("html_scraper salary_text_regex did not compile: {}", exc)
+        return {}
+    if not match:
+        return {}
+    groups = match.groupdict()
+    minimum = _as_number(groups.get("min"))
+    maximum = _as_number(groups.get("max"))
+    if minimum is None:
+        minimum = maximum
+    if maximum is None:
+        maximum = minimum
+    if minimum is None or maximum is None:
+        return {}
+    if minimum > maximum:
+        minimum, maximum = maximum, minimum
+
+    facts: dict[str, float | str] = {"salary_min": minimum, "salary_max": maximum}
+    currency = str(groups.get("currency") or "").strip().upper()
+    if currency and re.fullmatch(r"[A-Z]{3}", currency):
+        facts["salary_currency"] = currency
+    unit = str(groups.get("unit") or "").strip().upper()
+    if unit:
+        facts["salary_unit_text"] = unit
+    return facts
+
+
 def _structured_salary(soup: BeautifulSoup) -> dict[str, float | str]:
     """The ``data-salary-*`` facts a JSON mapping left on the salary node.
 
@@ -521,7 +560,12 @@ def parse_detail(
 
     # A structured salary (schema.org ``baseSalary``) survives as attributes on
     # the node the JSON mapping rendered, so the number is not lost to text.
-    salary_facts = _structured_salary(soup)
+    # A board that prints pay as one string ("800 - 850 EUR/luna") publishes no
+    # numeric field; a configured regex recovers the bounds from that text.
+    salary_facts = {
+        **_salary_from_text(site_config.salary_text_regex, salary),
+        **_structured_salary(soup),
+    }
 
     if posted_date_text and site_config.posted_date_regex:
         match = re.search(site_config.posted_date_regex, posted_date_text)
