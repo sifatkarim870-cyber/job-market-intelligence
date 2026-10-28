@@ -379,3 +379,74 @@ def test_mapped_json_html_carries_the_employment_type() -> None:
     html = client._json_detail_as_html({"job_type": "Purna Waktu"}, "https://example.invalid/1")
 
     assert "<div id='employment_type'>Purna Waktu</div>" in html
+
+
+def test_json_detail_can_publish_the_postings_canonical_url(monkeypatch) -> None:
+    """Some listing APIs know only a numeric id, not the page's own address.
+
+    ZonaJobs (Navent) builds every posted link as ``/empleos/<slug>-<id>.html``,
+    but its search API returns bare ids, so the discovery URL would be a guess.
+    ``detail_json_url_path`` reads the address the detail payload publishes, and
+    the record's id then comes from that canonical link (2026-10-28).
+    """
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "detail_json_url": "https://example.invalid/api/ads/{id}",
+                "detail_json_url_path": "aviso.seoFriendlyUrl",
+                "detail_json_map": {"title": "aviso.titulo"},
+                "listing_json_url_template": "/empleos/{id}.html",
+                "id_url_regex": r"-(\d+)\.html$",
+                "inter_request_delay_seconds": 0,
+            }
+        ),
+    )
+
+    def fake_discovery(budget: int) -> tuple[list[dict], dict[str, str]]:
+        return [
+            {
+                "url": "https://example.invalid/empleos/2192601.html",
+                "title": "",
+                "id": 2192601,
+            }
+        ], {}
+
+    monkeypatch.setattr(client, "discover_detail_paths", fake_discovery)
+    monkeypatch.setattr(
+        client,
+        "_detail_json_payload",
+        lambda job_id: {
+            "aviso": {
+                "titulo": "Cajero Repositor",
+                "seoFriendlyUrl": "/empleos/cajero-repositor-s.a-2192601.html",
+            }
+        },
+    )
+
+    records, failures = client.fetch_raw_jobs(max_jobs=1)
+
+    assert failures == {}
+    assert records[0]["url"] == (
+        "https://example.invalid/empleos/cajero-repositor-s.a-2192601.html"
+    )
+    assert records[0]["job_id"] == "2192601"
+    assert "Cajero Repositor" in records[0]["html"]
+
+
+def test_json_detail_template_renders_nothing_when_every_part_is_missing() -> None:
+    """An ad that hides its pay must not turn the template's punctuation into data."""
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "detail_json_map": {
+                    "salary": ("ARS {pay.min} - {pay.max} {pay.period} ({pay.kind})"),
+                }
+            }
+        ),
+    )
+
+    html = client._json_detail_as_html({"title": "Cajero"}, "https://example.invalid/1")
+
+    assert "<div id='salary'></div>" in html

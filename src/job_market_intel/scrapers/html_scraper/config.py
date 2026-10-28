@@ -171,6 +171,14 @@ class SiteConfig(BaseModel):
         default_factory=dict,
         description="Output field -> dotted JSON path (or list of paths to concatenate)",
     )
+    #: Some detail payloads carry the posting's canonical page URL, while the
+    #: listing API only knows its numeric id (Navent boards build a
+    #: ``/empleos/<slug>-<id>.html`` link the listing never sees). When set, the
+    #: dotted path is read after the detail fetch and becomes the record's URL,
+    #: so stored links are the ones the site itself publishes.
+    detail_json_url_path: str = Field(
+        default="", description="Dotted path in the detail payload holding its page URL"
+    )
     #: Some boards print each fact as a label beside its value in an unlabelled
     #: container (``<li><span>Töökoha asukoht</span><span>Harju maakond</span></li>``
     #: or ``<dt>Location</dt><dd>Tallinn</dd>``), which no CSS selector can

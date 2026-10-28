@@ -310,7 +310,20 @@ def _fill_json_template(payload: Any, template: str, listing: dict | None) -> st
             return str(int(found))
         return "" if found in (None, "") else str(found)
 
-    return re.sub(r"\{([^{}]+)\}", lambda match: resolve(match.group(1).strip()), template)
+    resolved: list[str] = []
+
+    def substitute(match: re.Match[str]) -> str:
+        value = resolve(match.group(1).strip())
+        resolved.append(value)
+        return value
+
+    rendered = re.sub(r"\{([^{}]+)\}", substitute, template)
+    # A template is the shape of one fact ("{payType} {minimumPay}"). When the
+    # board publishes none of its parts, the literal punctuation would survive
+    # as a salary reading " -  por Mes ()" on an ad that discloses no pay.
+    if resolved and not any(resolved):
+        return ""
+    return rendered
 
 
 class HtmlScraperClient:
@@ -758,28 +771,42 @@ class HtmlScraperClient:
             raise failure
         raise HtmlScraperFetchError(f"no language configured for {template}")
 
-    def _detail_html(self, job: dict) -> str:
-        """The HTML the parser reads for one discovered posting."""
+    def _detail_page(self, job: dict) -> tuple[str, str | None]:
+        """The HTML the parser reads for one discovered posting, plus its URL.
+
+        The URL is normally the discovered one. A listing API that knows only
+        numeric ids (Navent) leaves the canonical ``/<section>/<slug>-<id>.html``
+        to the detail payload, and :attr:`detail_json_url_path` names it.
+        """
+
+        def finish(html: str, payload: Any) -> tuple[str, str | None]:
+            path = self._site_config.detail_json_url_path.strip()
+            canonical = self._dotted(payload, path) if path else None
+            if canonical in (None, ""):
+                return html, None
+            return html, urljoin(self._site_config.base_url, str(canonical))
+
         if self._site_config.detail_json_from_listing and job.get("payload"):
-            return self._mapped_json_html(job["payload"], job["url"], job.get("listing"))
+            payload = job["payload"]
+            return finish(self._mapped_json_html(payload, job["url"], job.get("listing")), payload)
         if self._site_config.detail_json_url.strip():
             job_id = job.get("id") or self._job_id_from_url(job["url"])
             payload = self._detail_json_payload(job_id)
-            return self._mapped_json_html(payload, job["url"], job.get("listing"))
+            return finish(self._mapped_json_html(payload, job["url"], job.get("listing")), payload)
         if (
             self._site_config.detail_json_selector.strip()
             and self._site_config.detail_json_attr.strip()
         ):
             page = self.fetch_detail(job["url"])
             payload = self._embedded_detail_json(page)
-            return self._mapped_json_html(payload, job["url"], job.get("listing"))
+            return finish(self._mapped_json_html(payload, job["url"], job.get("listing")), payload)
         if self._site_config.detail_json_ld:
             page = self.fetch_detail(job["url"])
             payload = _json_ld_job_posting(page)
             if payload is None:
                 raise HtmlScraperFetchError(f"no JobPosting JSON-LD on {job['url']}")
-            return self._mapped_json_html(payload, job["url"], job.get("listing"))
-        return self.fetch_detail(job["url"])
+            return finish(self._mapped_json_html(payload, job["url"], job.get("listing")), payload)
+        return self.fetch_detail(job["url"]), None
 
     def fetch_raw_jobs(self, max_jobs: int | None = None) -> tuple[list[dict], dict[str, str]]:
         """Discover and fetch postings."""
@@ -790,14 +817,15 @@ class HtmlScraperClient:
         records = []
         for job in selected:
             try:
-                html = self._detail_html(job)
+                html, canonical = self._detail_page(job)
+                url = canonical or job["url"]
                 records.append(
                     {
-                        "job_id": self._job_id_from_url(job["url"])
+                        "job_id": self._job_id_from_url(url)
                         if self._site_config.id_from_url
-                        else job["url"],
+                        else url,
                         "html": html,
-                        "url": job["url"],
+                        "url": url,
                         "title_hint": job.get("title", ""),
                         "listing_page": None,
                     }
