@@ -44,6 +44,24 @@ from .exceptions import NetEmpregosFetchError, NetEmpregosResponseError
 #: deduplicated by id.
 _DETAIL_PATH = re.compile(r"^/(\d{6,12})/[^/?#]{4,}/?$")
 
+#: The sitemap is plain text, one absolute URL per line with whitespace
+#: between them -- not XML and not anchors.
+_SITEMAP_URL = re.compile(r"https?://[^\s<>\"']+")
+
+
+def _path_id(href: str) -> tuple[str, str] | None:
+    """Return ``(job_id, path)`` when ``href`` points at a posting."""
+    href = href.strip()
+    if not href or href.startswith(("#", "mailto:", "javascript:", "tel:")):
+        return None
+    parsed = urlparse(href)
+    if parsed.scheme and parsed.scheme not in ("http", "https"):
+        return None
+    match = _DETAIL_PATH.match(parsed.path)
+    if match is None:
+        return None
+    return match.group(1), parsed.path
+
 
 def extract_detail_paths(html: str) -> dict[str, str]:
     """Return ``{job_id: path}`` for every posting linked on a listing page.
@@ -51,24 +69,28 @@ def extract_detail_paths(html: str) -> dict[str, str]:
     Parses anchors instead of scanning raw HTML for one exact quoting style.
     The listing mixes quoted and unquoted attributes on the same page
     (``href="/16181991/..."`` for the logo and ``href=/16181991/...`` for the
-    card text), and the 2026-10-17 CI run observed HTTP 200 with zero matches
-    on this exact regex -- a template variant that emits unquoted or absolute
-    links silently costs the whole run. ``BeautifulSoup`` normalises quoting,
-    entity escaping and absolute URLs, so all three shapes reduce to the same
-    path.
+    card text), so ``BeautifulSoup`` normalises quoting, entity escaping and
+    absolute URLs and all shapes reduce to the same path.
     """
     found: dict[str, str] = {}
     for anchor in BeautifulSoup(html or "", "html.parser").find_all("a", href=True):
-        href = str(anchor["href"]).strip()
-        if not href or href.startswith(("#", "mailto:", "javascript:", "tel:")):
-            continue
-        parsed = urlparse(href)
-        if parsed.scheme and parsed.scheme not in ("http", "https"):
-            continue
-        match = _DETAIL_PATH.match(parsed.path)
-        if match is None:
-            continue
-        found.setdefault(match.group(1), parsed.path)
+        hit = _path_id(str(anchor["href"]))
+        if hit is not None:
+            found.setdefault(*hit)
+    return found
+
+
+def extract_sitemap_paths(text: str) -> dict[str, str]:
+    """Return ``{job_id: path}`` from Net-Empregos's plain-text sitemap.
+
+    ``/Sitemap.asp`` is one absolute URL per line, newest first, 5,000 of
+    them measured 2026-10-29. robots.txt advertises it as a Sitemap.
+    """
+    found: dict[str, str] = {}
+    for token in _SITEMAP_URL.findall(text or ""):
+        hit = _path_id(token)
+        if hit is not None:
+            found.setdefault(*hit)
     return found
 
 
@@ -129,6 +151,30 @@ class NetEmpregosClient:
         time.sleep(self._settings.inter_request_delay_seconds)
         return found
 
+    def fetch_sitemap_paths(self) -> dict[str, str]:
+        """Return ``{job_id: detail_path}`` from the plain-text sitemap."""
+        url = f"{self._settings.base_url}{self._settings.sitemap_path}"
+        found = extract_sitemap_paths(self._fetch(url))
+        logger.info(
+            "net-empregos sitemap {}: {} posting(s)", self._settings.sitemap_path, len(found)
+        )
+        return found
+
+    def _sitemap_entries(self, failures: dict[str, str]) -> dict[str, dict]:
+        """Newest postings from the sitemap, capped at the per-run budget."""
+        try:
+            sitemap = self.fetch_sitemap_paths()
+        except NetEmpregosFetchError as exc:
+            failures["sitemap"] = str(exc)
+            logger.warning("net-empregos sitemap fallback failed: {}", exc)
+            return {}
+        entries: dict[str, dict] = {}
+        for job_id, path in sitemap.items():
+            if len(entries) >= self._settings.max_jobs_per_run:
+                break
+            entries[job_id] = {"path": path, "page": 0}
+        return entries
+
     # ------------------------------------------------------------- discovery
 
     def discover_detail_paths(self) -> tuple[dict[str, dict], dict[str, str]]:
@@ -174,12 +220,21 @@ class NetEmpregosClient:
                 break
             empty_streak = 0
 
-        if not found and not failures:
+        if not found:
+            # The listing is login-walled for datacenter addresses: measured
+            # 2026-10-29 from a GitHub Actions runner, /jobs answers 200 with
+            # the 59,601-char "Net-Empregos - Login de Candidato" page and no
+            # posting link at all. The sitemap is advertised in robots.txt and
+            # stays machine-readable, so it is the channel CI can use.
+            found = self._sitemap_entries(failures)
+
+        if not found:
             raise NetEmpregosResponseError(
                 f"no postings found in {self._settings.max_pages} page(s) of "
-                f"{self._settings.listing_path}. An empty result here means the "
-                "listing markup changed -- not that the board is empty -- so it "
-                "is raised rather than returned empty."
+                f"{self._settings.listing_path}, and the {self._settings.sitemap_path} "
+                "fallback yielded none either. An empty result here means the board "
+                "is serving a wall or has changed shape -- not that it is empty -- "
+                "so it is raised rather than returned empty."
             )
         return found, failures
 

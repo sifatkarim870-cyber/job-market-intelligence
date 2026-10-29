@@ -37,6 +37,14 @@ class NetEmpregosSettings(BaseSettings):
 
     base_url: str = Field(default="https://www.net-empregos.com", description="Site root.")
     listing_path: str = Field(default="/jobs", description="Server-rendered listing page.")
+    sitemap_path: str = Field(
+        default="/Sitemap.asp",
+        description=(
+            "Plain-text sitemap of every posting, newest first. Used as the "
+            "discovery fallback: datacenter addresses are served the candidate "
+            "login page instead of /jobs, while the sitemap stays machine-readable."
+        ),
+    )
 
     max_pages: int = Field(
         default=8,

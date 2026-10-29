@@ -37,6 +37,7 @@ from job_market_intel.cleaning.net_empregos_cleaner import (
 from job_market_intel.scrapers.net_empregos.client import (
     NetEmpregosClient,
     extract_detail_paths,
+    extract_sitemap_paths,
 )
 from job_market_intel.scrapers.net_empregos.config import NetEmpregosSettings
 from job_market_intel.scrapers.net_empregos.exceptions import (
@@ -142,16 +143,56 @@ class TestListingLinks:
         )
         assert extract_detail_paths(html) == {}
 
+    def test_sitemap_text_is_parsed_without_markup(self) -> None:
+        """``/Sitemap.asp`` is 5,000 absolute URLs with whitespace between them."""
+        text = (
+            "\r\n  https://www.net-empregos.com/16181991/tecnico-de-assistencia/\r\n"
+            "  https://www.net-empregos.com/15781364/ai-customer-support/\r\n"
+            "  https://www.net-empregos.com/anuncio.asp\r\n"
+        )
+        assert extract_sitemap_paths(text) == {
+            "16181991": "/16181991/tecnico-de-assistencia/",
+            "15781364": "/15781364/ai-customer-support/",
+        }
+
+    def test_the_sitemap_is_the_fallback_when_the_listing_is_login_walled(self) -> None:
+        """Measured from a GitHub Actions runner 2026-10-29: /jobs is a login page.
+
+        The board answers 200 with "Net-Empregos - Login de Candidato" and no
+        posting link, so discovery must not treat that as an empty board.
+        """
+        login_page = (
+            "<html><head><title>Net-Empregos - Login de Candidato</title></head>"
+            '<body><a href="/loginc.asp">Login</a></body></html>'
+        )
+        sitemap = "\n".join(
+            f"https://www.net-empregos.com/1618{i:04d}/posting-{i}/" for i in range(1, 6)
+        )
+        client = NetEmpregosClient(
+            NetEmpregosSettings(
+                max_pages=1,
+                max_jobs_per_run=3,
+                inter_request_delay_seconds=0.0,
+            )
+        )
+        client._fetch = lambda url: sitemap if "Sitemap" in url else login_page  # type: ignore[method-assign]
+        found, failures = client.discover_detail_paths()
+        assert failures == {}
+        assert list(found) == ["16180001", "16180002", "16180003"]
+        assert found["16180001"] == {"path": "/16180001/posting-1/", "page": 0}
+
+    def test_no_listing_and_no_sitemap_raises(self) -> None:
+        client = NetEmpregosClient(
+            NetEmpregosSettings(max_pages=1, inter_request_delay_seconds=0.0)
+        )
+        client._fetch = lambda url: "<html><body>nothing</body></html>"  # type: ignore[method-assign]
+        with pytest.raises(NetEmpregosResponseError, match="fallback yielded none"):
+            client.discover_detail_paths()
+
     def test_listing_url_omits_the_query_on_page_one(self) -> None:
         client = NetEmpregosClient(NetEmpregosSettings())
         assert client.listing_url(1) == "https://www.net-empregos.com/jobs"
         assert client.listing_url(3) == "https://www.net-empregos.com/jobs?page=3"
-
-    def test_empty_discovery_raises_rather_than_returning_nothing(self) -> None:
-        client = NetEmpregosClient(NetEmpregosSettings(max_pages=1))
-        client._fetch = lambda url: "<html><body>nothing</body></html>"  # type: ignore[method-assign]
-        with pytest.raises(NetEmpregosResponseError, match="markup changed"):
-            client.discover_detail_paths()
 
     def test_a_repeated_page_is_not_counted_twice(self) -> None:
         """First listing wins, so a posting reachable from two pages is fetched once."""
