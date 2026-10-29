@@ -2,10 +2,13 @@
 
 Two steps:
 
-  1. **Discovery.** Walk ``/jobs?page=N``, collecting ``/jobs/<id>/<slug>/``
-     links. Measured 2026-10-16: exactly **18** per page, 18 new on every page,
-     so the pager is real. The URL pattern is ``/jobs/<id>/<slug>/`` where the
-     id is 6-12 digits.
+  1. **Discovery.** Walk ``/jobs?page=N``, collecting ``/<id>/<slug>/``
+     anchors. Measured 2026-10-16: exactly **18** postings per page, 18 new on
+     every page, so the pager is real. The id is 6-12 digits. The listing
+     writes the same posting three times (logo, title, "Ver Oferta") with a
+     mix of quoted and unquoted ``href`` values, so discovery parses anchors
+     with BeautifulSoup and deduplicates by id rather than matching one
+     quoting style with a regex.
 
   2. **Detail.** Fetch each link and read the schema.org ``JobPosting`` in its
      JSON-LD block. The JSON is malformed (raw newlines in the description), so
@@ -20,7 +23,9 @@ from __future__ import annotations
 
 import re
 import time
+from urllib.parse import urlparse
 
+from bs4 import BeautifulSoup
 from loguru import logger
 
 from job_market_intel.common.http_client import (
@@ -34,9 +39,37 @@ from .config import NetEmpregosSettings
 from .exceptions import NetEmpregosFetchError, NetEmpregosResponseError
 
 #: ``/<numeric id>/<slug>/``. The id is 6-12 digits and the slug is at
-#: least four characters. Measured: the listing emits ``/16131249/especialista-.../``
-#: with no ``/jobs/`` prefix on the detail path.
-_JOB_LINK = re.compile(r'href="/(\d{6,12})/[^"?#]{4,}/"')
+#: least four characters. Measured 2026-10-29: every card links to the same
+#: posting three times (logo, title, "Ver Oferta"), so anchors must be
+#: deduplicated by id.
+_DETAIL_PATH = re.compile(r"^/(\d{6,12})/[^/?#]{4,}/?$")
+
+
+def extract_detail_paths(html: str) -> dict[str, str]:
+    """Return ``{job_id: path}`` for every posting linked on a listing page.
+
+    Parses anchors instead of scanning raw HTML for one exact quoting style.
+    The listing mixes quoted and unquoted attributes on the same page
+    (``href="/16181991/..."`` for the logo and ``href=/16181991/...`` for the
+    card text), and the 2026-10-17 CI run observed HTTP 200 with zero matches
+    on this exact regex -- a template variant that emits unquoted or absolute
+    links silently costs the whole run. ``BeautifulSoup`` normalises quoting,
+    entity escaping and absolute URLs, so all three shapes reduce to the same
+    path.
+    """
+    found: dict[str, str] = {}
+    for anchor in BeautifulSoup(html or "", "html.parser").find_all("a", href=True):
+        href = str(anchor["href"]).strip()
+        if not href or href.startswith(("#", "mailto:", "javascript:", "tel:")):
+            continue
+        parsed = urlparse(href)
+        if parsed.scheme and parsed.scheme not in ("http", "https"):
+            continue
+        match = _DETAIL_PATH.match(parsed.path)
+        if match is None:
+            continue
+        found.setdefault(match.group(1), parsed.path)
+    return found
 
 
 class NetEmpregosClient:
@@ -75,10 +108,7 @@ class NetEmpregosClient:
     def fetch_listing_page(self, page: int = 1) -> dict[str, str]:
         """Return ``{job_id: detail_path}`` for one page of the listing."""
         html = self._fetch(self.listing_url(page))
-        found: dict[str, str] = {}
-        for m in _JOB_LINK.finditer(html):
-            # group(1) is the id; the full href is the quoted path in the match.
-            found.setdefault(m.group(1), m.group(0).split('"')[1])
+        found = extract_detail_paths(html)
         logger.info("net-empregos listing page {}: {} link(s)", page, len(found))
         time.sleep(self._settings.inter_request_delay_seconds)
         return found

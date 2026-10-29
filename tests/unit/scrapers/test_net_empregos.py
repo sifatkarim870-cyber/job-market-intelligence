@@ -34,7 +34,10 @@ from job_market_intel.cleaning.net_empregos_cleaner import (
     NetEmpregosCleaner,
     _map_employment_type,
 )
-from job_market_intel.scrapers.net_empregos.client import _JOB_LINK, NetEmpregosClient
+from job_market_intel.scrapers.net_empregos.client import (
+    NetEmpregosClient,
+    extract_detail_paths,
+)
 from job_market_intel.scrapers.net_empregos.config import NetEmpregosSettings
 from job_market_intel.scrapers.net_empregos.exceptions import (
     NetEmpregosParseError,
@@ -94,27 +97,50 @@ def detail_html(posting: dict | None = None) -> str:
 
 
 class TestListingLinks:
-    def test_link_regex_takes_the_numeric_id(self) -> None:
-        """The detail path has no /jobs/ prefix -- measured, not assumed.
+    def test_unquoted_relative_href_is_found(self) -> None:
+        """The card text writes ``href=/16131249/...`` with no quotes.
 
-        The first implementation required ``/jobs/`` in the path and matched
-        zero links on a board serving 18 per page, which is exactly the kind of
-        silent total loss the regex tests exist to catch.
+        A quoted-only regex reads zero links from a page that has 18 ads,
+        which is the exact silent total loss measured in CI on 2026-10-17.
         """
-        html = '<a href="/16131249/especialista-de-apoio-ao-cliente-servicos-bancarios/">x</a>'
-        # group(1) is the id; the full href is in the match text.
-        found = {m.group(1): m.group(0).split('"')[1] for m in _JOB_LINK.finditer(html)}
-        assert found == {
-            "16131249": "/16131249/especialista-de-apoio-ao-cliente-servicos-bancarios/"
+        html = "<a class='oferta-link' href=/16131249/especialista-de-apoio/>x</a>"
+        assert extract_detail_paths(html) == {"16131249": "/16131249/especialista-de-apoio/"}
+
+    def test_quoted_and_absolute_hrefs_are_normalised(self) -> None:
+        html = (
+            '<a href="/16131249/especialista-de-apoio/">logo</a>'
+            '<a href="https://www.net-empregos.com/16131250/carpinteiros-de-cofragem/">'
+            "Ver Oferta</a>"
+            "<a href='/16131251/condutor-de-empilhador/'>single quotes</a>"
+        )
+        assert extract_detail_paths(html) == {
+            "16131249": "/16131249/especialista-de-apoio/",
+            "16131250": "/16131250/carpinteiros-de-cofragem/",
+            "16131251": "/16131251/condutor-de-empilhador/",
         }
 
-    def test_link_regex_ignores_non_job_paths(self) -> None:
+    def test_one_card_linking_three_times_is_one_posting(self) -> None:
+        """Measured 2026-10-29: logo, title and CTA all link to the same ad."""
+        html = (
+            '<a href="/16131249/especialista-de-apoio/"><img></a>'
+            '<a href="/16131249/especialista-de-apoio/">Title</a>'
+            '<a href="/16131249/especialista-de-apoio/">Ver Oferta</a>'
+        )
+        assert list(extract_detail_paths(html)) == ["16131249"]
+
+    def test_query_and_fragment_do_not_break_the_path(self) -> None:
+        html = '<a href="/16131249/especialista-de-apoio/?utm_source=home#top">x</a>'
+        assert extract_detail_paths(html) == {"16131249": "/16131249/especialista-de-apoio/"}
+
+    def test_non_job_paths_are_ignored(self) -> None:
         html = (
             '<a href="/jobs">All jobs</a>'
             '<a href="/12345/short/">x</a>'  # id too short
             '<a href="/empresa/1234567890/x">Company</a>'
+            '<a href="#top">Top</a>'
+            '<a href="mailto:x@y.pt">Mail</a>'
         )
-        assert list(_JOB_LINK.finditer(html)) == []
+        assert extract_detail_paths(html) == {}
 
     def test_listing_url_omits_the_query_on_page_one(self) -> None:
         client = NetEmpregosClient(NetEmpregosSettings())
