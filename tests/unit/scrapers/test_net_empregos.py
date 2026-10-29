@@ -38,6 +38,7 @@ from job_market_intel.scrapers.net_empregos.client import (
     NetEmpregosClient,
     extract_detail_paths,
     extract_sitemap_paths,
+    parse_rss_items,
 )
 from job_market_intel.scrapers.net_empregos.config import NetEmpregosSettings
 from job_market_intel.scrapers.net_empregos.exceptions import (
@@ -92,6 +93,31 @@ def detail_html(posting: dict | None = None) -> str:
         f'<html><head><script type="application/ld+json">{json.dumps(body)}</script>'
         "</head><body></body></html>"
     )
+
+
+#: Trimmed from the live /rss.asp feed (2026-10-29): the description is
+#: HTML-escaped inside CDATA and carries the company/category/zone/date
+#: header before the ad body, which is itself truncated by the board.
+RSS_FEED = (
+    '<?xml version="1.0" encoding="iso-8859-1"?>'
+    '<rss version="2.0" xmlns:dc="https://purl.org/dc/elements/1.1/"><channel>'
+    "<title>Net-Empregos</title><link>https://www.net-empregos.com/</link>"
+    "<item><title><![CDATA[Operador de Armazém (M/F)]]></title>"
+    "<dc:creator><![CDATA[Bonfitec]]></dc:creator>"
+    "<link>https://www.net-empregos.com/16185614/operador-de-armazem-m-f/</link>"
+    "<description><![CDATA["
+    "&lt;b&gt;Empresa: &lt;/b&gt;Bonfitec&lt;br&gt;"
+    "&lt;b&gt;Categoria: &lt;/b&gt;Transportes / Logística&lt;br&gt;"
+    "&lt;b&gt;Zona: &lt;/b&gt; Porto&lt;br&gt;"
+    "&lt;b&gt;Data: &lt;/b&gt;29-10-2026&lt;br&gt;&lt;br&gt;"
+    "&lt;b&gt;Descrição: &lt;/b&gt;A Bonfitec procura um operador de armazém "
+    "para integrar o seu departamento produtivo.&lt;br&gt;&lt;br&gt;"
+    "&lt;a target='_blank' href='https://www.net-empregos.com/16185614/x/'&gt;"
+    "Ver Oferta de Emprego&lt;/a&gt;"
+    "]]></description>"
+    "<pubDate>Wed, 28 Oct 2026 19:32:03 GMT</pubDate></item>"
+    "</channel></rss>"
+)
 
 
 # ====================================================================== links
@@ -159,7 +185,9 @@ class TestListingLinks:
         """Measured from a GitHub Actions runner 2026-10-29: /jobs is a login page.
 
         The board answers 200 with "Net-Empregos - Login de Candidato" and no
-        posting link, so discovery must not treat that as an empty board.
+        posting link, so discovery must not treat that as an empty board. The
+        RSS feed is tried first; this fake answers it with the login page too,
+        which is how the sitemap becomes the last channel.
         """
         login_page = (
             "<html><head><title>Net-Empregos - Login de Candidato</title></head>"
@@ -188,6 +216,49 @@ class TestListingLinks:
         client._fetch = lambda url: "<html><body>nothing</body></html>"  # type: ignore[method-assign]
         with pytest.raises(NetEmpregosResponseError, match="fallback yielded none"):
             client.discover_detail_paths()
+
+    def test_rss_feed_carries_the_whole_posting(self) -> None:
+        """The feed's description holds Categoria/Zona/Data plus the ad body."""
+        items = parse_rss_items(RSS_FEED)
+        assert len(items) == 1
+        item = items[0]
+        assert (item["job_id"], item["path"]) == (
+            "16185614",
+            "/16185614/operador-de-armazem-m-f/",
+        )
+        posting = item["jsonld"]
+        assert posting["title"] == "Operador de Armazém (M/F)"
+        assert posting["hiringOrganization"]["name"] == "Bonfitec"
+        assert posting["jobLocation"]["address"]["addressLocality"] == "Porto"
+        assert posting["industry"] == "Transportes / Logística"
+        assert posting["datePosted"] == "2026-10-29"
+        assert "operador de armazém" in posting["description"]
+        assert "Ver Oferta" not in posting["description"]
+
+    def test_rss_records_parse_without_fetching_detail_pages(self) -> None:
+        """RSS is complete, so a walled board costs one request, not one per ad."""
+        calls: list[str] = []
+
+        def fake_fetch(url: str) -> str:
+            calls.append(url)
+            return "<html><title>Login</title></html>" if url.endswith("/jobs") else RSS_FEED
+
+        client = NetEmpregosClient(
+            NetEmpregosSettings(max_pages=1, max_jobs_per_run=5, inter_request_delay_seconds=0.0)
+        )
+        client._fetch = fake_fetch  # type: ignore[method-assign]
+        records, failures = client.fetch_raw_jobs(max_jobs=5)
+        assert failures == {}
+        assert [r["job_id"] for r in records] == ["16185614"]
+        assert calls == [
+            "https://www.net-empregos.com/jobs",
+            "https://www.net-empregos.com/rss.asp",
+        ]
+        job = NetEmpregosParser().parse(records[0]["job_id"], records[0]["html"])
+        assert job.title == "Operador de Armazém (M/F)"
+        assert job.company_name == "Bonfitec"
+        assert (job.city, job.country) == ("Porto", "PT")
+        assert job.posted_date == date(2026, 10, 29)
 
     def test_listing_url_omits_the_query_on_page_one(self) -> None:
         client = NetEmpregosClient(NetEmpregosSettings())

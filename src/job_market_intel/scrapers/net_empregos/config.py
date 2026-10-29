@@ -45,6 +45,14 @@ class NetEmpregosSettings(BaseSettings):
             "login page instead of /jobs, while the sitemap stays machine-readable."
         ),
     )
+    rss_path: str = Field(
+        default="/rss.asp",
+        description=(
+            "Full-item RSS feed (1,000 postings, title/creator/date/description). "
+            "The detail pages are login-walled for the same addresses, so the feed "
+            "is the complete record source when the listing is unavailable."
+        ),
+    )
 
     max_pages: int = Field(
         default=8,
