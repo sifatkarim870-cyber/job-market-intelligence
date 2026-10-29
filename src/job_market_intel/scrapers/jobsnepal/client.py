@@ -14,13 +14,11 @@ import time
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
+from curl_cffi import requests as curl_requests
+from curl_cffi.requests import exceptions as curl_exceptions
 from loguru import logger
 
-from job_market_intel.common.http_client import (
-    PermanentHTTPError,
-    TransientHTTPError,
-    fetch_html,
-)
+from job_market_intel.common.http_client import PermanentHTTPError, TransientHTTPError
 from job_market_intel.common.retry import call_with_retry
 
 from .config import JobsNepalSettings
@@ -54,16 +52,48 @@ class JobsNepalClient:
         self._settings = settings or JobsNepalSettings()
 
     def _fetch(self, url: str) -> str:
+        """GET one URL through curl_cffi's browser impersonation.
+
+        GitHub Actions datacenter IPs score plain ``requests`` as a bot and
+        serve a Cloudflare "Just a moment..." challenge (403) on both the
+        sitemap and the listing, so this source speaks through curl_cffi
+        impersonating Chrome's TLS/HTTP2 fingerprint instead (the same fix
+        jobam uses for its Cloudflare front). The shared transport contract
+        from ``common/http_client.py`` is reimplemented here: retryable
+        failures raise ``TransientHTTPError`` so ``call_with_retry`` owns
+        backoff; anything non-200 raises ``PermanentHTTPError``.
+
+        Catches both ``RequestException`` and ``CurlError`` because neither
+        subsumes the other (see jobam's module docstring for the MRO notes).
+        """
+
+        def do_request():
+            try:
+                response = curl_requests.get(
+                    url,
+                    impersonate=self._settings.impersonate or None,
+                    timeout=self._settings.request_timeout_seconds,
+                )
+            except (curl_exceptions.RequestException, curl_exceptions.CurlError) as exc:
+                raise TransientHTTPError(f"transport failure talking to {url}: {exc}") from exc
+            if response.status_code >= 500:
+                raise TransientHTTPError(
+                    f"{url} returned server error status {response.status_code}"
+                )
+            if response.status_code != 200:
+                raise PermanentHTTPError(
+                    f"{url} returned client error status {response.status_code}: "
+                    f"{response.text[:300]!r}"
+                )
+            return response.text
+
         try:
             return call_with_retry(
-                fetch_html,
-                url,
+                do_request,
                 retry_exception_types=TransientHTTPError,
                 max_attempts=self._settings.max_retry_attempts,
                 initial_wait_seconds=self._settings.retry_initial_wait_seconds,
                 max_wait_seconds=self._settings.retry_max_wait_seconds,
-                timeout_seconds=float(self._settings.request_timeout_seconds),
-                user_agent=self._settings.user_agent,
             )
         except TransientHTTPError as exc:
             raise JobsNepalFetchError(

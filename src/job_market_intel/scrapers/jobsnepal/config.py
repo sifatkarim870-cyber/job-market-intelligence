@@ -71,3 +71,15 @@ class JobsNepalSettings(BaseSettings):
     min_links_per_page: int = Field(
         default=5, ge=1, description="Tail threshold. Pages carry ~12 postings."
     )
+
+    #: GitHub Actions datacenter IPs score plain ``requests`` as a bot and serve
+    #: a Cloudflare "Just a moment..." challenge (403) on the sitemap *and* the
+    #: listing. curl_cffi's Chrome impersonation matches a real browser's TLS /
+    #: HTTP2 fingerprint, which is what gets past the managed challenge.
+    impersonate: str = Field(
+        default="chrome",
+        description=(
+            "curl_cffi browser impersonation profile ("
+            "e.g. ``chrome``, ``edge``, ``safari``). Empty string disables it."
+        ),
+    )
