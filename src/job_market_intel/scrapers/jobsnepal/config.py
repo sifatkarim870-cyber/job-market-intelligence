@@ -38,6 +38,13 @@ class JobsNepalSettings(BaseSettings):
 
     base_url: str = Field(default="https://www.jobsnepal.com", description="Site root.")
     listing_path: str = Field(default="/top-job", description="Server-rendered listing page.")
+    sitemap_path: str = Field(
+        default="/jobs-sitemap.xml",
+        description=(
+            "Every live posting, newest first (152 measured 2026-10-29), against "
+            "14 on the listing. Primary discovery; the listing is the fallback."
+        ),
+    )
 
     max_pages: int = Field(
         default=6, ge=1, le=200, description="Listing pages to walk. ~12 postings per page."
