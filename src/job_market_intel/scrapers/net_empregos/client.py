@@ -109,7 +109,23 @@ class NetEmpregosClient:
         """Return ``{job_id: detail_path}`` for one page of the listing."""
         html = self._fetch(self.listing_url(page))
         found = extract_detail_paths(html)
-        logger.info("net-empregos listing page {}: {} link(s)", page, len(found))
+        if found:
+            logger.info("net-empregos listing page {}: {} link(s)", page, len(found))
+        else:
+            # A 200 with no postings is the failure this board serves to
+            # datacenter addresses: it is not an empty board and not a
+            # markup change, so record what actually arrived instead of
+            # leaving the next reader to guess.
+            soup = BeautifulSoup(html or "", "html.parser")
+            title = soup.title.get_text(" ", strip=True) if soup.title else ""
+            logger.warning(
+                "net-empregos listing page {}: 0 postings in a {} char page "
+                "({} anchor(s), title {!r})",
+                page,
+                len(html or ""),
+                len(soup.find_all("a", href=True)),
+                title[:160],
+            )
         time.sleep(self._settings.inter_request_delay_seconds)
         return found
 
