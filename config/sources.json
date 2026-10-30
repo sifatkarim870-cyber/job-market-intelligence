@@ -1060,12 +1060,12 @@
     },
     {
       "code": "lucru_md",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
-      "timeout": 60,
+      "group": "browser",
+      "script": "scripts/run_browser_scraper.py",
+      "timeout": 45,
       "max_env": "LUCRU_MD_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Lucru.md (lucru.md) - Moldova; No key, no registration, no proxy. Uses the generic HTML scraper framework. Registered 2026-10-21. Fixed 2026-10-27: updated listing_path to /ro/lucru-moldova (40 jobs/page), pagination=/page-{page}, card=div.vacancyCardItem, link=a[href*=/ro/lucru/], detail_pattern=.*/ro/lucru/.*/[0-9]+$, currency=MDL. Verified 2026-10-27: 10/10 fetched, 10 parsed, batch validation PASSED."
+      "notes": "Lucru.md (lucru.md) - Moldova; No key, no registration, no proxy. Registered 2026-10-21. Fixed 2026-10-27 against the HTML framework: listing_path /ro/lucru-moldova (40 jobs/page), pagination /page-{page}, card div.vacancyCardItem, link a[href*=/ro/lucru/], detail pattern .*/ro/lucru/.*/[0-9]+$, currency MDL; 10/10 parsed locally. MOVED TO THE BROWSER FRAMEWORK 2026-10-30: from the GitHub runner the board answers HTTP 200 with a 2,410-byte Imperva/Incapsula interstitial ('JavaScript is disabled ... verify that you're not a robot'), which the new empty-listing diagnostic logged as challenge_marker='enable javascript'. curl_cffi chrome impersonation did not change it (run 41019779253): the check needs JavaScript to run, so no TLS fingerprint can pass it. The source now uses run_browser_scraper.py with undetected Chrome, waits up to 25s for a[href*=/ro/lucru/] on the listing to appear, and raises BrowserChallengeError rather than reading an empty page if the interstitial persists."
     },
     {
       "code": "arbeidsplassen_nav_no",
