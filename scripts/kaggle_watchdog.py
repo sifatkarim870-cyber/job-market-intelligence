@@ -71,9 +71,7 @@ import time
 import urllib.request
 
 KERNEL = "mskarim870/jmi-translate-hf"
-STATUS_URL = (
-    "https://www.kaggle.com/api/v1/kernels/status?userName={user}&kernelSlug={slug}"
-)
+STATUS_URL = "https://www.kaggle.com/api/v1/kernels/status?userName={user}&kernelSlug={slug}"
 
 #: Statuses that mean the day's scheduled run is dead and a re-push is the fix.
 #: ``cancelacknowledged`` is Kaggle's way of reporting a cancelled run.
@@ -170,6 +168,55 @@ def verify_pulled(meta: dict, notebook_source: str) -> None:
         raise SystemExit("pulled notebook still references Neon -- refusing to push")
 
 
+def _notebook_source(notebook: dict) -> str:
+    """Concatenate the source of every code cell in a pulled notebook."""
+    return "".join(
+        "".join(cell.get("source", []))
+        for cell in notebook.get("cells", [])
+        if cell.get("cell_type") == "code"
+    )
+
+
+def repush(kernel: str) -> int:
+    """Pull the current notebook, verify it, and push it back to queue a GPU run.
+
+    Always returns 1 on purpose: the day's scheduled run still failed, and the
+    red X is the notification. A successful re-push is remediation, not a clean
+    bill of health.
+    """
+    work = pathlib.Path(tempfile.mkdtemp(prefix="jmi_watchdog_"))
+    result = kaggle_cli("kernels", "pull", kernel, "-p", str(work), "-m")
+    if result.returncode != 0:
+        print(f"pull failed: {(result.stderr or result.stdout).strip()[:300]}")
+        return 1
+
+    nb_path = next(work.glob("*.ipynb"), None)
+    meta_path = work / "kernel-metadata.json"
+    if nb_path is None or not meta_path.is_file():
+        print(f"pull produced no notebook/metadata pair in {work}")
+        return 1
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    source = _notebook_source(json.loads(nb_path.read_text(encoding="utf-8")))
+    try:
+        verify_pulled(meta, source)
+    except SystemExit as exc:
+        print(f"verification refused the push: {exc}")
+        return 1
+
+    print("pushing the current notebook (uploads AND runs; a push queues for GPU)")
+    result = kaggle_cli("kernels", "push", "-p", str(work))
+    for stream in (result.stdout, result.stderr):
+        for line in stream.splitlines():
+            if line.strip():
+                print(f"   {line.strip()}")
+    if result.returncode != 0:
+        print("re-push FAILED -- the kernel stays dead until the next watchdog run")
+        return 1
+
+    print("re-push accepted; the run is queued for a GPU slot")
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--kernel", default=KERNEL)
@@ -200,44 +247,7 @@ def main(argv: list[str] | None = None) -> int:
         print("--dry-run: would re-push the current notebook to re-queue a GPU run")
         return 1
 
-    work = pathlib.Path(tempfile.mkdtemp(prefix="jmi_watchdog_"))
-    result = kaggle_cli("kernels", "pull", args.kernel, "-p", str(work), "-m")
-    if result.returncode != 0:
-        print(f"pull failed: {(result.stderr or result.stdout).strip()[:300]}")
-        return 1
-
-    nb_path = next(work.glob("*.ipynb"), None)
-    meta_path = work / "kernel-metadata.json"
-    if nb_path is None or not meta_path.is_file():
-        print(f"pull produced no notebook/metadata pair in {work}")
-        return 1
-    meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    nb = json.loads(nb_path.read_text(encoding="utf-8"))
-    source = "".join(
-        "".join(cell.get("source", []))
-        for cell in nb.get("cells", [])
-        if cell.get("cell_type") == "code"
-    )
-    try:
-        verify_pulled(meta, source)
-    except SystemExit as exc:
-        print(f"verification refused the push: {exc}")
-        return 1
-
-    print("pushing the current notebook (uploads AND runs; a push queues for GPU)")
-    result = kaggle_cli("kernels", "push", "-p", str(work))
-    for stream in (result.stdout, result.stderr):
-        for line in stream.splitlines():
-            if line.strip():
-                print(f"   {line.strip()}")
-    if result.returncode != 0:
-        print("re-push FAILED -- the kernel stays dead until the next watchdog run")
-        return 1
-
-    # Exit 1 on purpose: the scheduled run still failed today, and the red X is
-    # the notification. The re-push is remediation, not a clean bill of health.
-    print("re-push accepted; the run is queued for a GPU slot")
-    return 1
+    return repush(args.kernel)
 
 
 if __name__ == "__main__":
