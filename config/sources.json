@@ -601,12 +601,12 @@
     },
     {
       "code": "fne_cm",
-      "group": "html",
-      "script": "scripts/run_html_scraper.py",
+      "group": "browser",
+      "script": "scripts/run_browser_scraper.py",
       "timeout": 60,
       "max_env": "FNE_CM_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "FNE (emploi.fnecm.org) - Cameroon state agency; updated base_url to emploi.fnecm.org, listing_path to /offres, and currency to XAF."
+      "notes": "FNE (emploi.fnecm.org) - Cameroon state agency; updated base_url to emploi.fnecm.org, listing_path to /offres, and currency to XAF. Moved html->browser 2026-10-31: CI run 41102023184 (2026-10-30) failed with 'listing page 1: 0 job link(s)' and the diagnostic showed the runner had been served 'One moment, please... / Please wait while your request is being verified...' (11,989 bytes) - a DDoS-Guard JavaScript challenge, not a markup change. The same URL returns the real 96 KB listing with 9 /offre/ anchors from a residential IP, and the scheduled run 41103439192 passed, so the challenge is intermittent and IP-based. requests/curl_cffi cannot execute the JS challenge (the same reason lucru_md moved to the browser group), so the board is now rendered by real Chrome in UC mode, which solves the challenge and then reads the listing. Detail pages: title from og:title/h1 (h1 matches), body from div.col-lg-8 (the 'Missions / Taches' + 'Competences requises' cards); the summary card div.col-lg-4 holds Type de contrat, Lieu de travail and Salaire as bare label/value text with no addressable element, so those stay unset. Verified locally 2026-10-31 (plain fetch): 5 listing pages x 9 distinct /offre/ links = 45, and 45/45 parsed with validation PASSED."
     },
     {
       "code": "jobwebkenya_com",
