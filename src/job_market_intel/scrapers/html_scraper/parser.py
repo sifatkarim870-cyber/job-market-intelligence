@@ -423,6 +423,22 @@ def _fill_from_labels(
     return values
 
 
+def _salary_number(value: Any) -> float | None:
+    """A salary token as a number, honouring thousands-grouped integers.
+
+    Many boards print amounts as ``$610.001`` / ``1.210.001 €``: dot is the
+    thousands separator there, not a decimal point. ``float("610.001")`` would
+    quietly turn a 610,001 CLP monthly wage into 610.001, so a token that is
+    exactly ``\\d{1,3}(.\\d{3})+`` is collapsed to its digits first. Anything
+    else (``850.50``, ``1,5``) is left to the normal numeric path.
+    """
+    if isinstance(value, str):
+        token = value.strip()
+        if re.fullmatch(r"\d{1,3}(?:\.\d{3})+", token):
+            value = token.replace(".", "")
+    return _as_number(value)
+
+
 def _salary_from_text(pattern: str, text: str | None) -> dict[str, float | str]:
     """Salary bounds read out of mapped salary text (``salary_text_regex``).
 
@@ -441,8 +457,8 @@ def _salary_from_text(pattern: str, text: str | None) -> dict[str, float | str]:
     if not match:
         return {}
     groups = match.groupdict()
-    minimum = _as_number(groups.get("min"))
-    maximum = _as_number(groups.get("max"))
+    minimum = _salary_number(groups.get("min"))
+    maximum = _salary_number(groups.get("max"))
     if minimum is None:
         minimum = maximum
     if maximum is None:

@@ -1,40 +1,51 @@
 {
   "source_code": "bne_cl",
-  "source_name": "BNE – state (bne.cl)",
+  "source_name": "BNE - Bolsa Nacional de Empleo (bne.gob.cl)",
   "country": "Chile",
-  "base_url": "https://www.bne.cl",
-  "listing_path": "/ofertas",
+  "base_url": "https://www.bne.gob.cl",
+  "listing_path": "/buscar-empleo",
   "listing_pagination": "",
-  "max_pages": 10,
+  "max_pages": 4,
   "max_jobs_per_run": 60,
+  "listing_page_size": 25,
+  "listing_json_url": "https://www.bne.gob.cl/api/ofertas/busqueda?page={zero_page}&size=25",
+  "listing_json_method": "POST",
+  "listing_json_body": "{}",
+  "listing_json_path": "content",
+  "listing_json_id_field": "id",
+  "listing_json_url_template": "/ofertas/{id}",
+  "detail_json_url": "https://www.bne.gob.cl/api/ofertas/publica/{id}",
+  "salary_text_regex": "\\$\\s*(?P<min>[\\d.]+)\\s*-\\s*\\$?\\s*(?P<max>[\\d.]+)",
+  "detail_json_map": {
+    "title": "puesto",
+    "company": "nombreEmpresa",
+    "location": [
+      "comunaNombre",
+      "regionNombre"
+    ],
+    "employment_type": "tipoContratoNombre",
+    "description": [
+      "descripcion"
+    ],
+    "posted_date": "fecPublicacionInicio",
+    "salary": "rangoSalarioDescripcion"
+  },
   "selectors": {
     "job_card": "",
     "job_link": "",
     "job_title": "h1",
     "company": "#company",
     "location": "#location",
+    "employment_type": "#employment_type",
     "description": "#description",
     "posted_date": "#posted_date",
     "salary": "#salary",
     "skills": ""
   },
-  "detail_url_pattern": "/oferta/[^/]+$",
+  "detail_url_pattern": "/ofertas/[0-9]+$",
   "id_from_url": true,
-  "listing_json_url": "https://www.bne.cl/data/ofertas/buscarListas?mostrar=empleo&numResultadosPorPagina=100&clasificarYPaginar=true&numPaginaRecuperar={page}",
-  "listing_json_path": "paginaOfertas.resultados",
-  "listing_json_id_field": "codigo",
-  "listing_json_url_template": "/oferta/{id}",
-  "detail_json_ld": true,
-  "detail_json_map": {
-    "title": "listing.titulo",
-    "company": "hiringOrganization.name",
-    "location": "jobLocation.address.addressLocality",
-    "description": [
-      "description"
-    ],
-    "posted_date": "datePosted"
-  },
-  "user_agent": "job-market-intel-research (research@example.org)",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "impersonate": "chrome",
   "request_timeout_seconds": 30,
   "inter_request_delay_seconds": 2.0,
   "currency_iso_code": "CLP",
