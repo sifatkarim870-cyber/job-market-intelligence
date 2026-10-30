@@ -39,8 +39,7 @@ _FETCH_ERRORS = (
 )
 
 #: Errors that mean no HTTP status was ever received, so the same request can be
-#: sent again. An HTTP error *status* is deliberately not retried: the server
-#: answered, and repeating it only triples the load.
+#: sent again.
 #:
 #: minajobs.net closes the TLS connection on roughly one request in five
 #: (``Connection closed abruptly`` / ``Connection timed out``) while serving the
@@ -54,9 +53,20 @@ _TRANSPORT_ERRORS = (
     curl_exceptions.CurlError,
 )
 
+#: HTTP *statuses* worth a bounded retry because they mean "the server is having
+#: a moment", not "your request is wrong". A 4xx (except 429) is definitive and
+#: is returned to the caller unchanged: repeating it only triples the load.
+#:
+#: educarriere.ci intermittently answers the listing with 500 from a GitHub
+#: runner IP while serving 200 from a residential IP and passing whole scheduled
+#: runs; a single 500 used to end the run (CI 41112360639, 2026-10-30). RFC 9110
+#: names 500/502/503/504 as retryable server conditions. The 520-524 codes are
+#: Cloudflare's origin-error band and behave the same way.
+_RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504, 520, 521, 522, 523, 524})
+
 #: Three attempts with 2s then 4s between them. Long enough to ride out one
-#: dropped connection, short enough that a board which is really down still
-#: fails the listing page well inside the job timeout.
+#: dropped connection or a transient 5xx, short enough that a board which is
+#: really down still fails the listing page well inside the job timeout.
 _TRANSPORT_ATTEMPTS = 3
 _TRANSPORT_RETRY_DELAYS = (2.0, 4.0)
 
@@ -592,33 +602,44 @@ class HtmlScraperClient:
         headers: dict[str, str] | None = None,
         data=None,
     ):
-        """Send a request, retrying only failures that never reached the server.
+        """Send a request, retrying transient failures a bounded number of times.
 
-        A dropped connection or a timeout is retried a bounded number of times
-        (see :data:`_TRANSPORT_ATTEMPTS`); an HTTP 4xx/5xx response is returned
-        to the caller unchanged, because ``raise_for_status`` is what decides a
-        status is fatal.
+        Two things are retried: a failure that never reached the server (a
+        dropped connection or a timeout, see :data:`_TRANSPORT_ERRORS`), and a
+        response whose status is in :data:`_RETRYABLE_STATUS_CODES` (429 and the
+        5xx band). Any other response -- notably a 4xx -- is returned to the
+        caller unchanged, because ``raise_for_status`` is what decides a status
+        is fatal.
         """
         last_error: Exception | None = None
         for attempt in range(1, _TRANSPORT_ATTEMPTS + 1):
             try:
-                return self._transport(method, url, headers=headers, data=data)
+                resp = self._transport(method, url, headers=headers, data=data)
             except _TRANSPORT_ERRORS as exc:
                 last_error = exc
                 if attempt >= _TRANSPORT_ATTEMPTS:
                     break
-                delay = _TRANSPORT_RETRY_DELAYS[attempt - 1]
-                logger.warning(
-                    "html_scraper transport error for {} (attempt {}/{}): {}; retrying in {:.0f}s",
-                    url,
-                    attempt,
-                    _TRANSPORT_ATTEMPTS,
-                    exc,
-                    delay,
-                )
-                time.sleep(delay)
+                self._log_retry(url, attempt, str(exc))
+                continue
+            if resp.status_code in _RETRYABLE_STATUS_CODES and attempt < _TRANSPORT_ATTEMPTS:
+                self._log_retry(url, attempt, f"HTTP {resp.status_code}")
+                continue
+            return resp
         assert last_error is not None  # _TRANSPORT_ATTEMPTS >= 1
         raise last_error
+
+    def _log_retry(self, url: str, attempt: int, reason: str) -> None:
+        """Warn about a retry and sleep before the next attempt."""
+        delay = _TRANSPORT_RETRY_DELAYS[attempt - 1]
+        logger.warning(
+            "html_scraper transient failure for {} (attempt {}/{}): {}; retrying in {:.0f}s",
+            url,
+            attempt,
+            _TRANSPORT_ATTEMPTS,
+            reason,
+            delay,
+        )
+        time.sleep(delay)
 
     def _get(self, url: str) -> str:
         try:
