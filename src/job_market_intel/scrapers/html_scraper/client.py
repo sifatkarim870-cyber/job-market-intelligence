@@ -38,6 +38,28 @@ _FETCH_ERRORS = (
     curl_exceptions.CurlError,
 )
 
+#: Errors that mean no HTTP status was ever received, so the same request can be
+#: sent again. An HTTP error *status* is deliberately not retried: the server
+#: answered, and repeating it only triples the load.
+#:
+#: minajobs.net closes the TLS connection on roughly one request in five
+#: (``Connection closed abruptly`` / ``Connection timed out``) while serving the
+#: same URL with HTTP 200 on the next attempt. Without a retry a single dropped
+#: connection becomes a detail-page failure, and a dropped listing request
+#: becomes a whole empty run.
+_TRANSPORT_ERRORS = (
+    requests.ConnectionError,  # also covers requests.exceptions.SSLError
+    requests.Timeout,
+    curl_exceptions.RequestException,
+    curl_exceptions.CurlError,
+)
+
+#: Three attempts with 2s then 4s between them. Long enough to ride out one
+#: dropped connection, short enough that a board which is really down still
+#: fails the listing page well inside the job timeout.
+_TRANSPORT_ATTEMPTS = 3
+_TRANSPORT_RETRY_DELAYS = (2.0, 4.0)
+
 #: Phrases that identify an anti-bot interstitial rather than a board's own
 #: listing markup. Used only to explain an empty listing page in the logs.
 _CHALLENGE_MARKERS = (
@@ -563,9 +585,44 @@ class HtmlScraperClient:
             return self._session.post(url, headers=request_headers, data=data, timeout=timeout)
         return self._session.get(url, headers=request_headers, timeout=timeout)
 
+    def _transport_with_retry(
+        self,
+        method: str,
+        url: str,
+        headers: dict[str, str] | None = None,
+        data=None,
+    ):
+        """Send a request, retrying only failures that never reached the server.
+
+        A dropped connection or a timeout is retried a bounded number of times
+        (see :data:`_TRANSPORT_ATTEMPTS`); an HTTP 4xx/5xx response is returned
+        to the caller unchanged, because ``raise_for_status`` is what decides a
+        status is fatal.
+        """
+        last_error: Exception | None = None
+        for attempt in range(1, _TRANSPORT_ATTEMPTS + 1):
+            try:
+                return self._transport(method, url, headers=headers, data=data)
+            except _TRANSPORT_ERRORS as exc:
+                last_error = exc
+                if attempt >= _TRANSPORT_ATTEMPTS:
+                    break
+                delay = _TRANSPORT_RETRY_DELAYS[attempt - 1]
+                logger.warning(
+                    "html_scraper transport error for {} (attempt {}/{}): {}; retrying in {:.0f}s",
+                    url,
+                    attempt,
+                    _TRANSPORT_ATTEMPTS,
+                    exc,
+                    delay,
+                )
+                time.sleep(delay)
+        assert last_error is not None  # _TRANSPORT_ATTEMPTS >= 1
+        raise last_error
+
     def _get(self, url: str) -> str:
         try:
-            resp = self._transport("GET", url)
+            resp = self._transport_with_retry("GET", url)
             resp.raise_for_status()
             return _response_text(resp)
         except _FETCH_ERRORS as exc:
@@ -579,7 +636,7 @@ class HtmlScraperClient:
         the fetch has to carry a body rather than query parameters.
         """
         try:
-            resp = self._transport(
+            resp = self._transport_with_retry(
                 "POST",
                 url,
                 headers={"Content-Type": "application/json", "Accept": "application/json"},
