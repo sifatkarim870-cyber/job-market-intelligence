@@ -13,8 +13,8 @@ a 5xx response (where the server *did* answer) is not.
 
 from __future__ import annotations
 
-import requests
 import pytest
+import requests
 
 from job_market_intel.scrapers.html_scraper import client as client_module
 from job_market_intel.scrapers.html_scraper.client import HtmlScraperClient
