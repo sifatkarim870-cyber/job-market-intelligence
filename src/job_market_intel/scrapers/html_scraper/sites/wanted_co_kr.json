@@ -35,7 +35,7 @@
     ],
     "posted_date": "datePosted"
   },
-  "user_agent": "job-market-intel-research (research@example.org)",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
   "impersonate": "chrome",
   "extra_headers": {
     "Referer": "https://www.wanted.co.kr/wdlist"
