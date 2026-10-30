@@ -18,9 +18,13 @@ from __future__ import annotations
 import argparse
 import os
 import pathlib
+import random
 import shutil
 import sys
 import tempfile
+import time
+from collections.abc import Callable
+from typing import TypeVar
 from urllib.parse import urlsplit
 
 import pyarrow.parquet as pq
@@ -58,18 +62,76 @@ def _resolve_token() -> str:
     )
 
 
+T = TypeVar("T")
+
+#: HuggingFace answers 429 ("Too Many Requests") when more than a handful of
+#: calls arrive at once. A full Scrape (HTML) run starts ~97 matrix jobs, and
+#: *every* job downloads the same state snapshot, so the hub sees ~100 tree
+#: listings in the same minute. That burst is the whole cause of the
+#: `HfHubHTTPError: 429` failures that took out alfred, jobsnepal, karir_com,
+#: praca_by and willhaben_at on 2026-10-30 -- not anything about those boards.
+#: Retrying with exponential backoff (and jitter, so the ~100 jobs do not
+#: retry in lockstep) spreads the burst out instead of failing the scrape.
+_HF_MAX_ATTEMPTS = 7
+_HF_INITIAL_WAIT_SECONDS = 3.0
+_HF_MAX_WAIT_SECONDS = 90.0
+
+
+def _is_rate_limited(exc: BaseException) -> bool:
+    """True for HF 429s and transient 5xx, the failures worth retrying."""
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    if status == 429:
+        return True
+    if isinstance(status, int) and 500 <= status < 600:
+        return True
+    text = str(exc)
+    return "429" in text and "Too Many Requests" in text
+
+
+def _with_hf_retry(operation: Callable[[], T], description: str) -> T:
+    """Run one HuggingFace call, retrying rate limits with backoff."""
+    wait = _HF_INITIAL_WAIT_SECONDS
+    for attempt in range(1, _HF_MAX_ATTEMPTS + 1):
+        try:
+            return operation()
+        except Exception as exc:  # noqa: BLE001 - re-raised unless rate limited
+            if attempt >= _HF_MAX_ATTEMPTS or not _is_rate_limited(exc):
+                raise
+            pause = min(wait, _HF_MAX_WAIT_SECONDS) * (1 + random.random() * 0.4)
+            logger.warning(
+                "{}: HuggingFace rate limited (attempt {}/{}), retrying in {:.1f}s: {}",
+                description,
+                attempt,
+                _HF_MAX_ATTEMPTS,
+                pause,
+                exc,
+            )
+            time.sleep(pause)
+            wait *= 2
+    raise AssertionError("unreachable: retry loop must return or raise")
+
+
 def download_state(work: pathlib.Path) -> pathlib.Path:
     from huggingface_hub import HfApi
 
-    api = HfApi(token=_resolve_token())
+    token = _resolve_token()
+    api = HfApi(token=token)
     names = sorted(
-        n for n in api.list_repo_files(REPO, repo_type="dataset") if n.startswith(STATE_PREFIX)
+        n
+        for n in _with_hf_retry(
+            lambda: api.list_repo_files(REPO, repo_type="dataset"),
+            "list_repo_files",
+        )
+        if n.startswith(STATE_PREFIX)
     )
     dest = work / "state"
     dest.mkdir(parents=True, exist_ok=True)
     for name in names:
-        local = api.hf_hub_download(
-            repo_id=REPO, repo_type="dataset", filename=name, token=_resolve_token()
+        local = _with_hf_retry(
+            lambda name=name: api.hf_hub_download(
+                repo_id=REPO, repo_type="dataset", filename=name, token=token
+            ),
+            f"hf_hub_download {name}",
         )
         shutil.copy(local, dest / name[len(STATE_PREFIX) :])
         logger.info("downloaded {}", name[len(STATE_PREFIX) :])
