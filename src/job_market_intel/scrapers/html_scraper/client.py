@@ -38,6 +38,19 @@ _FETCH_ERRORS = (
     curl_exceptions.CurlError,
 )
 
+#: Phrases that identify an anti-bot interstitial rather than a board's own
+#: listing markup. Used only to explain an empty listing page in the logs.
+_CHALLENGE_MARKERS = (
+    "just a moment",
+    "checking your browser",
+    "enable javascript",
+    "captcha",
+    "ddos-guard",
+    "qrator",
+    "access denied",
+    "attention required",
+)
+
 
 def _extract_attr(element, attr: str) -> str | None:
     """Extract an attribute value from a BeautifulSoup element."""
@@ -926,7 +939,33 @@ class HtmlScraperClient:
                 unique_jobs.append(j)
 
         logger.info("html_scraper listing page {}: {} job link(s)", page, len(unique_jobs))
+        if not unique_jobs and page == 1:
+            self._warn_empty_listing(html)
         return html, unique_jobs
+
+    def _warn_empty_listing(self, html: str) -> None:
+        """Say *what* the runner actually received when page 1 has no links.
+
+        A 200 response with none of the expected anchors is ambiguous: the
+        board may have changed its markup, or it may be serving an anti-bot
+        interstitial. ``listing page 1: 0 job link(s)`` alone cannot tell them
+        apart, which is what made lucru_md's CI-only failure undiagnosable on
+        2026-10-30. Log the title, size, a text sample and any known challenge
+        marker, so the next run explains itself.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        title = soup.title.get_text(strip=True) if soup.title else "<no title>"
+        sample = " ".join(soup.get_text(" ", strip=True).split())[:240]
+        lowered = html.lower()
+        marker = next((m for m in _CHALLENGE_MARKERS if m in lowered), "")
+        logger.warning(
+            "html_scraper listing page 1 yielded no links: title={!r} bytes={} sample={!r}"
+            + (" challenge_marker={!r}" if marker else ""),
+            title,
+            len(html),
+            sample,
+            *([marker] if marker else []),
+        )
 
     def discover_detail_paths(
         self, max_jobs: int | None = None
