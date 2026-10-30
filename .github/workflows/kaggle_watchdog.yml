@@ -1,0 +1,86 @@
+name: Kaggle watchdog
+
+# The daily Kaggle schedule fires the translation kernel at ~09:03 UTC, and
+# every scheduled firing observed (2026-10-24, -28, -29, -30) was allocated a
+# CPU-only slot -- {"torch": "2.11.0+cpu", "gpus": 0} -- where the kernel's
+# fail-fast guard aborts in ~10 seconds. The kernel code and metadata are
+# correct (enable_gpu, NvidiaTeslaT4, the CUDA BYOD image); the difference is
+# that a manual `kaggle kernels push` WAITS for a GPU (3/3 successes) while a
+# UI-scheduled session does not. Kaggle's API exposes no schedule field to fix
+# and the schedule UI has no accelerator setting, so the fix is this watchdog:
+# ~20 minutes after the scheduled window, check `kernels status`; if the run
+# errored, re-push the current notebook verbatim, which re-queues it for a GPU
+# slot the way every manual push has succeeded.
+#
+# Why ~20 minutes after the window rather than hours later: an errored run is
+# dead within seconds of firing, so 09:23 UTC sees the truth; a run that DID
+# get a GPU is still "running" at 09:23 and is left alone. One daily run is
+# deliberate -- the re-push consumes GPU quota and a second attempt would only
+# help in the rare case where the re-push itself failed, which shows up red
+# here anyway.
+#
+# This runs `scripts/kaggle_watchdog.py`, which exits 1 whenever the observed
+# status is "error" -- even after a successful re-push -- so a red X means
+# "the scheduled run failed today", which is the notification. The failure
+# annotation below spells out what was already done about it.
+
+on:
+  schedule:
+    # 09:23 UTC daily (15:23 local, ~20 min after the 09:03 UTC scheduled
+    # window). Off the hour on purpose: GitHub queues scheduled workflows and
+    # the top of the hour is the worst slot.
+    - cron: "23 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  watchdog:
+    name: Re-queue jmi-translate-hf if the scheduled run died
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: uv sync --extra test
+
+      # The script itself imports only the standard library; the kaggle CLI is
+      # provided at runtime via --with, the same way fix_overlay_overwrite.py
+      # and rerun_kaggle_kernel.py expect it locally.
+      - name: Check kernel status and re-push if dead
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: uv run --with kaggle python scripts/kaggle_watchdog.py
+
+      - name: Summary
+        if: always()
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          {
+            echo "### Kaggle watchdog — jmi-translate-hf"
+            echo ""
+            echo '```'
+            uv run --with kaggle python scripts/kaggle_watchdog.py --dry-run || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The re-push is the remediation; the annotation is the notification.
+      # Without the message text here, a red X on a job that auto-fixed the
+      # problem would read as something still broken and train you to ignore it.
+      - name: Annotate failure
+        if: failure()
+        run: |
+          echo "::error title=Kaggle translation kernel errored::The daily scheduled run of mskarim870/jmi-translate-hf died (almost always: Kaggle allocated a CPU-only slot and the kernel's guard aborted in ~10s). The watchdog has re-pushed the current notebook, which re-queues it for a GPU slot -- check https://www.kaggle.com/code/mskarim870/jmi-translate-hf for the new version's run. If this annotation repeats daily, the re-pushes are also failing: check this workflow's logs for the pull/push output, and confirm the GPU quota has not run out ('kaggle quota'). No translations are lost either way -- the kernel aborts before uploading, so the overlay stays intact."
