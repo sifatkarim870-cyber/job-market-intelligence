@@ -36,6 +36,10 @@
     "posted_date": "datePosted"
   },
   "user_agent": "job-market-intel-research (research@example.org)",
+  "impersonate": "chrome",
+  "extra_headers": {
+    "Referer": "https://www.wanted.co.kr/wdlist"
+  },
   "request_timeout_seconds": 30,
   "inter_request_delay_seconds": 2.0,
   "currency_iso_code": "KRW",
