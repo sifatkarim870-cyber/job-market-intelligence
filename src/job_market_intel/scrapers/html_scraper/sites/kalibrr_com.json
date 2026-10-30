@@ -21,6 +21,7 @@
   "detail_url_pattern": ".*/c/[^/]+/jobs/[0-9]+/.*",
   "id_from_url": true,
   "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "impersonate": "chrome",
   "request_timeout_seconds": 30,
   "inter_request_delay_seconds": 2.0,
   "currency_iso_code": "PHP",
