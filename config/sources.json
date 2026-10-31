@@ -1109,8 +1109,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "IEFPONLINE_IEFP_PT_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "IEFP (iefponline.iefp.pt) - Portugal state employment portal; fixed detail_url_pattern, query-param ID extraction via id_url_regex, and search listing path."
+      "enabled": false,
+      "notes": "IEFP (iefponline.iefp.pt) - Portugal state employment portal; fixed detail_url_pattern, query-param ID extraction via id_url_regex, and search listing path. Disabled 2026-11-01: the whole portal is in maintenance - https://iefponline.iefp.pt/IEFP/index.jsp returns HTTP 503 with the title 'Site em manutenção' (122 KB page) both locally and on the CI runner, so there is nothing to fix in the scraper. Re-enable and re-run scrape_html.yml with only=iefponline_iefp_pt once the portal is serving normally again; the main www.iefp.pt site is up, only the iefponline subdomain is affected."
     },
     {
       "code": "bestjobs_eu",
