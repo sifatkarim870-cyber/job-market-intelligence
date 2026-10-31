@@ -5,25 +5,56 @@
   "base_url": "https://www.kalibrr.com",
   "listing_path": "/job-board",
   "listing_pagination": "?page={page}",
-  "max_pages": 2,
-  "max_jobs_per_run": 50,
+  "max_pages": 3,
+  "max_jobs_per_run": 30,
   "selectors": {
-    "job_card": "a[href*='/jobs/'], div[class*='card'], article",
-    "job_link": "a[href*='/jobs/']",
-    "job_title": "h1, h2, [class*='title']",
-    "company": "a[href*='/c/'], .company, .employer, [class*='company']",
-    "location": ".location, [class*='location'], [class*='city'], [class*='place']",
-    "description": "main, article, .job-description, .description, body",
-    "posted_date": "[class*='date'], [class*='posted'], [class*='time'], time",
-    "salary": "[class*='salary'], [class*='pay']",
-    "skills": "[class*='skill'], [class*='tag']"
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "employment_type": "#employment_type",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": ""
   },
   "detail_url_pattern": ".*/c/[^/]+/jobs/[0-9]+/.*",
-  "id_from_url": true,
-  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "id_from_url": false,
+  "listing_json_url": "https://www.kalibrr.com/kjs/job_board/search?limit=15&offset={offset}",
+  "listing_page_size": 15,
+  "listing_json_path": "jobs",
+  "listing_json_id_field": "id",
+  "listing_json_url_template": "/c/{company.code}/jobs/{id}/{slug}",
+  "detail_json_from_listing": true,
+  "detail_json_map": {
+    "title": "name",
+    "company": "company_name",
+    "location": [
+      "google_location.address_components.city",
+      "google_location.address_components.region"
+    ],
+    "employment_type": "tenure",
+    "description": [
+      "description",
+      "qualifications"
+    ],
+    "posted_date": "activation_date"
+  },
+  "detail_json_salary": {
+    "currency": "salary_currency",
+    "min": "base_salary",
+    "max": "maximum_salary",
+    "unit": "salary_interval"
+  },
   "impersonate": "chrome",
+  "extra_headers": {
+    "Accept": "application/json",
+    "Referer": "https://www.kalibrr.com/home"
+  },
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   "request_timeout_seconds": 30,
-  "inter_request_delay_seconds": 2.0,
+  "inter_request_delay_seconds": 1.0,
   "currency_iso_code": "PHP",
   "pay_period": "monthly",
   "country_fallback": "Philippines"

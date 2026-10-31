@@ -104,6 +104,43 @@ def test_external_json_listing_uses_hydra_member() -> None:
     ]
 
 
+def test_json_listing_template_can_name_nested_item_fields() -> None:
+    """Kalibrr's detail path carries the company code and slug, not just the id.
+
+    The listing API returns each ad's ``id``, ``slug`` and ``company.code``;
+    the dataset keeps a readable canonical URL instead of a synthetic numeric
+    one, so the template may name any nested field besides ``{id}``.
+    """
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "listing_json_url_template": "/c/{company.code}/jobs/{id}/{slug}",
+            }
+        ),
+    )
+
+    jobs = client._jobs_from_payload(
+        {
+            "props": {
+                "pageProps": {
+                    "jobs": [
+                        {
+                            "id": 269315,
+                            "slug": "human-resources-intern",
+                            "company": {"code": "green-cross-inc"},
+                        }
+                    ]
+                }
+            }
+        }
+    )
+
+    assert jobs[0]["url"] == (
+        "https://example.invalid/c/green-cross-inc/jobs/269315/human-resources-intern"
+    )
+
+
 def test_json_detail_renders_mapped_fields_as_html() -> None:
     client = HtmlScraperClient(
         "unit_test",

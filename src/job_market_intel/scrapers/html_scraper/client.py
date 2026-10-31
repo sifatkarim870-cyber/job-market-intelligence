@@ -721,7 +721,15 @@ class HtmlScraperClient:
                     continue
                 url = urljoin(self._site_config.base_url, str(detail))
             else:
-                url = urljoin(self._site_config.base_url, template.format(id=job_id))
+                # ``{id}`` is the feed's configured id field; other placeholders
+                # name nested item fields (Kalibrr's detail path needs the
+                # company code and slug, not just the numeric id).
+                rendered = template.replace("{id}", str(job_id))
+                if "{" in rendered:
+                    rendered = _fill_json_template(item, rendered, None)
+                if not rendered:
+                    continue
+                url = urljoin(self._site_config.base_url, rendered)
             if _is_offsite_social(url):
                 continue
             job = {"url": url, "title": "", "id": job_id, "listing": item}
