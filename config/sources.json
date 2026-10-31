@@ -117,7 +117,7 @@
       "timeout": 90,
       "max_env": "GLINTS_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "sitemap_index round-robin over country families, then 300-500 KB HTML pages; throttles us if hit too often"
+      "notes": "sitemap_index round-robin over country families, then 300-500 KB HTML pages; throttles us if hit too often. CI run 41121987633 (2026-10-30, full HTML matrix) failed on the first request: /sitemap_index.xml answered HTTP 403 with '<title>Glints - Firewall</title>' and '<meta http-equiv=refresh content=360>' - Glints' temporary rate-limit page asking the client to come back in six minutes, not a permanent ban. glints passed every other full run (41112360639, 41103439192, 41102023184, 41011068478, 40931491452), so this was a transient IP-based throttle. Fixed in commit 5167a84: GlintsClient now recognises that page (403 + marker), reads the advertised refresh value (falling back to firewall_cool_down_seconds=360), sleeps it once per run and retries; a second block fails the run instead of sleeping again, and a plain 403 without the marker stays permanent. CI verified 2026-10-31 in run 41234525346 (job success): 400 records fetched, 400 parsed, 400 cleaned, batch validation PASSED, 400 inserted / 0 failed."
     },
     {
       "code": "jobinja",
