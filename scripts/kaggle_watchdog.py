@@ -3,8 +3,8 @@
 Why this exists
 ---------------
 The daily Kaggle schedule for ``mskarim870/jmi-translate-hf`` fires at
-09:03 UTC, and every scheduled firing observed so far (2026-10-24, -28, -29,
--30) was allocated a CPU-only slot -- ``{"torch": "2.11.0+cpu", "gpus": 0}`` --
+09:03 UTC, and every scheduled firing observed (2026-10-24, -28, -29, -30,
+-31) was allocated a CPU-only slot -- ``{"torch": "2.11.0+cpu", "gpus": 0}`` --
 where the kernel's fail-fast guard aborts in ~10 seconds with::
 
     SystemExit: no GPU allocated: Kaggle gave this session a CPU-only torch
@@ -20,36 +20,41 @@ the two triggers enter Kaggle's queue:
   it starts on CPU instead of queueing, and at peak free-tier demand a GPU is
   apparently never free at that hour.
 
-Kaggle's API exposes no schedule fields to fix, and the schedule UI itself has
-no accelerator setting (checked in the editor: only the notebook's side panel
-does, and the schedule ignores it). So the fix is not a setting -- it is this
-watchdog: after the scheduled window, check ``kernels status``; if the run
-errored, re-push the *current* notebook verbatim (a push is also a run, and a
-push queues for GPU). The re-push is a pull->verify->push roundtrip so exactly
-what Kaggle serves is what goes back; the metadata sanity checks refuse to
-push a pull that lost the GPU config or the creds dataset.
+Kaggle's API exposes no schedule fields to fix, the schedule UI has no
+accelerator setting, and -- critically -- Kaggle returns HTTP 403 for its
+``/api/v1/kernels/status`` endpoint from GitHub Actions' datacenter IP range
+(verified: the watchdog's first scheduled run on 2026-10-31 got 403 on all
+three status checks). So this watchdog does **not** call Kaggle at all. It uses
+the Hugging Face translations dataset as the system of record: if today's
+scheduled run succeeded, the overlay file was re-published after the window
+opened (a healthy GPU run publishes within ~10 minutes). If the overlay was
+*not* updated today on/after the scheduled window, the scheduled run died and
+the watchdog re-pushes the current notebook verbatim -- a push is also a run,
+and a push queues for a GPU.
 
 Failure semantics
 -----------------
-The script exits 1 whenever the observed status is ``error`` (or
-``cancelacknowledged``), *including* after a successful re-push. A red X is the
-notification: the day's scheduled run failed, even if the watchdog rescued the
-translations. The status message (e.g. the SystemExit text) is printed so the
-Actions annotation says why. On ``running``/``queued``/``complete`` it exits 0
-and does nothing -- a run in flight must not be double-started.
+The script exits 1 whenever today's overlay is stale (the scheduled run failed
+today), *including* after a successful re-push. A red X is the notification:
+"the scheduled run failed today." The status detail is printed so the Actions
+annotation says why. On a fresh overlay it exits 0 and does nothing.
 
-The kaggle CLI is invoked as a subprocess (``{sys.executable} -m kaggle``), the
-same pattern as ``fix_overlay_overwrite.py``: this file imports nothing outside
-the standard library, because ``test_declared_dependencies.py`` audits every
-import in ``scripts/`` against pyproject.toml and ``kaggle`` is deliberately
-not a project dependency. Run it with the CLI provided at runtime::
+If Hugging Face is unreachable, the script exits 1 **without** pushing -- a
+stale overlay with an unreachable signal must not trigger a blind double-run.
+
+The kaggle CLI is invoked as a subprocess (``{sys.executable} -m kaggle``),
+the same pattern as ``fix_overlay_overwrite.py``: this file imports nothing
+outside the standard library, because ``test_declared_dependencies.py`` audits
+every import in ``scripts/`` against pyproject.toml and ``kaggle`` is
+deliberately not a project dependency. Run it with the CLI provided at runtime::
 
     KAGGLE_USERNAME=... KAGGLE_KEY=... \
         uv run --with kaggle python scripts/kaggle_watchdog.py
 
 Credentials come from the ``KAGGLE_USERNAME``/``KAGGLE_KEY`` environment
 variables (what CI uses) and fall back to ``~/.kaggle/kaggle.json`` for local
-runs.
+runs. HF is read anonymously (the dataset is public), so no HF token is needed
+for the staleness check.
 
 Usage:
     python scripts/kaggle_watchdog.py
@@ -60,7 +65,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import base64
+import datetime as _dt
 import json
 import os
 import pathlib
@@ -68,19 +73,28 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 
 KERNEL = "mskarim870/jmi-translate-hf"
-STATUS_URL = "https://www.kaggle.com/api/v1/kernels/status?userName={user}&kernelSlug={slug}"
+HF_DATASET = "Shifat2110724169/job-market-intel-translations"
+HF_INFO_URL = f"https://huggingface.co/api/datasets/{HF_DATASET}"
 
-#: Statuses that mean the day's scheduled run is dead and a re-push is the fix.
-#: ``cancelacknowledged`` is Kaggle's way of reporting a cancelled run.
+#: Kaggle's daily schedule fires the kernel at this UTC time.
+SCHEDULE_UTC = _dt.time(9, 3)
+
+#: The watchdog runs this many minutes after the window, giving a healthy GPU
+#: run (~10 min incl. smoke test and translation) time to publish.
+WATCHDOG_OFFSET_MIN = 20
+
+#: Statuses Kaggle's API returns for a dead run (kept for documentation; the
+#  status check itself is unavailable from CI due to Kaggle's 403, so the
+#  decision is made from HF staleness instead).
 DEAD_STATUSES = frozenset({"error", "cancelacknowledged"})
 
-#: The pulled metadata must carry exactly this GPU configuration. If a future
-#: Kaggle API change drops or renames these fields, refusing to push is the
-#: right reaction: a push with ``enable_gpu`` missing could silently start a
-#: CPU run -- the exact failure this watchdog exists to fix.
+#: The pulled metadata must carry exactly this GPU configuration. Refusing to
+#  push a degraded pull is the watchdog's one remediation attempt not spending
+#  itself re-creating the CPU failure it exists to fix.
 EXPECTED_META = {
     "enable_gpu": True,
     "machine_shape": "NvidiaTeslaT4",
@@ -113,40 +127,52 @@ def credentials() -> tuple[str, str]:
     )
 
 
-def fetch_status(user: str, key: str, attempts: int = 3) -> dict:
-    """GET the kernel's run status, retrying transient network failures.
+def today_utc() -> _dt.date:
+    return _dt.datetime.now(_dt.UTC).date()
 
-    A single flaky request must not flip the decision to re-push or, worse,
-    mask a dead run as healthy. Three attempts with a short backoff covers a
-    blip; a real outage fails loudly on the third.
+
+def hf_last_modified(attempts: int = 3) -> _dt.datetime | None:
+    """Return the overlay dataset's last-modified instant, or None if unreachable.
+
+    The dataset is public, so this works with no token. Retries transient
+    failures; a real HF outage fails loudly on the third attempt and the caller
+    refuses to push blindly.
     """
-    auth = base64.b64encode(f"{user}:{key}".encode()).decode()
-    url = STATUS_URL.format(user=user.split("/")[0], slug=KERNEL.split("/")[-1])
     last_error: Exception | None = None
     for attempt in range(1, attempts + 1):
         try:
-            req = urllib.request.Request(url, headers={"Authorization": f"Basic {auth}"})
-            with urllib.request.urlopen(req, timeout=60) as response:
-                return json.loads(response.read().decode("utf-8"))
+            with urllib.request.urlopen(HF_INFO_URL, timeout=60) as response:
+                data = json.loads(response.read().decode("utf-8"))
+            raw = data.get("lastModified")
+            if not raw:
+                return None
+            return _dt.datetime.fromisoformat(raw.replace("Z", "+00:00"))
         except Exception as exc:  # noqa: BLE001 - any transport error is retryable
             last_error = exc
             if attempt < attempts:
                 time.sleep(10 * attempt)
-    raise SystemExit(f"kernels status unreachable after {attempts} attempts: {last_error}")
+    print(f"hf dataset unreachable after {attempts} attempts: {last_error}")
+    return None
 
 
-def decide(status: str) -> str:
-    """Map a kernel status to the watchdog's action: 'repush' or 'noop'."""
-    return "repush" if status.strip().lower() in DEAD_STATUSES else "noop"
+def overlay_is_fresh(last_modified: _dt.datetime | None) -> bool:
+    """True if the overlay was (re)published today on/after the schedule window."""
+    if last_modified is None:
+        return False
+    today = today_utc()
+    if last_modified.date() != today:
+        return False
+    window_open = _dt.datetime.combine(today, SCHEDULE_UTC, tzinfo=_dt.UTC)
+    return last_modified >= window_open
+
+
+def decide(fresh: bool) -> str:
+    """Map overlay staleness to the watchdog's action: 'repush' or 'noop'."""
+    return "noop" if fresh else "repush"
 
 
 def verify_pulled(meta: dict, notebook_source: str) -> None:
-    """Refuse to push unless the pull still carries the working configuration.
-
-    Checked before the push, never after: pushing a degraded pull would
-    re-create the CPU failure this watchdog is fixing, and the day's only
-    remediation attempt would be spent making things worse.
-    """
+    """Refuse to push unless the pull still carries the working configuration."""
     for field, expected in EXPECTED_META.items():
         if meta.get(field) != expected:
             raise SystemExit(
@@ -168,24 +194,41 @@ def verify_pulled(meta: dict, notebook_source: str) -> None:
         raise SystemExit("pulled notebook still references Neon -- refusing to push")
 
 
-def _notebook_source(notebook: dict) -> str:
-    """Concatenate the source of every code cell in a pulled notebook."""
-    return "".join(
-        "".join(cell.get("source", []))
-        for cell in notebook.get("cells", [])
-        if cell.get("cell_type") == "code"
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--kernel", default=KERNEL)
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="report the staleness decision, but never push",
     )
+    args = ap.parse_args(argv)
 
+    user, key = credentials()
+    last_modified = hf_last_modified()
+    fresh = overlay_is_fresh(last_modified)
+    action = decide(fresh)
 
-def repush(kernel: str) -> int:
-    """Pull the current notebook, verify it, and push it back to queue a GPU run.
+    print(f"kernel : {args.kernel}")
+    print(f"hf overlay last_modified: {last_modified.isoformat() if last_modified else 'unreachable'}")
+    print(f"schedule window opened today at {SCHEDULE_UTC.isoformat()} UTC")
+    print(f"overlay fresh: {fresh}")
+    print(f"action : {action}")
 
-    Always returns 1 on purpose: the day's scheduled run still failed, and the
-    red X is the notification. A successful re-push is remediation, not a clean
-    bill of health.
-    """
+    if action == "noop":
+        print("nothing to do: today's scheduled run already published translations")
+        return 0
+
+    if last_modified is None:
+        print("refusing to re-push: hf unreachable, cannot confirm staleness")
+        return 1
+
+    if args.dry_run:
+        print("--dry-run: would re-push the current notebook to re-queue a GPU run")
+        return 1
+
     work = pathlib.Path(tempfile.mkdtemp(prefix="jmi_watchdog_"))
-    result = kaggle_cli("kernels", "pull", kernel, "-p", str(work), "-m")
+    result = kaggle_cli("kernels", "pull", args.kernel, "-p", str(work), "-m")
     if result.returncode != 0:
         print(f"pull failed: {(result.stderr or result.stdout).strip()[:300]}")
         return 1
@@ -196,7 +239,12 @@ def repush(kernel: str) -> int:
         print(f"pull produced no notebook/metadata pair in {work}")
         return 1
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    source = _notebook_source(json.loads(nb_path.read_text(encoding="utf-8")))
+    nb = json.loads(nb_path.read_text(encoding="utf-8"))
+    source = "".join(
+        "".join(cell.get("source", []))
+        for cell in nb.get("cells", [])
+        if cell.get("cell_type") == "code"
+    )
     try:
         verify_pulled(meta, source)
     except SystemExit as exc:
@@ -213,41 +261,10 @@ def repush(kernel: str) -> int:
         print("re-push FAILED -- the kernel stays dead until the next watchdog run")
         return 1
 
+    # Exit 1 on purpose: the scheduled run still failed today, and the red X is
+    # the notification. The re-push is remediation, not a clean bill of health.
     print("re-push accepted; the run is queued for a GPU slot")
     return 1
-
-
-def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--kernel", default=KERNEL)
-    ap.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="report the status and the decision, but never push",
-    )
-    args = ap.parse_args(argv)
-
-    user, key = credentials()
-    status = fetch_status(user, key)
-    observed = status.get("status", "")
-    message = status.get("failureMessage") or ""
-    action = decide(observed)
-
-    print(f"kernel : {args.kernel}")
-    print(f"status : {observed!r}")
-    if message:
-        print(f"detail : {message.strip()[:300]}")
-    print(f"action : {action}")
-
-    if action == "noop":
-        print("nothing to do: the run is in flight or already completed")
-        return 0
-
-    if args.dry_run:
-        print("--dry-run: would re-push the current notebook to re-queue a GPU run")
-        return 1
-
-    return repush(args.kernel)
 
 
 if __name__ == "__main__":

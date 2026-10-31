@@ -1,28 +1,33 @@
 name: Kaggle watchdog
 
 # The daily Kaggle schedule fires the translation kernel at ~09:03 UTC, and
-# every scheduled firing observed (2026-10-24, -28, -29, -30) was allocated a
+# every scheduled firing observed (2026-10-24 through -31) was allocated a
 # CPU-only slot -- {"torch": "2.11.0+cpu", "gpus": 0} -- where the kernel's
 # fail-fast guard aborts in ~10 seconds. The kernel code and metadata are
 # correct (enable_gpu, NvidiaTeslaT4, the CUDA BYOD image); the difference is
 # that a manual `kaggle kernels push` WAITS for a GPU (3/3 successes) while a
-# UI-scheduled session does not. Kaggle's API exposes no schedule field to fix
-# and the schedule UI has no accelerator setting, so the fix is this watchdog:
-# ~20 minutes after the scheduled window, check `kernels status`; if the run
-# errored, re-push the current notebook verbatim, which re-queues it for a GPU
-# slot the way every manual push has succeeded.
+# UI-scheduled session does not. Kaggle's API exposes no schedule field to fix,
+# the schedule UI has no accelerator setting, and Kaggle returns HTTP 403 for
+# /api/v1/kernels/status from GitHub Actions' datacenter IP range (verified on
+# the watchdog's first run). So this watchdog does NOT call Kaggle at all.
 #
-# Why ~20 minutes after the window rather than hours later: an errored run is
-# dead within seconds of firing, so 09:23 UTC sees the truth; a run that DID
-# get a GPU is still "running" at 09:23 and is left alone. One daily run is
-# deliberate -- the re-push consumes GPU quota and a second attempt would only
-# help in the rare case where the re-push itself failed, which shows up red
-# here anyway.
+# It uses the Hugging Face translations dataset as the system of record: if
+# today's scheduled run succeeded, the overlay was re-published after the
+# 09:03 UTC window opened (a healthy GPU run publishes within ~10 minutes).
+# ~20 minutes after the window, if the overlay is stale, the watchdog re-pushes
+# the current notebook verbatim -- a push is also a run, and a push queues for
+# a GPU.
 #
-# This runs `scripts/kaggle_watchdog.py`, which exits 1 whenever the observed
-# status is "error" -- even after a successful re-push -- so a red X means
-# "the scheduled run failed today", which is the notification. The failure
-# annotation below spells out what was already done about it.
+# One daily run is deliberate -- the re-push consumes GPU quota. A second
+# attempt would only help if the re-push itself failed, which shows up red here
+# anyway.
+#
+# The watchdog script exits 1 whenever today's overlay is stale -- even after a
+# successful re-push -- so a red X means "the scheduled run failed today", which
+# is the notification. The annotation below spells out what was done about it.
+# Hugging Face is read anonymously (the dataset is public); if HF is
+# unreachable, the script exits 1 WITHOUT pushing -- a blind double-run is
+# worse than a missed day.
 
 on:
   schedule:
@@ -54,10 +59,11 @@ jobs:
       - name: Install
         run: uv sync --extra test
 
-      # The script itself imports only the standard library; the kaggle CLI is
-      # provided at runtime via --with, the same way fix_overlay_overwrite.py
-      # and rerun_kaggle_kernel.py expect it locally.
-      - name: Check kernel status and re-push if dead
+      # The script imports only the standard library; the kaggle CLI is
+      # provided at runtime via --with. HF is checked anonymously, so no token
+      # is needed for the staleness check; KAGGLE credentials are needed only
+      # for the re-push itself.
+      - name: Check overlay freshness and re-push if stale
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
@@ -83,4 +89,4 @@ jobs:
       - name: Annotate failure
         if: failure()
         run: |
-          echo "::error title=Kaggle translation kernel errored::The daily scheduled run of mskarim870/jmi-translate-hf died (almost always: Kaggle allocated a CPU-only slot and the kernel's guard aborted in ~10s). The watchdog has re-pushed the current notebook, which re-queues it for a GPU slot -- check https://www.kaggle.com/code/mskarim870/jmi-translate-hf for the new version's run. If this annotation repeats daily, the re-pushes are also failing: check this workflow's logs for the pull/push output, and confirm the GPU quota has not run out ('kaggle quota'). No translations are lost either way -- the kernel aborts before uploading, so the overlay stays intact."
+          echo "::error title=Kaggle translation kernel errored::The daily scheduled run of mskarim870/jmi-translate-hf died (almost always: Kaggle allocated a CPU-only slot and the kernel's guard aborted in ~10s; Kaggle's status API returns 403 from GitHub's IP range, so the watchdog uses the Hugging Face overlay's last-modified time as the success signal). The watchdog has re-pushed the current notebook, which re-queues it for a GPU slot -- check https://www.kaggle.com/code/mskarim870/jmi-translate-hf for the new version's run. If this annotation repeats daily, the re-pushes are also failing: check this workflow's logs for the pull/push output, and confirm the GPU quota has not run out ('kaggle quota'). No translations are lost either way -- the kernel aborts before uploading, so the overlay stays intact."
