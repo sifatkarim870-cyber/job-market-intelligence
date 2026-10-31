@@ -929,8 +929,14 @@ class HtmlScraperClient:
         # Try configured CSS selector first
         link_els = [] if jobs else self._select(soup, self._site_config.selectors.job_link)
         generic_selector = self._site_config.selectors.job_link.strip() == GENERIC_LINK_SELECTOR
+        link_attr = self._site_config.listing_link_attr.strip()
+        link_pattern = self._site_config.listing_link_regex.strip()
         for el in link_els:
             link = _extract_attr(el, "href")
+            if not link and link_attr:
+                # A card that navigates with JavaScript carries its detail URL
+                # in an attribute instead of an anchor (see listing_link_attr).
+                link = self._link_from_attribute(el, link_attr, link_pattern)
             title = _extract_text(el)
             if link:
                 link = urljoin(self._site_config.base_url, link)
@@ -949,6 +955,23 @@ class HtmlScraperClient:
             raw_links = _extract_links_from_html(html, self._site_config.base_url)
             jobs = [{"url": u, "title": t} for u, t in raw_links if not _is_offsite_social(u)]
         return jobs
+
+    @staticmethod
+    def _link_from_attribute(element, attr: str, pattern: str) -> str | None:
+        """The detail URL a clickable card carries in a JS attribute.
+
+        See ``SiteConfig.listing_link_attr``: the card navigates with
+        ``onclick="document.location.href='...'"`` rather than an anchor, so
+        the URL is read from the attribute and, when a pattern is configured,
+        cut out of it.
+        """
+        raw = _extract_attr(element, attr)
+        if not raw:
+            return None
+        if not pattern:
+            return raw
+        match = re.search(pattern, raw)
+        return match.group(1) if match else None
 
     def fetch_listing_page(self, page: int = 1) -> tuple[str, list[dict]]:
         """Fetch one listing page. Returns (html, [job_links_with_titles])."""

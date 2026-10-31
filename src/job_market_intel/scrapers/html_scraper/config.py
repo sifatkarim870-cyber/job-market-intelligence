@@ -127,6 +127,21 @@ class SiteConfig(BaseModel):
     listing_json_url_field: str = Field(
         default="", description="Dotted field in each JSON job holding its detail URL"
     )
+    #: Some boards make a whole card clickable with JavaScript instead of an
+    #: anchor: Serbia's NSZ job search puts
+    #: ``onclick="document.location.href='https://.../jobs/preview/104483'"``
+    #: on a ``<div>`` and ships no ``<a href>`` at all, so the link selector
+    #: matches elements that carry no ``href``. When set, this attribute is
+    #: read from each ``job_link`` element and :attr:`listing_link_regex`
+    #: extracts the detail URL from its value.
+    listing_link_attr: str = Field(
+        default="", description="Attribute holding the detail URL when job_link has no href"
+    )
+    #: Regex whose first group is the URL inside :attr:`listing_link_attr`
+    #: (e.g. ``href='([^']+)'``). Empty means the attribute *is* the URL.
+    listing_link_regex: str = Field(
+        default="", description="Regex whose first group is the detail URL in listing_link_attr"
+    )
     #: Some gateways ship their JSON compressed, as an index-addressed zlib
     #: envelope (``{"_data_": {"0": 120, "1": 156, ...}}``) that the board's own
     #: bundle inflates with pako before parsing. When set, such a payload is

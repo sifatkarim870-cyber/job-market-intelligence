@@ -1145,8 +1145,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "NSZ_GOV_RS_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "NSZ – state (nsz.gov.rs) - Serbia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/nsz_gov_rs.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:01:57.547\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
+      "enabled": true,
+      "notes": "NSZ – state (nsz.gov.rs) - Serbia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/nsz_gov_rs.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: the auto-generated config pointed at the site root ('/'), whose only matching anchors are navigation. Fixed 2026-11-01: the real job search is /employee/jobs/search (?page=N, 20 per page, 26 pages), whose cards navigate with onclick=\"document.location.href='https://nsz.gov.rs/employee/jobs/preview/<id>'\" and ship no <a href> at all -- a new opt-in listing_link_attr + listing_link_regex reads the detail URL out of the JS attribute (see SiteConfig.listing_link_attr). Detail fields are .job-title (position), .job-description (employer), .job-location (category - city), .job-content (ad body) and .job-requirements for the validity window (posted_date_regex takes the window's start date); title_priority is selector-first because the detail <title> is the generic 'Preview Job'. Local dry-run 2026-11-01: page 1 x 20 links, 12 fetched / 12 parsed / 0 skipped / 0 failures, batch validation PASSED."
     },
     {
       "code": "kariera_sk",
