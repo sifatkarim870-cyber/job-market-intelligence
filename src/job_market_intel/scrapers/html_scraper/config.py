@@ -198,6 +198,16 @@ class SiteConfig(BaseModel):
     detail_json_ld: bool = Field(
         default=False, description="Read the detail page's JobPosting JSON-LD block"
     )
+    #: Some boards print the ad body as ordinary markup while also publishing a
+    #: schema.org ``JobPosting`` summary whose ``datePosted`` /
+    #: ``hiringOrganization`` / ``jobLocation`` name fields the markup leaves
+    #: unlabelled (Slovakia's HelloWorld prints the deadline as a bare date and
+    #: the posted date nowhere). Unlike :attr:`detail_json_ld`, which replaces
+    #: the page with the mapped block, this keeps the real markup for the
+    #: description and only fills fields the CSS selectors left empty.
+    detail_json_ld_fill: bool = Field(
+        default=False, description="Fill empty fields from the page's JobPosting JSON-LD"
+    )
     detail_json_map: dict[str, str | list[str]] = Field(
         default_factory=dict,
         description="Output field -> dotted JSON path (or list of paths to concatenate)",

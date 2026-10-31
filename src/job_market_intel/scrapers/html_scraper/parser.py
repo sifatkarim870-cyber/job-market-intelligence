@@ -16,6 +16,7 @@ from loguru import logger
 
 from .config import SiteConfig
 from .exceptions import HtmlScraperParseError
+from .jsonld import json_ld_job_posting
 from .models import RawHtmlScraperJob
 
 
@@ -423,6 +424,67 @@ def _fill_from_labels(
     return values
 
 
+#: schema.org ``JobPosting`` paths that fill fields the markup may not name.
+#: Only fields the detail parser reads from CSS/labels are listed -- the ad body
+#: always comes from the markup, never from the block's own summary sentence.
+#: ``jobLocation`` is a list of ``Place`` objects on most boards and a single
+#: one on the rest, so :func:`_json_ld_value` unwraps a list at every step.
+_JSON_LD_FIELDS: dict[str, tuple[str, ...]] = {
+    "company": ("hiringOrganization", "name"),
+    "location": ("jobLocation", "address", "addressLocality"),
+    "employment_type": ("employmentType",),
+    "posted_date": ("datePosted",),
+}
+
+
+def _json_ld_value(posting: dict, keys: tuple[str, ...]) -> str | None:
+    """Follow a dotted path through a JSON-LD ``JobPosting`` to a string."""
+    node: Any = posting
+    for key in keys:
+        if isinstance(node, list):
+            node = node[0] if node else None
+        if not isinstance(node, dict):
+            return None
+        node = node.get(key)
+    if isinstance(node, list):
+        node = node[0] if node else None
+    if isinstance(node, str):
+        return node.strip() or None
+    return None
+
+
+def _fill_from_json_ld(html: str, values: dict[str, str | None]) -> dict[str, str | None]:
+    """Fill empty fields from the page's schema.org ``JobPosting`` block.
+
+    See ``SiteConfig.detail_json_ld_fill``. Only gaps are filled, so a CSS
+    selector or label that produced a value always wins.
+    """
+    posting = json_ld_job_posting(html)
+    if not posting:
+        return values
+    for field, path in _JSON_LD_FIELDS.items():
+        current = values.get(field)
+        if current and not (field == "company" and current == "Unknown employer"):
+            continue
+        found = _json_ld_value(posting, path)
+        if found:
+            values[field] = found
+    return values
+
+
+def _fill_missing_facts(
+    html: str,
+    soup: BeautifulSoup,
+    site_config: SiteConfig,
+    values: dict[str, str | None],
+) -> dict[str, str | None]:
+    """Apply every optional fact source: label rows, then a JSON-LD gap-fill."""
+    values = _fill_from_labels(soup, site_config.detail_label_map, values)
+    if site_config.detail_json_ld_fill:
+        values = _fill_from_json_ld(html, values)
+    return values
+
+
 def _salary_number(value: Any) -> float | None:
     """A salary token as a number, honouring thousands-grouped integers.
 
@@ -574,10 +636,13 @@ def parse_detail(
     posted_date_text = _extract_field(soup, sel.posted_date) if sel.posted_date else None
 
     # Label/value rows (see ``detail_label_map``), for boards whose facts sit
-    # beside a visible label rather than under a stable class name.
-    values = _fill_from_labels(
+    # beside a visible label rather than under a stable class name; and, where
+    # configured, a schema.org ``JobPosting`` block that names fields the
+    # markup leaves unlabelled (see ``detail_json_ld_fill``).
+    values = _fill_missing_facts(
+        html,
         soup,
-        site_config.detail_label_map,
+        site_config,
         {
             "company": company_name,
             "location": location,

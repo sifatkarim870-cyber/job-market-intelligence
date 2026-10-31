@@ -292,6 +292,29 @@ def test_offset_pagination_uses_page_size() -> None:
     assert client.listing_data_url(3) == "https://api.example.invalid/jobs?limit=20&offset=40"
 
 
+def test_html_offset_pagination_uses_page_size() -> None:
+    """Some boards put the item offset in the *path*, not a query string.
+
+    HelloWorld.rs walks its listing as ``/oglasi-za-posao/stranica/<n>`` where
+    ``<n>`` counts items (30 per page), so ``{offset}`` is substituted the same
+    way it is for a JSON endpoint.
+    """
+    client = HtmlScraperClient(
+        "unit_test",
+        site_config=_site_config().model_copy(
+            update={
+                "listing_path": "/oglasi-za-posao/",
+                "listing_pagination": "stranica/{offset}",
+                "listing_page_size": 30,
+            }
+        ),
+    )
+
+    assert client.listing_url(1) == "https://example.invalid/oglasi-za-posao/"
+    assert client.listing_url(2) == "https://example.invalid/oglasi-za-posao/stranica/30"
+    assert client.listing_url(3) == "https://example.invalid/oglasi-za-posao/stranica/60"
+
+
 # --- Karir: a search gateway that answers only POST ---------------------------
 
 

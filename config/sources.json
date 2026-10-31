@@ -1136,8 +1136,8 @@
       "script": "scripts/run_html_scraper.py",
       "timeout": 60,
       "max_env": "HELLOWORLD_RS_MAX_JOBS_PER_RUN",
-      "enabled": false,
-      "notes": "HelloWorld.rs (helloworld.rs) - Serbia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/helloworld_rs.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:00:59.409\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
+      "enabled": true,
+      "notes": "HelloWorld.rs (helloworld.rs) - Serbia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/helloworld_rs.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: the auto-generated config pointed at the site root ('/'), a Next.js shell that renders no detail anchors. Fixed 2026-11-01: the listing is /oglasi-za-posao/, paged by item offset at /oglasi-za-posao/stranica/<n> (30 per page, read through a new {offset} mode in the HTML listing pagination); detail links are /posao/<slug>/<company>/<id> with the title in a.__ga4_job_title. Facts come from the detail markup (h1 title, .__job-header h4 employer, .__job-header i.la-map-marker + p location, .__job-text-body body) plus a new opt-in detail_json_ld_fill that reads the page's schema.org JobPosting block for fields the markup leaves unlabelled -- the header clock is the application deadline (validThrough), so posted_date comes from the block's datePosted and the employer from hiringOrganization; the body always stays the markup's, never the block's one-line summary. Local dry-run 2026-11-01: 2 pages x 30 links, 11 fetched / 11 parsed / 0 skipped, batch validation PASSED."
     },
     {
       "code": "nsz_gov_rs",

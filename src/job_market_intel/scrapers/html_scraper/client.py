@@ -28,6 +28,7 @@ from .config import (
     load_site_config,
 )
 from .exceptions import HtmlScraperFetchError, HtmlScraperResponseError
+from .jsonld import json_ld_job_posting as _json_ld_job_posting
 
 #: Both HTTP libraries raise their own transport error, and curl_cffi's
 #: ``CurlError`` is not a ``RequestException``, so a fetch that may go through
@@ -136,41 +137,6 @@ def _is_job_url(url: str) -> bool:
         return False
     # "/en/ads/sri-lanka/driver-jobs", "/jobs-in-nepal/marketing-sales-jobs-in-nepal"
     return not (last.endswith(("-jobs", "-job")) or "-jobs-in-" in last)
-
-
-def _json_ld_job_posting(html: str) -> dict | None:
-    """Return the schema.org ``JobPosting`` block embedded in a detail page.
-
-    Boards such as Qatar Living render the visible page as unlabelled layout
-    divs but publish the same record in ``<script type="application/ld+json">``.
-    The block can be a dict, a list of dicts, or a ``@graph`` container, so all
-    three shapes are accepted.
-    """
-    soup = BeautifulSoup(html, "html.parser")
-    for script in soup.find_all("script", type="application/ld+json"):
-        raw = script.string or script.get_text()
-        if not raw or not raw.strip():
-            continue
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError:
-            # Some boards (Chile's BNE) emit raw line breaks inside the
-            # description string, which strict JSON rejects. Keep the record
-            # instead of discarding the only structured copy of the ad.
-            try:
-                payload = json.loads(raw, strict=False)
-            except json.JSONDecodeError:
-                continue
-
-        candidates: list = []
-        if isinstance(payload, dict):
-            candidates = payload.get("@graph") or [payload]
-        elif isinstance(payload, list):
-            candidates = payload
-        for item in candidates:
-            if isinstance(item, dict) and item.get("@type") == "JobPosting":
-                return item
-    return None
 
 
 class _LinkExtractor(HTMLParser):
@@ -546,6 +512,11 @@ class HtmlScraperClient:
             if not self._listing_cursor:
                 return base
             return base + pagination.replace("{cursor}", quote(self._listing_cursor, safe=""))
+        # Boards that page by item offset (HelloWorld's ``/stranica/<n>``)
+        # rather than page number; ``listing_page_size`` supplies the stride.
+        if "{offset}" in pagination:
+            offset = (page - 1) * self._site_config.listing_page_size
+            return base + pagination.format(offset=offset)
         page_str = pagination.format(page=page)
         return base + page_str
 
