@@ -60,6 +60,12 @@ class GlintsSettings(BaseSettings):
             giving up on a transient failure.
         retry_initial_wait_seconds: Wait before the first retry.
         retry_max_wait_seconds: Ceiling on exponential backoff.
+        firewall_cool_down_seconds: How long to wait when Glints serves
+            its temporary ``Glints - Firewall`` page (HTTP 403) instead of
+            the sitemap. The page advertises
+            ``<meta http-equiv="refresh" content="360">``, so six minutes
+            is the site's own hint; the client waits it once per run and
+            retries (see ``GlintsFirewallError``).
         user_agent: Browser-style User-Agent; Glints serves its SSR
             pages fine to one, and identifying honestly is the polite
             thing to do regardless.
@@ -80,6 +86,9 @@ class GlintsSettings(BaseSettings):
     max_retry_attempts: int = 4
     retry_initial_wait_seconds: float = 1.0
     retry_max_wait_seconds: float = 30.0
+    #: Glints' temporary firewall page (HTTP 403, ``refresh`` meta tag)
+    #: tells the client to come back in 360s; wait that long once per run.
+    firewall_cool_down_seconds: float = Field(default=360.0, ge=0.0)
     user_agent: str = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"

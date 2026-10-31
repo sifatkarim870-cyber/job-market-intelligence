@@ -22,5 +22,21 @@ class GlintsFetchError(GlintsError):
     """
 
 
+class GlintsFirewallError(GlintsError):
+    """Glints served its temporary firewall page (HTTP 403).
+
+    This is a rate-limit response, not a permanent ban: the body is
+    ``<title>Glints - Firewall</title>`` with
+    ``<meta http-equiv="refresh" content="360">``, i.e. "come back in
+    six minutes". ``client._request_text`` waits out the advertised
+    cool-down (once per run) and retries; this error only escapes when
+    the block outlasts that wait.
+    """
+
+    def __init__(self, message: str, cool_down_seconds: float) -> None:
+        super().__init__(message)
+        self.cool_down_seconds = cool_down_seconds
+
+
 class GlintsResponseError(GlintsError):
     """Glints responded, but the payload wasn't a usable job list."""

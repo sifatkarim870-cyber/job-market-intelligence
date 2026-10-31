@@ -59,9 +59,16 @@ from job_market_intel.common.http_client import PermanentHTTPError, TransientHTT
 from job_market_intel.common.retry import call_with_retry
 
 from .config import GlintsSettings
-from .exceptions import GlintsFetchError, GlintsResponseError
+from .exceptions import GlintsFetchError, GlintsFirewallError, GlintsResponseError
 
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+
+#: Marker on Glints' temporary rate-limit page: HTTP 403 with
+#: ``<title>Glints - Firewall</title>`` and a ``refresh`` meta tag. This is a
+#: "come back in N seconds" block, not a permanent ban, so it is waited out
+#: (once per run) rather than treated like an ordinary 4xx.
+_FIREWALL_MARKER = "glints - firewall"
+_FIREWALL_REFRESH_RE = re.compile(r'http-equiv="refresh"\s+content="(\d+)"', re.I)
 
 #: ``sitemap_job_id_12.xml``, ``sitemap_sourced_job_vn_3.xml`` — the two
 #: job-sitemap families. Excludes lookalikes (``sitemap_find_jobs_*`` =
@@ -93,6 +100,10 @@ class GlintsClient:
                 "Accept-Language": "en-US,en;q=0.9",
             }
         )
+        #: True once this run has already slept out a firewall cool-down. A
+        #: second block means the wait did not clear it, and sleeping again
+        #: would only burn the job timeout.
+        self._firewall_wait_used = False
 
     def close(self) -> None:
         """Release the underlying HTTP connection pool."""
@@ -100,7 +111,32 @@ class GlintsClient:
 
     # -- one retried request -------------------------------------------
     def _request_text(self, url: str, *, what: str) -> str:
-        """GET one URL with retries; return the response body as text."""
+        """GET one URL; wait out Glints' firewall cool-down once, then retry."""
+        while True:
+            try:
+                return self._request_text_once(url, what=what)
+            except GlintsFirewallError as exc:
+                if self._firewall_wait_used:
+                    raise GlintsFetchError(
+                        f"Glints firewall still blocking ({what}) after the "
+                        f"{exc.cool_down_seconds:.0f}s cool-down"
+                    ) from exc
+                self._firewall_wait_used = True
+                logger.warning(
+                    "Glints firewall blocked {}; waiting {:.0f}s for the cool-down "
+                    "it advertises, then retrying.",
+                    what,
+                    exc.cool_down_seconds,
+                )
+                time.sleep(exc.cool_down_seconds)
+
+    def _request_text_once(self, url: str, *, what: str) -> str:
+        """One logical request: transient statuses/connections retried in place.
+
+        Raises ``GlintsFirewallError`` untouched so ``_request_text`` can wait
+        out the site's cool-down rather than letting the transient retry burn
+        its whole budget on a 403.
+        """
         settings = self._settings
 
         def _do() -> str:
@@ -111,6 +147,11 @@ class GlintsClient:
             except requests.RequestException as exc:
                 raise PermanentHTTPError(str(exc)) from exc
 
+            cool_down = self._firewall_cool_down(response)
+            if cool_down is not None:
+                raise GlintsFirewallError(
+                    f"HTTP {response.status_code} temporary firewall", cool_down
+                )
             if response.status_code in _RETRYABLE_STATUS:
                 raise TransientHTTPError(f"HTTP {response.status_code}")
             if response.status_code >= 400:
@@ -132,6 +173,18 @@ class GlintsClient:
             ) from exc
         except PermanentHTTPError as exc:
             raise GlintsFetchError(f"Glints request failed permanently ({what}): {exc}") from exc
+
+    def _firewall_cool_down(self, response: requests.Response) -> float | None:
+        """Seconds to wait if ``response`` is Glints' temporary firewall page."""
+        if response.status_code != 403:
+            return None
+        body = response.text
+        if _FIREWALL_MARKER not in body.lower():
+            return None
+        match = _FIREWALL_REFRESH_RE.search(body)
+        if match:
+            return float(match.group(1))
+        return self._settings.firewall_cool_down_seconds
 
     # -- discovery -------------------------------------------------------
     def _fetch_job_sitemap_families(self) -> OrderedDict[str, list[str]]:

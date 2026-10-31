@@ -13,11 +13,16 @@ from collections import OrderedDict
 from typing import Any
 
 import pytest
+import requests
 
 from job_market_intel.common.http_client import PermanentHTTPError, TransientHTTPError
+from job_market_intel.scrapers.glints import client as client_module
 from job_market_intel.scrapers.glints.client import GlintsClient
 from job_market_intel.scrapers.glints.config import GlintsSettings
-from job_market_intel.scrapers.glints.exceptions import GlintsFetchError, GlintsResponseError
+from job_market_intel.scrapers.glints.exceptions import (
+    GlintsFetchError,
+    GlintsResponseError,
+)
 
 UUID_A = "11111111-1111-4111-8111-111111111111"
 UUID_B = "22222222-2222-4222-8222-222222222222"
@@ -195,3 +200,122 @@ class TestDeadPageHandling:
 
         with pytest.raises(GlintsResponseError):
             client.fetch_raw_jobs()
+
+
+#: The real body Glints answered with in CI run 41121987633 (2026-10-30):
+#: an HTTP 403 page that asks the client to refresh in 360 seconds.
+FIREWALL_HTML = (
+    '<!doctype html><head><meta charset="utf-8" />'
+    "<title>Glints - Firewall</title>"
+    '<meta http-equiv="refresh" content="360"></head>'
+)
+
+
+def _response(status: int, body: str) -> requests.Response:
+    response = requests.Response()
+    response.status_code = status
+    response._content = body.encode("utf-8")
+    response.encoding = "utf-8"
+    response.url = "https://glints.com/sitemap_index.xml"
+    return response
+
+
+class _FakeSession:
+    """Serves a scripted list of responses and counts the requests made."""
+
+    def __init__(self, responses: list[requests.Response]) -> None:
+        self._responses = list(responses)
+        self.calls = 0
+
+    def get(self, url: str, timeout: float | None = None) -> requests.Response:
+        self.calls += 1
+        return self._responses.pop(0)
+
+
+class TestFirewallCoolDown:
+    """Glints' temporary firewall page is waited out once per run.
+
+    CI run 41121987633 (2026-10-30) failed on the very first request: the
+    sitemap index answered HTTP 403 ``<title>Glints - Firewall</title>`` with
+    ``<meta http-equiv="refresh" content="360">``. That is a rate-limit page
+    asking the client to come back in six minutes, not a permanent ban, so
+    the client sleeps the advertised cool-down and retries.
+    """
+
+    def _client(self) -> GlintsClient:
+        return GlintsClient(settings=GlintsSettings(max_jobs_per_run=1))
+
+    def test_firewall_page_is_waited_out_and_retried(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        client = self._client()
+        session = _FakeSession([_response(403, FIREWALL_HTML), _response(200, "<urlset/>")])
+        sleeps: list[float] = []
+        monkeypatch.setattr(client, "_session", session)
+        monkeypatch.setattr(client_module.time, "sleep", sleeps.append)
+
+        body = client._request_text("https://glints.com/sitemap_index.xml", what="sitemap index")
+
+        assert body == "<urlset/>"
+        assert sleeps == [360.0]
+        assert session.calls == 2
+
+    def test_second_firewall_block_fails_without_another_wait(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        client = self._client()
+        session = _FakeSession(
+            [
+                _response(403, FIREWALL_HTML),
+                _response(403, FIREWALL_HTML),
+                _response(200, "<urlset/>"),
+            ]
+        )
+        sleeps: list[float] = []
+        monkeypatch.setattr(client, "_session", session)
+        monkeypatch.setattr(client_module.time, "sleep", sleeps.append)
+
+        with pytest.raises(GlintsFetchError):
+            client._request_text("https://glints.com/sitemap_index.xml", what="sitemap index")
+
+        # One wait, then give up: a second block means the wait did not work
+        # and sleeping again would only burn the job timeout.
+        assert sleeps == [360.0]
+        assert session.calls == 2
+
+    def test_plain_403_is_permanent_and_not_waited(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        client = self._client()
+        session = _FakeSession([_response(403, "Forbidden")])
+        sleeps: list[float] = []
+        monkeypatch.setattr(client, "_session", session)
+        monkeypatch.setattr(client_module.time, "sleep", sleeps.append)
+
+        with pytest.raises(GlintsFetchError):
+            client._request_text("https://glints.com/sitemap_index.xml", what="sitemap index")
+
+        assert sleeps == []
+        assert session.calls == 1
+
+    def test_cool_down_uses_the_advertised_refresh_value(self) -> None:
+        client = self._client()
+        html = '<title>Glints - Firewall</title><meta http-equiv="refresh" content="120">'
+
+        assert client._firewall_cool_down(_response(403, html)) == 120.0
+
+    def test_cool_down_falls_back_to_the_configured_default(self) -> None:
+        client = GlintsClient(settings=GlintsSettings(firewall_cool_down_seconds=90.0))
+
+        assert (
+            client._firewall_cool_down(_response(403, "<title>Glints - Firewall</title>")) == 90.0
+        )
+
+    def test_non_firewall_response_has_no_cool_down(self) -> None:
+        client = self._client()
+
+        assert client._firewall_cool_down(_response(403, "Forbidden")) is None
+        assert client._firewall_cool_down(_response(200, "<urlset/>")) is None
