@@ -687,7 +687,7 @@
       "timeout": 60,
       "max_env": "LMRA_GOV_BH_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "LMRA – state (lmra.gov.bh) - Bahrain; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/lmra_gov_bh.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
+      "notes": "LMRA – state (lmra.gov.bh) - Bahrain; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/lmra_gov_bh.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error. Re-checked 2026-11-01: lmra.gov.bh now answers 200 to plain requests and to chrome impersonation, but it is a labour-market regulator, not a job board -- its jobs page (/ar/page/show/226, الوظائف) lists no vacancies of its own and directs applicants to Bahrain's Civil Service Bureau. Airport/harbour jobs are not published on the site, so there is nothing to scrape; keeping disabled."
     },
     {
       "code": "kuenselonline_com",
@@ -723,7 +723,7 @@
       "timeout": 60,
       "max_env": "NAUKRI_COM_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Naukri (naukri.com) - India; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/naukri_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
+      "notes": "Naukri (naukri.com) - India; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/naukri_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error. Re-checked 2026-11-01: naukri.com now answers 200 to plain requests and to chrome impersonation, but it is a JavaScript-rendered SPA behind Akamai: the homepage, the keyword/location search URLs (/software-developer-jobs-in-india etc.) and the /job-listings-<slug> detail pages all return a ~39 KB shell with no anchors, no JSON-LD and no embedded state; the internal listing API (/jobapi/v3/search) answers HTTP 406 '{\"message\":\"recaptcha required\"}'. Its sitemaps expose thousands of allowed /job-listings- URLs, but each detail page still needs the reCAPTCHA-gated API to render. Captcha-gated; keeping disabled."
     },
     {
       "code": "karir_com",
@@ -741,7 +741,7 @@
       "timeout": 60,
       "max_env": "JOBS_ID_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Jobs.id (jobs.id) - Indonesia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobs_id.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:01:19.449\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
+      "notes": "Jobs.id (jobs.id) - Indonesia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/jobs_id.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:01:19.449\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md. Re-checked 2026-11-01: jobs.id presents a TLS certificate for *.karir.com and, with verification relaxed, redirects every request (http/https, with and without www) to https://karir.com, the already-enabled karir_com source. It is an alias of that board, not a separate listing; keeping disabled."
     },
     {
       "code": "job_mynavi_jp",
@@ -876,7 +876,7 @@
       "timeout": 60,
       "max_env": "PUNAIME_AL_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Punaime.al (punaime.al) - Albania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/punaime_al.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error."
+      "notes": "Punaime.al (punaime.al) - Albania; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/punaime_al.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing refused the request (HTTP 403/WAF); observed: 403 Client Error. Re-checked 2026-11-01: punaime.al is reachable through chrome impersonation (plain requests resets the connection) and robots.txt is 'User-agent: * / Disallow:' (allow all), but every public listing view returns zero postings -- /listings reports 'Vende të lira pune janë gjetur (0)' with an empty result grid under every filter (country 2-5, city, category, seniority, premium, remote, keyword) and under a homepage-primed session; /publishers/<slug> (e.g. brunes) also shows 0; /jobs, /pune, /career, /sitemap.xml, /feed are 404; and there is no RSS/JSON endpoint. The homepage's 'N Vende të lira pune' publisher captions are stale. No detail URLs exist to scrape; keeping disabled until the board publishes listings."
     },
     {
       "code": "ams_at",
@@ -1038,7 +1038,7 @@
       "timeout": 60,
       "max_env": "NVA_GOV_LV_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "NVA – state (nva.gov.lv) - Latvia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/nva_gov_lv.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:02:12.455\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
+      "notes": "NVA – state (nva.gov.lv) - Latvia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/nva_gov_lv.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:02:12.455\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md. Re-checked 2026-11-01: www.nva.gov.lv answers 200, but its /lv/vakances page is NVA's own 'Karjeras iespējas' staff openings, not the national vacancy database; the real database at cvvp.nva.gov.lv still answers HTTP 403 (Cloudflare) to plain requests and to chrome/chrome124 impersonation. Keeping disabled."
     },
     {
       "code": "vaterland_li",
@@ -1371,7 +1371,7 @@
       "timeout": 60,
       "max_env": "TRINIDADEXPRESS_COM_MAX_JOBS_PER_RUN",
       "enabled": false,
-      "notes": "Express classifieds (trinidadexpress.com) - Trinidad and Tobago; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/trinidadexpress_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:02:37.018\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md."
+      "notes": "Express classifieds (trinidadexpress.com) - Trinidad and Tobago; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/trinidadexpress_com.json. Registered 2026-10-21. Disabled 2026-10-22 after live sweep: listing request failed (server error, TLS, or timeout); observed: \u001b[32m2026-10-22 00:02:37.018\u001b[0m | \u001b[33m\u001b[1mWARNING \u001b[0m | \u001b[36mjob_market_intel.scrapers.html_scraper.client\u001b[0m:\u001b[36md. Re-checked 2026-11-01: the newspaper's classifieds live on expressclassifiedstt.com; its robots.txt 'User-agent: *' block disallows '/classifieds/job/*?' (every paginated job URL) and the host answers 429 'Too Many Requests' to most calls (the /classifieds/job/ listing only loaded on a retry, and every detail page tested returned 429). Robots-disallowed and rate-limited; keeping disabled."
     },
     {
       "code": "uy_computrabajo_com",
