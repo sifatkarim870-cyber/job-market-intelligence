@@ -89,6 +89,7 @@ class HtmlScraperPipeline:
             parsed,
             site_host=urlparse(self._site_config.base_url).netloc,
             detail_pattern=self._site_config.detail_url_pattern,
+            min_description_chars=self._site_config.min_description_chars,
         )
         if rejected:
             logger.info(

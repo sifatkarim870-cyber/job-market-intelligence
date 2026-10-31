@@ -517,6 +517,26 @@ def _as_number(value: Any) -> float | None:
     return number
 
 
+def _resolve_description(soup: BeautifulSoup, site_config: SiteConfig) -> str | None:
+    """The ad body: selector, then a configured label, then a page-wide guess.
+
+    A few boards (Slovakia's ÚPSVaR) print the ad body beside a visible
+    "Náplň práce" label in a <dt>/<dd> row with no addressable class. A
+    configured description label wins over the generic fallback, which would
+    otherwise return the whole page for a short but complete ad body. When the
+    label is configured but this ad carries no value for it, the fallback is
+    skipped too: the page text would be navigation, not a body.
+    """
+    description = _extract_field(soup, site_config.selectors.description)
+    description_label = site_config.detail_label_map.get("description", "")
+    label_description = _label_value(soup, description_label)
+    if label_description:
+        return label_description
+    if not description_label and (not description or len(description) < 200):
+        return _fallback_description(soup) or description
+    return description
+
+
 def parse_detail(
     source_code: str,
     site_config: SiteConfig,
@@ -533,9 +553,7 @@ def parse_detail(
 
     # The body is read before the title because a board whose ads may omit the
     # title can name the posting from its opening sentence instead.
-    description = _extract_field(soup, sel.description)
-    if not description or len(description) < 200:
-        description = _fallback_description(soup) or description
+    description = _resolve_description(soup, site_config)
 
     title, title_source = _resolve_title(
         soup,

@@ -236,8 +236,10 @@ class SiteConfig(BaseModel):
     #: or ``<dt>Location</dt><dd>Tallinn</dd>``), which no CSS selector can
     #: address without pinning Tailwind class names that change on every deploy.
     #: This maps a field name (company, location, employment_type, salary,
-    #: posted_date) to the visible label whose sibling carries the value, and is
-    #: consulted only when the normal selector produced nothing.
+    #: posted_date, and description on boards whose ad body sits in the same
+    #: label/value shape) to the visible label whose sibling carries the value,
+    #: and is consulted only when the normal selector produced nothing (except
+    #: description, whose label wins over the generic fallback).
     detail_label_map: dict[str, str] = Field(
         default_factory=dict,
         description="Output field -> visible label whose sibling holds the value",
@@ -262,6 +264,14 @@ class SiteConfig(BaseModel):
     currency_iso_code: str = Field(default="USD", description="Default currency")
     pay_period: str = Field(default="monthly", description="Default pay period")
     country_fallback: str = Field(default="", description="Fallback country name")
+    #: The quality gate drops a parsed record whose body is shorter than this,
+    #: because an auto-generated listing that links to navigation yields a page
+    #: with no room for a real ad. 80 is the measured default; a government
+    #: registry whose employers legitimately write a one-line "Náplň práce"
+    #: (ÚPSVaR prints bodies as short as 30 chars) can lower it per site.
+    min_description_chars: int = Field(
+        default=80, ge=0, description="Shortest description that still counts as a posting"
+    )
 
 
 class HtmlScraperSettings(BaseSettings):

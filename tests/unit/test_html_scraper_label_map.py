@@ -161,3 +161,89 @@ def test_estonian_dotted_date_parses() -> None:
     assert _parse_date("28.10.2026") == date(2026, 10, 28)
     assert _parse_date("01.01.2027") == date(2027, 1, 1)
     assert _parse_date("31.02.2026") is None
+
+
+DESCRIPTION_ROW_HTML = """
+<html><body>
+  <h1>Pizzér</h1>
+  <dl>
+    <dt>Náplň práce</dt><dd>Príprava a pečenie pizze v peci na drevo.</dd>
+    <dt>Názov spoločnosti</dt><dd>SEPANTA, s. r. o.</dd>
+  </dl>
+</body></html>
+"""
+
+
+def test_a_description_label_beats_the_generic_fallback() -> None:
+    """ÚPSVaR prints "Náplň práce" / value in a classless ``<dt>``/``<dd>`` row.
+
+    The body is often only 30-100 characters, so the generic fallback (the
+    largest link-light block among ``<main>``/``<article>``/``*description*``)
+    would return the whole page and store navigation as the description. A
+    configured label has to win instead.
+    """
+    config = _site_config(
+        selectors={
+            "job_title": "h1",
+            "company": "",
+            "location": "",
+            "employment_type": "",
+            "description": "",
+            "posted_date": "",
+            "salary": "",
+        },
+        detail_label_map={
+            "description": "Náplň práce",
+            "company": "Názov spoločnosti",
+        },
+        posted_date_regex="",
+    )
+
+    job = HtmlScraperParser(config, "unit_test").parse(
+        "1", DESCRIPTION_ROW_HTML, url="https://example.invalid/jobs/1"
+    )
+
+    assert job.description == "Príprava a pečenie pizze v peci na drevo."
+    assert job.company_name == "SEPANTA, s. r. o."
+
+
+MISSING_DESCRIPTION_HTML = (
+    """
+<html><body>
+  <main><p>"""
+    + ("Navigácia a pätička stránky. " * 20)
+    + """</p></main>
+  <h1>Pizzér</h1>
+  <dl>
+    <dt>Náplň práce</dt><dd></dd>
+  </dl>
+</body></html>
+"""
+)
+
+
+def test_a_missing_description_label_does_not_store_the_page_as_body() -> None:
+    """When the label is configured but empty, the page-wide fallback is skipped.
+
+    Otherwise ``_fallback_description`` would return the ``<main>`` navigation
+    text and a posting with no ad body would be stored with a fake one.
+    """
+    config = _site_config(
+        selectors={
+            "job_title": "h1",
+            "company": "",
+            "location": "",
+            "employment_type": "",
+            "description": "",
+            "posted_date": "",
+            "salary": "",
+        },
+        detail_label_map={"description": "Náplň práce"},
+        posted_date_regex="",
+    )
+
+    job = HtmlScraperParser(config, "unit_test").parse(
+        "1", MISSING_DESCRIPTION_HTML, url="https://example.invalid/jobs/1"
+    )
+
+    assert job.description is None

@@ -5,19 +5,33 @@
   "base_url": "https://www.sluzbyzamestnanosti.gov.sk",
   "listing_path": "/pracovne-ponuky",
   "listing_pagination": "",
-  "max_pages": 1,
+  "max_pages": 2,
   "max_jobs_per_run": 50,
+  "listing_page_size": 30,
+  "listing_json_url": "https://www.sluzbyzamestnanosti.gov.sk/search/ponuky?pageNr={page}&pageSize=30&zdrojPonuky=VPM",
+  "listing_json_path": "pracovnePonuky",
+  "listing_json_id_field": "uuid",
+  "listing_json_url_template": "/pracovne-ponuky/{id}",
   "selectors": {
-    "job_card": "a.govuk-signpost__card, a[href*='/pracovne-ponuky/']",
-    "job_link": "a[href*='/pracovne-ponuky/']",
-    "job_title": "h1, .govuk-heading-xl",
-    "company": ".govuk-summary-list__value, [class*='company'], [class*='employer']",
-    "location": ".govuk-summary-list__value, [class*='location'], [class*='city']",
-    "description": "main, #main-content, .govuk-main-wrapper",
-    "posted_date": "[class*='date'], [class*='posted'], [class*='time'], time",
-    "salary": "[class*='salary'], [class*='pay']",
-    "skills": "[class*='skill'], [class*='tag']"
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "",
+    "location": "div[class*='vpm-data-panel__value'][class*='govuk-!-width-full']",
+    "employment_type": "",
+    "description": "",
+    "posted_date": "",
+    "salary": "",
+    "skills": ""
   },
+  "detail_label_map": {
+    "description": "Náplň práce",
+    "company": "Názov spoločnosti",
+    "employment_type": "Pracovný a mimopracovný pomer",
+    "salary": "Základná zložka mzdy v eurách (v hrubom)",
+    "posted_date": "Dátum a čas vytvorenia"
+  },
+  "posted_date_regex": "\\d{2}\\.\\d{2}\\.\\d{4}",
   "detail_url_pattern": ".*/pracovne-ponuky/[0-9a-f\\-]+.*",
   "id_from_url": true,
   "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -25,5 +39,6 @@
   "inter_request_delay_seconds": 2.0,
   "currency_iso_code": "EUR",
   "pay_period": "monthly",
-  "country_fallback": "Slovakia"
+  "country_fallback": "Slovakia",
+  "min_description_chars": 20
 }
