@@ -230,6 +230,45 @@ for code, s_info in registry_sources.items():
         if fd not in domain_to_code:
             domain_to_code[fd.lower()] = code
 
+
+SPA_BLOCKERS = {
+    "alwatwan": "PERMANENTLY_DEAD (Newspaper portal, /annonces/ 404, no job board)",
+    "kuenselonline_com": "PERMANENTLY_DEAD (Classifieds section gone, only CEO coverage PDF remains)",
+    "zhipin_com": "CAPTCHA_BLOCKED (Slider/image captcha wall on all endpoints; requires anti-captcha proxy)",
+    "naukri_com": "SPA_AKAMAI_BLOCKED (Akamai bot-manager blocks DC/CI IPs; 0 server-side links)",
+    "hiredly_com": "DUPLICATE (Domain alias of enabled 'hiredly' source; keep disabled to prevent dups)",
+    "iskur_gov_tr": "AUTH_REQUIRED (Angular SPA, job grid is empty anonymously; user login required)",
+    "laimoon_com": "PERMANENTLY_DEAD (DNS failure; job board permanently shut down)",
+    "tyopaikat_oikotie_fi": "PERMANENTLY_DEAD (Oikotie Työpaikat portal officially closed and redirects to notice)",
+    "jobline_hu": "PERMANENTLY_DEAD (Site shut down on 2026-01-31 per official closure notice)",
+    "cliclavoro_gov_it": "NO_JOB_CONTENT (Pivoted to institutional news portal; job paths 404)",
+    "superjob_ru": "CAPTCHA_BLOCKED (Slider captcha wall on all endpoints)",
+    "jamaicaobserver_com": "NO_JOB_CONTENT (Anygraaf API returns empty items; classifieds have 0 jobs)",
+    "empleo_gob_mx": "AUTH_REQUIRED (Angular SPA; JS bundle returns 403, /api/* returns 401 without session)",
+    "trinidadexpress_com": "ROBOTS_BLOCKED+429 (robots.txt disallows /classifieds/job/*; returns HTTP 429)",
+    "workforceaustralia_gov_au": "ROBOTS_BLOCKED (robots.txt: User-agent: * Disallow: / blanket ban)",
+    "samoaobserver_ws": "NO_JOB_CONTENT (Newspaper only; no jobs or classifieds board exists)",
+}
+
+SPA_ACTION_PLANS = {
+    "alwatwan": "Permanently decommission scraper (newspaper site without job board)",
+    "kuenselonline_com": "Permanently decommission scraper (classifieds section removed)",
+    "zhipin_com": "Requires residential IP proxy + paid captcha solving service (out of CI scope)",
+    "naukri_com": "Requires residential IP proxy to bypass Akamai bot manager (out of CI scope)",
+    "hiredly_com": "Keep disabled — 'hiredly' (my.hiredly.com) is the active operational scraper",
+    "iskur_gov_tr": "Requires government auth credentials / session tokens not available for public scraping",
+    "laimoon_com": "Permanently decommission scraper (DNS domain defunct)",
+    "tyopaikat_oikotie_fi": "Permanently decommission scraper (service officially discontinued)",
+    "jobline_hu": "Permanently decommission scraper (service permanently terminated 2026-01-31)",
+    "cliclavoro_gov_it": "Permanently decommission scraper (government moved job postings to SIISL)",
+    "superjob_ru": "Requires residential proxy and Russian captcha solver (out of CI scope)",
+    "jamaicaobserver_com": "Permanently decommission scraper (classifieds no longer lists employment)",
+    "empleo_gob_mx": "Requires Mexican government portal citizen authentication",
+    "trinidadexpress_com": "Comply with site robots.txt policy and avoid IP blacklisting",
+    "workforceaustralia_gov_au": "Comply with government robots.txt Disallow: / directive",
+    "samoaobserver_ws": "Permanently decommission scraper (news portal without employment section)",
+}
+
 disabled_reasons = {}
 analysis_md_path = ROOT_DIR / "DataBase" / "comprehensive_disabled_analysis.md"
 if analysis_md_path.exists():
@@ -358,22 +397,26 @@ for key, entry in all_master_entries.items():
             entry["github_status"] = "DONE (Active in CI)"
         else:
             entry["github_status"] = "BUILT (Disabled in CI)"
-            cat_reason = disabled_reasons.get(code, "")
-            notes = s_info.get("notes", "")
-            entry["blocker_reason"] = cat_reason if cat_reason else (notes[:120] if notes else "Disabled in registry")
-            
-            if "CSS" in cat_reason or "0 Postings" in cat_reason:
-                entry["action_plan"] = "Update CSS selectors in HTML site config and test with --no-db"
-            elif "Client-Rendered" in cat_reason:
-                entry["action_plan"] = "Check API XHR endpoint or switch to Playwright browser: true"
-            elif "403" in cat_reason:
-                entry["action_plan"] = "Inspect WAF / user-agent / proxy requirements"
-            elif "Cloudflare" in cat_reason:
-                entry["action_plan"] = "Residential IP proxy or undetected Chrome"
-            elif "Browser" in cat_reason or code == "indeed":
-                entry["action_plan"] = "Dedicated runner or seleniumbase UC mode"
+            if code in SPA_BLOCKERS:
+                entry["blocker_reason"] = SPA_BLOCKERS[code]
+                entry["action_plan"] = SPA_ACTION_PLANS[code]
             else:
-                entry["action_plan"] = "Investigate error logs and verify site response"
+                cat_reason = disabled_reasons.get(code, "")
+                notes = s_info.get("notes", "")
+                entry["blocker_reason"] = cat_reason if cat_reason else (notes[:120] if notes else "Disabled in registry")
+                
+                if "CSS" in cat_reason or "0 Postings" in cat_reason:
+                    entry["action_plan"] = "Update CSS selectors in HTML site config and test with --no-db"
+                elif "Client-Rendered" in cat_reason:
+                    entry["action_plan"] = "Check API XHR endpoint or switch to Playwright browser: true"
+                elif "403" in cat_reason:
+                    entry["action_plan"] = "Inspect WAF / user-agent / proxy requirements"
+                elif "Cloudflare" in cat_reason:
+                    entry["action_plan"] = "Residential IP proxy or undetected Chrome"
+                elif "Browser" in cat_reason or code == "indeed":
+                    entry["action_plan"] = "Dedicated runner or seleniumbase UC mode"
+                else:
+                    entry["action_plan"] = "Investigate error logs and verify site response"
     elif code and code in db_counts:
         entry["github_code"] = code
         entry["db_rows"] = db_counts[code]["rows"]
@@ -400,7 +443,11 @@ for code, s_info in registry_sources.items():
         entry["github_group"] = s_info.get("group", "")
         entry["github_status"] = "DONE (Active in CI)" if s_info.get("enabled") else "BUILT (Disabled in CI)"
         entry["db_rows"] = db_counts.get(code, {"rows": 0})["rows"]
-        entry["blocker_reason"] = disabled_reasons.get(code, s_info.get("notes", "")[:120])
+        if code in SPA_BLOCKERS:
+            entry["blocker_reason"] = SPA_BLOCKERS[code]
+            entry["action_plan"] = SPA_ACTION_PLANS.get(code, "")
+        else:
+            entry["blocker_reason"] = disabled_reasons.get(code, s_info.get("notes", "")[:120])
 
 print(f"Total unified master entries: {len(all_master_entries)}")
 

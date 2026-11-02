@@ -26,6 +26,8 @@ robots.txt: ``User-agent: *`` / ``Allow: /``.
 
 from __future__ import annotations
 
+import json
+import re
 import time
 
 from loguru import logger
@@ -80,6 +82,8 @@ class HiredlyClient:
     def fetch_listing_page(self, page: int = 1) -> dict[str, dict]:
         """Render one listing page and return ``{slug: {path, page}}``."""
         pw, browser = self._open_browser()
+        anchors: list[str] = []
+        content: str = ""
         try:
             view = browser.new_page(user_agent=self._settings.user_agent)
             view.goto(
@@ -87,32 +91,22 @@ class HiredlyClient:
                 wait_until="domcontentloaded",
                 timeout=self._settings.page_load_timeout_seconds * 1000,
             )
-            view.wait_for_timeout(int(self._settings.render_wait_seconds * 1000))
-            # Wait for the job-card anchors to materialise in the DOM before
-            # reading them.  The fixed sleep alone is not reliable in CI where
-            # the JS runtime is slower: the anchors may arrive after the sleep
-            # but before the eval, or they may never arrive (rate-limit / bot
-            # detection).  ``wait_for_selector`` with ``state="attached"`` gives
-            # us an explicit signal while the fixed sleep still acts as a
-            # minimum settle time.
             try:
                 view.wait_for_selector(
-                    'a[href^="/jobs/jobs-malaysia-"]',
+                    "#__NEXT_DATA__",
                     state="attached",
                     timeout=self._settings.data_wait_seconds * 1000,
                 )
             except Exception:  # noqa: BLE001
-                # Selector did not appear -- fall through; eval will return [].
                 pass
+            content = view.content()
             try:
                 anchors = view.eval_on_selector_all(
-                    'a[href^="/jobs/jobs-malaysia-"]',
+                    'a[href*="/jobs/jobs-malaysia-"]',
                     "els => els.map(e => e.getAttribute('href'))",
                 )
-            except Exception as exc:  # noqa: BLE001
-                raise HiredlyFetchError(
-                    f"could not read the rendered listing on Hiredly: {exc}"
-                ) from exc
+            except Exception:  # noqa: BLE001
+                anchors = []
         except HiredlyFetchError:
             raise
         except Exception as exc:  # noqa: BLE001
@@ -122,10 +116,28 @@ class HiredlyClient:
             pw.stop()
 
         found: dict[str, dict] = {}
+        # 1. Primary extraction: parse __NEXT_DATA__ JSON embedded in SSR HTML
+        if content:
+            m = re.search(r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>', content, re.S)
+            if m:
+                try:
+                    blob = json.loads(m.group(1))
+                    props = ((blob or {}).get("props") or {}).get("pageProps") or {}
+                    jobs_list = props.get("jobs") or []
+                    for item in jobs_list:
+                        if isinstance(item, dict):
+                            slug = item.get("slug")
+                            if slug and slug.startswith("jobs-malaysia-"):
+                                found.setdefault(slug, {"path": f"/jobs/{slug}", "page": page})
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("Failed parsing listing __NEXT_DATA__: {}", exc)
+
+        # 2. Fallback / supplement: parse anchors from hydrated DOM
         for href in anchors or []:
             slug = _slug_from_href(href)
             if slug is not None:
                 found.setdefault(slug, {"path": f"/jobs/{slug}", "page": page})
+
         logger.info("hiredly listing page {}: {} card(s)", page, len(found))
         time.sleep(self._settings.inter_request_delay_seconds)
         return found
