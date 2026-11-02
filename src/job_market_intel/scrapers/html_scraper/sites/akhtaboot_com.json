@@ -1,0 +1,42 @@
+{
+  "source_code": "akhtaboot_com",
+  "source_name": "Akhtaboot (akhtaboot.com)",
+  "country": "Jordan",
+  "base_url": "https://www.akhtaboot.com",
+  "listing_path": "/en/jobs",
+  "listing_pagination": "",
+  "max_pages": 5,
+  "max_jobs_per_run": 75,
+  "selectors": {
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": ""
+  },
+  "detail_url_pattern": "/en/jobs/[0-9]+",
+  "id_from_url": true,
+  "listing_json_url": "https://www.akhtaboot.com/api/v1/jobs?per_page=15&page={page}",
+  "listing_json_path": "results",
+  "listing_json_id_field": "_id",
+  "listing_json_url_template": "/en/jobs/{id}",
+  "detail_json_url": "https://www.akhtaboot.com/api/v1/jobs/{id}",
+  "detail_json_map": {
+    "title": "job.title",
+    "company": "job.company_name",
+    "location": "job.location",
+    "employment_type": "job.career_level",
+    "description": "job.job_description",
+    "posted_date": "job.created_at"
+  },
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "JOD",
+  "pay_period": "monthly",
+  "country_fallback": "Jordan"
+}

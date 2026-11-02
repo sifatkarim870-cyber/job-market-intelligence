@@ -227,6 +227,7 @@ domain_to_code = {
     "greatzambiajobs.com": "greatzambiajobs_com",
     "rekrute.com": "rekrute_com",
     "zimbojobs.com": "zimbojobs_com",
+    "akhtaboot.com": "akhtaboot_com",
 }
 
 for code, s_info in registry_sources.items():
