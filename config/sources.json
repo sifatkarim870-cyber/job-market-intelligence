@@ -1230,6 +1230,15 @@
       "notes": "Computrabajo Colombia (co.computrabajo.com) - Colombia; No key, no registration, no proxy. Uses the generic HTML scraper framework. Registered 2026-10-21. Fixed 2026-10-26: HTTP 403 was caused by default bot user agent; updated to standard browser UA, listing_path=/empleos-en-bogota-dc (29,000+ jobs), pagination=?p={page}, currency=COP. Verified 2026-10-26: 10/10 fetched, 10 parsed, batch validation PASSED."
     },
     {
+      "code": "cr_computrabajo_com",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 60,
+      "max_env": "CR_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "Computrabajo Costa Rica (cr.computrabajo.com) - Costa Rica; No key, no registration, no proxy. Uses the generic HTML scraper framework. Registered 2026-11-03. Standard browser UA, listing_path=/empleos-en-san-jose, pagination=?p={page}, currency=USD, detail_json_ld_fill=true. Verified 2026-11-03: 10/10 fetched, 10 parsed, batch validation PASSED."
+    },
+    {
       "code": "magneto365_com",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
