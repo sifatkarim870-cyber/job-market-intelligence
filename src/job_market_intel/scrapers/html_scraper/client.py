@@ -491,6 +491,7 @@ class HtmlScraperClient:
         self._settings = settings or HtmlScraperSettings()
         self._site_config = site_config or load_site_config(source_code, self._settings.sites_dir)
         self._listing_cursor = ""
+        self._listing_form_state: tuple[str, dict[str, str]] | None = None
         self._session = requests.Session()
         self._session.headers.update(
             {
@@ -639,6 +640,20 @@ class HtmlScraperClient:
         except _FETCH_ERRORS as exc:
             raise HtmlScraperFetchError(f"HTTP POST failed for {url}: {exc}") from exc
 
+    def _post_form(self, url: str, fields: dict[str, str]) -> str:
+        """POST an HTML form and return the response text.
+
+        Boards that page a search through the form's own submit button (IEFP's
+        ``Próximos``) carry ``currentPage``/``pos`` as hidden inputs, so the
+        next page is a form submission rather than a ``?page=N`` URL.
+        """
+        try:
+            resp = self._transport_with_retry("POST", url, data=fields)
+            resp.raise_for_status()
+            return _response_text(resp)
+        except _FETCH_ERRORS as exc:
+            raise HtmlScraperFetchError(f"HTTP form POST failed for {url}: {exc}") from exc
+
     def _select(self, soup: BeautifulSoup, selector: str) -> list:
         """Run a CSS selector, returning elements."""
         if not selector:
@@ -715,22 +730,8 @@ class HtmlScraperClient:
             job_id = self._dotted(item, field)
             if job_id in (None, ""):
                 continue
-            if url_field:
-                detail = self._dotted(item, url_field)
-                if detail in (None, ""):
-                    continue
-                url = urljoin(self._site_config.base_url, str(detail))
-            else:
-                # ``{id}`` is the feed's configured id field; other placeholders
-                # name nested item fields (Kalibrr's detail path needs the
-                # company code and slug, not just the numeric id).
-                rendered = template.replace("{id}", str(job_id))
-                if "{" in rendered:
-                    rendered = _fill_json_template(item, rendered, None)
-                if not rendered:
-                    continue
-                url = urljoin(self._site_config.base_url, rendered)
-            if _is_offsite_social(url):
+            url = self._detail_url_from_item(item, job_id, template, url_field)
+            if url is None or _is_offsite_social(url):
                 continue
             job = {"url": url, "title": "", "id": job_id, "listing": item}
             # The URL was built from the feed's own id, so that id — not a
@@ -743,6 +744,25 @@ class HtmlScraperClient:
                 job["payload"] = item
             jobs.append(job)
         return jobs
+
+    def _detail_url_from_item(
+        self, item: dict, job_id: Any, template: str, url_field: str
+    ) -> str | None:
+        """Build one posting's detail URL from its listing record."""
+        if url_field:
+            detail = self._dotted(item, url_field)
+            if detail in (None, ""):
+                return None
+            return urljoin(self._site_config.base_url, str(detail))
+        # ``{id}`` is the feed's configured id field; other placeholders name
+        # nested item fields (Kalibrr's detail path needs the company code and
+        # slug, not just the numeric id).
+        rendered = template.replace("{id}", str(job_id))
+        if "{" in rendered:
+            rendered = _fill_json_template(item, rendered, None)
+        if not rendered:
+            return None
+        return urljoin(self._site_config.base_url, rendered)
 
     def _json_listing_jobs(self, html: str) -> list[dict]:
         """Read a job list out of the listing page's embedded Next.js JSON.
@@ -981,6 +1001,53 @@ class HtmlScraperClient:
         match = re.search(pattern, raw)
         return match.group(1) if match else None
 
+    def _form_paged_listing(self, page: int) -> tuple[str, list[dict]]:
+        """Fetch a listing page through the search form's own POST.
+
+        The form is read once (its action and every hidden field), because the
+        counters it carries -- session id, result count, current page -- are
+        rewritten by the server on every response. Later pages resend that
+        snapshot with :attr:`SiteConfig.listing_form_pagination` applied.
+        """
+        first_html: str | None = None
+        if self._listing_form_state is None:
+            first_html = self._get(self.listing_url(1))
+            soup = BeautifulSoup(first_html, "html.parser")
+            selector = self._site_config.listing_form_selector.strip() or "form"
+            form = self._select_one(soup, selector)
+            if form is None:
+                logger.warning(
+                    "html_scraper listing form {} not found; falling back to GET pagination",
+                    selector,
+                )
+                return first_html, self._html_listing_jobs(first_html, soup)
+            action = urljoin(self.listing_url(1), form.get("action") or self.listing_url(1))
+            fields: dict[str, str] = {}
+            for element in form.find_all(["input", "textarea"]):
+                name = element.get("name")
+                if not name:
+                    continue
+                if (element.get("type") or "").lower() in ("submit", "button", "file", "image"):
+                    continue
+                fields[name] = element.get("value") or ""
+            self._listing_form_state = (action, fields)
+
+        action, base_fields = self._listing_form_state
+        if page <= 1:
+            html = first_html if first_html is not None else self._get(self.listing_url(1))
+        else:
+            size = self._site_config.listing_page_size
+            fields = dict(base_fields)
+            for name, template in self._site_config.listing_form_pagination.items():
+                fields[name] = template.format(
+                    page=page,
+                    offset=(page - 1) * size,
+                    page_size=size,
+                )
+            html = self._post_form(action, fields)
+        soup = BeautifulSoup(html, "html.parser")
+        return html, self._html_listing_jobs(html, soup)
+
     def fetch_listing_page(self, page: int = 1) -> tuple[str, list[dict]]:
         """Fetch one listing page. Returns (html, [job_links_with_titles])."""
         if self._site_config.listing_json_url.strip():
@@ -1003,6 +1070,8 @@ class HtmlScraperClient:
         ):
             html = self._get(self.listing_url(page))
             jobs = self._embedded_json_jobs(html)
+        elif self._site_config.listing_form_pagination:
+            html, jobs = self._form_paged_listing(page)
         else:
             html = self._get(self.listing_url(page))
             soup = BeautifulSoup(html, "html.parser")

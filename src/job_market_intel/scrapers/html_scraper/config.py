@@ -179,6 +179,21 @@ class SiteConfig(BaseModel):
     listing_page_size: int = Field(
         default=20, ge=1, description="Items per page, used to compute {offset}"
     )
+    #: Some boards (Portugal's IEFP) only page a search through the form's own
+    #: POST: the "next" button submits every hidden field alongside
+    #: ``currentPage``/``pos``. When :attr:`listing_form_pagination` is non-empty
+    #: the client reads the listing form once, then POSTs it back with the
+    #: fields below overridden instead of requesting ``?page=N``.
+    listing_form_selector: str = Field(
+        default="form", description="CSS selector for the listing form in form-POST mode"
+    )
+    #: Form field name -> value template, applied before the pagination POST.
+    #: ``{page}``, ``{offset}`` (``(page - 1) * listing_page_size``) and
+    #: ``{page_size}`` are substituted.
+    listing_form_pagination: dict[str, str] = Field(
+        default_factory=dict,
+        description="Form field -> value template for a form-POST listing page",
+    )
     #: Some boards only serve a detail page as JSON. When set, the client fetches
     #: this template (``{id}`` substituted) and renders the mapped fields as a
     #: minimal HTML document, so the existing parser and validator keep working.
