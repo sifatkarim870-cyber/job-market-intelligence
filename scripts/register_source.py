@@ -108,7 +108,12 @@ def main(argv: list[str] | None = None) -> int:
 
     os.environ.setdefault("HF_TOKEN", resolve_token())
     logger.info("republishing the state snapshot so CI can seed this source")
-    export_state_snapshot.main()
+    saved_argv = list(sys.argv)
+    sys.argv = [sys.argv[0]]
+    try:
+        export_state_snapshot.main()
+    finally:
+        sys.argv = saved_argv
     logger.info("done: {} is available to both the laptop and CI", args.code)
     return 0
 

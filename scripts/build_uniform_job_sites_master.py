@@ -221,6 +221,7 @@ domain_to_code = {
     "magneto365.com": "magneto365_com",
     "empleos.net": "empleos_net",
     "bumeran.com.pe": "bumeran_com_pe",
+    "pe.computrabajo.com": "pe_computrabajo_com",
 }
 
 for code, s_info in registry_sources.items():

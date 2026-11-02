@@ -1356,6 +1356,15 @@
       "notes": "Computrabajo Paraguay (py.computrabajo.com) - Paraguay; No key, no registration, no proxy. Uses the generic HTML scraper framework. Registered 2026-10-21. Fixed 2026-10-26: HTTP 403 was caused by default bot user agent; updated to standard browser UA, listing_path=/empleos-en-asuncion, pagination=?p={page}, currency=PYG. Verified 2026-10-26: 10/10 fetched, 10 parsed, batch validation PASSED."
     },
     {
+      "code": "pe_computrabajo_com",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 60,
+      "max_env": "PE_COMPUTRABAJO_COM_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "Computrabajo Perú (pe.computrabajo.com) - Peru; No key, no registration, no proxy. Uses the generic HTML scraper framework. Registered 2026-11-03. Standard browser UA, listing_path=/empleos-en-lima, pagination=?p={page}, currency=PEN, detail_json_ld_fill=true. Verified 2026-11-03: 10/10 fetched, 10 parsed, batch validation PASSED."
+    },
+    {
       "code": "bumeran_com_pe",
       "group": "browser",
       "script": "scripts/run_browser_scraper.py",
