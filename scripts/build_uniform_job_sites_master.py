@@ -223,6 +223,7 @@ domain_to_code = {
     "bumeran.com.pe": "bumeran_com_pe",
     "pe.computrabajo.com": "pe_computrabajo_com",
     "cr.computrabajo.com": "cr_computrabajo_com",
+    "bo.computrabajo.com": "bo_computrabajo_com",
 }
 
 for code, s_info in registry_sources.items():

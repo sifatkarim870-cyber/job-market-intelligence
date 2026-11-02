@@ -1,0 +1,30 @@
+{
+  "source_code": "bo_computrabajo_com",
+  "source_name": "Computrabajo Bolivia (bo.computrabajo.com)",
+  "country": "Bolivia",
+  "base_url": "https://bo.computrabajo.com",
+  "listing_path": "/empleos-en-santa-cruz",
+  "listing_pagination": "?p={page}",
+  "max_pages": 5,
+  "max_jobs_per_run": 50,
+  "selectors": {
+    "job_card": "article.box_offer, article",
+    "job_link": "a.js-o-link, a[href*='/ofertas-de-trabajo/']",
+    "job_title": "h1, h2, .title_offer",
+    "company": null,
+    "location": null,
+    "description": ".job-description, .description, [class*='description'], div.mb40.pb40.bb1, p.mbB, .box_detail",
+    "posted_date": "[class*='date'], [class*='posted'], time",
+    "salary": "[class*='salary']",
+    "skills": "[class*='skill'], [class*='tag']"
+  },
+  "detail_url_pattern": ".*/ofertas-de-trabajo/oferta-de-trabajo-.*",
+  "id_from_url": true,
+  "detail_json_ld_fill": true,
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 2.0,
+  "currency_iso_code": "BOB",
+  "pay_period": "monthly",
+  "country_fallback": "Bolivia"
+}
