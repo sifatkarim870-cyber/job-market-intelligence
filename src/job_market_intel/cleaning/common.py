@@ -184,4 +184,8 @@ class CleanedJob(BaseModel):
     currency_iso_code: str
     pay_period: str
     employment_type_code: str | None = None
+    education_level_code: str | None = None
+    experience_level_code: str | None = None
+    remote_work_type_code: str | None = None
+    job_category_code: str | None = None
     job_title_en: str | None = None

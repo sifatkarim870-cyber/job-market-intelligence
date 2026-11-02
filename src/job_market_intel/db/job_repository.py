@@ -341,6 +341,70 @@ class JobRepository(AbstractRepository[Any]):
             return None
         return int(result)
 
+    def get_education_level_id_by_code(self, session: Session, code: str | None) -> int | None:
+        """Look up education_level_id for a ref.education_levels.code value."""
+        if code is None:
+            return None
+        result = session.execute(
+            text("SELECT education_level_id FROM ref.education_levels WHERE code = :code"),
+            {"code": code},
+        ).scalar()
+        if result is None:
+            logger.warning(
+                "No ref.education_levels row for code={!r}; education_level_id will be NULL.",
+                code,
+            )
+            return None
+        return int(result)
+
+    def get_experience_level_id_by_code(self, session: Session, code: str | None) -> int | None:
+        """Look up experience_level_id for a ref.experience_levels.code value."""
+        if code is None:
+            return None
+        result = session.execute(
+            text("SELECT experience_level_id FROM ref.experience_levels WHERE code = :code"),
+            {"code": code},
+        ).scalar()
+        if result is None:
+            logger.warning(
+                "No ref.experience_levels row for code={!r}; experience_level_id will be NULL.",
+                code,
+            )
+            return None
+        return int(result)
+
+    def get_remote_work_type_id_by_code(self, session: Session, code: str | None) -> int | None:
+        """Look up remote_work_type_id for a ref.remote_work_types.code value."""
+        if code is None:
+            return None
+        result = session.execute(
+            text("SELECT remote_work_type_id FROM ref.remote_work_types WHERE code = :code"),
+            {"code": code},
+        ).scalar()
+        if result is None:
+            logger.warning(
+                "No ref.remote_work_types row for code={!r}; remote_work_type_id will be NULL.",
+                code,
+            )
+            return None
+        return int(result)
+
+    def get_job_category_id_by_code(self, session: Session, code: str | None) -> int | None:
+        """Look up job_category_id for a ref.job_categories.code value."""
+        if code is None:
+            return None
+        result = session.execute(
+            text("SELECT job_category_id FROM ref.job_categories WHERE code = :code"),
+            {"code": code},
+        ).scalar()
+        if result is None:
+            logger.warning(
+                "No ref.job_categories row for code={!r}; job_category_id will be NULL.",
+                code,
+            )
+            return None
+        return int(result)
+
     def get_or_create_company(
         self, session: Session, company_name: str, logo_url: str | None = None
     ) -> int:
@@ -432,6 +496,10 @@ class JobRepository(AbstractRepository[Any]):
         # None for sources that don't report an employment type (RemoteOK,
         # Remotive, WWR) -- see get_employment_type_id_by_code's docstring.
         employment_type_id = self.get_employment_type_id_by_code(session, job.employment_type_code)
+        education_level_id = self.get_education_level_id_by_code(session, job.education_level_code)
+        experience_level_id = self.get_experience_level_id_by_code(session, job.experience_level_code)
+        remote_work_type_id = self.get_remote_work_type_id_by_code(session, job.remote_work_type_code)
+        job_category_id = self.get_job_category_id_by_code(session, job.job_category_code)
         normalized_annual_min_usd, normalized_annual_max_usd = normalize_annual_salary(
             job.salary_min,
             job.salary_max,
@@ -456,7 +524,11 @@ class JobRepository(AbstractRepository[Any]):
                         # content change, so it must not be left stale. The
                         # COALESCE keeps a value the translation kernel wrote
                         # from being blanked by a source that has none.
-                        "job_title_en = COALESCE(:job_title_en, job_title_en) "
+                        "job_title_en = COALESCE(:job_title_en, job_title_en), "
+                        "education_level_id = COALESCE(:education_level_id, education_level_id), "
+                        "experience_level_id = COALESCE(:experience_level_id, experience_level_id), "
+                        "remote_work_type_id = COALESCE(:remote_work_type_id, remote_work_type_id), "
+                        "job_category_id = COALESCE(:job_category_id, job_category_id) "
                         "WHERE job_id = :job_id AND posting_date = :posting_date"
                     ),
                     {
@@ -465,6 +537,10 @@ class JobRepository(AbstractRepository[Any]):
                         "session_id": session_id,
                         "closing_date": c_date,
                         "job_title_en": job.job_title_en,
+                        "education_level_id": education_level_id,
+                        "experience_level_id": experience_level_id,
+                        "remote_work_type_id": remote_work_type_id,
+                        "job_category_id": job_category_id,
                     },
                 )
                 # The salary row is refreshed here too. The content hash
@@ -519,6 +595,10 @@ class JobRepository(AbstractRepository[Any]):
                         "closing_date = :closing_date, "
                         "location_id = :location_id, "
                         "employment_type_id = :employment_type_id, "
+                        "education_level_id = COALESCE(:education_level_id, education_level_id), "
+                        "experience_level_id = COALESCE(:experience_level_id, experience_level_id), "
+                        "remote_work_type_id = COALESCE(:remote_work_type_id, remote_work_type_id), "
+                        "job_category_id = COALESCE(:job_category_id, job_category_id), "
                         "job_title_en = COALESCE(:job_title_en, job_title_en), "
                         "last_scraped_at = now(), "
                         "last_scraping_session_id = "
@@ -535,6 +615,10 @@ class JobRepository(AbstractRepository[Any]):
                         "closing_date": c_date,
                         "location_id": location_id,
                         "employment_type_id": employment_type_id,
+                        "education_level_id": education_level_id,
+                        "experience_level_id": experience_level_id,
+                        "remote_work_type_id": remote_work_type_id,
+                        "job_category_id": job_category_id,
                         "job_title_en": job.job_title_en,
                         "session_id": session_id,
                         "job_id": job_id,
@@ -635,13 +719,15 @@ class JobRepository(AbstractRepository[Any]):
                 text(
                     "INSERT INTO core.jobs "
                     "(source_id, source_job_id, original_url, company_id, job_title, "
-                    "location_id, employment_type_id, posting_date, closing_date, "
+                    "location_id, employment_type_id, education_level_id, experience_level_id, "
+                    "remote_work_type_id, job_category_id, posting_date, closing_date, "
                     "first_scraped_at, last_scraped_at, "
                     "last_scraping_session_id, "
                     "job_status, content_hash, data_quality_score, job_title_en) "
                     "VALUES "
                     "(:source_id, :source_job_id, :original_url, :company_id, :job_title, "
-                    ":location_id, :employment_type_id, :posting_date, :closing_date, "
+                    ":location_id, :employment_type_id, :education_level_id, :experience_level_id, "
+                    ":remote_work_type_id, :job_category_id, :posting_date, :closing_date, "
                     "now(), now(), :session_id, "
                     "'active', :content_hash, :data_quality_score, :job_title_en) "
                     "RETURNING job_id"
@@ -661,6 +747,10 @@ class JobRepository(AbstractRepository[Any]):
                     "job_title_en": job.job_title_en,
                     "location_id": location_id,
                     "employment_type_id": employment_type_id,
+                    "education_level_id": education_level_id,
+                    "experience_level_id": experience_level_id,
+                    "remote_work_type_id": remote_work_type_id,
+                    "job_category_id": job_category_id,
                     "posting_date": p_date,
                     "closing_date": c_date,
                     "session_id": session_id,

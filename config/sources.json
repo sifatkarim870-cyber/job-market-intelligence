@@ -1453,6 +1453,15 @@
       "max_env": "GREATZAMBIAJOBS_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Great Zambia Jobs (greatzambiajobs.com) - Zambia; No key, no registration, no proxy. Uses the generic HTML scraper framework. Registered 2026-11-03. listing_path=/jobs/, card=a.jobtitle, company=meta[property='og:title']@content, location=.jsjobs-jobs-overview-area .js_job_data_wrapper:nth-child(4) .js_job_data_value, currency=ZMW. Verified 2026-11-03: 10/10 fetched, 10 parsed, 10 inserted, batch validation PASSED."
+    },
+    {
+      "code": "rekrute_com",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 60,
+      "max_env": "REKRUTE_COM_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "ReKrute Morocco (rekrute.com) - Morocco; No key, no registration, no proxy. Uses generic HTML scraper framework. Registered 2026-11-03. listing_path=/offres-emploi-maroc.html, card=li.post-id, company=meta[property='og:title']@content (with bracket clean), location=span.jo-pill--cityRegion, currency=MAD. Verified 2026-11-03: 10/10 fetched, 10 parsed, 10 inserted, batch validation PASSED."
     }
   ]
 }

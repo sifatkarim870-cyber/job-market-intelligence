@@ -9,6 +9,12 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from job_market_intel.cleaning.common import CleanedJob
+from job_market_intel.cleaning.qualification_mappers import (
+    map_education_level,
+    map_experience_level,
+    map_job_category,
+    map_remote_work_type,
+)
 from job_market_intel.cleaning.text_utils import clean_html_text, clean_plain_text
 
 if TYPE_CHECKING:
@@ -51,6 +57,22 @@ _EMPLOYMENT_MAP = {
     "VOLUNTEER": "volunteer",
     "FREELANCE": "freelance",
     "APPRENTICESHIP": "apprenticeship",
+    # French terms
+    "CDI": "full_time",
+    "CDD": "temporary",
+    "STAGE": "internship",
+    "STAGIAIRE": "internship",
+    "ALTERNANCE": "apprenticeship",
+    "APPRENTI": "apprenticeship",
+    "TEMPS_PLEIN": "full_time",
+    "TEMPS_PARTIEL": "part_time",
+    # Spanish terms
+    "TIEMPO_COMPLETO": "full_time",
+    "MEDIO_TIEMPO": "part_time",
+    "INDEFINIDO": "full_time",
+    "TEMPORAL": "temporary",
+    "PRACTICAS": "internship",
+    "PRACTICANTE": "internship",
 }
 
 
@@ -116,6 +138,8 @@ class HtmlScraperCleaner:
     def clean_job(self, raw_job: RawHtmlScraperJob) -> CleanedJob:
         body = clean_html_text(raw_job.description) or ""
         company = clean_plain_text(raw_job.company_name) or "Unknown employer"
+        if company.startswith("[") and "]" in company:
+            company = company[1 : company.index("]")].strip()
         location = clean_plain_text(raw_job.location) if raw_job.location else None
 
         raw = dict(raw_job.raw or {})
@@ -151,6 +175,14 @@ class HtmlScraperCleaner:
             }
         )
 
+        edu_code = map_education_level(raw_job.education_level or body)
+        exp_code = map_experience_level(
+            raw_job.experience_level or body,
+            title=raw_job.title,
+        )
+        remote_code = map_remote_work_type(raw_job.remote_work_type or location or body)
+        cat_code = map_job_category(raw_job.title, raw_job.job_category)
+
         return CleanedJob(
             source_job_id=raw_job.source_job_id,
             job_title=clean_plain_text(raw_job.title) or raw_job.title,
@@ -174,6 +206,10 @@ class HtmlScraperCleaner:
             currency_iso_code=currency_iso_code,
             pay_period=pay_period,
             employment_type_code=map_employment_type(raw_job.employment_type),
+            education_level_code=edu_code,
+            experience_level_code=exp_code,
+            remote_work_type_code=remote_code,
+            job_category_code=cat_code,
         )
 
     def _quality_score(self, job: RawHtmlScraperJob, description: str, skills: list[str]) -> float:

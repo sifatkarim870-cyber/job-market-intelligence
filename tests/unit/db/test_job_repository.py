@@ -740,6 +740,42 @@ class TestReferenceLookupHelpers:
         session.execute.return_value.scalar.return_value = None
         assert repo.get_employment_type_id_by_code(session, "not-a-real-code") is None
 
+    def test_get_education_level_id_by_code(self) -> None:
+        repo = JobRepository()
+        session = MagicMock()
+        assert repo.get_education_level_id_by_code(session, None) is None
+        session.execute.assert_not_called()
+        session.execute.return_value.scalar.return_value = 4
+        assert repo.get_education_level_id_by_code(session, "bachelor") == 4
+        assert session.execute.call_args.args[1] == {"code": "bachelor"}
+
+    def test_get_experience_level_id_by_code(self) -> None:
+        repo = JobRepository()
+        session = MagicMock()
+        assert repo.get_experience_level_id_by_code(session, None) is None
+        session.execute.assert_not_called()
+        session.execute.return_value.scalar.return_value = 4
+        assert repo.get_experience_level_id_by_code(session, "senior") == 4
+        assert session.execute.call_args.args[1] == {"code": "senior"}
+
+    def test_get_remote_work_type_id_by_code(self) -> None:
+        repo = JobRepository()
+        session = MagicMock()
+        assert repo.get_remote_work_type_id_by_code(session, None) is None
+        session.execute.assert_not_called()
+        session.execute.return_value.scalar.return_value = 2
+        assert repo.get_remote_work_type_id_by_code(session, "hybrid") == 2
+        assert session.execute.call_args.args[1] == {"code": "hybrid"}
+
+    def test_get_job_category_id_by_code(self) -> None:
+        repo = JobRepository()
+        session = MagicMock()
+        assert repo.get_job_category_id_by_code(session, None) is None
+        session.execute.assert_not_called()
+        session.execute.return_value.scalar.return_value = 1
+        assert repo.get_job_category_id_by_code(session, "engineering") == 1
+        assert session.execute.call_args.args[1] == {"code": "engineering"}
+
 
 class TestEmploymentTypeThreading:
     """Verifies core.jobs.employment_type_id is bound on insert and on a

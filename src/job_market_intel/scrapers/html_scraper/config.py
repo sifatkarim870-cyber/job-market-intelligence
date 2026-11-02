@@ -30,6 +30,10 @@ class SelectorConfig(BaseModel):
     salary: str = Field(default="", description="CSS selector for salary")
     skills: str = Field(default="", description="CSS selector for skills list")
     employment_type: str = Field(default="", description="CSS selector for employment type")
+    education_level: str = Field(default="", description="CSS selector for education level requirement")
+    experience_level: str = Field(default="", description="CSS selector for experience level requirement")
+    remote_work_type: str = Field(default="", description="CSS selector for remote / hybrid work type")
+    job_category: str = Field(default="", description="CSS selector for job category / industry")
 
 
 class SiteConfig(BaseModel):

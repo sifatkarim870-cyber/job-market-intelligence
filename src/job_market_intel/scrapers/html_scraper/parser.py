@@ -350,7 +350,7 @@ def _resolve_title(
     )
 
 
-_LABEL_FIELDS = ("company", "location", "employment_type", "salary", "posted_date")
+_LABEL_FIELDS = ("company", "location", "employment_type", "salary", "posted_date", "education_level", "experience_level", "remote_work_type", "job_category")
 
 #: Elements that plausibly carry a form-style label. Kept narrow on purpose:
 #: a bare ``div`` holding the word "Location" is usually a heading, while a
@@ -434,6 +434,10 @@ _JSON_LD_FIELDS: dict[str, tuple[str, ...]] = {
     "location": ("jobLocation", "address", "addressLocality"),
     "employment_type": ("employmentType",),
     "posted_date": ("datePosted",),
+    "education_level": ("educationRequirements",),
+    "experience_level": ("experienceRequirements",),
+    "remote_work_type": ("jobLocationType",),
+    "job_category": ("occupationalCategory",),
 }
 
 
@@ -634,6 +638,10 @@ def parse_detail(
     employment_type = _extract_field(soup, sel.employment_type) if sel.employment_type else None
     salary = _extract_field(soup, sel.salary) if sel.salary else None
     posted_date_text = _extract_field(soup, sel.posted_date) if sel.posted_date else None
+    education_level = _extract_field(soup, sel.education_level) if sel.education_level else None
+    experience_level = _extract_field(soup, sel.experience_level) if sel.experience_level else None
+    remote_work_type = _extract_field(soup, sel.remote_work_type) if sel.remote_work_type else None
+    job_category = _extract_field(soup, sel.job_category) if sel.job_category else None
 
     # Label/value rows (see ``detail_label_map``), for boards whose facts sit
     # beside a visible label rather than under a stable class name; and, where
@@ -649,6 +657,10 @@ def parse_detail(
             "employment_type": employment_type,
             "salary": salary,
             "posted_date": posted_date_text,
+            "education_level": education_level,
+            "experience_level": experience_level,
+            "remote_work_type": remote_work_type,
+            "job_category": job_category,
         },
     )
     company_name = values["company"] or company_name
@@ -656,6 +668,10 @@ def parse_detail(
     employment_type = values["employment_type"]
     salary = values["salary"]
     posted_date_text = values["posted_date"]
+    education_level = values["education_level"]
+    experience_level = values["experience_level"]
+    remote_work_type = values["remote_work_type"]
+    job_category = values["job_category"]
 
     # A structured salary (schema.org ``baseSalary``) survives as attributes on
     # the node the JSON mapping rendered, so the number is not lost to text.
@@ -723,6 +739,10 @@ def parse_detail(
         location=location,
         country=site_config.country,
         employment_type=employment_type,
+        education_level=education_level,
+        experience_level=experience_level,
+        remote_work_type=remote_work_type,
+        job_category=job_category,
         posted_date=posted_date,
         closing_date=None,  # HTML scrapers rarely have closing dates
         url=url,

@@ -1,0 +1,31 @@
+{
+  "source_code": "rekrute_com",
+  "source_name": "ReKrute Morocco (rekrute.com)",
+  "country": "Morocco",
+  "base_url": "https://www.rekrute.com",
+  "listing_path": "/offres-emploi-maroc.html",
+  "listing_pagination": "/offres.html?p={page}&s=1&o=1",
+  "max_pages": 3,
+  "max_jobs_per_run": 20,
+  "selectors": {
+    "job_card": "li.post-id",
+    "job_link": "a.titreJob, a[href*='offre-emploi-']",
+    "job_title": "p.jo-topTitle",
+    "company": "meta[property='og:title']@content",
+    "location": "span.jo-pill--cityRegion",
+    "description": "div.content-column",
+    "posted_date": "span.jo-pill--publication",
+    "salary": "",
+    "skills": "",
+    "employment_type": "span.jo-infoItem"
+  },
+  "title_priority": "selector,og:title,title-tag,h1",
+  "detail_url_pattern": ".*/offre-emploi-.*\\.html",
+  "id_from_url": true,
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.5,
+  "currency_iso_code": "MAD",
+  "pay_period": "monthly",
+  "country_fallback": "Morocco"
+}
