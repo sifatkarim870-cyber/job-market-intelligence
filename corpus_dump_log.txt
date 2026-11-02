@@ -1,0 +1,1245 @@
+﻿dump	Set up job	´╗┐2026-10-27T03:37:03.6683294Z Current runner version: '2.338.0'
+dump	Set up job	2026-10-27T03:37:03.6719921Z ##[group]Runner Image Provisioner
+dump	Set up job	2026-10-27T03:37:03.6722189Z Hosted Compute Agent
+dump	Set up job	2026-10-27T03:37:03.6723164Z Version: 20261021.618
+dump	Set up job	2026-10-27T03:37:03.6724376Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+dump	Set up job	2026-10-27T03:37:03.6725700Z Build Date: 2026-10-21T00:45:21Z
+dump	Set up job	2026-10-27T03:37:03.6726788Z Worker ID: {a0315d2f-937d-4ec2-9ea9-fc75b7f56c94}
+dump	Set up job	2026-10-27T03:37:03.6728190Z Region: eastus
+dump	Set up job	2026-10-27T03:37:03.6729101Z Cloud: Azure
+dump	Set up job	2026-10-27T03:37:03.6730054Z ##[endgroup]
+dump	Set up job	2026-10-27T03:37:03.6732735Z ##[group]Operating System
+dump	Set up job	2026-10-27T03:37:03.6733910Z Ubuntu
+dump	Set up job	2026-10-27T03:37:03.6734830Z 24.04.5
+dump	Set up job	2026-10-27T03:37:03.6735695Z LTS
+dump	Set up job	2026-10-27T03:37:03.6736654Z ##[endgroup]
+dump	Set up job	2026-10-27T03:37:03.6737542Z ##[group]Runner Image
+dump	Set up job	2026-10-27T03:37:03.6738623Z Image: ubuntu-24.04
+dump	Set up job	2026-10-27T03:37:03.6739635Z Version: 20261012.334.1
+dump	Set up job	2026-10-27T03:37:03.6741698Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+dump	Set up job	2026-10-27T03:37:03.6744900Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+dump	Set up job	2026-10-27T03:37:03.6746776Z ##[endgroup]
+dump	Set up job	2026-10-27T03:37:03.6748704Z ##[group]GITHUB_TOKEN Permissions
+dump	Set up job	2026-10-27T03:37:03.6751966Z Contents: read
+dump	Set up job	2026-10-27T03:37:03.6752917Z Metadata: read
+dump	Set up job	2026-10-27T03:37:03.6753912Z ##[endgroup]
+dump	Set up job	2026-10-27T03:37:03.6756946Z Secret source: Actions
+dump	Set up job	2026-10-27T03:37:03.6758600Z Cache mode: write
+dump	Set up job	2026-10-27T03:37:03.6760017Z Prepare workflow directory
+dump	Set up job	2026-10-27T03:37:03.7321756Z Prepare all required actions
+dump	Set up job	2026-10-27T03:37:03.7369670Z Getting action download info
+dump	Set up job	2026-10-27T03:37:03.9200519Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+dump	Set up job	2026-10-27T03:37:04.0164163Z Download action repository 'astral-sh/setup-uv@v3' (SHA:caf0cab7a618c569241d31dcd442f54681755d39)
+dump	Set up job	2026-10-27T03:37:04.2186636Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+dump	Set up job	2026-10-27T03:37:04.4095564Z Complete job name: dump
+dump	Initialize containers	´╗┐2026-10-27T03:37:04.4640924Z ##[group]Checking docker version
+dump	Initialize containers	2026-10-27T03:37:04.4654511Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+dump	Initialize containers	2026-10-27T03:37:04.5545555Z '1.48'
+dump	Initialize containers	2026-10-27T03:37:04.5562013Z Docker daemon API version: '1.48'
+dump	Initialize containers	2026-10-27T03:37:04.5562944Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+dump	Initialize containers	2026-10-27T03:37:04.5723712Z '1.48'
+dump	Initialize containers	2026-10-27T03:37:04.5737512Z Docker client API version: '1.48'
+dump	Initialize containers	2026-10-27T03:37:04.5742404Z ##[endgroup]
+dump	Initialize containers	2026-10-27T03:37:04.5745471Z ##[group]Clean up resources from previous jobs
+dump	Initialize containers	2026-10-27T03:37:04.5750820Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=e7f295"
+dump	Initialize containers	2026-10-27T03:37:04.5895318Z ##[command]/usr/bin/docker network prune --force --filter "label=e7f295"
+dump	Initialize containers	2026-10-27T03:37:04.6025893Z ##[endgroup]
+dump	Initialize containers	2026-10-27T03:37:04.6026437Z ##[group]Create local container network
+dump	Initialize containers	2026-10-27T03:37:04.6036245Z ##[command]/usr/bin/docker network create --label e7f295 github_network_54a068eae6c84de5bf1bc8f65cd9778e
+dump	Initialize containers	2026-10-27T03:37:04.6583810Z 0e776299b5dbb3b2cd684991348a6e07b6c92ce64ef993d201606a127245ae2b
+dump	Initialize containers	2026-10-27T03:37:04.6608810Z ##[endgroup]
+dump	Initialize containers	2026-10-27T03:37:04.6634116Z ##[group]Starting postgres service container
+dump	Initialize containers	2026-10-27T03:37:04.6657103Z ##[command]/usr/bin/docker pull postgres:18-alpine
+dump	Initialize containers	2026-10-27T03:37:04.9199136Z 18-alpine: Pulling from library/postgres
+dump	Initialize containers	2026-10-27T03:37:04.9892877Z 7b229517ed22: Pulling fs layer
+dump	Initialize containers	2026-10-27T03:37:04.9894336Z 9b7e1e6003c9: Pulling fs layer
+dump	Initialize containers	2026-10-27T03:37:04.9895926Z c636fe474156: Pulling fs layer
+dump	Initialize containers	2026-10-27T03:37:04.9897045Z 8a06bdb27c21: Pulling fs layer
+dump	Initialize containers	2026-10-27T03:37:04.9897691Z 242c5d565900: Pulling fs layer
+dump	Initialize containers	2026-10-27T03:37:04.9898213Z f0f97016fb12: Pulling fs layer
+dump	Initialize containers	2026-10-27T03:37:04.9898718Z ca102eb59e0e: Pulling fs layer
+dump	Initialize containers	2026-10-27T03:37:04.9899222Z 13930ab5cb14: Pulling fs layer
+dump	Initialize containers	2026-10-27T03:37:04.9899718Z 04d6f1f64405: Pulling fs layer
+dump	Initialize containers	2026-10-27T03:37:04.9900220Z 8a06bdb27c21: Waiting
+dump	Initialize containers	2026-10-27T03:37:04.9900978Z 242c5d565900: Waiting
+dump	Initialize containers	2026-10-27T03:37:04.9901582Z f0f97016fb12: Waiting
+dump	Initialize containers	2026-10-27T03:37:04.9902050Z ca102eb59e0e: Waiting
+dump	Initialize containers	2026-10-27T03:37:04.9902494Z 13930ab5cb14: Waiting
+dump	Initialize containers	2026-10-27T03:37:04.9902923Z 04d6f1f64405: Waiting
+dump	Initialize containers	2026-10-27T03:37:05.0278342Z c636fe474156: Verifying Checksum
+dump	Initialize containers	2026-10-27T03:37:05.0279439Z c636fe474156: Download complete
+dump	Initialize containers	2026-10-27T03:37:05.0303296Z 9b7e1e6003c9: Verifying Checksum
+dump	Initialize containers	2026-10-27T03:37:05.0304927Z 9b7e1e6003c9: Download complete
+dump	Initialize containers	2026-10-27T03:37:05.0463655Z 7b229517ed22: Verifying Checksum
+dump	Initialize containers	2026-10-27T03:37:05.0464788Z 7b229517ed22: Download complete
+dump	Initialize containers	2026-10-27T03:37:05.0547057Z 8a06bdb27c21: Verifying Checksum
+dump	Initialize containers	2026-10-27T03:37:05.0548060Z 8a06bdb27c21: Download complete
+dump	Initialize containers	2026-10-27T03:37:05.0722055Z f0f97016fb12: Verifying Checksum
+dump	Initialize containers	2026-10-27T03:37:05.0724089Z f0f97016fb12: Download complete
+dump	Initialize containers	2026-10-27T03:37:05.0930960Z ca102eb59e0e: Verifying Checksum
+dump	Initialize containers	2026-10-27T03:37:05.0932728Z ca102eb59e0e: Download complete
+dump	Initialize containers	2026-10-27T03:37:05.1013649Z 13930ab5cb14: Download complete
+dump	Initialize containers	2026-10-27T03:37:05.1205938Z 04d6f1f64405: Download complete
+dump	Initialize containers	2026-10-27T03:37:05.1880627Z 7b229517ed22: Pull complete
+dump	Initialize containers	2026-10-27T03:37:05.2352309Z 9b7e1e6003c9: Pull complete
+dump	Initialize containers	2026-10-27T03:37:05.2875926Z c636fe474156: Pull complete
+dump	Initialize containers	2026-10-27T03:37:05.3037273Z 8a06bdb27c21: Pull complete
+dump	Initialize containers	2026-10-27T03:37:05.4886945Z 242c5d565900: Verifying Checksum
+dump	Initialize containers	2026-10-27T03:37:05.4889448Z 242c5d565900: Download complete
+dump	Initialize containers	2026-10-27T03:37:07.9992246Z 242c5d565900: Pull complete
+dump	Initialize containers	2026-10-27T03:37:08.0110025Z f0f97016fb12: Pull complete
+dump	Initialize containers	2026-10-27T03:37:08.0430255Z ca102eb59e0e: Pull complete
+dump	Initialize containers	2026-10-27T03:37:08.0563600Z 13930ab5cb14: Pull complete
+dump	Initialize containers	2026-10-27T03:37:08.0654766Z 04d6f1f64405: Pull complete
+dump	Initialize containers	2026-10-27T03:37:08.0696390Z Digest: sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+dump	Initialize containers	2026-10-27T03:37:08.0707528Z Status: Downloaded newer image for postgres:18-alpine
+dump	Initialize containers	2026-10-27T03:37:08.0715854Z docker.io/library/postgres:18-alpine
+dump	Initialize containers	2026-10-27T03:37:08.0777625Z ##[command]/usr/bin/docker create --name 8b46b71001f1489f9afc5b059ad842b6_postgres18alpine_98b244 --label e7f295 --network github_network_54a068eae6c84de5bf1bc8f65cd9778e --network-alias postgres -p 5432:5432 --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5 -e "POSTGRES_USER=postgres" -e "POSTGRES_PASSWORD=postgres" -e "POSTGRES_DB=jmi_ci" -e GITHUB_ACTIONS=true -e CI=true postgres:18-alpine
+dump	Initialize containers	2026-10-27T03:37:08.1061100Z 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Initialize containers	2026-10-27T03:37:08.1084914Z ##[command]/usr/bin/docker start 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Initialize containers	2026-10-27T03:37:08.3325705Z 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Initialize containers	2026-10-27T03:37:08.3355426Z ##[command]/usr/bin/docker ps --all --filter id=64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+dump	Initialize containers	2026-10-27T03:37:08.3520300Z 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3 Up Less than a second (health: starting)
+dump	Initialize containers	2026-10-27T03:37:08.3547517Z ##[command]/usr/bin/docker port 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Initialize containers	2026-10-27T03:37:08.3700368Z 5432/tcp -> 0.0.0.0:5432
+dump	Initialize containers	2026-10-27T03:37:08.3701041Z 5432/tcp -> [::]:5432
+dump	Initialize containers	2026-10-27T03:37:08.3761382Z ##[endgroup]
+dump	Initialize containers	2026-10-27T03:37:08.3773063Z ##[group]Waiting for all services to be ready
+dump	Initialize containers	2026-10-27T03:37:08.3788150Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Initialize containers	2026-10-27T03:37:08.3947308Z starting
+dump	Initialize containers	2026-10-27T03:37:08.3971343Z postgres service is starting, waiting 2 seconds before checking again.
+dump	Initialize containers	2026-10-27T03:37:10.3984837Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Initialize containers	2026-10-27T03:37:10.4120455Z starting
+dump	Initialize containers	2026-10-27T03:37:10.4133200Z postgres service is starting, waiting 4 seconds before checking again.
+dump	Initialize containers	2026-10-27T03:37:14.7951992Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Initialize containers	2026-10-27T03:37:14.8092057Z starting
+dump	Initialize containers	2026-10-27T03:37:14.8106395Z postgres service is starting, waiting 7 seconds before checking again.
+dump	Initialize containers	2026-10-27T03:37:21.8564842Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Initialize containers	2026-10-27T03:37:21.8696393Z healthy
+dump	Initialize containers	2026-10-27T03:37:21.8713871Z postgres service is healthy.
+dump	Initialize containers	2026-10-27T03:37:21.8714913Z ##[endgroup]
+dump	Run actions/checkout@v4	´╗┐2026-10-27T03:37:21.9084570Z ##[group]Run actions/checkout@v4
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9085199Z with:
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9085511Z   repository: sifatkarim870-cyber/job-market-intelligence
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9087933Z   token: ***
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9088149Z   ssh-strict: true
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9088403Z   ssh-user: git
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9088626Z   persist-credentials: true
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9088868Z   clean: true
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9089086Z   sparse-checkout-cone-mode: true
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9089346Z   fetch-depth: 1
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9089549Z   fetch-tags: false
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9089772Z   show-progress: true
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9090005Z   lfs: false
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9090192Z   submodules: false
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9090399Z   set-safe-directory: true
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9090646Z   allow-unsafe-pr-checkout: false
+dump	Run actions/checkout@v4	2026-10-27T03:37:21.9091104Z ##[endgroup]
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0099271Z Syncing repository: sifatkarim870-cyber/job-market-intelligence
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0101747Z ##[group]Getting Git version info
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0102727Z Working directory is '/home/runner/work/job-market-intelligence/job-market-intelligence'
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0104048Z [command]/usr/bin/git version
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0226635Z git version 2.55.0
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0249115Z ##[endgroup]
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0267545Z Temporarily overriding HOME='/home/runner/work/_temp/d1414040-7194-4e62-9dd8-ab4daa75c261' before making global git config changes
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0269103Z Adding repository directory to the temporary git global config as a safe directory
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0274486Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/job-market-intelligence/job-market-intelligence
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0327401Z Deleting the contents of '/home/runner/work/job-market-intelligence/job-market-intelligence'
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0331769Z ##[group]Initializing the repository
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0338272Z [command]/usr/bin/git init /home/runner/work/job-market-intelligence/job-market-intelligence
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0429753Z hint: Using 'master' as the name for the initial branch. This default branch name
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0430495Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0431031Z hint: to use in all of your new repositories, which will suppress this warning,
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0431701Z hint: call:
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0432194Z hint:
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0432613Z hint: 	git config --global init.defaultBranch <name>
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0433082Z hint:
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0433636Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0434406Z hint: 'development'. The just-created branch can be renamed via this command:
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0434859Z hint:
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0435077Z hint: 	git branch -m <name>
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0435418Z hint:
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0436029Z hint: Disable this message with "git config set advice.defaultBranchName false"
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0437659Z Initialized empty Git repository in /home/runner/work/job-market-intelligence/job-market-intelligence/.git/
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0447880Z [command]/usr/bin/git remote add origin https://github.com/sifatkarim870-cyber/job-market-intelligence
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0539035Z ##[endgroup]
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0539635Z ##[group]Disabling automatic garbage collection
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0545110Z [command]/usr/bin/git config --local gc.auto 0
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0593144Z ##[endgroup]
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0593903Z ##[group]Setting up auth
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0594603Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.0645842Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.1019782Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.1058466Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.1284400Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.1320238Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.1547542Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.1589638Z ##[endgroup]
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.1590279Z ##[group]Fetching the repository
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.1599690Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +24ef97a0bada0c2a2a42992c7251e1f309e0a13f:refs/remotes/origin/main
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.6228758Z From https://github.com/sifatkarim870-cyber/job-market-intelligence
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.6229914Z  * [new ref]         24ef97a0bada0c2a2a42992c7251e1f309e0a13f -> origin/main
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.6244254Z ##[endgroup]
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.6244919Z ##[group]Determining the checkout info
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.6245506Z ##[endgroup]
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.6247263Z [command]/usr/bin/git sparse-checkout disable
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.6305449Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.6337598Z ##[group]Checking out the ref
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.6342467Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.7139402Z Switched to a new branch 'main'
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.7149102Z branch 'main' set up to track 'origin/main'.
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.7154160Z ##[endgroup]
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.7202696Z [command]/usr/bin/git log -1 --format=%H
+dump	Run actions/checkout@v4	2026-10-27T03:37:22.7230329Z 24ef97a0bada0c2a2a42992c7251e1f309e0a13f
+dump	Install uv	´╗┐2026-10-27T03:37:22.7467135Z ##[group]Run astral-sh/setup-uv@v3
+dump	Install uv	2026-10-27T03:37:22.7467457Z with:
+dump	Install uv	2026-10-27T03:37:22.7467674Z   enable-cache: true
+dump	Install uv	2026-10-27T03:37:22.7467903Z   version: latest
+dump	Install uv	2026-10-27T03:37:22.7470195Z   github-token: ***
+dump	Install uv	2026-10-27T03:37:22.7470443Z   cache-dependency-glob: **/uv.lock
+dump	Install uv	2026-10-27T03:37:22.7470720Z   prune-cache: true
+dump	Install uv	2026-10-27T03:37:22.7470929Z ##[endgroup]
+dump	Install uv	2026-10-27T03:37:22.8838005Z Downloading uv from "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+dump	Install uv	2026-10-27T03:37:22.8849878Z (node:2674) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+dump	Install uv	2026-10-27T03:37:22.8850681Z (Use `node --trace-deprecation ...` to show where the warning was created)
+dump	Install uv	2026-10-27T03:37:23.1337918Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/ae906bbd-21b5-4c4e-b3e2-868443ed3a1e -f /home/runner/work/_temp/5e585673-ad01-4e73-a790-59a485fbefa8
+dump	Install uv	2026-10-27T03:37:23.4607496Z Added /opt/hostedtoolcache/uv/0.13.6/x86_64 to the path
+dump	Install uv	2026-10-27T03:37:23.4608876Z Added /home/runner/.local/bin to the path
+dump	Install uv	2026-10-27T03:37:23.4613971Z Successfully installed uv version 0.13.6
+dump	Install uv	2026-10-27T03:37:23.4638679Z Set UV_CACHE_DIR to /home/runner/work/_temp/setup-uv-cache
+dump	Install uv	2026-10-27T03:37:23.4639434Z Searching files using cache dependency glob: **/uv.lock
+dump	Install uv	2026-10-27T03:37:23.5753016Z /home/runner/work/job-market-intelligence/job-market-intelligence/uv.lock
+dump	Install uv	2026-10-27T03:37:23.5791238Z Found 1 files to hash.
+dump	Install uv	2026-10-27T03:37:23.5792927Z Trying to restore uv cache from GitHub Actions cache with key: setup-uv-1-x86_64-unknown-linux-gnu-0.13.6-da2efcbc16b793da86d481ca3102c563a175c37305047f05bd68e96ca1cc5db2
+dump	Install uv	2026-10-27T03:37:23.6633889Z ##[warning]Failed to restore: Cache service responded with 400
+dump	Install uv	2026-10-27T03:37:23.6644773Z No GitHub Actions cache found for key: setup-uv-1-x86_64-unknown-linux-gnu-0.13.6-da2efcbc16b793da86d481ca3102c563a175c37305047f05bd68e96ca1cc5db2
+dump	Set up Python	´╗┐2026-10-27T03:37:23.6813898Z ##[group]Run actions/setup-python@v5
+dump	Set up Python	2026-10-27T03:37:23.6814203Z with:
+dump	Set up Python	2026-10-27T03:37:23.6814405Z   python-version: 3.11
+dump	Set up Python	2026-10-27T03:37:23.6814631Z   check-latest: false
+dump	Set up Python	2026-10-27T03:37:23.6816873Z   token: ***
+dump	Set up Python	2026-10-27T03:37:23.6817092Z   update-environment: true
+dump	Set up Python	2026-10-27T03:37:23.6817340Z   allow-prereleases: false
+dump	Set up Python	2026-10-27T03:37:23.6817569Z   freethreaded: false
+dump	Set up Python	2026-10-27T03:37:23.6817786Z env:
+dump	Set up Python	2026-10-27T03:37:23.6818018Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+dump	Set up Python	2026-10-27T03:37:23.6818321Z ##[endgroup]
+dump	Set up Python	2026-10-27T03:37:23.8150400Z ##[group]Installed versions
+dump	Set up Python	2026-10-27T03:37:23.8278052Z (node:2691) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+dump	Set up Python	2026-10-27T03:37:23.8279390Z (Use `node --trace-deprecation ...` to show where the warning was created)
+dump	Set up Python	2026-10-27T03:37:23.8280240Z Successfully set up CPython (3.11.17)
+dump	Set up Python	2026-10-27T03:37:23.8281004Z ##[endgroup]
+dump	Install a pg_dump that matches the server	´╗┐2026-10-27T03:37:23.8440923Z ##[group]Run set -euo pipefail
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8441755Z ^[[36;1mset -euo pipefail^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8442316Z ^[[36;1msudo install -d /usr/share/postgresql-common/pgdg^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8443159Z ^[[36;1msudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8444025Z ^[[36;1m  https://www.postgresql.org/media/keys/ACCC4CF8.asc^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8445335Z ^[[36;1mecho "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8446647Z ^[[36;1m  | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8447224Z ^[[36;1msudo apt-get update -qq^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8447723Z ^[[36;1msudo apt-get install -y "postgresql-client-18"^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8448425Z ^[[36;1m# PGDG installs under /usr/lib/postgresql/<major>/bin but does NOT^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8449242Z ^[[36;1m# repoint the /usr/bin alternatives, so `pg_restore` on PATH stayed on^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8450087Z ^[[36;1m# the older build and rejected the archive pg_dump had just written^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8450784Z ^[[36;1m# ("unsupported version (1.16) in file header").^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8451280Z ^[[36;1m#^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8451934Z ^[[36;1m# $GITHUB_PATH only affects LATER steps, which is why the version^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8452726Z ^[[36;1m# print in this step still showed 16 and why the fix has to be applied^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8453545Z ^[[36;1m# again inside the dump step. Discover the newest client rather than^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8454286Z ^[[36;1m# assuming a path, and fail loudly if it is not there.^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8455043Z ^[[36;1mPG_BIN="$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -n 1)"^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8455797Z ^[[36;1mif [ -z "$PG_BIN" ] || [ ! -x "$PG_BIN/pg_dump" ]; then^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8456604Z ^[[36;1m  echo "::error::no PGDG pg_dump found; installed clients:"; ls /usr/lib/postgresql || true^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8457339Z ^[[36;1m  exit 1^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8457651Z ^[[36;1mfi^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8457999Z ^[[36;1mecho "PG_BIN=$PG_BIN" >> "$GITHUB_ENV"^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8458514Z ^[[36;1mecho "PG_BIN=$PG_BIN" >> "$GITHUB_PATH"^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8458999Z ^[[36;1m"$PG_BIN/pg_dump" --version^[[0m
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8736263Z shell: /usr/bin/bash -e {0}
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8736589Z env:
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8737063Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8737467Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8737924Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8738354Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8738733Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8739114Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8739491Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:23.8739825Z ##[endgroup]
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.1247333Z Reading package lists...
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.3202858Z Building dependency tree...
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.3210357Z Reading state information...
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.4613197Z Suggested packages:
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.4613704Z   postgresql-18 postgresql-doc-18
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.4780050Z The following NEW packages will be installed:
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.4792285Z   postgresql-client-18
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.8568192Z 0 upgraded, 1 newly installed, 0 to remove and 104 not upgraded.
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.8569152Z Need to get 2114 kB of archives.
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.8569765Z After this operation, 10.5 MB of additional disk space will be used.
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:29.8570874Z Get:1 https://apt.postgresql.org/pub/repos/apt noble-pgdg/main amd64 postgresql-client-18 amd64 18.6-1.pgdg24.04+2 [2114 kB]
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.5900186Z Fetched 2114 kB in 1s (2473 kB/s)
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6123410Z Selecting previously unselected package postgresql-client-18.
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6386909Z (Reading database ... 
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6387396Z (Reading database ... 5%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6387669Z (Reading database ... 10%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6388043Z (Reading database ... 15%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6388312Z (Reading database ... 20%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6388557Z (Reading database ... 25%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6388789Z (Reading database ... 30%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6389022Z (Reading database ... 35%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6389649Z (Reading database ... 40%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6390393Z (Reading database ... 45%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6390923Z (Reading database ... 50%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.6435253Z (Reading database ... 55%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.7486940Z (Reading database ... 60%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:30.9539390Z (Reading database ... 65%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:31.1562190Z (Reading database ... 70%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:31.3433659Z (Reading database ... 75%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:31.5022450Z (Reading database ... 80%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:31.7065033Z (Reading database ... 85%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:31.8693363Z (Reading database ... 90%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.0586522Z (Reading database ... 95%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.0587290Z (Reading database ... 100%
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.0588259Z (Reading database ... 203540 files and directories currently installed.)
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.0632418Z Preparing to unpack .../postgresql-client-18_18.6-1.pgdg24.04+2_amd64.deb ...
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.0660930Z Unpacking postgresql-client-18 (18.6-1.pgdg24.04+2) ...
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.2536119Z Setting up postgresql-client-18 (18.6-1.pgdg24.04+2) ...
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.6124007Z update-alternatives: using /usr/share/postgresql/18/man/man1/psql.1.gz to provide /usr/share/man/man1/psql.1.gz (psql.1.gz) in auto mode
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.6518207Z Processing triggers for postgresql-common (293.pgdg24.04+1) ...
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.7837680Z Building PostgreSQL dictionaries from installed myspell/hunspell packages...
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.7881661Z   en_us
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:32.8323528Z Removing obsolete dictionary files:
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5234578Z 
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5235295Z Running kernel seems to be up-to-date.
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5235705Z 
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5235895Z No services need to be restarted.
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5236192Z 
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5236363Z No containers need to be restarted.
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5236663Z 
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5236874Z No user sessions are running outdated binaries.
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5237228Z 
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:33.5237569Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+dump	Install a pg_dump that matches the server	2026-10-27T03:37:34.5090342Z pg_dump (PostgreSQL) 18.6 (Ubuntu 18.6-1.pgdg24.04+2)
+dump	Install dependencies	´╗┐2026-10-27T03:37:34.5133740Z ##[group]Run uv sync --extra dev --extra test
+dump	Install dependencies	2026-10-27T03:37:34.5134134Z ^[[36;1muv sync --extra dev --extra test^[[0m
+dump	Install dependencies	2026-10-27T03:37:34.5199765Z shell: /usr/bin/bash -e {0}
+dump	Install dependencies	2026-10-27T03:37:34.5200031Z env:
+dump	Install dependencies	2026-10-27T03:37:34.5200285Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+dump	Install dependencies	2026-10-27T03:37:34.5200696Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Install dependencies	2026-10-27T03:37:34.5201158Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+dump	Install dependencies	2026-10-27T03:37:34.5201827Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Install dependencies	2026-10-27T03:37:34.5202223Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Install dependencies	2026-10-27T03:37:34.5202622Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Install dependencies	2026-10-27T03:37:34.5203028Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+dump	Install dependencies	2026-10-27T03:37:34.5203395Z   PG_BIN: /usr/lib/postgresql/18/bin
+dump	Install dependencies	2026-10-27T03:37:34.5203662Z ##[endgroup]
+dump	Install dependencies	2026-10-27T03:37:34.6273050Z Using CPython 3.11.17 interpreter at: /opt/hostedtoolcache/Python/3.11.17/x64/bin/python3
+dump	Install dependencies	2026-10-27T03:37:34.6274025Z Creating virtual environment at: .venv
+dump	Install dependencies	2026-10-27T03:37:34.6334887Z Resolved 272 packages in 1ms
+dump	Install dependencies	2026-10-27T03:37:34.6551032Z    Building job-market-intel @ file:///home/runner/work/job-market-intelligence/job-market-intelligence
+dump	Install dependencies	2026-10-27T03:37:34.7114064Z Downloading nvidia-cuda-nvrtc (86.0MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7114886Z Downloading nvidia-nvshmem-cu13 (57.6MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7122757Z Downloading pyarrow (47.7MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7123499Z Downloading nvidia-nvjitlink (38.9MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7124209Z Downloading duckdb (20.5MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7124905Z Downloading transformers (11.4MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7125607Z Downloading ruff (10.9MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7126273Z Downloading nvidia-cuda-cupti (10.2MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7127013Z Downloading pillow (6.6MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7127667Z Downloading sympy (6.0MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7128349Z Downloading psycopg-binary (4.9MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7129012Z Downloading hf-xet (4.3MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7129747Z Downloading tokenizers (3.1MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7130879Z Downloading nvidia-cuda-runtime (2.1MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7132014Z Downloading pydantic-core (2.0MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7132730Z Downloading networkx (2.0MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7134532Z Downloading sentencepiece (1.3MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7135905Z Downloading ast-serialize (1.2MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7137477Z Downloading pygments (1.2MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7139306Z Downloading nvidia-cufile (1.2MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7282681Z Downloading playwright (46.0MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7283407Z Downloading numpy (16.1MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7283929Z Downloading cuda-bindings (6.4MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7284515Z Downloading nvidia-nccl-cu13 (206.0MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7293438Z Downloading scipy (33.7MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7294072Z Downloading torch (528.9MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7294688Z Downloading nvidia-cublas (403.5MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7295370Z Downloading scikit-learn (8.9MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7295942Z Downloading nvidia-cusolver (191.6MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7296495Z Downloading nvidia-cufft (204.2MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7297098Z Downloading sqlalchemy (3.2MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7298593Z Downloading curl-cffi (12.9MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7302059Z Downloading nvidia-cusparselt-cu13 (162.3MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7304748Z Downloading nvidia-cusparse (139.2MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7307901Z Downloading nvidia-curand (56.8MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7310058Z Downloading triton (236.5MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7312894Z Downloading nvidia-cudnn-cu13 (527.5MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7339389Z Downloading mypy (14.4MiB)
+dump	Install dependencies	2026-10-27T03:37:34.7340163Z Downloading virtualenv (5.2MiB)
+dump	Install dependencies	2026-10-27T03:37:35.0206044Z    Building langdetect==1.0.9
+dump	Install dependencies	2026-10-27T03:37:35.0433083Z  Downloaded ast-serialize
+dump	Install dependencies	2026-10-27T03:37:35.0678254Z  Downloaded pygments
+dump	Install dependencies	2026-10-27T03:37:35.0679209Z  Downloaded nvidia-cufile
+dump	Install dependencies	2026-10-27T03:37:35.0995966Z  Downloaded sentencepiece
+dump	Install dependencies	2026-10-27T03:37:35.2317549Z  Downloaded networkx
+dump	Install dependencies	2026-10-27T03:37:35.2324766Z  Downloaded pydantic-core
+dump	Install dependencies	2026-10-27T03:37:35.2475032Z  Downloaded nvidia-cuda-runtime
+dump	Install dependencies	2026-10-27T03:37:35.3593335Z  Downloaded tokenizers
+dump	Install dependencies	2026-10-27T03:37:35.4041769Z  Downloaded sqlalchemy
+dump	Install dependencies	2026-10-27T03:37:35.5153818Z  Downloaded hf-xet
+dump	Install dependencies	2026-10-27T03:37:35.6176402Z  Downloaded psycopg-binary
+dump	Install dependencies	2026-10-27T03:37:35.6342467Z  Downloaded virtualenv
+dump	Install dependencies	2026-10-27T03:37:35.7780011Z  Downloaded pillow
+dump	Install dependencies	2026-10-27T03:37:35.7803421Z  Downloaded cuda-bindings
+dump	Install dependencies	2026-10-27T03:37:35.8445978Z  Downloaded sympy
+dump	Install dependencies	2026-10-27T03:37:35.9892495Z  Downloaded scikit-learn
+dump	Install dependencies	2026-10-27T03:37:36.1320592Z  Downloaded nvidia-cuda-cupti
+dump	Install dependencies	2026-10-27T03:37:36.1462661Z  Downloaded ruff
+dump	Install dependencies	2026-10-27T03:37:36.1738494Z  Downloaded transformers
+dump	Install dependencies	2026-10-27T03:37:36.2873958Z  Downloaded curl-cffi
+dump	Install dependencies	2026-10-27T03:37:36.4956253Z  Downloaded numpy
+dump	Install dependencies	2026-10-27T03:37:36.7042488Z  Downloaded mypy
+dump	Install dependencies	2026-10-27T03:37:36.7266041Z  Downloaded duckdb
+dump	Install dependencies	2026-10-27T03:37:36.9718414Z       Built job-market-intel @ file:///home/runner/work/job-market-intelligence/job-market-intelligence
+dump	Install dependencies	2026-10-27T03:37:37.4797520Z  Downloaded scipy
+dump	Install dependencies	2026-10-27T03:37:37.6533650Z  Downloaded nvidia-nvjitlink
+dump	Install dependencies	2026-10-27T03:37:37.9751261Z  Downloaded playwright
+dump	Install dependencies	2026-10-27T03:37:38.0293925Z  Downloaded pyarrow
+dump	Install dependencies	2026-10-27T03:37:38.2992912Z  Downloaded nvidia-curand
+dump	Install dependencies	2026-10-27T03:37:38.3450650Z  Downloaded nvidia-nvshmem-cu13
+dump	Install dependencies	2026-10-27T03:37:38.4683275Z       Built langdetect==1.0.9
+dump	Install dependencies	2026-10-27T03:37:39.0626455Z  Downloaded nvidia-cuda-nvrtc
+dump	Install dependencies	2026-10-27T03:37:40.0831715Z  Downloaded nvidia-cusparse
+dump	Install dependencies	2026-10-27T03:37:40.5477629Z  Downloaded nvidia-cusparselt-cu13
+dump	Install dependencies	2026-10-27T03:37:41.0289411Z  Downloaded nvidia-cusolver
+dump	Install dependencies	2026-10-27T03:37:41.1747538Z  Downloaded nvidia-cufft
+dump	Install dependencies	2026-10-27T03:37:41.2195931Z  Downloaded nvidia-nccl-cu13
+dump	Install dependencies	2026-10-27T03:37:43.6066263Z  Downloaded nvidia-cublas
+dump	Install dependencies	2026-10-27T03:37:45.3166247Z  Downloaded triton
+dump	Install dependencies	2026-10-27T03:37:46.9606629Z  Downloaded torch
+dump	Install dependencies	2026-10-27T03:37:47.0767769Z  Downloaded nvidia-cudnn-cu13
+dump	Install dependencies	2026-10-27T03:37:47.6445814Z Prepared 105 packages in 13.00s
+dump	Install dependencies	2026-10-27T03:37:49.8406296Z Installed 105 packages in 2.19s
+dump	Install dependencies	2026-10-27T03:37:49.8407112Z  + annotated-types==0.8.0
+dump	Install dependencies	2026-10-27T03:37:49.8407511Z  + apscheduler==3.11.3
+dump	Install dependencies	2026-10-27T03:37:49.8408021Z  + ast-serialize==0.6.0
+dump	Install dependencies	2026-10-27T03:37:49.8408629Z  + bcrypt==5.0.0
+dump	Install dependencies	2026-10-27T03:37:49.8409113Z  + beautifulsoup4==4.15.0
+dump	Install dependencies	2026-10-27T03:37:49.8409731Z  + certifi==2026.7.22
+dump	Install dependencies	2026-10-27T03:37:49.8410230Z  + cffi==2.1.1
+dump	Install dependencies	2026-10-27T03:37:49.8410674Z  + cfgv==3.5.0
+dump	Install dependencies	2026-10-27T03:37:49.8411137Z  + charset-normalizer==3.5.1
+dump	Install dependencies	2026-10-27T03:37:49.8411993Z  + cloudpickle==3.1.2
+dump	Install dependencies	2026-10-27T03:37:49.8412706Z  + coverage==7.15.2
+dump	Install dependencies	2026-10-27T03:37:49.8413198Z  + cuda-bindings==13.3.1
+dump	Install dependencies	2026-10-27T03:37:49.8413738Z  + cuda-pathfinder==1.8.1
+dump	Install dependencies	2026-10-27T03:37:49.8414264Z  + cuda-toolkit==13.0.3.0
+dump	Install dependencies	2026-10-27T03:37:49.8414779Z  + curl-cffi==0.16.3
+dump	Install dependencies	2026-10-27T03:37:49.8415283Z  + distlib==0.4.3
+dump	Install dependencies	2026-10-27T03:37:49.8415864Z  + duckdb==1.5.6
+dump	Install dependencies	2026-10-27T03:37:49.8416365Z  + filelock==3.32.7
+dump	Install dependencies	2026-10-27T03:37:49.8416902Z  + fsspec==2026.7.0
+dump	Install dependencies	2026-10-27T03:37:49.8417406Z  + ftfy==6.3.1
+dump	Install dependencies	2026-10-27T03:37:49.8417876Z  + greenlet==3.5.4
+dump	Install dependencies	2026-10-27T03:37:49.8418396Z  + hf-xet==1.6.0
+dump	Install dependencies	2026-10-27T03:37:49.8418906Z  + huggingface-hub==0.36.2
+dump	Install dependencies	2026-10-27T03:37:49.8419487Z  + identify==2.6.19
+dump	Install dependencies	2026-10-27T03:37:49.8419874Z  + idna==3.20
+dump	Install dependencies	2026-10-27T03:37:49.8420220Z  + iniconfig==2.3.0
+dump	Install dependencies	2026-10-27T03:37:49.8420606Z  + jinja2==3.1.6
+dump	Install dependencies	2026-10-27T03:37:49.8421344Z  + job-market-intel==0.1.0 (from file:///home/runner/work/job-market-intelligence/job-market-intelligence)
+dump	Install dependencies	2026-10-27T03:37:49.8422364Z  + joblib==1.6.0
+dump	Install dependencies	2026-10-27T03:37:49.8422782Z  + langdetect==1.0.9
+dump	Install dependencies	2026-10-27T03:37:49.8423138Z  + librt==0.13.0
+dump	Install dependencies	2026-10-27T03:37:49.8423514Z  + loguru==0.7.3
+dump	Install dependencies	2026-10-27T03:37:49.8423859Z  + markupsafe==3.0.3
+dump	Install dependencies	2026-10-27T03:37:49.8424262Z  + mpmath==1.3.0
+dump	Install dependencies	2026-10-27T03:37:49.8425036Z  + mypy==2.3.0
+dump	Install dependencies	2026-10-27T03:37:49.8425465Z  + mypy-extensions==1.1.0
+dump	Install dependencies	2026-10-27T03:37:49.8425902Z  + narwhals==2.26.0
+dump	Install dependencies	2026-10-27T03:37:49.8426276Z  + networkx==3.6.1
+dump	Install dependencies	2026-10-27T03:37:49.8426993Z  + nodeenv==1.10.0
+dump	Install dependencies	2026-10-27T03:37:49.8427379Z  + numpy==2.4.6
+dump	Install dependencies	2026-10-27T03:37:49.8427728Z  + nvidia-cublas==13.1.1.3
+dump	Install dependencies	2026-10-27T03:37:49.8428121Z  + nvidia-cuda-cupti==13.0.85
+dump	Install dependencies	2026-10-27T03:37:49.8428603Z  + nvidia-cuda-nvrtc==13.0.88
+dump	Install dependencies	2026-10-27T03:37:49.8429076Z  + nvidia-cuda-runtime==13.0.96
+dump	Install dependencies	2026-10-27T03:37:49.8429550Z  + nvidia-cudnn-cu13==9.24.0.43
+dump	Install dependencies	2026-10-27T03:37:49.8429985Z  + nvidia-cufft==12.0.0.61
+dump	Install dependencies	2026-10-27T03:37:49.8430420Z  + nvidia-cufile==1.15.1.6
+dump	Install dependencies	2026-10-27T03:37:49.8430845Z  + nvidia-curand==10.4.0.35
+dump	Install dependencies	2026-10-27T03:37:49.8431293Z  + nvidia-cusolver==12.0.4.66
+dump	Install dependencies	2026-10-27T03:37:49.8431966Z  + nvidia-cusparse==12.6.3.3
+dump	Install dependencies	2026-10-27T03:37:49.8432451Z  + nvidia-cusparselt-cu13==0.8.1
+dump	Install dependencies	2026-10-27T03:37:49.8432937Z  + nvidia-nccl-cu13==2.30.7
+dump	Install dependencies	2026-10-27T03:37:49.8433395Z  + nvidia-nvjitlink==13.3.33
+dump	Install dependencies	2026-10-27T03:37:49.8433860Z  + nvidia-nvshmem-cu13==3.4.5
+dump	Install dependencies	2026-10-27T03:37:49.8434516Z  + nvidia-nvtx==13.0.85
+dump	Install dependencies	2026-10-27T03:37:49.8434972Z  + packaging==26.3
+dump	Install dependencies	2026-10-27T03:37:49.8435334Z  + passlib==1.7.4
+dump	Install dependencies	2026-10-27T03:37:49.8435636Z  + pathspec==1.1.1
+dump	Install dependencies	2026-10-27T03:37:49.8435935Z  + pillow==12.3.0
+dump	Install dependencies	2026-10-27T03:37:49.8436247Z  + platformdirs==4.11.11
+dump	Install dependencies	2026-10-27T03:37:49.8436632Z  + playwright==1.64.0
+dump	Install dependencies	2026-10-27T03:37:49.8436978Z  + pluggy==1.6.0
+dump	Install dependencies	2026-10-27T03:37:49.8437310Z  + pre-commit==4.6.1
+dump	Install dependencies	2026-10-27T03:37:49.8437653Z  + psycopg==3.3.4
+dump	Install dependencies	2026-10-27T03:37:49.8438131Z  + psycopg-binary==3.3.4
+dump	Install dependencies	2026-10-27T03:37:49.8438550Z  + pyarrow==25.0.1
+dump	Install dependencies	2026-10-27T03:37:49.8438903Z  + pycparser==3.0
+dump	Install dependencies	2026-10-27T03:37:49.8439223Z  + pydantic==2.13.4
+dump	Install dependencies	2026-10-27T03:37:49.8439554Z  + pydantic-core==2.46.4
+dump	Install dependencies	2026-10-27T03:37:49.8439931Z  + pydantic-settings==2.14.2
+dump	Install dependencies	2026-10-27T03:37:49.8440296Z  + pyee==13.0.1
+dump	Install dependencies	2026-10-27T03:37:49.8440614Z  + pygments==2.21.0
+dump	Install dependencies	2026-10-27T03:37:49.8440932Z  + pypdf==6.21.1
+dump	Install dependencies	2026-10-27T03:37:49.8441255Z  + pytest==9.1.1
+dump	Install dependencies	2026-10-27T03:37:49.8442176Z  + pytest-cov==7.1.0
+dump	Install dependencies	2026-10-27T03:37:49.8442546Z  + python-discovery==1.5.1
+dump	Install dependencies	2026-10-27T03:37:49.8442920Z  + python-dotenv==1.2.2
+dump	Install dependencies	2026-10-27T03:37:49.8443299Z  + pytz==2026.5
+dump	Install dependencies	2026-10-27T03:37:49.8443557Z  + pyyaml==6.0.3
+dump	Install dependencies	2026-10-27T03:37:49.8443759Z  + regex==2026.9.3
+dump	Install dependencies	2026-10-27T03:37:49.8443959Z  + requests==2.34.2
+dump	Install dependencies	2026-10-27T03:37:49.8444155Z  + ruff==0.16.1
+dump	Install dependencies	2026-10-27T03:37:49.8444371Z  + safetensors==0.8.0
+dump	Install dependencies	2026-10-27T03:37:49.8444586Z  + scikit-learn==1.9.0
+dump	Install dependencies	2026-10-27T03:37:49.8444798Z  + scipy==1.17.1
+dump	Install dependencies	2026-10-27T03:37:49.8445015Z  + sentence-transformers==3.4.1
+dump	Install dependencies	2026-10-27T03:37:49.8445264Z  + sentencepiece==0.2.2
+dump	Install dependencies	2026-10-27T03:37:49.8445521Z  + setuptools==84.0.0
+dump	Install dependencies	2026-10-27T03:37:49.8445721Z  + six==1.17.0
+dump	Install dependencies	2026-10-27T03:37:49.8445909Z  + soupsieve==2.9.2
+dump	Install dependencies	2026-10-27T03:37:49.8446106Z  + sqlalchemy==2.0.51
+dump	Install dependencies	2026-10-27T03:37:49.8446311Z  + sympy==1.14.0
+dump	Install dependencies	2026-10-27T03:37:49.8446503Z  + tenacity==9.1.4
+dump	Install dependencies	2026-10-27T03:37:49.8446737Z  + threadpoolctl==3.6.0
+dump	Install dependencies	2026-10-27T03:37:49.8446982Z  + tokenizers==0.22.2
+dump	Install dependencies	2026-10-27T03:37:49.8447198Z  + torch==2.14.0
+dump	Install dependencies	2026-10-27T03:37:49.8447387Z  + tqdm==4.70.0
+dump	Install dependencies	2026-10-27T03:37:49.8447581Z  + transformers==4.57.6
+dump	Install dependencies	2026-10-27T03:37:49.8447798Z  + triton==3.8.0
+dump	Install dependencies	2026-10-27T03:37:49.8448001Z  + typing-extensions==4.16.0
+dump	Install dependencies	2026-10-27T03:37:49.8448244Z  + typing-inspection==0.4.2
+dump	Install dependencies	2026-10-27T03:37:49.8448472Z  + tzlocal==5.4.4
+dump	Install dependencies	2026-10-27T03:37:49.8448662Z  + urllib3==2.7.0
+dump	Install dependencies	2026-10-27T03:37:49.8448996Z  + virtualenv==21.7.1
+dump	Install dependencies	2026-10-27T03:37:49.8449460Z  + wcwidth==0.8.2
+dump	Seed the ephemeral database from the HF state snapshot	´╗┐2026-10-27T03:37:50.0001136Z ##[group]Run uv run python scripts/restore_state_snapshot.py --source hf \
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0002204Z ^[[36;1muv run python scripts/restore_state_snapshot.py --source hf \^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0003057Z ^[[36;1m  --dsn "${CI_DATABASE_URL:-***localhost:5432/jmi_ci}"^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0066406Z shell: /usr/bin/bash -e {0}
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0066662Z env:
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0066911Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0067473Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0067934Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0068391Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0068793Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0069194Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0069601Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0069957Z   PG_BIN: /usr/lib/postgresql/18/bin
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0070396Z   HF_TOKEN: ***
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0070605Z   CI_DATABASE_URL: 
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:50.0070818Z ##[endgroup]
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:52.7587129Z ^[[32m2026-10-27 03:37:52.758^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.benefits.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:52.8988283Z ^[[32m2026-10-27 03:37:52.898^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.cities.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:53.0100454Z ^[[32m2026-10-27 03:37:53.009^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.countries.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:53.2424675Z ^[[32m2026-10-27 03:37:53.242^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.currencies.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:53.3862337Z ^[[32m2026-10-27 03:37:53.385^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.education_levels.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:53.5045736Z ^[[32m2026-10-27 03:37:53.504^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.employment_types.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:53.7159724Z ^[[32m2026-10-27 03:37:53.715^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.experience_levels.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:53.8369878Z ^[[32m2026-10-27 03:37:53.836^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.job_categories.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:53.9486922Z ^[[32m2026-10-27 03:37:53.948^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.languages.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:54.1038263Z ^[[32m2026-10-27 03:37:54.103^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.locations.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:54.2760885Z ^[[32m2026-10-27 03:37:54.275^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.normalized_job_titles.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:54.4143563Z ^[[32m2026-10-27 03:37:54.413^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.regions.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:54.5492846Z ^[[32m2026-10-27 03:37:54.548^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.remote_work_types.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:54.6528497Z ^[[32m2026-10-27 03:37:54.652^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.skill_categories.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:54.8230012Z ^[[32m2026-10-27 03:37:54.822^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.skills.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:54.9588769Z ^[[32m2026-10-27 03:37:54.958^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded ref.sources.parquet^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:37:54.9927457Z ^[[32m2026-10-27 03:37:54.992^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mdownload_state^[[0m:^[[36m75^[[0m - ^[[1mdownloaded schema.sql^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:38:01.6226823Z ^[[32m2026-10-27 03:38:01.622^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mapply_schema^[[0m:^[[36m132^[[0m - ^[[1mschema applied from schema.sql^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:38:10.6488649Z ^[[32m2026-10-27 03:38:10.648^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36m_resync_identity_sequences^[[0m:^[[36m335^[[0m - ^[[1mresynced 16 identity sequence(s): ['ref.benefits.benefit_id unused->31', 'ref.currencies.currency_id unused->2074', 'ref.education_levels.education_level_id unused->7', 'ref.employment_types.employment_type_id unused->7', 'ref.experience_levels.experience_level_id unused->7', 'ref.job_categories.job_category_id unused->590', 'ref.languages.language_id unused->35', 'ref.normalized_job_titles.normalized_title_id unused->2574', 'ref.remote_work_types.remote_work_type_id unused->6', 'ref.skill_categories.skill_category_id unused->192', 'ref.skills.skill_id unused->2029', 'ref.sources.source_id unused->1083', 'ref.countries.country_id unused->2207', 'ref.regions.region_id unused->6002', 'ref.cities.city_id unused->5187', 'ref.locations.location_id unused->621']^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:38:10.7118545Z ^[[32m2026-10-27 03:38:10.711^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mrestore_reference^[[0m:^[[36m265^[[0m - ^[[1mrestored 4,031 reference rows^[[0m
+dump	Seed the ephemeral database from the HF state snapshot	2026-10-27T03:38:10.7120169Z ^[[32m2026-10-27 03:38:10.711^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36mmain^[[0m:^[[36m373^[[0m - ^[[1mstate snapshot restored into localhost:5432/jmi_ci^[[0m
+dump	Export any rows scraped since the last shard export	´╗┐2026-10-27T03:38:10.8313877Z ##[group]Run if [ -n "20000" ]; then
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8314240Z ^[[36;1mif [ -n "20000" ]; then^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8314570Z ^[[36;1m  echo "CORPUS_MAX_ROWS_PER_SHARD=20000" >> "$GITHUB_ENV"^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8314944Z ^[[36;1m  echo "row cap per shard: 20000"^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8315224Z ^[[36;1mfi^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8315499Z ^[[36;1muv run python scripts/export_corpus_shards.py --all^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8380103Z shell: /usr/bin/bash -e {0}
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8380368Z env:
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8380617Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8381016Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8381738Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8382235Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8382669Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8383072Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8383505Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8383845Z   PG_BIN: /usr/lib/postgresql/18/bin
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8384096Z   DATABASE_URL: 
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8384297Z   CI_DATABASE_URL: 
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8384796Z   HF_TOKEN: ***
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8385073Z   CORPUS_HF_REPO: Shifat2110724169/job-market-intel-corpus
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8385396Z ##[endgroup]
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:10.8467742Z row cap per shard: 20000
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:11.8972629Z ^[[32m2026-10-27 03:38:11^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.common.logger^[[0m:^[[36mconfigure_logging^[[0m:^[[36m101^[[0m - ^[[1mLogging configured. Console level=INFO, file level=DEBUG, file=logs/job_market_intel.log^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.2876276Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export 51job: nothing new since 2026-10-24T04:25:35.349607+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.3481729Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export acbar_jobs: nothing new since 2026-10-24T04:48:06.573282+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.4162972Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export acbar_org: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.4766610Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export agenceemploijeunes: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.5305504Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export agenceemploijeunes_ci: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.5894341Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export alfred: nothing new since 2026-10-24T04:47:43.289451+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.6803409Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export alwatwan: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.7426695Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export alwatwan_net: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.7987727Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export alwihdainfo: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.8534192Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export alwihdainfo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.9132870Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export ams_at: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:12.9685793Z ^[[32m2026-10-27 03:38:12^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export angola_emprego: nothing new since 2026-10-24T04:48:48.734071+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.0215228Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export angolaemprego_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.0810622Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export apna: nothing new since 2026-10-24T04:53:38.836873+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.1369772Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export aptitus_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.1925395Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export ar_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.2474537Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export arbeidsplassen_nav_no: nothing new since 2026-10-23T10:33:09.348985+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.3142575Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export arbeitnow: nothing new since 2026-10-24T04:25:14.001199+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.3684817Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export arbeitsagentur_de: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.4356834Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export bestjobs_eu: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.4916317Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export bne_cl: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.5464923Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export brightermonday_co_tz: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.6049845Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export builtin: nothing new since 2026-10-24T04:57:17.839845+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.6635904Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export bumeran_com_ar: nothing new since 2026-10-23T10:32:34.009361+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.7196222Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export bumeran_com_pe: nothing new since 2026-10-23T10:32:18.785009+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.7750105Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export burkina24_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:13.9601806Z ^[[32m2026-10-27 03:38:13^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export camhr_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.0153082Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export careercenter_am: nothing new since 2026-10-23T10:33:21.683455+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.0727323Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export careerjunction: nothing new since 2026-10-24T04:44:52.303749+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.1252684Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export careerjunction_co_za: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.1843515Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export careers24: nothing new since 2026-10-24T04:47:18.400056+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.2400710Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export careerviet_vn: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.2957671Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export cliclavoro_gov_it: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.3563498Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export co_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.4100601Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export company_career_page: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.4643214Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export corporatestaffing_co_ke: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.5180097Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export corporatestaffing_ke: nothing new since 2026-10-24T04:47:54.281341+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.5746825Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export cv_lt: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.6307947Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export do_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.6978694Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export dubizzle_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.7551980Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export ec_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.8091161Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export educarriere: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.8656083Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export educarriere_ci: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.9210645Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export empleo_gob_mx: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:14.9749075Z ^[[32m2026-10-27 03:38:14^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export empleos_net: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.0295049Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export emploidakar_com: nothing new since 2026-10-24T04:44:34.932548+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.0845366Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export emploipartner_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.1472646Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export emploitic: nothing new since 2026-10-23T17:14:41.136406+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.2018774Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export emprego_sapo_pt: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.2580255Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export enbek_kz: nothing new since 2026-10-24T04:45:18.274051+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.3185345Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export ethiojobs: nothing new since 2026-10-23T10:36:39.198665+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.3690703Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export ethiojobs_net: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.4255093Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export fijisun_com_fj: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.4830091Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export fijisun_jobs: nothing new since 2026-10-24T04:45:08.219294+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.5374927Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export fne_cm: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.5935123Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export fnecm: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.6527266Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export forasna: nothing new since 2026-10-24T04:46:05.750396+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.7063055Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export geo_probe: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.7598695Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export geo_probe2: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.8173431Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export geo_probe3: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.8725359Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export glassdoor: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.9337132Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export glints: nothing new since 2026-10-24T04:51:04.846929+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:15.9939020Z ^[[32m2026-10-27 03:38:15^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export govt_portal: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.0540630Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export greenhouse: nothing new since 2026-10-24T04:25:42.028187+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.1132426Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export gt_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.1649274Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export gupy_io: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.2183207Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hellojob: nothing new since 2026-10-24T04:47:46.559120+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.2773370Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hellojob_az: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.3302203Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hellowork_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.3851682Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export helloworld_rs: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.4499321Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hiiraan_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.5042280Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hiiraan_jobs: nothing new since 2026-10-24T04:44:39.037377+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.5665082Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export himalayas: nothing new since 2026-10-23T21:20:32.953763+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.6372399Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hiredly: nothing new since 2026-10-23T17:30:24.464048+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.6913231Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hiredly_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.7499992Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hn_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.8067735Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hotnigerianjobs: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.8599057Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hotnigerianjobs_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.9183006Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export hrge: nothing new since 2026-10-24T04:50:56.253964+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:16.9747995Z ^[[32m2026-10-27 03:38:16^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export iefp_cv: nothing new since 2026-10-24T04:45:29.902168+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.0279386Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export iefponline_iefp_pt: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.0845287Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export ikman_lk: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.1401644Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export indeed: nothing new since 2026-10-09T09:21:12.691171+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.1946799Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export irantalent: nothing new since 2026-10-24T04:25:32.333840+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.2491273Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export iskur_gov_tr: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.3064808Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jamaica_gleaner_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.3670602Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jamaicaobserver_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.4198070Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export job_mynavi_jp: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.4748605Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobam: nothing new since 2026-10-24T04:26:43.304374+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.5352247Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobbank: nothing new since 2026-10-24T04:44:45.881881+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.6015273Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobbnorge_no: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.6601858Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobfind_gr: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.7177430Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobicy: nothing new since 2026-10-24T04:25:06.272283+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.7785720Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobinja: nothing new since 2026-10-20T17:21:17.492245+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.8386011Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobinrwanda: nothing new since 2026-10-24T04:52:55.791758+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.8924809Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobline_hu: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:17.9495215Z ^[[32m2026-10-27 03:38:17^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobmail: nothing new since 2026-10-24T04:53:53.485907+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.0053526Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobmaster: nothing new since 2026-10-24T04:58:56.755637+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.0660598Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobnet_dk: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.1250046Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobs_af: nothing new since 2026-10-24T04:44:50.215776+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.1864978Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobs_id: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.2461733Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobsearch_az: nothing new since 2026-10-21T17:28:47.099211+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.3047455Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobsge: nothing new since 2026-10-23T17:28:14.855237+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.3648597Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobsireland: nothing new since 2026-10-24T04:49:13.584007+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.4190479Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobsireland_ie: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.4718004Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobsnepal: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.5263503Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobsnepal_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.5873387Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobthai_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.6542047Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobtiger_bg: nothing new since 2026-10-24T04:45:53.270839+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.7098189Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobvision: nothing new since 2026-10-24T04:29:28.778198+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.7693284Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobwebghana: nothing new since 2026-10-24T04:46:34.744920+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.8247087Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobwebghana_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.8838823Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobwebkenya_com: nothing new since 2026-10-24T04:47:49.919485+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:18.9391275Z ^[[32m2026-10-27 03:38:18^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobzella: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.0036109Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export jobzella_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.0645810Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export kalibrr_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.1240089Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export kariera_sk: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.1794827Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export karir_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.2354295Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export karriere_at: nothing new since 2026-10-24T04:45:00.302066+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.2946161Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export keejob_com: nothing new since 2026-10-23T10:33:46.777270+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.3548845Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export kosovajob_com: nothing new since 2026-10-23T17:15:14.009405+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.4103562Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export kuenselonline_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.4652563Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export kumarijob_com: nothing new since 2026-10-23T17:15:52.254337+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.5931220Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export laimoon_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.6491721Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export leforem_be: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.7002769Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export linkedin: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.7540515Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export lmra_gov_bh: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.8072994Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export lucru_md: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.8587367Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export magneto365_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.9133643Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export mifotra_gov_rw: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:19.9704732Z ^[[32m2026-10-27 03:38:19^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export minajobs: nothing new since 2026-10-22T10:45:39.822119+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.0267005Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export minajobs_net: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.0903591Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export mojposao_ba: nothing new since 2026-10-23T17:18:48.302065+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.1508108Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export mol_gov_om: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.2087759Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export mustakbil: nothing new since 2026-10-24T04:52:59.261206+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.2680733Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export mustakbil_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.3234045Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export mwnation_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.3818082Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export mx_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.4410362Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export myjob: nothing new since 2026-10-24T04:26:49.699619+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.4999405Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export naukri_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.5630263Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export net_empregos: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.6254896Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export ngcareers_com: nothing new since 2026-10-23T10:33:15.830837+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.6825056Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export ni_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.7407501Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export nsz_gov_rs: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.8003001Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export nva_gov_lv: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.8569316Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export optius_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.9129993Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export pa_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:20.9723788Z ^[[32m2026-10-27 03:38:20^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export philjobnet: nothing new since 2026-10-24T04:44:54.506555+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.0262513Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export philjobnet_gov_ph: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.0863672Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export posao_hr: nothing new since 2026-10-24T04:47:16.192939+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.1533827Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export praca_by: nothing new since 2026-10-23T17:15:35.089066+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.2112709Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export praca_pl: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.2783930Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export prace_cz: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.3386173Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export pracecz: nothing new since 2026-10-24T04:45:38.005372+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.3939353Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export punaime_al: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.4497268Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export py_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.5057149Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export qatarliving_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.5666122Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export reed: nothing new since 2026-10-10T21:31:25.788014+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.6253912Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export remoteok: nothing new since 2026-10-24T04:25:26.379136+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.6826580Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export remotive: nothing new since 2026-10-24T04:25:30.204260+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.7381605Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export republish_probe: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.7946003Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export salary_probe: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.8499561Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export salary_probe2: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.9036448Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export salary_probe3: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:21.9585827Z ^[[32m2026-10-27 03:38:21^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export samoaobserver_ws: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.0160758Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export shine: nothing new since 2026-10-24T04:46:10.697872+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.1402798Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export shine_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.2020270Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export skill_jobs: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.2561330Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export skilljobs: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.3116745Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export superjob_ru: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.3656486Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export sv_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.4236039Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export themuse: nothing new since 2026-10-23T16:58:03.611976+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.4807133Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export tootukassa_ee: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.5356643Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export trinidadexpress_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.5958412Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export tyopaikat_oikotie_fi: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.6506844Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export upsvr_gov_sk: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.7068084Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export usajobs: nothing new since 2026-10-24T04:31:56.173864+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.7675860Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export uy_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.8273797Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export vagas_com_br: nothing new since 2026-10-21T17:22:11.302756+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.8801014Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export vaterland_li: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.9356535Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export ve_computrabajo_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:22.9886432Z ^[[32m2026-10-27 03:38:22^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export wanted_co_kr: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.0563912Z ^[[32m2026-10-27 03:38:23^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export wellfound: nothing new since 2026-10-24T04:52:42.690993+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.1185753Z ^[[32m2026-10-27 03:38:23^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export weworkremotely: nothing new since 2026-10-23T21:20:02.663541+00:00^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.1795051Z ^[[32m2026-10-27 03:38:23^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export willhaben_at: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.2360022Z ^[[32m2026-10-27 03:38:23^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export workandincome_govt_nz: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.2902456Z ^[[32m2026-10-27 03:38:23^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export workforceaustralia_gov_au: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.3443743Z ^[[32m2026-10-27 03:38:23^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export zaplata_bg: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.3995977Z ^[[32m2026-10-27 03:38:23^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export zhipin_com: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4534623Z ^[[32m2026-10-27 03:38:23^[[0m | ^[[1mINFO    ^[[0m | ^[[36mjob_market_intel.corpus.shard_export^[[0m:^[[36mexport_source^[[0m:^[[36m356^[[0m - ^[[1mcorpus export zonajobs_com_ar: nothing new since None^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4538084Z repo    : Shifat2110724169/job-market-intel-corpus
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4538547Z sources : 190
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4538850Z ========================================================================
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4539267Z -- 51job          rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4539812Z -- acbar_jobs     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4540184Z -- acbar_org      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4540630Z -- agenceemploijeunes rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4541113Z -- agenceemploijeunes_ci rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4541902Z -- alfred         rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4542324Z -- alwatwan       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4542854Z -- alwatwan_net   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4543217Z -- alwihdainfo    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4543664Z -- alwihdainfo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4544199Z -- ams_at         rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4544728Z -- angola_emprego rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4545245Z -- angolaemprego_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4545582Z -- apna           rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4545892Z -- aptitus_com    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4546217Z -- ar_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4546583Z -- arbeidsplassen_nav_no rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4546926Z -- arbeitnow      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4547246Z -- arbeitsagentur_de rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4547566Z -- bestjobs_eu    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4547869Z -- bne_cl         rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4548192Z -- brightermonday_co_tz rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4548529Z -- builtin        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4548831Z -- bumeran_com_ar rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4549139Z -- bumeran_com_pe rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4549699Z -- burkina24_com  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4550008Z -- camhr_com      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4550321Z -- careercenter_am rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4550649Z -- careerjunction rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4550978Z -- careerjunction_co_za rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4551308Z -- careers24      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4551775Z -- careerviet_vn  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4552096Z -- cliclavoro_gov_it rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4552436Z -- co_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4552787Z -- company_career_page rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4553149Z -- corporatestaffing_co_ke rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4553523Z -- corporatestaffing_ke rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4553853Z -- cv_lt          rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4554151Z -- do_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4554441Z -- dubizzle_com   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4554835Z -- ec_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4555661Z -- educarriere    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4556186Z -- educarriere_ci rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4556752Z -- empleo_gob_mx  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4557175Z -- empleos_net    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4557488Z -- emploidakar_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4557803Z -- emploipartner_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4558095Z -- emploitic      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4558372Z -- emprego_sapo_pt rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4558655Z -- enbek_kz       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4558929Z -- ethiojobs      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4559215Z -- ethiojobs_net  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4559490Z -- fijisun_com_fj rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4559761Z -- fijisun_jobs   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4560036Z -- fne_cm         rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4560303Z -- fnecm          rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4560566Z -- forasna        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4560845Z -- geo_probe      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4561112Z -- geo_probe2     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4561617Z -- geo_probe3     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4561934Z -- glassdoor      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4562218Z -- glints         rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4562492Z -- govt_portal    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4562768Z -- greenhouse     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4563598Z -- gt_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4563917Z -- gupy_io        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4564196Z -- hellojob       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4564478Z -- hellojob_az    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4564748Z -- hellowork_com  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4565019Z -- helloworld_rs  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4565287Z -- hiiraan_com    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4565557Z -- hiiraan_jobs   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4565855Z -- himalayas      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4566125Z -- hiredly        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4566403Z -- hiredly_com    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4566694Z -- hn_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4566998Z -- hotnigerianjobs rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4567296Z -- hotnigerianjobs_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4567768Z -- hrge           rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4568051Z -- iefp_cv        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4568349Z -- iefponline_iefp_pt rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4568648Z -- ikman_lk       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4568912Z -- indeed         rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4569179Z -- irantalent     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4569451Z -- iskur_gov_tr   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4569739Z -- jamaica_gleaner_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4570047Z -- jamaicaobserver_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4570339Z -- job_mynavi_jp  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4570613Z -- jobam          rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4570877Z -- jobbank        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4571901Z ^[[32m2026-10-27 03:38:23^[[0m | ^[[1mINFO    ^[[0m | ^[[36m__main__^[[0m:^[[36m_main^[[0m:^[[36m114^[[0m - ^[[1mcorpus export finished^[[0m
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4572430Z -- jobbnorge_no   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4572713Z -- jobfind_gr     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4572982Z -- jobicy         rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4573388Z -- jobinja        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4573669Z -- jobinrwanda    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4573947Z -- jobline_hu     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4574214Z -- jobmail        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4574488Z -- jobmaster      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4574765Z -- jobnet_dk      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4575039Z -- jobs_af        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4575305Z -- jobs_id        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4575582Z -- jobsearch_az   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4575857Z -- jobsge         rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4576139Z -- jobsireland    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4576420Z -- jobsireland_ie rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4576695Z -- jobsnepal      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4576976Z -- jobsnepal_com  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4577264Z -- jobthai_com    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4577558Z -- jobtiger_bg    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4577839Z -- jobvision      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4578115Z -- jobwebghana    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4578404Z -- jobwebghana_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4578702Z -- jobwebkenya_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4578989Z -- jobzella       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4579265Z -- jobzella_com   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4579539Z -- kalibrr_com    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4579813Z -- kariera_sk     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4580091Z -- karir_com      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4580367Z -- karriere_at    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4580648Z -- keejob_com     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4580932Z -- kosovajob_com  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4581254Z -- kuenselonline_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4581771Z -- kumarijob_com  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4582049Z -- laimoon_com    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4582320Z -- leforem_be     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4582588Z -- linkedin       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4582856Z -- lmra_gov_bh    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4583134Z -- lucru_md       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4583404Z -- magneto365_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4583678Z -- mifotra_gov_rw rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4583946Z -- minajobs       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4584343Z -- minajobs_net   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4584614Z -- mojposao_ba    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4584888Z -- mol_gov_om     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4585161Z -- mustakbil      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4585432Z -- mustakbil_com  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4585706Z -- mwnation_com   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4585998Z -- mx_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4586296Z -- myjob          rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4586574Z -- naukri_com     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4586844Z -- net_empregos   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4587119Z -- ngcareers_com  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4587410Z -- ni_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4587702Z -- nsz_gov_rs     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4587978Z -- nva_gov_lv     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4588253Z -- optius_com     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4588543Z -- pa_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4588959Z -- philjobnet     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4589249Z -- philjobnet_gov_ph rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4589541Z -- posao_hr       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4589813Z -- praca_by       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4590095Z -- praca_pl       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4590363Z -- prace_cz       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4590636Z -- pracecz        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4590914Z -- punaime_al     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4591203Z -- py_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4591854Z -- qatarliving_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4592160Z -- reed           rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4592437Z -- remoteok       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4592708Z -- remotive       rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4592986Z -- republish_probe rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4593275Z -- salary_probe   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4593551Z -- salary_probe2  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4593827Z -- salary_probe3  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4594111Z -- samoaobserver_ws rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4594398Z -- shine          rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4594670Z -- shine_com      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4594938Z -- skill_jobs     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4595207Z -- skilljobs      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4595486Z -- superjob_ru    rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4595806Z -- sv_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4596095Z -- themuse        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4596367Z -- tootukassa_ee  rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4596658Z -- trinidadexpress_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4596977Z -- tyopaikat_oikotie_fi rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4597283Z -- upsvr_gov_sk   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4597549Z -- usajobs        rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4597835Z -- uy_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4598127Z -- vagas_com_br   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4598396Z -- vaterland_li   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4598688Z -- ve_computrabajo_com rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4598973Z -- wanted_co_kr   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4599246Z -- wellfound      rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4599521Z -- weworkremotely rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4599796Z -- willhaben_at   rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4600233Z -- workandincome_govt_nz rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4600588Z -- workforceaustralia_gov_au rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4600913Z -- zaplata_bg     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4601187Z -- zhipin_com     rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4601763Z -- zonajobs_com_ar rows=     0         0 KiB  
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4602143Z ========================================================================
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4602444Z {
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4602641Z   "uploaded_shards": 0,
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4602863Z   "rows_exported": 0,
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4603068Z   "errors": []
+dump	Export any rows scraped since the last shard export	2026-10-27T03:38:23.4603255Z }
+dump	Dump the database	´╗┐2026-10-27T03:38:23.6062351Z ##[group]Run set -euo pipefail
+dump	Dump the database	2026-10-27T03:38:23.6062774Z ^[[36;1mset -euo pipefail^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6063166Z ^[[36;1m# Parse the DSN with Python rather than shell parameter expansion.^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6063561Z ^[[36;1m#^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6063793Z ^[[36;1m# The shell version did:^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6064154Z ^[[36;1m#     dsn="${DSN#postgresql+psycopg://}"; host="${dsn%%/*}"^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6064655Z ^[[36;1m# which keeps the port glued to the host -- the path split is at the^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6065295Z ^[[36;1m# FIRST '/', and for ***localhost:5432/db that^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6065714Z ^[[36;1m# first '/' is the one before the database, so host came out as^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6066133Z ^[[36;1m# "localhost:5432" and pg_dump reported^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6066540Z ^[[36;1m#     could not translate host name "localhost:5432" to address^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6066996Z ^[[36;1m# shell has no reliable "rsplit on the last @ before the path", and^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6067446Z ^[[36;1m# that is also needed for a password containing '@'.^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6067839Z ^[[36;1m#^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6068151Z ^[[36;1m# The DSN travels through an environment variable rather than argv: a^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6068658Z ^[[36;1m# heredoc-fed python cannot see the shell's positional parameters, so^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6069158Z ^[[36;1m# sys.argv[1] raised IndexError and every field came out empty -- a^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6069620Z ^[[36;1m# failure that then looks like an authentication problem.^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6070223Z ^[[36;1mJMI_DSN="${CI_DATABASE_URL:-***localhost:5432/jmi_ci}"^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6070559Z ^[[36;1mexport JMI_DSN^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6070802Z ^[[36;1meval "$(uv run python - <<'PY'^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6071069Z ^[[36;1mimport os^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6071281Z ^[[36;1mimport shlex^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6071802Z ^[[36;1mimport sys^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6072223Z ^[[36;1mfrom urllib.parse import unquote, urlsplit^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6072559Z ^[[36;1m^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6072761Z ^[[36;1mdsn = os.environ["JMI_DSN"]^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6073170Z ^[[36;1mfor prefix in ("postgresql+psycopg://", "postgresql://", "postgres://"):^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6073595Z ^[[36;1m    if dsn.startswith(prefix):^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6073918Z ^[[36;1m        dsn = "postgresql://" + dsn[len(prefix):]^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6074218Z ^[[36;1m        break^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6074440Z ^[[36;1mu = urlsplit(dsn)^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6074770Z ^[[36;1m# urlsplit exposes the database as .path (leading '/'), not^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6075218Z ^[[36;1m# .database -- which is a SQLAlchemy-ism, not a stdlib one.^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6075586Z ^[[36;1mdb = u.path.lstrip("/")^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6075890Z ^[[36;1mif not u.hostname or not u.username or not db:^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6076236Z ^[[36;1m    sys.exit(f"cannot parse DSN: {dsn!r}")^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6076567Z ^[[36;1mprint(f"host={shlex.quote(u.hostname)}")^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6076919Z ^[[36;1mprint(f"port={shlex.quote(str(u.port or 5432))}")^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6077253Z ^[[36;1mprint(f"db={shlex.quote(db)}")^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6077575Z ^[[36;1mprint(f"user={shlex.quote(unquote(u.username))}")^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6077985Z ^[[36;1mprint(f"PGPASSWORD={shlex.quote(unquote(u.password or ''))}")^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6078528Z ^[[36;1mPY^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6078706Z ^[[36;1m)"^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6078902Z ^[[36;1mexport PGPASSWORD^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6079259Z ^[[36;1mPG_BIN="${PG_BIN:-$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -n 1)}"^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6079698Z ^[[36;1mecho "dumping $db at $host:$port as $user"^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6080143Z ^[[36;1m"$PG_BIN/pg_dump" -h "$host" -p "$port" -U "$user" -d "$db" -Fc -Z6 -f corpus_full.dump^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6080600Z ^[[36;1mls -l corpus_full.dump^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6080943Z ^[[36;1msha256sum corpus_full.dump | tee corpus_full.dump.sha256^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6081622Z ^[[36;1m# DIAGNOSTIC, not a gate: a verifier failure must not stop the^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6082247Z ^[[36;1m# upload, or a good dump never reaches the Hub.^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6082693Z ^[[36;1mif "$PG_BIN/pg_restore" --list corpus_full.dump > toc.txt 2> toc.err; then^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6083197Z ^[[36;1m  echo "TABLE DATA entries: $(grep -c 'TABLE DATA' toc.txt || true)"^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6083590Z ^[[36;1m  echo "verify=ok" >> "$GITHUB_ENV"^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6083863Z ^[[36;1melse^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6084236Z ^[[36;1m  echo "::warning::pg_restore --list could not read the archive: $(head -n 1 toc.err)"^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6084692Z ^[[36;1m  echo "verify=failed" >> "$GITHUB_ENV"^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6084972Z ^[[36;1mfi^[[0m
+dump	Dump the database	2026-10-27T03:38:23.6148036Z shell: /usr/bin/bash -e {0}
+dump	Dump the database	2026-10-27T03:38:23.6148313Z env:
+dump	Dump the database	2026-10-27T03:38:23.6148571Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+dump	Dump the database	2026-10-27T03:38:23.6148972Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Dump the database	2026-10-27T03:38:23.6149417Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+dump	Dump the database	2026-10-27T03:38:23.6149855Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Dump the database	2026-10-27T03:38:23.6150239Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Dump the database	2026-10-27T03:38:23.6150623Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Dump the database	2026-10-27T03:38:23.6151010Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+dump	Dump the database	2026-10-27T03:38:23.6151532Z   PG_BIN: /usr/lib/postgresql/18/bin
+dump	Dump the database	2026-10-27T03:38:23.6151868Z   CORPUS_MAX_ROWS_PER_SHARD: 20000
+dump	Dump the database	2026-10-27T03:38:23.6152113Z   CI_DATABASE_URL: 
+dump	Dump the database	2026-10-27T03:38:23.6152321Z ##[endgroup]
+dump	Dump the database	2026-10-27T03:38:23.6643716Z dumping jmi_ci at localhost:5432 as postgres
+dump	Dump the database	2026-10-27T03:38:24.1426455Z -rw-r--r-- 1 runner runner 1094744 Oct 27 03:38 corpus_full.dump
+dump	Dump the database	2026-10-27T03:38:24.1460091Z 9be968388509530531c0e630998b28226d3b766b2ba6ad4bcefa91c1930e911a  corpus_full.dump
+dump	Dump the database	2026-10-27T03:38:24.1611714Z TABLE DATA entries: 122
+dump	Upload the dump	´╗┐2026-10-27T03:38:24.1646313Z ##[group]Run set -euo pipefail
+dump	Upload the dump	2026-10-27T03:38:24.1646660Z ^[[36;1mset -euo pipefail^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1646935Z ^[[36;1mpip install --quiet huggingface_hub^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1647242Z ^[[36;1mpython - <<'PY'^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1647466Z ^[[36;1mimport os^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1647710Z ^[[36;1mfrom huggingface_hub import HfApi^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1647983Z ^[[36;1m^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1648203Z ^[[36;1mapi = HfApi(token=os.environ["HF_TOKEN"])^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1648536Z ^[[36;1mrepo = os.environ["HF_REPO_ID"]^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1648892Z ^[[36;1mfor name in ("corpus_full.dump", "corpus_full.dump.sha256"):^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1649258Z ^[[36;1m    api.upload_file(^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1649504Z ^[[36;1m        path_or_fileobj=name,^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1649790Z ^[[36;1m        path_in_repo=f"dumps/{name}",^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1650085Z ^[[36;1m        repo_id=repo,^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1650335Z ^[[36;1m        repo_type="dataset",^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1650581Z ^[[36;1m    )^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1650838Z ^[[36;1m    print("uploaded dumps/" + name)^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1651105Z ^[[36;1mPY^[[0m
+dump	Upload the dump	2026-10-27T03:38:24.1715190Z shell: /usr/bin/bash -e {0}
+dump	Upload the dump	2026-10-27T03:38:24.1715465Z env:
+dump	Upload the dump	2026-10-27T03:38:24.1715834Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+dump	Upload the dump	2026-10-27T03:38:24.1716613Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Upload the dump	2026-10-27T03:38:24.1717169Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+dump	Upload the dump	2026-10-27T03:38:24.1732409Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Upload the dump	2026-10-27T03:38:24.1733130Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Upload the dump	2026-10-27T03:38:24.1733643Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Upload the dump	2026-10-27T03:38:24.1734064Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+dump	Upload the dump	2026-10-27T03:38:24.1734420Z   PG_BIN: /usr/lib/postgresql/18/bin
+dump	Upload the dump	2026-10-27T03:38:24.1734705Z   CORPUS_MAX_ROWS_PER_SHARD: 20000
+dump	Upload the dump	2026-10-27T03:38:24.1734963Z   verify: ok
+dump	Upload the dump	2026-10-27T03:38:24.1735334Z   HF_TOKEN: ***
+dump	Upload the dump	2026-10-27T03:38:24.1735601Z   HF_REPO_ID: Shifat2110724169/job-market-intel-corpus
+dump	Upload the dump	2026-10-27T03:38:24.1735914Z ##[endgroup]
+dump	Upload the dump	2026-10-27T03:38:28.6952626Z 
+dump	Upload the dump	2026-10-27T03:38:28.6953318Z [notice] A new release of pip is available: 26.2.1 -> 26.2.2
+dump	Upload the dump	2026-10-27T03:38:28.6954035Z [notice] To update, run: pip install --upgrade pip
+dump	Upload the dump	2026-10-27T03:38:29.0256892Z Traceback (most recent call last):
+dump	Upload the dump	2026-10-27T03:38:29.0267636Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/utils/_http.py", line 866, in hf_raise_for_status
+dump	Upload the dump	2026-10-27T03:38:29.0268630Z     response.raise_for_status()
+dump	Upload the dump	2026-10-27T03:38:29.0269458Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/httpx2/_models.py", line 828, in raise_for_status
+dump	Upload the dump	2026-10-27T03:38:29.0270175Z     raise HTTPStatusError(message, request=request, response=self)
+dump	Upload the dump	2026-10-27T03:38:29.0270973Z httpx2.HTTPStatusError: Client error '401 Unauthorized' for url 'https://huggingface.co/api/datasets/Shifat2110724169/job-market-intel-corpus/preupload/main'
+dump	Upload the dump	2026-10-27T03:38:29.0272170Z For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+dump	Upload the dump	2026-10-27T03:38:29.0272538Z 
+dump	Upload the dump	2026-10-27T03:38:29.0272727Z The above exception was the direct cause of the following exception:
+dump	Upload the dump	2026-10-27T03:38:29.0273024Z 
+dump	Upload the dump	2026-10-27T03:38:29.0273132Z Traceback (most recent call last):
+dump	Upload the dump	2026-10-27T03:38:29.0273439Z   File "<stdin>", line 7, in <module>
+dump	Upload the dump	2026-10-27T03:38:29.0274102Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/utils/_validators.py", line 89, in _inner_fn
+dump	Upload the dump	2026-10-27T03:38:29.0274738Z     return fn(*args, **kwargs)
+dump	Upload the dump	2026-10-27T03:38:29.0274988Z            ^^^^^^^^^^^^^^^^^^^
+dump	Upload the dump	2026-10-27T03:38:29.0275559Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 2036, in _inner
+dump	Upload the dump	2026-10-27T03:38:29.0276143Z     return fn(self, *args, **kwargs)
+dump	Upload the dump	2026-10-27T03:38:29.0276392Z            ^^^^^^^^^^^^^^^^^^^^^^^^^
+dump	Upload the dump	2026-10-27T03:38:29.0277954Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 5755, in upload_file
+dump	Upload the dump	2026-10-27T03:38:29.0279001Z     return self.create_commit(
+dump	Upload the dump	2026-10-27T03:38:29.0279363Z            ^^^^^^^^^^^^^^^^^^^
+dump	Upload the dump	2026-10-27T03:38:29.0279966Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/utils/_validators.py", line 89, in _inner_fn
+dump	Upload the dump	2026-10-27T03:38:29.0280743Z     return fn(*args, **kwargs)
+dump	Upload the dump	2026-10-27T03:38:29.0281134Z            ^^^^^^^^^^^^^^^^^^^
+dump	Upload the dump	2026-10-27T03:38:29.0282126Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 2036, in _inner
+dump	Upload the dump	2026-10-27T03:38:29.0282860Z     return fn(self, *args, **kwargs)
+dump	Upload the dump	2026-10-27T03:38:29.0283604Z            ^^^^^^^^^^^^^^^^^^^^^^^^^
+dump	Upload the dump	2026-10-27T03:38:29.0284827Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 5198, in create_commit
+dump	Upload the dump	2026-10-27T03:38:29.0291206Z     self.preupload_lfs_files(
+dump	Upload the dump	2026-10-27T03:38:29.0292654Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 5422, in preupload_lfs_files
+dump	Upload the dump	2026-10-27T03:38:29.0298641Z     _fetch_upload_modes(
+dump	Upload the dump	2026-10-27T03:38:29.0300073Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/utils/_validators.py", line 89, in _inner_fn
+dump	Upload the dump	2026-10-27T03:38:29.0301171Z     return fn(*args, **kwargs)
+dump	Upload the dump	2026-10-27T03:38:29.0301856Z            ^^^^^^^^^^^^^^^^^^^
+dump	Upload the dump	2026-10-27T03:38:29.0303005Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/_commit_api.py", line 769, in _fetch_upload_modes
+dump	Upload the dump	2026-10-27T03:38:29.0304141Z     hf_raise_for_status(resp)
+dump	Upload the dump	2026-10-27T03:38:29.0305216Z   File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/huggingface_hub/utils/_http.py", line 953, in hf_raise_for_status
+dump	Upload the dump	2026-10-27T03:38:29.0306678Z     raise _format(RepositoryNotFoundError, message, response, repo_type=repo_type, repo_id=repo_id) from e
+dump	Upload the dump	2026-10-27T03:38:29.0308236Z huggingface_hub.errors.RepositoryNotFoundError: 401 Client Error. (Request ID: Root=1-6ae01cb5-2d58f0cb3507c0c167c81356;9f02e74c-8b70-438d-8cb7-4b05db47bd51)
+dump	Upload the dump	2026-10-27T03:38:29.0309211Z 
+dump	Upload the dump	2026-10-27T03:38:29.0309832Z Repository Not Found for url: https://huggingface.co/api/datasets/Shifat2110724169/job-market-intel-corpus/preupload/main.
+dump	Upload the dump	2026-10-27T03:38:29.0310838Z Please make sure you specified the correct `repo_id` and `repo_type`.
+dump	Upload the dump	2026-10-27T03:38:29.0312097Z If you are trying to access a private or gated repo, make sure you are authenticated and your token has the required permissions.
+dump	Upload the dump	2026-10-27T03:38:29.0313158Z For more details, see https://huggingface.co/docs/huggingface_hub/authentication
+dump	Upload the dump	2026-10-27T03:38:29.0313805Z Invalid username or password.
+dump	Upload the dump	2026-10-27T03:38:29.0314657Z Note: Creating a commit assumes that the repo already exists on the Huggingface Hub. Please use `create_repo` if it's not the case.
+dump	Upload the dump	2026-10-27T03:38:29.0657885Z ##[error]Process completed with exit code 1.
+dump	Record what was published	´╗┐2026-10-27T03:38:29.0695715Z ##[group]Run {
+dump	Record what was published	2026-10-27T03:38:29.0695974Z ^[[36;1m{^[[0m
+dump	Record what was published	2026-10-27T03:38:29.0696252Z ^[[36;1m  echo "## Corpus dump $(date -u +%Y-%m-%dT%H:%M:%SZ)"^[[0m
+dump	Record what was published	2026-10-27T03:38:29.0696602Z ^[[36;1m  echo^[[0m
+dump	Record what was published	2026-10-27T03:38:29.0696905Z ^[[36;1m  echo "- corpus_full.dump: $(du -h corpus_full.dump | cut -f1)"^[[0m
+dump	Record what was published	2026-10-27T03:38:29.0697420Z ^[[36;1m  echo "- sha256: $(cut -d' ' -f1 corpus_full.dump.sha256 2>/dev/null || echo 'n/a')"^[[0m
+dump	Record what was published	2026-10-27T03:38:29.0697845Z ^[[36;1m} >> "$GITHUB_STEP_SUMMARY"^[[0m
+dump	Record what was published	2026-10-27T03:38:29.0760680Z shell: /usr/bin/bash -e {0}
+dump	Record what was published	2026-10-27T03:38:29.0760947Z env:
+dump	Record what was published	2026-10-27T03:38:29.0761205Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+dump	Record what was published	2026-10-27T03:38:29.0761976Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Record what was published	2026-10-27T03:38:29.0762443Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+dump	Record what was published	2026-10-27T03:38:29.0762893Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Record what was published	2026-10-27T03:38:29.0763289Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Record what was published	2026-10-27T03:38:29.0763741Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+dump	Record what was published	2026-10-27T03:38:29.0764142Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+dump	Record what was published	2026-10-27T03:38:29.0764513Z   PG_BIN: /usr/lib/postgresql/18/bin
+dump	Record what was published	2026-10-27T03:38:29.0764796Z   CORPUS_MAX_ROWS_PER_SHARD: 20000
+dump	Record what was published	2026-10-27T03:38:29.0765056Z   verify: ok
+dump	Record what was published	2026-10-27T03:38:29.0765256Z ##[endgroup]
+dump	Post Run actions/checkout@v4	´╗┐2026-10-27T03:38:29.1006099Z Post job cleanup.
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.1875975Z [command]/usr/bin/git version
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.1926021Z git version 2.55.0
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.1972616Z Temporarily overriding HOME='/home/runner/work/_temp/6258052b-419c-4df4-945e-55f5771bfdb1' before making global git config changes
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.1974202Z Adding repository directory to the temporary git global config as a safe directory
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.1979827Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/job-market-intelligence/job-market-intelligence
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.2026257Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.2067286Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.2360162Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.2412925Z http.https://github.com/.extraheader
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.2446428Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.2495439Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.2826858Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+dump	Post Run actions/checkout@v4	2026-10-27T03:38:29.2877885Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+dump	Stop containers	´╗┐2026-10-27T03:38:29.3836562Z Print service container logs: 8b46b71001f1489f9afc5b059ad842b6_postgres18alpine_98b244
+dump	Stop containers	2026-10-27T03:38:29.3841269Z ##[command]/usr/bin/docker logs --details 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Stop containers	2026-10-27T03:38:29.3973317Z  The files belonging to this database system will be owned by user "postgres".
+dump	Stop containers	2026-10-27T03:38:29.3974410Z  This user must also own the server process.
+dump	Stop containers	2026-10-27T03:38:29.3976631Z  sh: locale: not found
+dump	Stop containers	2026-10-27T03:38:29.3977281Z  2026-10-27 03:37:08.826 UTC [40] WARNING:  no usable system locales were found
+dump	Stop containers	2026-10-27T03:38:29.3978107Z  initdb: warning: enabling "trust" authentication for local connections
+dump	Stop containers	2026-10-27T03:38:29.3979268Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+dump	Stop containers	2026-10-27T03:38:29.3980745Z  2026-10-27 03:37:09.681 UTC [1] LOG:  starting PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+dump	Stop containers	2026-10-27T03:38:29.3982277Z  2026-10-27 03:37:09.681 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+dump	Stop containers	2026-10-27T03:38:29.3983096Z  2026-10-27 03:37:09.681 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+dump	Stop containers	2026-10-27T03:38:29.3983971Z  2026-10-27 03:37:09.682 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+dump	Stop containers	2026-10-27T03:38:29.3984714Z  2026-10-27 03:37:09.686 UTC [68] LOG:  database system was shut down at 2026-10-27 03:37:09 UTC
+dump	Stop containers	2026-10-27T03:38:29.3985275Z  2026-10-27 03:37:09.691 UTC [1] LOG:  database system is ready to accept connections
+dump	Stop containers	2026-10-27T03:38:29.3985731Z  2026-10-27 03:37:18.367 UTC [78] FATAL:  role "root" does not exist
+dump	Stop containers	2026-10-27T03:38:29.3986155Z  2026-10-27 03:37:28.406 UTC [85] FATAL:  role "root" does not exist
+dump	Stop containers	2026-10-27T03:38:29.3986547Z  2026-10-27 03:37:38.464 UTC [92] FATAL:  role "root" does not exist
+dump	Stop containers	2026-10-27T03:38:29.3986933Z  2026-10-27 03:37:48.503 UTC [101] FATAL:  role "root" does not exist
+dump	Stop containers	2026-10-27T03:38:29.3987333Z  2026-10-27 03:37:58.555 UTC [109] FATAL:  role "root" does not exist
+dump	Stop containers	2026-10-27T03:38:29.3987756Z  2026-10-27 03:38:08.608 UTC [117] FATAL:  role "root" does not exist
+dump	Stop containers	2026-10-27T03:38:29.3988173Z  2026-10-27 03:38:18.649 UTC [126] FATAL:  role "root" does not exist
+dump	Stop containers	2026-10-27T03:38:29.3988559Z  2026-10-27 03:38:28.688 UTC [134] FATAL:  role "root" does not exist
+dump	Stop containers	2026-10-27T03:38:29.3988877Z  
+dump	Stop containers	2026-10-27T03:38:29.3989163Z  The database cluster will be initialized with locale "en_US.utf8".
+dump	Stop containers	2026-10-27T03:38:29.3989599Z  The default database encoding has accordingly been set to "UTF8".
+dump	Stop containers	2026-10-27T03:38:29.3990021Z  The default text search configuration will be set to "english".
+dump	Stop containers	2026-10-27T03:38:29.3990346Z  
+dump	Stop containers	2026-10-27T03:38:29.3990537Z  Data page checksums are enabled.
+dump	Stop containers	2026-10-27T03:38:29.3990778Z  
+dump	Stop containers	2026-10-27T03:38:29.3991087Z  fixing permissions on existing directory /var/lib/postgresql/18/docker ... ok
+dump	Stop containers	2026-10-27T03:38:29.3991800Z  creating subdirectories ... ok
+dump	Stop containers	2026-10-27T03:38:29.3992335Z  selecting dynamic shared memory implementation ... posix
+dump	Stop containers	2026-10-27T03:38:29.3993275Z  selecting default "max_connections" ... 100
+dump	Stop containers	2026-10-27T03:38:29.3993793Z  selecting default "shared_buffers" ... 128MB
+dump	Stop containers	2026-10-27T03:38:29.3994285Z  selecting default time zone ... UTC
+dump	Stop containers	2026-10-27T03:38:29.3994757Z  creating configuration files ... ok
+dump	Stop containers	2026-10-27T03:38:29.3995216Z  running bootstrap script ... ok
+dump	Stop containers	2026-10-27T03:38:29.3995708Z  performing post-bootstrap initialization ... ok
+dump	Stop containers	2026-10-27T03:38:29.3996222Z  syncing data to disk ... ok
+dump	Stop containers	2026-10-27T03:38:29.3996594Z  
+dump	Stop containers	2026-10-27T03:38:29.3996864Z  
+dump	Stop containers	2026-10-27T03:38:29.3997219Z  Success. You can now start the database server using:
+dump	Stop containers	2026-10-27T03:38:29.3997681Z  
+dump	Stop containers	2026-10-27T03:38:29.3998055Z      pg_ctl -D /var/lib/postgresql/18/docker -l logfile start
+dump	Stop containers	2026-10-27T03:38:29.3998576Z  
+dump	Stop containers	2026-10-27T03:38:29.3999500Z  waiting for server to start....2026-10-27 03:37:09.392 UTC [46] LOG:  starting PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+dump	Stop containers	2026-10-27T03:38:29.4000837Z  2026-10-27 03:37:09.393 UTC [46] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+dump	Stop containers	2026-10-27T03:38:29.4002447Z  2026-10-27 03:37:09.396 UTC [52] LOG:  database system was shut down at 2026-10-27 03:37:09 UTC
+dump	Stop containers	2026-10-27T03:38:29.4003312Z  2026-10-27 03:37:09.399 UTC [46] LOG:  database system is ready to accept connections
+dump	Stop containers	2026-10-27T03:38:29.4003909Z   done
+dump	Stop containers	2026-10-27T03:38:29.4004197Z  server started
+dump	Stop containers	2026-10-27T03:38:29.4004518Z  CREATE DATABASE
+dump	Stop containers	2026-10-27T03:38:29.4004831Z  
+dump	Stop containers	2026-10-27T03:38:29.4005128Z  
+dump	Stop containers	2026-10-27T03:38:29.4005654Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+dump	Stop containers	2026-10-27T03:38:29.4006306Z  
+dump	Stop containers	2026-10-27T03:38:29.4006886Z  waiting for server to shut down....2026-10-27 03:37:09.559 UTC [46] LOG:  received fast shutdown request
+dump	Stop containers	2026-10-27T03:38:29.4007785Z  2026-10-27 03:37:09.559 UTC [46] LOG:  aborting any active transactions
+dump	Stop containers	2026-10-27T03:38:29.4008785Z  2026-10-27 03:37:09.562 UTC [46] LOG:  background worker "logical replication launcher" (PID 55) exited with exit code 1
+dump	Stop containers	2026-10-27T03:38:29.4009716Z  2026-10-27 03:37:09.563 UTC [50] LOG:  shutting down
+dump	Stop containers	2026-10-27T03:38:29.4010369Z  2026-10-27 03:37:09.563 UTC [50] LOG:  checkpoint starting: shutdown immediate
+dump	Stop containers	2026-10-27T03:38:29.4013086Z  2026-10-27 03:37:09.583 UTC [50] LOG:  checkpoint complete: wrote 943 buffers (5.8%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.014 s, sync=0.002 s, total=0.021 s; sync files=303, longest=0.001 s, average=0.001 s; distance=4362 kB, estimate=4362 kB; lsn=0/1BA8860, redo lsn=0/1BA8860
+dump	Stop containers	2026-10-27T03:38:29.4015073Z  2026-10-27 03:37:09.596 UTC [46] LOG:  database system is shut down
+dump	Stop containers	2026-10-27T03:38:29.4015651Z   done
+dump	Stop containers	2026-10-27T03:38:29.4015956Z  server stopped
+dump	Stop containers	2026-10-27T03:38:29.4016269Z  
+dump	Stop containers	2026-10-27T03:38:29.4016519Z  PostgreSQL init process complete; ready for start up.
+dump	Stop containers	2026-10-27T03:38:29.4016830Z  
+dump	Stop containers	2026-10-27T03:38:29.4022831Z Stop and remove container: 8b46b71001f1489f9afc5b059ad842b6_postgres18alpine_98b244
+dump	Stop containers	2026-10-27T03:38:29.4028351Z ##[command]/usr/bin/docker rm --force 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Stop containers	2026-10-27T03:38:29.5739731Z 64ca622305e0a649cb15ab10200ef5f585a62ab85f5f8e984ef6edcc98c1a3e3
+dump	Stop containers	2026-10-27T03:38:29.5767400Z Remove container network: github_network_54a068eae6c84de5bf1bc8f65cd9778e
+dump	Stop containers	2026-10-27T03:38:29.5772667Z ##[command]/usr/bin/docker network rm github_network_54a068eae6c84de5bf1bc8f65cd9778e
+dump	Stop containers	2026-10-27T03:38:29.6902668Z github_network_54a068eae6c84de5bf1bc8f65cd9778e
+dump	Complete job	´╗┐2026-10-27T03:38:29.6980077Z Cleaning up orphan processes
+dump	Complete job	2026-10-27T03:38:29.7336564Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, astral-sh/setup-uv@v3. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

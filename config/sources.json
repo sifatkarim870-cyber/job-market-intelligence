@@ -1462,6 +1462,15 @@
       "max_env": "REKRUTE_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "ReKrute Morocco (rekrute.com) - Morocco; No key, no registration, no proxy. Uses generic HTML scraper framework. Registered 2026-11-03. listing_path=/offres-emploi-maroc.html, card=li.post-id, company=meta[property='og:title']@content (with bracket clean), location=span.jo-pill--cityRegion, currency=MAD. Verified 2026-11-03: 10/10 fetched, 10 parsed, 10 inserted, batch validation PASSED."
+    },
+    {
+      "code": "zimbojobs_com",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 30,
+      "max_env": "ZIMBOJOBS_COM_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "ZimboJobs Zimbabwe (zimbojobs.com) - Zimbabwe; Public Next.js API endpoints. Uses generic HTML scraper framework with JSON listing and detail endpoints. Registered 2026-11-03. listing_json_url=https://zimbojobs.com/api/jobs, detail_json_url=https://zimbojobs.com/api/vacancies/{id}. Verified 2026-11-03: 10/10 fetched, 10 parsed, 10 inserted, batch validation PASSED."
     }
   ]
 }

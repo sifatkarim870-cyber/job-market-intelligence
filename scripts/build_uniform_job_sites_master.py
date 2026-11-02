@@ -226,6 +226,7 @@ domain_to_code = {
     "bo.computrabajo.com": "bo_computrabajo_com",
     "greatzambiajobs.com": "greatzambiajobs_com",
     "rekrute.com": "rekrute_com",
+    "zimbojobs.com": "zimbojobs_com",
 }
 
 for code, s_info in registry_sources.items():

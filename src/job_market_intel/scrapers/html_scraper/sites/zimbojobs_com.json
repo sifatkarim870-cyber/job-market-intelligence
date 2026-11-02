@@ -1,0 +1,41 @@
+{
+  "source_code": "zimbojobs_com",
+  "source_name": "ZimboJobs Zimbabwe (zimbojobs.com)",
+  "country": "Zimbabwe",
+  "base_url": "https://zimbojobs.com",
+  "listing_path": "/jobs",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 50,
+  "selectors": {
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": ""
+  },
+  "detail_url_pattern": "/jobs/[a-zA-Z0-9]+",
+  "id_from_url": true,
+  "listing_json_url": "https://zimbojobs.com/api/jobs",
+  "listing_json_path": "jobs",
+  "listing_json_id_field": "_id",
+  "listing_json_url_template": "/jobs/{id}",
+  "detail_json_url": "https://zimbojobs.com/api/vacancies/{id}",
+  "detail_json_map": {
+    "title": "title",
+    "company": "",
+    "location": "location",
+    "description": "description",
+    "posted_date": "createdAt"
+  },
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 0.5,
+  "currency_iso_code": "USD",
+  "pay_period": "monthly",
+  "country_fallback": "Zimbabwe"
+}
