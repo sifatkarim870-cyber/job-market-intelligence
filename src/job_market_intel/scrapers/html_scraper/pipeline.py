@@ -118,10 +118,29 @@ class HtmlScraperPipeline:
                 {"code": self._source_code},
             ).scalar()
             if source_id is None:
-                raise RuntimeError(
-                    f"ref.sources has no row with source_code={self._source_code!r}. "
-                    "Run scripts/register_source.py --code ... before scraping."
+                logger.info(
+                    "ref.sources has no row for source_code={!r}; auto-registering from site_config.",
+                    self._source_code,
                 )
+                with transaction(session):
+                    source_id = session.execute(
+                        text(
+                            """
+                            INSERT INTO ref.sources
+                                (source_code, source_name, source_type, base_url,
+                                 requires_auth, is_active)
+                            VALUES (:code, :name, 'job_board', :url, false, true)
+                            ON CONFLICT (source_code) DO UPDATE
+                                SET is_active = true
+                            RETURNING source_id
+                            """
+                        ),
+                        {
+                            "code": self._site_config.source_code,
+                            "name": self._site_config.source_name,
+                            "url": self._site_config.base_url,
+                        },
+                    ).scalar()
             for job in cleaned:
                 try:
                     with transaction(session):
