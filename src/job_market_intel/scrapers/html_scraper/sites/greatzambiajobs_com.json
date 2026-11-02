@@ -1,0 +1,31 @@
+{
+  "source_code": "greatzambiajobs_com",
+  "source_name": "Great Zambia Jobs (greatzambiajobs.com)",
+  "country": "Zambia",
+  "base_url": "https://greatzambiajobs.com",
+  "listing_path": "/jobs/",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 20,
+  "selectors": {
+    "job_card": "a.jobtitle",
+    "job_link": "a.jobtitle, a[href*='/job-detail/']",
+    "job_title": "",
+    "company": "meta[property='og:title']@content",
+    "location": ".jsjobs-jobs-overview-area .js_job_data_wrapper:nth-child(4) .js_job_data_value",
+    "description": ".jsjobs_description_data",
+    "posted_date": ".jsjobs-jobs-overview-area .js_job_data_wrapper:nth-child(5) .js_job_data_value",
+    "salary": "",
+    "skills": "",
+    "employment_type": ".jsjobs-jobs-overview-area .js_job_data_wrapper:nth-child(2) .js_job_data_value"
+  },
+  "title_priority": "title-tag",
+  "detail_url_pattern": ".*/job-detail/.*",
+  "id_from_url": true,
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.5,
+  "currency_iso_code": "ZMW",
+  "pay_period": "monthly",
+  "country_fallback": "Zambia"
+}
