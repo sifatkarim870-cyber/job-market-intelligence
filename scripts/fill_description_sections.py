@@ -122,14 +122,14 @@ def fetch_batch(conn, *, overwrite: bool, limit: int) -> list[tuple]:
     description is redone so the improved extractor can replace earlier output.
     """
     if overwrite:
-        where = "WHERE d.description_clean IS NOT NULL"
+        where = "WHERE COALESCE(d.description_en, d.description_clean) IS NOT NULL"
     else:
-        where = "WHERE d.description_clean IS NOT NULL AND " + " AND ".join(
+        where = "WHERE COALESCE(d.description_en, d.description_clean) IS NOT NULL AND " + " AND ".join(
             f"({c} IS NULL OR btrim({c}) = '')" for c in COLUMNS
         )
     return conn.execute(
         text(
-            "SELECT d.job_id, d.description_clean FROM core.job_descriptions d "
+            "SELECT d.job_id, COALESCE(d.description_en, d.description_clean) AS description_clean FROM core.job_descriptions d "
             f"{where} ORDER BY d.job_id LIMIT :limit"
         ),
         {"limit": limit},
@@ -168,6 +168,7 @@ def run_fill(
     overwrite: bool,
     limit: int | None,
     batch_size: int,
+    offset: int = 0,
 ) -> int:
     """Extract and write in batches until the selection runs dry.
 
@@ -179,6 +180,8 @@ def run_fill(
     """
     session.execute(text(STAGE_DDL))
     candidate_ids = select_candidate_ids(session, overwrite=overwrite, limit=limit)
+    if offset:
+        candidate_ids = candidate_ids[offset:]
     logger.info("{} rows selected for extraction", f"{len(candidate_ids):,}")
 
     total_updated = 0
@@ -186,7 +189,8 @@ def run_fill(
         chunk = candidate_ids[start : start + batch_size]
         batch = session.execute(
             text(
-                "SELECT job_id, description_clean FROM core.job_descriptions "
+                "SELECT job_id, description_clean AS description_clean "
+                "FROM core.job_descriptions "
                 "WHERE job_id = ANY(:ids)"
             ),
             {"ids": chunk},
@@ -246,6 +250,7 @@ def main() -> int:
         ),
     )
     parser.add_argument("--limit", type=int, help="Stop after N rows (testing).")
+    parser.add_argument("--offset", type=int, default=0, help="Skip the first N selected rows (resume).")
     parser.add_argument("--batch", type=int, default=BATCH, help="Rows per batch.")
     parser.add_argument(
         "--overwrite",
@@ -277,7 +282,8 @@ def main() -> int:
             ids = select_candidate_ids(session, overwrite=args.overwrite, limit=args.limit or 1000)
             rows = session.execute(
                 text(
-                    "SELECT description_clean FROM core.job_descriptions WHERE job_id = ANY(:ids)"
+                    "SELECT description_clean AS description_clean "
+                    "FROM core.job_descriptions WHERE job_id = ANY(:ids)"
                 ),
                 {"ids": ids},
             ).all()
@@ -297,6 +303,7 @@ def main() -> int:
             overwrite=args.overwrite,
             limit=args.limit,
             batch_size=args.batch,
+            offset=args.offset,
         )
         print_rates("AFTER", fetch_fill_rates(session))
         print(f"\nrows updated: {total_updated:,}")

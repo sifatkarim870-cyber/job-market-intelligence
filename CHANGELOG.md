@@ -187,6 +187,60 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- **Kaggle `jmi-translate-hf` died on HTTP 429 before translating a row.** v58
+  ran on the right GPU (`torch 2.11.0+cu128, gpus: 2`) and still produced 0
+  rows: `fetch_pending` handed DuckDB the glob
+  `hf://…/shards/*/*/*.parquet`, and DuckDB expands an `hf://` glob with one
+  tree-API call **per directory**. This corpus has 540 of them, over Hugging
+  Face's 500-requests/300s anonymous budget shared by every Kaggle session on
+  the same egress IP. Fixed in two layers, because listing the files was only
+  half the problem:
+  - **Tree API.** Shards are listed once with `HfApi.list_repo_files` and read
+    by explicit path, which never touches the tree API (826 shards in 1.9s).
+  - **Resolver API.** Reading 861 parquet files over `hf://` costs several range
+    requests each (footer plus column chunks) -- about 5,000 requests, exactly
+    this account's `5000 / 300s` resolver budget. One full scan exhausted it
+    (`RateLimit: "resolvers";r=0;t=30`), which is why v51 died at offset 14,400
+    and v58 died on its first fetch. The corpus is only 0.56 GB, so the kernel
+    now `snapshot_download`s it once into `/tmp/jmi_corpus` (861 files, ~3 min)
+    and every query after that is local.
+  - Also fixed the follow-on crash: an empty batch serialised to a column-less
+    frame, which DuckDB rejects with "Provided table/dataframe must have at
+    least one column".
+- **Kaggle `jmi-translate-hf` re-translated the same rows every night.** The
+  selection predicate was `description_en IS NULL` on the *corpus*, but the
+  translations live in a separate overlay dataset, so a run never knew what it
+  had already published: v51 added 12,404 rows, then v53 added 449 and v56
+  added 144. Measured on the live corpus: 168,273 distinct keys, 47,802 selected
+  by that predicate, of which **12,823 were already in the overlay**. The
+  predicate also selected *rows*, and the corpus keeps one part file per scrape
+  run, so 47,802 keys spanning ~91,600 rows meant nearly half of every batch was
+  duplicate work that `attempted` then discarded. The kernel now downloads the
+  overlay's key list, de-duplicates the corpus with `arg_max` (longest
+  description wins), and anti-joins the two into a materialised `pending` table
+  -- **30,375 genuinely new keys** -- which every batch then pages locally.
+- **A refactor shipped a `NameError` to a GPU.** v60 dropped the `shards`
+  parameter from `fetch_pending_retry` but left the body calling
+  `fetch_pending(con, offset, shards)`. It parsed, satisfied every string check
+  the watchdog looks for, and ran on a T4 for 264 s before
+  `name 'shards' is not defined` at the first fetch. No test caught it because
+  every test called `fetch_pending` itself, never the wrapper. Fixed in v61, and
+  the watchdog now parses the pulled notebook and refuses any call to a
+  notebook-defined function with more positional arguments than it declares:
+  v60 is refused (`line 230: fetch_pending() takes 2 positional argument(s) but
+  is called with 3`), v61 and v59 accepted. Two hardenings from the same run:
+  `download_corpus` lists the exact files rather than relying on a glob whose
+  meaning changed with the library, and checks the downloaded count against that
+  listing (`refusing to select work from a partial corpus`); and a run whose
+  fetch fails after every retry now exits non-zero instead of reporting success
+  with nothing published.
+- **The scheduled Kaggle run cannot be repaired from CI.** Kaggle returns HTTP
+  403 for status, pull and push from GitHub Actions' datacenter IPs, so the
+  watchdog runs on the laptop instead (`scripts/kaggle_watchdog_local.py`,
+  daily 15:20 local plus logon catch-up). It no-ops while a run is
+  `QUEUED`/`RUNNING` -- the daily task fires 17 minutes after the schedule,
+  before a healthy run's first checkpoint -- and otherwise re-pushes when the
+  overlay is stale, restoring the GPU metadata the schedule overwrites.
 - **Kaggle `jmi-translate-hf` was silently dead.** The scheduled translation
   kernel had been running against a stale HF write token (`hf_Ctte…`, rotated
   away months earlier) mounted from `mskarim870/jmi-translate-hf-creds`, so

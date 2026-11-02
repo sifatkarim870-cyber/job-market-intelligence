@@ -164,6 +164,13 @@ jobs:
           USAJOBS_API_KEY: ${{ secrets.USAJOBS_API_KEY }}
         run: uv run python ${{ matrix.script }}
 
+      - name: Extract description sections
+        if: success()
+        env:
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+        run: uv run python scripts/fill_description_sections.py
+
       - name: Export new rows to a Hugging Face shard
         # Neon Free refuses writes past 1 GB, so the analysis-ready rows also go
         # out as zstd Parquet (measured 692 B/row, ~7x smaller than the

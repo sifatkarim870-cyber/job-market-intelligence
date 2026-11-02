@@ -161,11 +161,13 @@ SELECT j.source_job_id::text                 AS source_job_id,
        sal.is_negotiable,
        d.description_clean,
        d.description_en,
-       -- English rows are never sent to the translator (language_code = 'en'
-       -- is the skip path), so description_en is legitimately NULL for them.
-       -- Resolve it once, here, so every shard row has English text.
-       CASE WHEN j.language_code = 'en' THEN d.description_clean
-            ELSE d.description_en END         AS text_en,
+       -- English text for downstream consumers. Prefer the translated
+       -- description when one exists (non-English rows); fall back to the
+       -- original description_clean otherwise (English rows, rows whose
+       -- language_code is NULL, and rows translation has not reached yet).
+       -- COALESCE keeps text_en populated whenever any description exists,
+       -- mirroring normalization.skill_extraction's fetch_unscanned_jobs.
+       COALESCE(d.description_en, d.description_clean) AS text_en,
        d.requirements,
        d.responsibilities,
        d.required_skills_text,

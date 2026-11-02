@@ -43,7 +43,6 @@ from job_market_intel.normalization.translation import (
     fetch_detection_pending,
     looks_like_non_english_output,
     process_description_row,
-    process_detection_row,
     resolve_flores_code,
 )
 
@@ -70,26 +69,37 @@ def _run_title_pass(
 ) -> Counter:
     pending = fetch_detection_pending(session, limit=limit)
     counts: Counter = Counter()
-    samples = 0
 
-    for index, job in enumerate(pending, start=1):
-        if not dry_run:
-            payload = process_detection_row(job, translator)
-            apply_title_translation(session, job.job_id, payload)
-            if payload["language_code"] == "en":
-                counts["detected_english"] += 1
-            elif payload["job_title_en"]:
-                counts["titles_translated"] += 1
-            else:
-                counts["recorded_unresolved"] += 1
-            if index % _COMMIT_EVERY_TITLES == 0:
-                session.commit()
-                logger.info("Title pass: committed after {} rows.", index)
-            continue
-
-        # Dry run: detection for every row, full translation for a few.
+    # Detect language for every pending row first (fast, langdetect only).
+    detected_map: dict[int, str] = {}
+    for job in pending:
         probe = choose_detection_text(job.job_title, job.description_clean)
-        detected = detect_language(probe) or "unknown"
+        detected = detect_language(probe)
+        if detected is None:
+            detected = "unknown"
+        detected_map[job.job_id] = detected
+
+    if dry_run:
+        _run_title_pass_dry_run(pending, detected_map, translator, counts)
+    else:
+        _run_title_pass_non_dry(session, translator, pending, detected_map, counts)
+
+    if pending and not dry_run:
+        session.commit()
+    counts["title_pass_rows"] = len(pending)
+    return counts
+
+
+def _run_title_pass_dry_run(
+    pending: list,
+    detected_map: dict[int, str],
+    translator: NllbTranslator,
+    counts: Counter,
+) -> None:
+    """Dry run: detect language for every row, preview a few translations."""
+    samples = 0
+    for job in pending:
+        detected = detected_map[job.job_id]
         counts[f"dry_detect_{detected}"] += 1
         flores = resolve_flores_code(detected)
         if flores and samples < _DRY_RUN_TITLE_SAMPLES:
@@ -103,10 +113,84 @@ def _run_title_pass(
             )
             samples += 1
 
-    if pending and not dry_run:
+
+def _run_title_pass_non_dry(
+    session,
+    translator: NllbTranslator,
+    pending: list,
+    detected_map: dict[int, str],
+    counts: Counter,
+) -> None:
+    """Non-dry run: bucket by FLORES code, batch-translate titles, apply all."""
+    processed = 0
+    buckets: dict[str, list] = {}
+    for job in pending:
+        detected = detected_map[job.job_id]
+        if detected == "en":
+            counts["detected_english"] += 1
+            apply_title_translation(
+                session,
+                job.job_id,
+                {"language_code": "en", "job_title_en": None, "translated_by": None},
+            )
+            processed += 1
+            _maybe_commit(session, processed)
+            continue
+        flores = resolve_flores_code(detected)
+        if flores is None:
+            counts["recorded_unresolved"] += 1
+            apply_title_translation(
+                session,
+                job.job_id,
+                {"language_code": detected, "job_title_en": None, "translated_by": None},
+            )
+            processed += 1
+            _maybe_commit(session, processed)
+            continue
+        buckets.setdefault(flores, []).append(job)
+
+    for _flores, jobs in buckets.items():
+        for start in range(0, len(jobs), _DESC_BATCH_JOBS):
+            slab = jobs[start : start + _DESC_BATCH_JOBS]
+            texts = [job.job_title or "" for job in slab]
+            outputs = translator.translate_batch(
+                texts, _flores, batch_size=_DESC_BATCH_JOBS
+            )
+            for job, en in zip(slab, outputs, strict=True):
+                if not en or looks_like_non_english_output(en):
+                    counts["recorded_unresolved"] += 1
+                    apply_title_translation(
+                        session,
+                        job.job_id,
+                        {
+                            "language_code": detected_map[job.job_id],
+                            "job_title_en": None,
+                            "translated_by": None,
+                        },
+                    )
+                else:
+                    apply_title_translation(
+                        session,
+                        job.job_id,
+                        {
+                            "language_code": detected_map[job.job_id],
+                            "job_title_en": en,
+                            "translated_by": translator.provenance_label,
+                        },
+                    )
+                    counts["titles_translated"] += 1
+                processed += 1
+                if processed % _COMMIT_EVERY_TITLES == 0:
+                    session.commit()
+                    logger.info(
+                        "Title pass: committed after {} rows.", processed
+                    )
+
+
+def _maybe_commit(session, processed: int) -> None:
+    if processed % _COMMIT_EVERY_TITLES == 0:
         session.commit()
-    counts["title_pass_rows"] = len(pending)
-    return counts
+        logger.info("Title pass: committed after {} rows.", processed)
 
 
 def _run_description_pass(
