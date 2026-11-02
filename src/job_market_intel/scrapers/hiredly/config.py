@@ -64,7 +64,7 @@ class HiredlySettings(BaseSettings):
     headless: bool = Field(default=True, description="Run the browser headless.")
     page_load_timeout_seconds: int = Field(default=60, ge=1)
     render_wait_seconds: float = Field(
-        default=5.0, ge=0.0, description="Settle time after domcontentloaded before reading."
+        default=8.0, ge=0.0, description="Settle time after domcontentloaded before reading."
     )
     #: Wait for the JSON blob rather than for a clock. Without it the run is at
     #: the mercy of when Next.js finishes hydrating.

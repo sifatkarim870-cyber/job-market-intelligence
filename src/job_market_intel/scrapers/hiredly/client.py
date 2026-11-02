@@ -88,6 +88,22 @@ class HiredlyClient:
                 timeout=self._settings.page_load_timeout_seconds * 1000,
             )
             view.wait_for_timeout(int(self._settings.render_wait_seconds * 1000))
+            # Wait for the job-card anchors to materialise in the DOM before
+            # reading them.  The fixed sleep alone is not reliable in CI where
+            # the JS runtime is slower: the anchors may arrive after the sleep
+            # but before the eval, or they may never arrive (rate-limit / bot
+            # detection).  ``wait_for_selector`` with ``state="attached"`` gives
+            # us an explicit signal while the fixed sleep still acts as a
+            # minimum settle time.
+            try:
+                view.wait_for_selector(
+                    'a[href^="/jobs/jobs-malaysia-"]',
+                    state="attached",
+                    timeout=self._settings.data_wait_seconds * 1000,
+                )
+            except Exception:  # noqa: BLE001
+                # Selector did not appear -- fall through; eval will return [].
+                pass
             try:
                 anchors = view.eval_on_selector_all(
                     'a[href^="/jobs/jobs-malaysia-"]',
