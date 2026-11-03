@@ -1,0 +1,46 @@
+{
+  "source_code": "co_elempleo_com",
+  "source_name": "El Empleo Colombia (elempleo.com)",
+  "country": "Colombia",
+  "base_url": "https://www.elempleo.com",
+  "listing_path": "/co/ofertas-empleo",
+  "listing_pagination": "/pagina-{page}",
+  "max_pages": 10,
+  "max_jobs_per_run": 60,
+  "selectors": {
+    "job_card": "div.result-item, div.js-area-result-item, .item-result",
+    "job_link": "a[href*='/ofertas-trabajo/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "employment_type": "#employment_type",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": ""
+  },
+  "detail_url_pattern": "/co/ofertas-trabajo/.*-\\d+$",
+  "id_url_regex": "-(\\d+)$",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": "jobLocation.address.addressLocality",
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "closing_date": "validThrough",
+    "employment_type": "employmentType"
+  },
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "extra_headers": {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+  },
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "COP",
+  "pay_period": "monthly",
+  "country_fallback": "Colombia"
+}

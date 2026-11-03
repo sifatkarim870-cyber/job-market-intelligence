@@ -229,6 +229,7 @@ domain_to_code = {
     "zimbojobs.com": "zimbojobs_com",
     "akhtaboot.com": "akhtaboot_com",
     "poslovi.infostud.com": "poslovi_infostud_com",
+    "elempleo.com": "co_elempleo_com",
 }
 
 for code, s_info in registry_sources.items():
