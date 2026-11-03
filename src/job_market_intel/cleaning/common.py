@@ -189,3 +189,5 @@ class CleanedJob(BaseModel):
     remote_work_type_code: str | None = None
     job_category_code: str | None = None
     job_title_en: str | None = None
+    visa_sponsorship: bool | None = None
+    relocation_support: bool | None = None

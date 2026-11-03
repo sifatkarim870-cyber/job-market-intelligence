@@ -14,6 +14,8 @@ from job_market_intel.cleaning.qualification_mappers import (
     map_experience_level,
     map_job_category,
     map_remote_work_type,
+    map_visa_sponsorship,
+    map_relocation_support,
 )
 from job_market_intel.cleaning.text_utils import clean_html_text, clean_plain_text
 
@@ -182,6 +184,8 @@ class HtmlScraperCleaner:
         )
         remote_code = map_remote_work_type(raw_job.remote_work_type or location or body)
         cat_code = map_job_category(raw_job.title, raw_job.job_category)
+        visa_spon = map_visa_sponsorship(body)
+        reloc_supp = map_relocation_support(body)
 
         return CleanedJob(
             source_job_id=raw_job.source_job_id,
@@ -210,6 +214,8 @@ class HtmlScraperCleaner:
             experience_level_code=exp_code,
             remote_work_type_code=remote_code,
             job_category_code=cat_code,
+            visa_sponsorship=visa_spon,
+            relocation_support=reloc_supp,
         )
 
     def _quality_score(self, job: RawHtmlScraperJob, description: str, skills: list[str]) -> float:

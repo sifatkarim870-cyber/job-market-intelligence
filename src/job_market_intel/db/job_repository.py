@@ -528,7 +528,11 @@ class JobRepository(AbstractRepository[Any]):
                         "education_level_id = COALESCE(:education_level_id, education_level_id), "
                         "experience_level_id = COALESCE(:experience_level_id, experience_level_id), "
                         "remote_work_type_id = COALESCE(:remote_work_type_id, remote_work_type_id), "
-                        "job_category_id = COALESCE(:job_category_id, job_category_id) "
+                        "job_category_id = COALESCE(:job_category_id, job_category_id), "
+                        "application_url = COALESCE(:application_url, application_url), "
+                        "application_method = COALESCE(:application_method, application_method), "
+                        "visa_sponsorship = COALESCE(:visa_sponsorship, visa_sponsorship), "
+                        "relocation_support = COALESCE(:relocation_support, relocation_support) "
                         "WHERE job_id = :job_id AND posting_date = :posting_date"
                     ),
                     {
@@ -541,6 +545,10 @@ class JobRepository(AbstractRepository[Any]):
                         "experience_level_id": experience_level_id,
                         "remote_work_type_id": remote_work_type_id,
                         "job_category_id": job_category_id,
+                        "application_url": job.apply_url or job.original_url,
+                        "application_method": ("email" if str(job.apply_url or job.original_url).startswith("mailto:") else "external_url") if (job.apply_url or job.original_url) else None,
+                        "visa_sponsorship": job.visa_sponsorship,
+                        "relocation_support": job.relocation_support,
                     },
                 )
                 # The salary row is refreshed here too. The content hash
@@ -599,6 +607,10 @@ class JobRepository(AbstractRepository[Any]):
                         "experience_level_id = COALESCE(:experience_level_id, experience_level_id), "
                         "remote_work_type_id = COALESCE(:remote_work_type_id, remote_work_type_id), "
                         "job_category_id = COALESCE(:job_category_id, job_category_id), "
+                        "application_url = COALESCE(:application_url, application_url), "
+                        "application_method = COALESCE(:application_method, application_method), "
+                        "visa_sponsorship = COALESCE(:visa_sponsorship, visa_sponsorship), "
+                        "relocation_support = COALESCE(:relocation_support, relocation_support), "
                         "job_title_en = COALESCE(:job_title_en, job_title_en), "
                         "last_scraped_at = now(), "
                         "last_scraping_session_id = "
@@ -619,6 +631,10 @@ class JobRepository(AbstractRepository[Any]):
                         "experience_level_id": experience_level_id,
                         "remote_work_type_id": remote_work_type_id,
                         "job_category_id": job_category_id,
+                        "application_url": job.apply_url or job.original_url,
+                        "application_method": ("email" if str(job.apply_url or job.original_url).startswith("mailto:") else "external_url") if (job.apply_url or job.original_url) else None,
+                        "visa_sponsorship": job.visa_sponsorship,
+                        "relocation_support": job.relocation_support,
                         "job_title_en": job.job_title_en,
                         "session_id": session_id,
                         "job_id": job_id,
@@ -720,14 +736,15 @@ class JobRepository(AbstractRepository[Any]):
                     "INSERT INTO core.jobs "
                     "(source_id, source_job_id, original_url, company_id, job_title, "
                     "location_id, employment_type_id, education_level_id, experience_level_id, "
-                    "remote_work_type_id, job_category_id, posting_date, closing_date, "
+                    "remote_work_type_id, job_category_id, application_url, application_method, visa_sponsorship, relocation_support, posting_date, closing_date, "
                     "first_scraped_at, last_scraped_at, "
                     "last_scraping_session_id, "
                     "job_status, content_hash, data_quality_score, job_title_en) "
                     "VALUES "
                     "(:source_id, :source_job_id, :original_url, :company_id, :job_title, "
                     ":location_id, :employment_type_id, :education_level_id, :experience_level_id, "
-                    ":remote_work_type_id, :job_category_id, :posting_date, :closing_date, "
+                    ":remote_work_type_id, :job_category_id, :application_url, :application_method, "
+                    ":visa_sponsorship, :relocation_support, :posting_date, :closing_date, "
                     "now(), now(), :session_id, "
                     "'active', :content_hash, :data_quality_score, :job_title_en) "
                     "RETURNING job_id"
@@ -751,6 +768,10 @@ class JobRepository(AbstractRepository[Any]):
                     "experience_level_id": experience_level_id,
                     "remote_work_type_id": remote_work_type_id,
                     "job_category_id": job_category_id,
+                    "application_url": job.apply_url or job.original_url,
+                    "application_method": ("email" if str(job.apply_url or job.original_url).startswith("mailto:") else "external_url") if (job.apply_url or job.original_url) else None,
+                    "visa_sponsorship": job.visa_sponsorship,
+                    "relocation_support": job.relocation_support,
                     "posting_date": p_date,
                     "closing_date": c_date,
                     "session_id": session_id,

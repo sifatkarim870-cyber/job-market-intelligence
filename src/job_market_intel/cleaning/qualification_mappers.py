@@ -341,3 +341,48 @@ def map_job_category(title: str | None, raw_category: str | None = None) -> str 
             if pattern.search(title):
                 return code
     return None
+
+# ============================================================================
+# Visa & Relocation
+# ============================================================================
+
+_VISA_POS = re.compile(
+    r"\b(visa\s*sponsorship\s*(?:is\s*)?(?:available|provided|offered|supported)|we\s*(?:can\s*)?sponsor\s*visas?|will\s*sponsor\s*visa|sponsoring\s*visas?)\b",
+    re.IGNORECASE,
+)
+_VISA_NEG = re.compile(
+    r"\b(no\s*visa\s*sponsorship|visa\s*sponsorship\s*(?:is\s*)?not\s*available|cannot\s*sponsor|unable\s*to\s*sponsor|not\s*providing\s*visa|must\s*have\s*valid\s*work\s*authorization|no\s*sponsorship)\b",
+    re.IGNORECASE,
+)
+
+_RELOC_POS = re.compile(
+    r"\b(relocation\s*(?:assistance|package|support|allowance|bonus|provided|covered|offered)|we\s*(?:will|can)\s*relocate|help\s*with\s*relocation)\b",
+    re.IGNORECASE,
+)
+_RELOC_NEG = re.compile(
+    r"\b(no\s*relocation|relocation\s*(?:assistance\s*)?(?:is\s*)?not\s*(?:provided|available|offered)|cannot\s*relocate)\b",
+    re.IGNORECASE,
+)
+
+
+def map_visa_sponsorship(text: str | None) -> bool | None:
+    """Map text to a visa_sponsorship boolean."""
+    if not text:
+        return None
+    if _VISA_POS.search(text):
+        return True
+    if _VISA_NEG.search(text):
+        return False
+    return None
+
+
+def map_relocation_support(text: str | None) -> bool | None:
+    """Map text to a relocation_support boolean."""
+    if not text:
+        return None
+    if _RELOC_POS.search(text):
+        return True
+    if _RELOC_NEG.search(text):
+        return False
+    return None
+
