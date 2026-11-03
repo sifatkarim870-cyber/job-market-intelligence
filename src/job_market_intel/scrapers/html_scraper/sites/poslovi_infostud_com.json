@@ -1,0 +1,46 @@
+{
+  "source_code": "poslovi_infostud_com",
+  "source_name": "Poslovi Infostud (poslovi.infostud.com)",
+  "country": "Serbia",
+  "base_url": "https://poslovi.infostud.com",
+  "listing_path": "/oglasi-za-posao",
+  "listing_pagination": "?page={page}",
+  "max_pages": 10,
+  "max_jobs_per_run": 60,
+  "selectors": {
+    "job_card": "div.search-job-card",
+    "job_link": "a[href*='/posao/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "employment_type": "#employment_type",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": ""
+  },
+  "detail_url_pattern": "/posao/[^/]+/[^/]+/\\d+",
+  "id_url_regex": "/(\\d+)(?:\\?.*)?$",
+  "detail_json_next_data": true,
+  "detail_json_path": "props.pageProps.job",
+  "detail_json_map": {
+    "title": "title",
+    "company": "companyName",
+    "location": "location",
+    "description": [
+      "textAd"
+    ],
+    "posted_date": "datePosted",
+    "salary": "salary"
+  },
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "extra_headers": {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "sr,en-US;q=0.9,en;q=0.8"
+  },
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "RSD",
+  "pay_period": "monthly",
+  "country_fallback": "Serbia"
+}
