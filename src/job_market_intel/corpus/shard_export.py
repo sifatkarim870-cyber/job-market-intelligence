@@ -116,6 +116,7 @@ SHARD_SELECT = """
 SELECT j.source_job_id::text                 AS source_job_id,
        s.source_code,
        s.source_name,
+       co.company_name,
        j.posting_date,
        j.closing_date,
        j.first_scraped_at,
@@ -134,24 +135,23 @@ SELECT j.source_job_id::text                 AS source_job_id,
        j.is_duplicate_of::text                AS is_duplicate_of,
        j.data_quality_score::float8           AS data_quality_score,
        l.raw_location_text                    AS location_raw,
-       -- Why this exists: country_code IS NULL used to mean two entirely
-       -- different things, and a consumer could not tell them apart.
-       --   is_global_remote = TRUE  -> genuinely worldwide-remote (15,316 rows
-       --                                at 2026-10-13); a country-less posting
-       --                                is the correct answer, not a gap.
-       --   is_global_remote IS NULL -> no ref.locations row at all (3,903
-       --                                rows); the posting was never resolved.
-       -- Exposing the flag turns "WHERE country_code IS NULL" from a query
-       -- that silently drops 13% of the corpus into one that can separate
-       -- "remote everywhere" from "we failed to resolve this".
        l.is_global_remote                     AS is_global_remote,
+       rwt.label                              AS remote_work_type,
+       cit.city_name,
        c.iso_code_2                           AS country_code,
        c.country_name,
        et.label                               AS employment_type,
        el.label                               AS experience_level,
+       j.experience_years_min                 AS experience_years_min,
+       j.experience_years_max                 AS experience_years_max,
+       j.seniority_role_type                  AS seniority_role_type,
+       j.is_managerial                        AS is_managerial,
+       j.work_schedule                        AS work_schedule,
        ed.label                               AS education_level,
        j.education_field_raw                  AS education_field_raw,
        j.education_field_normalized           AS education_field_normalized,
+       j.skills_normalized                    AS skills_normalized,
+       j.benefits_normalized                  AS benefits_normalized,
        jc.label                               AS job_category,
        sal.salary_min::float8                 AS salary_min,
        sal.salary_max::float8                 AS salary_max,
@@ -163,12 +163,6 @@ SELECT j.source_job_id::text                 AS source_job_id,
        sal.is_negotiable,
        d.description_clean,
        d.description_en,
-       -- English text for downstream consumers. Prefer the translated
-       -- description when one exists (non-English rows); fall back to the
-       -- original description_clean otherwise (English rows, rows whose
-       -- language_code is NULL, and rows translation has not reached yet).
-       -- COALESCE keeps text_en populated whenever any description exists,
-       -- mirroring normalization.skill_extraction's fetch_unscanned_jobs.
        COALESCE(d.description_en, d.description_clean) AS text_en,
        d.requirements,
        d.responsibilities,
@@ -177,12 +171,15 @@ SELECT j.source_job_id::text                 AS source_job_id,
        d.word_count
 FROM core.jobs j
 JOIN ref.sources s                 ON s.source_id = j.source_id
+LEFT JOIN core.companies co        ON co.company_id = j.company_id
 LEFT JOIN core.job_descriptions d  ON d.job_id = j.job_id
 LEFT JOIN ref.locations l          ON l.location_id = j.location_id
+LEFT JOIN ref.cities cit           ON cit.city_id = l.city_id
 LEFT JOIN ref.countries c          ON c.country_id = l.country_id
 LEFT JOIN ref.employment_types et  ON et.employment_type_id = j.employment_type_id
 LEFT JOIN ref.experience_levels el ON el.experience_level_id = j.experience_level_id
 LEFT JOIN ref.education_levels ed  ON ed.education_level_id = j.education_level_id
+LEFT JOIN ref.remote_work_types rwt ON rwt.remote_work_type_id = j.remote_work_type_id
 LEFT JOIN ref.job_categories jc    ON jc.job_category_id = j.job_category_id
 LEFT JOIN LATERAL (
     SELECT * FROM salary.job_salaries s2
@@ -198,6 +195,7 @@ SHARD_COLUMNS = [
     "source_job_id",
     "source_code",
     "source_name",
+    "company_name",
     "posting_date",
     "closing_date",
     "first_scraped_at",
@@ -217,13 +215,22 @@ SHARD_COLUMNS = [
     "data_quality_score",
     "location_raw",
     "is_global_remote",
+    "remote_work_type",
+    "city_name",
     "country_code",
     "country_name",
     "employment_type",
     "experience_level",
+    "experience_years_min",
+    "experience_years_max",
+    "seniority_role_type",
+    "is_managerial",
+    "work_schedule",
     "education_level",
     "education_field_raw",
     "education_field_normalized",
+    "skills_normalized",
+    "benefits_normalized",
     "job_category",
     "salary_min",
     "salary_max",

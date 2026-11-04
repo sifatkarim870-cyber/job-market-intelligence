@@ -535,8 +535,13 @@ class JobRepository(AbstractRepository[Any]):
                         "relocation_support = COALESCE(:relocation_support, relocation_support), "
                         "education_field_raw = COALESCE(:education_field_raw, education_field_raw), "
                         "education_field_normalized = COALESCE(:education_field_normalized, education_field_normalized), "
-                        "education_field_raw = COALESCE(:education_field_raw, education_field_raw), "
-                        "education_field_normalized = COALESCE(:education_field_normalized, education_field_normalized) "
+                        "experience_years_min = COALESCE(:experience_years_min, experience_years_min), "
+                        "experience_years_max = COALESCE(:experience_years_max, experience_years_max), "
+                        "seniority_role_type = COALESCE(:seniority_role_type, seniority_role_type), "
+                        "is_managerial = COALESCE(:is_managerial, is_managerial), "
+                        "work_schedule = COALESCE(:work_schedule, work_schedule), "
+                        "skills_normalized = COALESCE(:skills_normalized, skills_normalized), "
+                        "benefits_normalized = COALESCE(:benefits_normalized, benefits_normalized) "
                         "WHERE job_id = :job_id AND posting_date = :posting_date"
                     ),
                     {
@@ -555,6 +560,13 @@ class JobRepository(AbstractRepository[Any]):
                         "relocation_support": job.relocation_support,
                         "education_field_raw": job.education_field_raw,
                         "education_field_normalized": job.education_field_normalized,
+                        "experience_years_min": job.experience_years_min,
+                        "experience_years_max": job.experience_years_max,
+                        "seniority_role_type": job.seniority_role_type,
+                        "is_managerial": job.is_managerial,
+                        "work_schedule": job.work_schedule,
+                        "skills_normalized": job.skills_normalized,
+                        "benefits_normalized": job.benefits_normalized,
                     },
                 )
                 # The salary row is refreshed here too. The content hash
@@ -617,6 +629,15 @@ class JobRepository(AbstractRepository[Any]):
                         "application_method = COALESCE(:application_method, application_method), "
                         "visa_sponsorship = COALESCE(:visa_sponsorship, visa_sponsorship), "
                         "relocation_support = COALESCE(:relocation_support, relocation_support), "
+                        "education_field_raw = COALESCE(:education_field_raw, education_field_raw), "
+                        "education_field_normalized = COALESCE(:education_field_normalized, education_field_normalized), "
+                        "experience_years_min = COALESCE(:experience_years_min, experience_years_min), "
+                        "experience_years_max = COALESCE(:experience_years_max, experience_years_max), "
+                        "seniority_role_type = COALESCE(:seniority_role_type, seniority_role_type), "
+                        "is_managerial = COALESCE(:is_managerial, is_managerial), "
+                        "work_schedule = COALESCE(:work_schedule, work_schedule), "
+                        "skills_normalized = COALESCE(:skills_normalized, skills_normalized), "
+                        "benefits_normalized = COALESCE(:benefits_normalized, benefits_normalized), "
                         "job_title_en = COALESCE(:job_title_en, job_title_en), "
                         "last_scraped_at = now(), "
                         "last_scraping_session_id = "
@@ -643,6 +664,13 @@ class JobRepository(AbstractRepository[Any]):
                         "relocation_support": job.relocation_support,
                         "education_field_raw": job.education_field_raw,
                         "education_field_normalized": job.education_field_normalized,
+                        "experience_years_min": job.experience_years_min,
+                        "experience_years_max": job.experience_years_max,
+                        "seniority_role_type": job.seniority_role_type,
+                        "is_managerial": job.is_managerial,
+                        "work_schedule": job.work_schedule,
+                        "skills_normalized": job.skills_normalized,
+                        "benefits_normalized": job.benefits_normalized,
                         "job_title_en": job.job_title_en,
                         "session_id": session_id,
                         "job_id": job_id,
@@ -744,7 +772,7 @@ class JobRepository(AbstractRepository[Any]):
                     "INSERT INTO core.jobs "
                     "(source_id, source_job_id, original_url, company_id, job_title, "
                     "location_id, employment_type_id, education_level_id, experience_level_id, "
-                    "remote_work_type_id, job_category_id, application_url, application_method, visa_sponsorship, relocation_support, education_field_raw, education_field_normalized, posting_date, closing_date, "
+                    "remote_work_type_id, job_category_id, application_url, application_method, visa_sponsorship, relocation_support, education_field_raw, education_field_normalized, experience_years_min, experience_years_max, seniority_role_type, is_managerial, work_schedule, skills_normalized, benefits_normalized, posting_date, closing_date, "
                     "first_scraped_at, last_scraped_at, "
                     "last_scraping_session_id, "
                     "job_status, content_hash, data_quality_score, job_title_en) "
@@ -752,7 +780,7 @@ class JobRepository(AbstractRepository[Any]):
                     "(:source_id, :source_job_id, :original_url, :company_id, :job_title, "
                     ":location_id, :employment_type_id, :education_level_id, :experience_level_id, "
                     ":remote_work_type_id, :job_category_id, :application_url, :application_method, "
-                    ":visa_sponsorship, :relocation_support, :education_field_raw, :education_field_normalized, :posting_date, :closing_date, "
+                    ":visa_sponsorship, :relocation_support, :education_field_raw, :education_field_normalized, :experience_years_min, :experience_years_max, :seniority_role_type, :is_managerial, :work_schedule, :skills_normalized, :benefits_normalized, :posting_date, :closing_date, "
                     "now(), now(), :session_id, "
                     "'active', :content_hash, :data_quality_score, :job_title_en) "
                     "RETURNING job_id"
@@ -782,6 +810,13 @@ class JobRepository(AbstractRepository[Any]):
                     "relocation_support": job.relocation_support,
                     "education_field_raw": job.education_field_raw,
                     "education_field_normalized": job.education_field_normalized,
+                    "experience_years_min": job.experience_years_min,
+                    "experience_years_max": job.experience_years_max,
+                    "seniority_role_type": job.seniority_role_type,
+                    "is_managerial": job.is_managerial,
+                    "work_schedule": job.work_schedule,
+                    "skills_normalized": job.skills_normalized,
+                    "benefits_normalized": job.benefits_normalized,
                     "posting_date": p_date,
                     "closing_date": c_date,
                     "session_id": session_id,

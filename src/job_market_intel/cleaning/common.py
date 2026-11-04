@@ -193,3 +193,10 @@ class CleanedJob(BaseModel):
     relocation_support: bool | None = None
     education_field_raw: str | None = None
     education_field_normalized: str | None = None
+    experience_years_min: int | None = None
+    experience_years_max: int | None = None
+    seniority_role_type: str | None = None
+    is_managerial: bool | None = None
+    work_schedule: str | None = None
+    skills_normalized: str | None = None
+    benefits_normalized: str | None = None

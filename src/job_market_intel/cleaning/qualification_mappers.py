@@ -626,3 +626,231 @@ def extract_education_discipline_context(text: str | None) -> tuple[str | None, 
         return raw, norm
 
     return raw, None
+
+
+# ---------------------------------------------------------------------------
+# Experience years extraction
+# ---------------------------------------------------------------------------
+
+_YEARS_RANGE = re.compile(
+    r'\b(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*(?:\+)?\s*(?:years?|yrs?)(?:\s+(?:of\s+)?(?:relevant\s+|direct\s+)?experience)?\b',
+    re.IGNORECASE,
+)
+_YEARS_MIN = re.compile(
+    r'\b(?:at\s+least|minimum|min\.?|more\s+than|>|\+)?\s*(\d{1,2})\s*(?:\+)?\s*(?:years?|yrs?)\s+(?:of\s+)?(?:relevant\s+|direct\s+)?experience\b',
+    re.IGNORECASE,
+)
+_YEARS_PLUS = re.compile(
+    r'\b(\d{1,2})\s*\+\s*(?:years?|yrs?)(?:\s+(?:of\s+)?(?:relevant\s+|direct\s+)?experience)?\b',
+    re.IGNORECASE,
+)
+
+
+def extract_experience_years(text: str | None) -> tuple[int | None, int | None]:
+    """Extract numeric min and max years of experience from text."""
+    if not text:
+        return None, None
+
+    m = _YEARS_RANGE.search(text)
+    if m:
+        low, high = int(m.group(1)), int(m.group(2))
+        if 0 <= low <= high <= 30:
+            return low, high
+
+    m = _YEARS_PLUS.search(text)
+    if m:
+        val = int(m.group(1))
+        if 0 <= val <= 30:
+            return val, None
+
+    m = _YEARS_MIN.search(text)
+    if m:
+        val = int(m.group(1))
+        if 0 <= val <= 30:
+            return val, None
+
+    return None, None
+
+
+# ---------------------------------------------------------------------------
+# Seniority and management extraction
+# ---------------------------------------------------------------------------
+
+_EXECUTIVE_TITLES = re.compile(
+    r'\b(?:c[etfomio]o|chief\s+\w+\s+officer|vice\s+president|vp\b|managing\s+director|executive\s+director|partner|founder)\b',
+    re.IGNORECASE,
+)
+_DIRECTOR_TITLES = re.compile(
+    r'\b(?:director(?:\s+of)?|head\s+of|group\s+head)\b',
+    re.IGNORECASE,
+)
+_MANAGER_TITLES = re.compile(
+    r'\b(?:manager|general\s+manager|supervisor|superintendent)\b',
+    re.IGNORECASE,
+)
+_LEAD_TITLES = re.compile(
+    r'\b(?:team\s+lead|tech\s+lead|lead\s+(?:engineer|developer|designer|analyst|architect|consultant)|lead)\b',
+    re.IGNORECASE,
+)
+_IC_TITLES = re.compile(
+    r'\b(?:intern|junior|entry\s*level|associate|specialist|engineer|developer|analyst|consultant|coordinator|officer|staff|principal|senior)\b',
+    re.IGNORECASE,
+)
+_MANAGEMENT_TEXT = re.compile(
+    r'\b(?:manage\s+(?:a\s+)?team|direct\s+reports|supervise\s+(?:staff|team|employees)|leading\s+a\s+team\s+of)\b',
+    re.IGNORECASE,
+)
+
+
+def extract_seniority_and_management(
+    title: str | None, text: str | None = None
+) -> tuple[str | None, bool | None]:
+    """Extract seniority role type and is_managerial boolean flag."""
+    if not title:
+        return None, None
+
+    t_lower = title.lower()
+
+    if _EXECUTIVE_TITLES.search(t_lower):
+        return "executive", True
+    if _DIRECTOR_TITLES.search(t_lower):
+        return "director", True
+    if _MANAGER_TITLES.search(t_lower):
+        return "manager", True
+    if _LEAD_TITLES.search(t_lower):
+        is_mgr = True if (text and _MANAGEMENT_TEXT.search(text)) else None
+        return "team_lead", is_mgr
+    if _IC_TITLES.search(t_lower):
+        return "individual_contributor", False
+
+    if text and _MANAGEMENT_TEXT.search(text):
+        return "manager", True
+
+    return None, None
+
+
+# ---------------------------------------------------------------------------
+# Work schedule extraction
+# ---------------------------------------------------------------------------
+
+_SCHEDULE_PATTERNS = [
+    ("night_shift", re.compile(r'\b(?:night\s*shift|third\s*shift|graveyard\s*shift|overnights?)\b', re.IGNORECASE)),
+    ("weekend", re.compile(r'\b(?:weekend\s*shift|weekends?\s*only|weekend\s*work)\b', re.IGNORECASE)),
+    ("rotational", re.compile(r'\b(?:rotational\s*shift|rotating\s*shift|shift\s*work)\b', re.IGNORECASE)),
+    ("flexible", re.compile(r'\b(?:flexible\s*(?:working\s*)?(?:hours|schedule)|flexitime|flextime)\b', re.IGNORECASE)),
+    ("standard_day", re.compile(r'\b(?:day\s*shift|standard\s*business\s*hours|9\s*(?:am)?\s*(?:-|to)\s*5\s*(?:pm)?|monday\s*(?:-|to)\s*friday)\b', re.IGNORECASE)),
+]
+
+
+def extract_work_schedule(text: str | None) -> str | None:
+    """Extract standard work schedule taxonomy tag."""
+    if not text:
+        return None
+    for code, pat in _SCHEDULE_PATTERNS:
+        if pat.search(text):
+            return code
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Benefits normalization
+# ---------------------------------------------------------------------------
+
+_BENEFIT_TAXONOMY = [
+    ("health_insurance", re.compile(r'\b(?:health|medical)\s+(?:insurance|coverage|care|plan|benefits?)\b', re.IGNORECASE)),
+    ("dental_vision", re.compile(r'\b(?:dental|vision)\s+(?:insurance|coverage|plan|benefits?)\b', re.IGNORECASE)),
+    ("retirement_401k", re.compile(r'\b(?:401\(?k\)?|pension|retirement\s*(?:plan|fund|benefits?)|superannuation)\b', re.IGNORECASE)),
+    ("paid_time_off", re.compile(r'\b(?:paid\s+time\s+off|pto|vacation\s+days|annual\s+leave)\b', re.IGNORECASE)),
+    ("equity_stock_options", re.compile(r'\b(?:equity|stock\s+options|esop|rsu|company\s+shares)\b', re.IGNORECASE)),
+    ("parental_leave", re.compile(r'\b(?:parental|maternity|paternity)\s+leave\b', re.IGNORECASE)),
+    ("tuition_reimbursement", re.compile(r'\b(?:tuition\s+(?:reimbursement|assistance)|education\s+stipend|learning\s+budget)\b', re.IGNORECASE)),
+    ("relocation_assistance", re.compile(r'\b(?:relocation\s+(?:assistance|package|support|allowance))\b', re.IGNORECASE)),
+    ("wellness_perks", re.compile(r'\b(?:gym\s+membership|wellness\s+stipend|mental\s+health\s+support)\b', re.IGNORECASE)),
+]
+
+
+def extract_normalized_benefits(text: str | None) -> str | None:
+    """Extract comma-separated normalized benefit tags."""
+    if not text:
+        return None
+    matched = []
+    for code, pat in _BENEFIT_TAXONOMY:
+        if pat.search(text):
+            matched.append(code)
+    return ",".join(matched) if matched else None
+
+
+# ---------------------------------------------------------------------------
+# Skills normalization
+# ---------------------------------------------------------------------------
+
+_SKILL_TAXONOMY = [
+    ("python", re.compile(r'\bpython\b', re.IGNORECASE)),
+    ("sql", re.compile(r'\bsql\b', re.IGNORECASE)),
+    ("javascript", re.compile(r'\b(?:javascript|js)\b', re.IGNORECASE)),
+    ("typescript", re.compile(r'\b(?:typescript|ts)\b', re.IGNORECASE)),
+    ("java", re.compile(r'\bjava\b(?!\s*script)', re.IGNORECASE)),
+    ("c_cpp", re.compile(r'\b(?:c\+\+|cpp)\b', re.IGNORECASE)),
+    ("c_sharp", re.compile(r'\b(?:c#|csharp)\b', re.IGNORECASE)),
+    ("go_golang", re.compile(r'\b(?:golang|go\s+programming)\b', re.IGNORECASE)),
+    ("rust", re.compile(r'\brust\b(?!\s*(?:stain|iron))', re.IGNORECASE)),
+    ("ruby", re.compile(r'\bruby(?:\s+on\s+rails)?\b', re.IGNORECASE)),
+    ("php", re.compile(r'\bphp\b', re.IGNORECASE)),
+    ("swift", re.compile(r'\bswift\b(?!\s*code)', re.IGNORECASE)),
+    ("kotlin", re.compile(r'\bkotlin\b', re.IGNORECASE)),
+    ("r_lang", re.compile(r'\b(?:r\s+programming|r\s+language)\b', re.IGNORECASE)),
+    ("scala", re.compile(r'\bscala\b', re.IGNORECASE)),
+    ("react", re.compile(r'\breact(?:\.js|js)?\b', re.IGNORECASE)),
+    ("angular", re.compile(r'\bangular(?:\.js|js)?\b', re.IGNORECASE)),
+    ("vue", re.compile(r'\bvue(?:\.js|js)?\b', re.IGNORECASE)),
+    ("node_js", re.compile(r'\bnode(?:\.js|js)?\b', re.IGNORECASE)),
+    ("django", re.compile(r'\bdjango\b', re.IGNORECASE)),
+    ("fastapi", re.compile(r'\bfastapi\b', re.IGNORECASE)),
+    ("flask", re.compile(r'\bflask\b', re.IGNORECASE)),
+    ("spring_boot", re.compile(r'\bspring\s*boot\b', re.IGNORECASE)),
+    ("dotnet", re.compile(r'\b(?:\.net|dotnet)\b', re.IGNORECASE)),
+    ("aws", re.compile(r'\baws\b|\bamazon\s+web\s+services\b', re.IGNORECASE)),
+    ("azure", re.compile(r'\b(?:azure|microsoft\s+azure)\b', re.IGNORECASE)),
+    ("gcp", re.compile(r'\b(?:gcp|google\s+cloud)\b', re.IGNORECASE)),
+    ("docker", re.compile(r'\bdocker\b', re.IGNORECASE)),
+    ("kubernetes", re.compile(r'\b(?:kubernetes|k8s)\b', re.IGNORECASE)),
+    ("terraform", re.compile(r'\bterraform\b', re.IGNORECASE)),
+    ("linux", re.compile(r'\blinux\b', re.IGNORECASE)),
+    ("git", re.compile(r'\bgit\b|\bgithub\b|\bgitlab\b', re.IGNORECASE)),
+    ("ci_cd", re.compile(r'\bci[/-]?cd\b', re.IGNORECASE)),
+    ("postgresql", re.compile(r'\b(?:postgres|postgresql)\b', re.IGNORECASE)),
+    ("mysql", re.compile(r'\bmysql\b', re.IGNORECASE)),
+    ("mongodb", re.compile(r'\bmongodb\b', re.IGNORECASE)),
+    ("redis", re.compile(r'\bredis\b', re.IGNORECASE)),
+    ("elasticsearch", re.compile(r'\belasticsearch\b', re.IGNORECASE)),
+    ("snowflake", re.compile(r'\bsnowflake\b', re.IGNORECASE)),
+    ("bigquery", re.compile(r'\bbigquery\b', re.IGNORECASE)),
+    ("pandas", re.compile(r'\bpandas\b', re.IGNORECASE)),
+    ("numpy", re.compile(r'\bnumpy\b', re.IGNORECASE)),
+    ("pytorch", re.compile(r'\bpytorch\b', re.IGNORECASE)),
+    ("tensorflow", re.compile(r'\btensorflow\b', re.IGNORECASE)),
+    ("scikit_learn", re.compile(r'\bscikit[-_]?learn\b', re.IGNORECASE)),
+    ("spark", re.compile(r'\b(?:apache\s+spark|pyspark|spark)\b', re.IGNORECASE)),
+    ("tableau", re.compile(r'\btableau\b', re.IGNORECASE)),
+    ("power_bi", re.compile(r'\bpower\s*bi\b', re.IGNORECASE)),
+    ("excel", re.compile(r'\b(?:microsoft\s+excel|advanced\s+excel)\b', re.IGNORECASE)),
+    ("machine_learning", re.compile(r'\bmachine\s+learning\b|\bml\b', re.IGNORECASE)),
+    ("deep_learning", re.compile(r'\bdeep\s+learning\b', re.IGNORECASE)),
+    ("nlp", re.compile(r'\bnatural\s+language\s+processing\b|\bnlp\b', re.IGNORECASE)),
+    ("computer_vision", re.compile(r'\bcomputer\s+vision\b', re.IGNORECASE)),
+    ("agile_scrum", re.compile(r'\b(?:agile|scrum)\b', re.IGNORECASE)),
+    ("project_management", re.compile(r'\bproject\s+management\b', re.IGNORECASE)),
+    ("salesforce", re.compile(r'\bsalesforce\b', re.IGNORECASE)),
+    ("jira", re.compile(r'\bjira\b', re.IGNORECASE)),
+]
+
+
+def extract_normalized_skills(text: str | None) -> str | None:
+    """Extract comma-separated normalized skill tags."""
+    if not text:
+        return None
+    matched = []
+    for code, pat in _SKILL_TAXONOMY:
+        if pat.search(text):
+            matched.append(code)
+    return ",".join(matched) if matched else None

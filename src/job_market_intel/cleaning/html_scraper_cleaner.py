@@ -19,6 +19,11 @@ from job_market_intel.cleaning.qualification_mappers import (
     extract_education_field_raw,
     map_education_discipline,
     extract_education_discipline_context,
+    extract_experience_years,
+    extract_seniority_and_management,
+    extract_work_schedule,
+    extract_normalized_skills,
+    extract_normalized_benefits,
 )
 from job_market_intel.cleaning.text_utils import clean_html_text, clean_plain_text
 
@@ -190,6 +195,11 @@ class HtmlScraperCleaner:
         visa_spon = map_visa_sponsorship(body)
         reloc_supp = map_relocation_support(body)
         edu_field_raw, edu_field_norm = extract_education_discipline_context(body)
+        exp_years_min, exp_years_max = extract_experience_years(raw_job.experience_level or body)
+        seniority_role, is_mgr = extract_seniority_and_management(raw_job.title, body)
+        work_sched = extract_work_schedule(body)
+        skills_norm = extract_normalized_skills(body)
+        benefits_norm = extract_normalized_benefits(body)
 
         return CleanedJob(
             source_job_id=raw_job.source_job_id,
@@ -222,6 +232,13 @@ class HtmlScraperCleaner:
             relocation_support=reloc_supp,
             education_field_raw=edu_field_raw,
             education_field_normalized=edu_field_norm,
+            experience_years_min=exp_years_min,
+            experience_years_max=exp_years_max,
+            seniority_role_type=seniority_role,
+            is_managerial=is_mgr,
+            work_schedule=work_sched,
+            skills_normalized=skills_norm,
+            benefits_normalized=benefits_norm,
         )
 
     def _quality_score(self, job: RawHtmlScraperJob, description: str, skills: list[str]) -> float:

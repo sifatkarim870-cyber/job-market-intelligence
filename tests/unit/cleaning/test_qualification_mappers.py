@@ -5,6 +5,11 @@ from job_market_intel.cleaning.qualification_mappers import (
     map_remote_work_type,
     extract_education_field_raw,
     map_education_discipline,
+    extract_experience_years,
+    extract_seniority_and_management,
+    extract_work_schedule,
+    extract_normalized_benefits,
+    extract_normalized_skills,
 )
 
 
@@ -72,3 +77,53 @@ def test_map_education_discipline() -> None:
     assert "data_science_statistics" in (map_education_discipline("Data Science, Statistics") or "")
     assert "finance_accounting" in (map_education_discipline("Finance and Accounting") or "")
     assert "healthcare_nursing" in (map_education_discipline("Nursing and Medicine") or "")
+
+
+def test_extract_experience_years() -> None:
+    assert extract_experience_years(None) == (None, None)
+    assert extract_experience_years("") == (None, None)
+    assert extract_experience_years("Requires 3-5 years of experience") == (3, 5)
+    assert extract_experience_years("Minimum 5 years of experience in Python") == (5, None)
+    assert extract_experience_years("7+ years of relevant experience") == (7, None)
+    assert extract_experience_years("No experience required") == (None, None)
+
+
+def test_extract_seniority_and_management() -> None:
+    assert extract_seniority_and_management(None) == (None, None)
+    assert extract_seniority_and_management("") == (None, None)
+    assert extract_seniority_and_management("Chief Executive Officer") == ("executive", True)
+    assert extract_seniority_and_management("VP of Engineering") == ("executive", True)
+    assert extract_seniority_and_management("Director of Data Science") == ("director", True)
+    assert extract_seniority_and_management("Engineering Manager") == ("manager", True)
+    assert extract_seniority_and_management("Senior Backend Engineer") == ("individual_contributor", False)
+    assert extract_seniority_and_management("Junior Developer") == ("individual_contributor", False)
+    assert extract_seniority_and_management("Intern") == ("individual_contributor", False)
+
+
+def test_extract_work_schedule() -> None:
+    assert extract_work_schedule(None) is None
+    assert extract_work_schedule("Flexible working hours with remote options") == "flexible"
+    assert extract_work_schedule("Must be available for night shift") == "night_shift"
+    assert extract_work_schedule("Standard Monday to Friday 9 to 5") == "standard_day"
+    assert extract_work_schedule("Weekend shift work required") == "weekend"
+
+
+def test_extract_normalized_benefits() -> None:
+    assert extract_normalized_benefits(None) is None
+    text = "We offer comprehensive health insurance, dental coverage, 401(k) matching, and generous paid time off."
+    b = extract_normalized_benefits(text) or ""
+    assert "health_insurance" in b
+    assert "dental_vision" in b
+    assert "retirement_401k" in b
+    assert "paid_time_off" in b
+
+
+def test_extract_normalized_skills() -> None:
+    assert extract_normalized_skills(None) is None
+    text = "Requirements: Strong experience with Python, PostgreSQL, Docker, AWS, and React."
+    s = extract_normalized_skills(text) or ""
+    assert "python" in s
+    assert "postgresql" in s
+    assert "docker" in s
+    assert "aws" in s
+    assert "react" in s
