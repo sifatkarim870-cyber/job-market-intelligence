@@ -386,3 +386,243 @@ def map_relocation_support(text: str | None) -> bool | None:
         return False
     return None
 
+# ============================================================================
+# Education Field of Study / Discipline
+# ============================================================================
+
+_RAW_EDU_PATTERNS = [
+    re.compile(
+        r"""(?ix)
+        \b(?:
+            (?:bachelor(?:['’]s)?|master(?:['’]s)?|ph\.?d\.?|doctorate|doctorat|associate(?:['’]s)?|undergraduate|graduate|university|college)?
+            \s*(?:of\s+(?:science|arts|engineering|commerce|business|technology))?
+            \s*(?:degree|diploma|licenciatura|t[ií]tulo(?:\s+universitario)?|dipl[oô]me|maestr[ií]a|doctorado|bac\s*\+\s*[345]|bsc|msc|b\.s\.|m\.s\.|b\.a\.|m\.a\.|ph\.?d\.?)
+            |
+            (?:bachelor(?:['’]s)?|master(?:['’]s)?|ph\.?d\.?|doctorate|doctorat|associate(?:['’]s)?|licenciatura|maestr[ií]a|doctorado|bac\s*\+\s*[345]|\bbs\b|\bms\b|\bba\b|bsc|msc|b\.s\.|m\.s\.|b\.a\.|m\.a\.)
+        )
+        \s+(?:in|of|en|de|d'|en\s+materia\s+de)\s+
+        ([A-Za-z0-9\s,&/\-–\u00C0-\u017F]+?)
+        (?=(?:\s+(?:or|o|ou)\s+(?:a\s+)?(?:closely\s+)?(?:related|relevant|af[ií]n|afines|connexe|equivalent|equivalente|[eé]quivalent|quantitative)(?:\s+(?:field|discipline|area|branche|domaine))?|[.;\n\r]|\Z|\s+is\s+required|\s+required\b|\s+preferred\b|\s+with\b|\s+and\s+\d+\+?\s+years))
+        """
+    ),
+    re.compile(
+        r"""(?ix)
+        \b(?:degree|major|discipline|field\s+of\s+study|formation|t[ií]tulo)\s*(?:required|needed)?\s*[:\-]\s*
+        ([A-Za-z0-9\s,&/\-–\u00C0-\u017F]+?)
+        (?=(?:\s+(?:or|o|ou)\s+(?:a\s+)?(?:related|af[ií]n|connexe|equivalent)\b|[.;\n\r]|\Z|\s+is\s+required|\s+required\b|\s+preferred\b))
+        """
+    ),
+]
+
+_DISCIPLINE_TAXONOMY: list[tuple[str, re.Pattern[str]]] = [
+    (
+        "computer_science",
+        re.compile(
+            r"\b(computer\s*sciences?|software(?:\s*engineering)?|informatique|inform[aá]tica|computer\s*engineering|g[eé]nie\s*logiciel|computaci[oó]n|ciencias\s*de\s*la\s*computaci[oó]n|\bcs\b)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "information_technology",
+        re.compile(
+            r"\b(information\s*technolog(?:y|ies)|information\s*systems?|cyber\s*security|cybersecurity|network(?:ing)?|sysadmin|syst[eè]mes\s*d'information|tecnolog[ií]a\s*de\s*la\s*informaci[oó]n|\bit\b)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "data_science_statistics",
+        re.compile(
+            r"\b(data\s*sciences?|data\s*analytics?|statistics?|statistical|statistiques?|estad[ií]sticas?|biostatistics?|business\s*analytics?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "mathematics",
+        re.compile(
+            r"\b(mathematics?|applied\s*math(?:ematics)?|math[eé]matiques?|matem[aá]ticas?|actuarial(?:\s*science)?|\bmath\b)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "engineering_electrical",
+        re.compile(
+            r"\b(electrical|electronics?|g[eé]nie\s*[eé]lectrique|ingenier[ií]a\s*[eé]l[eé]ctrica|telecom(?:munications?)?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "engineering_mechanical",
+        re.compile(
+            r"\b(mechanical(?:\s*engineering)?|m[eé]canique|mec[aá]nica|mechatronics?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "engineering_civil",
+        re.compile(
+            r"\b(civil(?:\s*engineering)?|construction(?:\s*management)?|g[eé]nie\s*civil|ingenier[ií]a\s*civil|structural(?:\s*engineering)?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "engineering_chemical",
+        re.compile(
+            r"\b(chemical\s*engineering|g[eé]nie\s*chimique|ingenier[ií]a\s*qu[ií]mica)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "engineering_general",
+        re.compile(
+            r"\b(engineering|ing[eé]nierie|ingenier[ií]a|industrial\s*engineering)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "business_administration",
+        re.compile(
+            r"\b(business\s*administration|business\s*management|gesti[oó]n|administraci[oó]n(?:\s*de\s*empresas)?|management|commerce|\bmba\b)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "finance_accounting",
+        re.compile(
+            r"\b(finance|financial|accounting|accountancy|economics?|comptabilit[eé]|finanzas|contabilidad|econom[ií]a|audit|banking)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "marketing_communications",
+        re.compile(
+            r"\b(marketing|communications?|advertising|journalism|public\s*relations?|relaciones\s*p[uú]blicas|media(?:\s*studies)?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "human_resources",
+        re.compile(
+            r"\b(human\s*resources?|ressources\s*humaines|recursos\s*humanos|\bhr\b|talent\s*management)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "healthcare_nursing",
+        re.compile(
+            r"\b(nursing|medicine|pharmacy|public\s*health|sant[eé]|enfermer[ií]a|medicina|pharmacology|healthcare)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "natural_sciences",
+        re.compile(
+            r"\b(physics|chemistry|biology|biotechnology|biotech|biochemistry|physique|chimie|biologie|f[ií]sica|qu[ií]mica|environmental\s*science)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "social_sciences",
+        re.compile(
+            r"\b(psychology|sociology|political\s*science|international\s*relations?|psychologie|sociologie|psicolog[ií]a|ciencias\s*sociales)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "law_legal",
+        re.compile(
+            r"\b(law|legal(?:\s*studies)?|droit|derecho|jurisprudence|\bllb\b|\bllm\b|\bjd\b)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "education_teaching",
+        re.compile(
+            r"\b(education|[eé]ducation|teaching|pedagogy|enseignement|pedagog[ií]a)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "arts_design",
+        re.compile(
+            r"\b(design|architecture|fine\s*arts?|graphic(?:\s*design)?|visual\s*arts?|dise[nñ]o)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "agriculture",
+        re.compile(
+            r"\b(agriculture|agronomy|forestry|veterinary|agronome|agronom[ií]a)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "logistics_supply_chain",
+        re.compile(
+            r"\b(supply\s*chain|logistics?|procurement|log[ií]stica|approvisionnement)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "stem_general",
+        re.compile(
+            r"\b(stem|quantitative(?:\s*field)?|scientific\s*discipline|technical\s*field)\b",
+            re.IGNORECASE,
+        ),
+    ),
+]
+
+_DISQUALIFIED_RAW_WORDS = re.compile(
+    r"\b(nuevo|alert|cookie|apply|click|terms|privacy|equal opportunity|job|position|employment|candidate|experience|years|work|customer|country|client|account|accounts|countries|breakthrough|reality|spoken|written|english|spanish|french)\b",
+    re.IGNORECASE,
+)
+
+_EDU_SENTENCE_TRIGGER = re.compile(
+    r"\b(degree|diploma|dipl[oô]me|licenciatura|bac\s*\+\s*[345]|bachelor|master|ph\.?d\.?|doctorate|doctorat|associate|bsc|msc|b\.s\.|m\.s\.|b\.a\.|m\.a\.)\b",
+    re.IGNORECASE,
+)
+
+
+def extract_education_field_raw(text: str | None) -> str | None:
+    """Extract raw degree discipline text phrase from requirements/description text."""
+    if not text:
+        return None
+    for pat in _RAW_EDU_PATTERNS:
+        for m in pat.finditer(text):
+            raw = m.group(1).strip(" \t\r\n,.;:-")
+            if 3 <= len(raw) <= 80:
+                words = raw.split()
+                if len(words) <= 10 and not _DISQUALIFIED_RAW_WORDS.search(raw):
+                    return raw
+    return None
+
+
+def map_education_discipline(text: str | None) -> str | None:
+    """Map text (either extracted raw field or description block) to comma-separated discipline tags."""
+    if not text:
+        return None
+    matched = []
+    for code, pat in _DISCIPLINE_TAXONOMY:
+        if pat.search(text):
+            matched.append(code)
+    return ",".join(matched) if matched else None
+
+
+def extract_education_discipline_context(text: str | None) -> tuple[str | None, str | None]:
+    """Extract both raw field and normalized discipline from text with strict sentence scoping."""
+    if not text:
+        return None, None
+    raw = extract_education_field_raw(text)
+    if raw:
+        norm = map_education_discipline(raw)
+        if norm:
+            return raw, norm
+
+    # If raw didn't map or was missing, check sentences that explicitly mention degree/diploma
+    sentences = re.split(r"[.\n\r;]", text)
+    edu_phrases = [s.strip() for s in sentences if _EDU_SENTENCE_TRIGGER.search(s) and len(s.strip()) <= 200]
+    if edu_phrases:
+        scoped_text = " ".join(edu_phrases)
+        norm = map_education_discipline(scoped_text)
+        return raw, norm
+
+    return raw, None

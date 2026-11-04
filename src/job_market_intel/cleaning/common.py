@@ -191,3 +191,5 @@ class CleanedJob(BaseModel):
     job_title_en: str | None = None
     visa_sponsorship: bool | None = None
     relocation_support: bool | None = None
+    education_field_raw: str | None = None
+    education_field_normalized: str | None = None

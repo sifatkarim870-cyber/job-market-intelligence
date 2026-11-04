@@ -3,6 +3,8 @@ from job_market_intel.cleaning.qualification_mappers import (
     map_experience_level,
     map_job_category,
     map_remote_work_type,
+    extract_education_field_raw,
+    map_education_discipline,
 )
 
 
@@ -53,3 +55,20 @@ def test_map_job_category() -> None:
     assert map_job_category("Customer Support Agent") == "customer_support"
     assert map_job_category("Senior Accountant") == "finance"
     assert map_job_category("Technical Recruiter") == "hr_people"
+
+
+def test_extract_education_field_raw() -> None:
+    assert extract_education_field_raw(None) is None
+    assert extract_education_field_raw("") is None
+    assert extract_education_field_raw("Bachelor's degree in Computer Science or related field") == "Computer Science"
+    assert extract_education_field_raw("Degree in Business Administration, Finance or Accounting is required") == "Business Administration, Finance or Accounting"
+    assert extract_education_field_raw("Degree in Nursing required") == "Nursing"
+
+
+def test_map_education_discipline() -> None:
+    assert map_education_discipline(None) is None
+    assert map_education_discipline("") is None
+    assert "computer_science" in (map_education_discipline("Computer Science, Software Engineering") or "")
+    assert "data_science_statistics" in (map_education_discipline("Data Science, Statistics") or "")
+    assert "finance_accounting" in (map_education_discipline("Finance and Accounting") or "")
+    assert "healthcare_nursing" in (map_education_discipline("Nursing and Medicine") or "")
