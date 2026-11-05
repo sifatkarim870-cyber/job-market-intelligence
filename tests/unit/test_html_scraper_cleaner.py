@@ -58,3 +58,31 @@ def test_pipeline_passes_the_site_config_to_the_cleaner() -> None:
 
     assert job.currency_iso_code == "NZD"
     assert job.pay_period == "hourly"
+
+
+def test_cleaner_extracts_features_from_multilingual_and_translated_text() -> None:
+    raw = RawHtmlScraperJob(
+        source_job_id="test-fa-1",
+        title="توسعه دهنده ارشد بک اند",
+        company_name="دیجیکالا",
+        description="ما به دنبال یک توسعه دهنده با حداقل ۳ سال سابقه کار هستیم. مزایا: بیمه تامین اجتماعی و ناهار.",
+        location="Tehran",
+        country="Iran",
+        posted_date=date(2026, 11, 1),
+        url="https://example.invalid/jobs/fa-1",
+        raw={
+            "job_title_en": "Senior Backend Developer",
+            "description_en": "We are looking for a Senior Backend Developer with at least 3 years of experience in Python and PostgreSQL. Benefits include health insurance and lunch.",
+        },
+    )
+
+    cleaner = HtmlScraperCleaner()
+    job = cleaner.clean_job(raw)
+
+    assert job.experience_years_min == 3
+    assert job.seniority_role_type == "individual_contributor"
+    assert job.is_managerial is False
+    assert job.job_category_code == "swe_backend"
+    assert "health_insurance" in (job.benefits_normalized or "")
+    assert "python" in (job.skills_normalized or "")
+    assert "postgresql" in (job.skills_normalized or "")

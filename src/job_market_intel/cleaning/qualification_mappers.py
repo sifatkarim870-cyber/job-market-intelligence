@@ -16,32 +16,38 @@ import re
 # ============================================================================
 
 _EDU_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("phd", re.compile(r"\b(ph\.?d|doctorat|doctorate|doctorado|dr\.)\b", re.IGNORECASE)),
+    (
+        "phd",
+        re.compile(
+            r"\b(ph\.?d|doctorat|doctorate|doctorado|dr\.|promotion|doktortitel|دکتری|دکترا|\bs3\b)\b",
+            re.IGNORECASE,
+        ),
+    ),
     (
         "master",
         re.compile(
-            r"\b(master'?s?|magister|msc|m\.s\.|mba|maestr[ií]a|bac\s*\+\s*5|postgraduate|graduate degree)\b",
+            r"\b(master'?s?|magister|msc|m\.s\.|mba|maestr[ií]a|bac\s*\+\s*5|postgraduate|graduate degree|کارشناسی[\s\u200c]*ارشد|فوق[\s\u200c]*لیسانس|\bs2\b)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "bachelor",
         re.compile(
-            r"\b(bachelor'?s?|licence|licenciatura|bac\s*\+\s*[34]|bsc|b\.s\.|b\.a\.|grado universitario|undergraduate|degree in|college degree|university degree)\b",
+            r"\b(bachelor'?s?|licence|licenciatura|bac\s*\+\s*[34]|bsc|b\.s\.|b\.a\.|grado universitario|undergraduate|degree in|college degree|university degree|کارشناسی|لیسانس|\bs1\b|sarjana)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "high_school",
         re.compile(
-            r"\b(high\s*school|baccalaur[eé]at|\bbac\b|secundaria|bachiller|bachillerato|ged|secondary education)\b",
+            r"\b(high\s*school|baccalaur[eé]at|\bbac\b|secundaria|bachiller|bachillerato|ged|secondary education|دیپلم|abitur|realschulabschluss|matura|\bsma\b|\bsmk\b)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "associate",
         re.compile(
-            r"\b(associate'?s?|dut|bts|t[eé]cnico superior|foundation degree|college diploma)\b",
+            r"\b(associate'?s?|dut|bts|t[eé]cnico superior|foundation degree|college diploma|کاردانی|فوق[\s\u200c]*دیپلم|ausbildung|fachhochschulreife|\bd3\b)\b",
             re.IGNORECASE,
         ),
     ),
@@ -85,28 +91,28 @@ _EXP_TITLE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "executive",
         re.compile(
-            r"\b(c-level|chief executive|ceo|cto|cfo|coo|cmo|vice president|\bvp\b|president)\b",
+            r"\b(c-level|chief executive|ceo|cto|cfo|coo|cmo|vice president|\bvp\b|president|geschäftsführer|vorstand|مدیر[\s\u200c]*عامل|مدیر[\s\u200c]*ارشد)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "principal",
         re.compile(
-            r"\b(principal|staff\s+(?:engineer|developer)|distinguished|director)\b",
+            r"\b(principal|staff\s+(?:engineer|developer)|distinguished|director|directeur|leiter|abteilungsleiter|bereichsleiter|مدیر[\s\u200c]*کل|رئیس)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "lead",
         re.compile(
-            r"\b(team\s*lead|lead|tech\s*lead|chef d'[eé]quipe|architect|manager)\b",
+            r"\b(team\s*lead|lead|tech\s*lead|chef d'[eé]quipe|architect|manager|líder|teamleiter|سرپرست|لید)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "senior",
         re.compile(
-            r"\b(senior|\bsr\.?\b|s[eé]nior|avanc[eé]|experto)\b",
+            r"\b(senior|\bsr\.?\b|s[eé]nior|avanc[eé]|experto|ارشد)\b",
             re.IGNORECASE,
         ),
     ),
@@ -127,7 +133,7 @@ _EXP_TITLE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "entry",
         re.compile(
-            r"\b(entry[-\s]?level|trainee|stagiaire|intern|internship|pr[aá]cticas|practicante|fresh graduate|apprentice)\b",
+            r"\b(entry[-\s]?level|trainee|stagiaire|intern|internship|pr[aá]cticas|practicante|fresh graduate|apprentice|werkstudent|praktikant|کارآموز)\b",
             re.IGNORECASE,
         ),
     ),
@@ -418,147 +424,147 @@ _DISCIPLINE_TAXONOMY: list[tuple[str, re.Pattern[str]]] = [
     (
         "computer_science",
         re.compile(
-            r"\b(computer\s*sciences?|software(?:\s*engineering)?|informatique|inform[aá]tica|computer\s*engineering|g[eé]nie\s*logiciel|computaci[oó]n|ciencias\s*de\s*la\s*computaci[oó]n|\bcs\b)\b",
+            r"\b(computer\s*sciences?|software(?:\s*engineering)?|informatique|inform[aá]tica|computer\s*engineering|g[eé]nie\s*logiciel|computaci[oó]n|ciencias\s*de\s*la\s*computaci[oó]n|informatik|rechnertechnik|مهندسی\s*کامپیوتر|نرم[\s\u200c]*افزار|علوم\s*کامپیوتر|\bcs\b)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "information_technology",
         re.compile(
-            r"\b(information\s*technolog(?:y|ies)|information\s*systems?|cyber\s*security|cybersecurity|network(?:ing)?|sysadmin|syst[eè]mes\s*d'information|tecnolog[ií]a\s*de\s*la\s*informaci[oó]n|\bit\b)\b",
+            r"\b(information\s*technolog(?:y|ies)|information\s*systems?|cyber\s*security|cybersecurity|network(?:ing)?|sysadmin|syst[eè]mes\s*d'information|tecnolog[ií]a\s*de\s*la\s*informaci[oó]n|wirtschaftsinformatik|فناوری\s*اطلاعات|\bit\b)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "data_science_statistics",
         re.compile(
-            r"\b(data\s*sciences?|data\s*analytics?|statistics?|statistical|statistiques?|estad[ií]sticas?|biostatistics?|business\s*analytics?)\b",
+            r"\b(data\s*sciences?|data\s*analytics?|statistics?|statistical|statistiques?|estad[ií]sticas?|biostatistics?|business\s*analytics?|ciencia\s*de\s*datos|علم\s*داده|آمار)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "mathematics",
         re.compile(
-            r"\b(mathematics?|applied\s*math(?:ematics)?|math[eé]matiques?|matem[aá]ticas?|actuarial(?:\s*science)?|\bmath\b)\b",
+            r"\b(mathematics?|applied\s*math(?:ematics)?|math[eé]matiques?|matem[aá]ticas?|actuarial(?:\s*science)?|mathematik|ریاضی|\bmath\b)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "engineering_electrical",
         re.compile(
-            r"\b(electrical|electronics?|g[eé]nie\s*[eé]lectrique|ingenier[ií]a\s*[eé]l[eé]ctrica|telecom(?:munications?)?)\b",
+            r"\b(electrical|electronics?|g[eé]nie\s*[eé]lectrique|ingenier[ií]a\s*[eé]l[eé]ctrica|telecom(?:munications?)?|elektrotechnik|مهندسی\s*برق|الکترونیک)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "engineering_mechanical",
         re.compile(
-            r"\b(mechanical(?:\s*engineering)?|m[eé]canique|mec[aá]nica|mechatronics?)\b",
+            r"\b(mechanical(?:\s*engineering)?|m[eé]canique|mec[aá]nica|mechatronics?|maschinenbau|مهندسی\s*مکانیک)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "engineering_civil",
         re.compile(
-            r"\b(civil(?:\s*engineering)?|construction(?:\s*management)?|g[eé]nie\s*civil|ingenier[ií]a\s*civil|structural(?:\s*engineering)?)\b",
+            r"\b(civil(?:\s*engineering)?|construction(?:\s*management)?|g[eé]nie\s*civil|ingenier[ií]a\s*civil|structural(?:\s*engineering)?|bauingenieurwesen|مهندسی\s*عمران)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "engineering_chemical",
         re.compile(
-            r"\b(chemical\s*engineering|g[eé]nie\s*chimique|ingenier[ií]a\s*qu[ií]mica)\b",
+            r"\b(chemical\s*engineering|g[eé]nie\s*chimique|ingenier[ií]a\s*qu[ií]mica|مهندسی\s*شیمی)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "engineering_general",
         re.compile(
-            r"\b(engineering|ing[eé]nierie|ingenier[ií]a|industrial\s*engineering)\b",
+            r"\b(engineering|ing[eé]nierie|ingenier[ií]a|industrial\s*engineering|wirtschaftsingenieurwesen|مهندسی\s*صنایع)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "business_administration",
         re.compile(
-            r"\b(business\s*administration|business\s*management|gesti[oó]n|administraci[oó]n(?:\s*de\s*empresas)?|management|commerce|\bmba\b)\b",
+            r"\b(business\s*administration|business\s*management|gesti[oó]n|administraci[oó]n(?:\s*de\s*empresas)?|management|commerce|betriebswirtschaft|\bbwl\b|مدیریت|مدیریت\s*بازرگانی|مدیریت\s*کسب\s*و\s*کار|\bmba\b)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "finance_accounting",
         re.compile(
-            r"\b(finance|financial|accounting|accountancy|economics?|comptabilit[eé]|finanzas|contabilidad|econom[ií]a|audit|banking)\b",
+            r"\b(finance|financial|accounting|accountancy|economics?|comptabilit[eé]|finanzas|contabilidad|econom[ií]a|audit|banking|finanzwesen|rechnungswesen|حسابداری|مدیریت\s*مالی|اقتصاد)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "marketing_communications",
         re.compile(
-            r"\b(marketing|communications?|advertising|journalism|public\s*relations?|relaciones\s*p[uú]blicas|media(?:\s*studies)?)\b",
+            r"\b(marketing|communications?|advertising|journalism|public\s*relations?|relaciones\s*p[uú]blicas|media(?:\s*studies)?|بازاریابی|مارکتینگ)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "human_resources",
         re.compile(
-            r"\b(human\s*resources?|ressources\s*humaines|recursos\s*humanos|\bhr\b|talent\s*management)\b",
+            r"\b(human\s*resources?|ressources\s*humaines|recursos\s*humanos|\bhr\b|talent\s*management|منابع\s*انسانی)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "healthcare_nursing",
         re.compile(
-            r"\b(nursing|medicine|pharmacy|public\s*health|sant[eé]|enfermer[ií]a|medicina|pharmacology|healthcare)\b",
+            r"\b(nursing|medicine|pharmacy|public\s*health|sant[eé]|enfermer[ií]a|medicina|pharmacology|healthcare|krankenpflege|پزشکی|پرستاری|داروسازی)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "natural_sciences",
         re.compile(
-            r"\b(physics|chemistry|biology|biotechnology|biotech|biochemistry|physique|chimie|biologie|f[ií]sica|qu[ií]mica|environmental\s*science)\b",
+            r"\b(physics|chemistry|biology|biotechnology|biotech|biochemistry|physique|chimie|biologie|f[ií]sica|qu[ií]mica|environmental\s*science|شیمی|زیست[\s\u200c]*شناسی)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "social_sciences",
         re.compile(
-            r"\b(psychology|sociology|political\s*science|international\s*relations?|psychologie|sociologie|psicolog[ií]a|ciencias\s*sociales)\b",
+            r"\b(psychology|sociology|political\s*science|international\s*relations?|psychologie|sociologie|psicolog[ií]a|ciencias\s*sociales|روانشناسی|علوم\s*اجتماعی)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "law_legal",
         re.compile(
-            r"\b(law|legal(?:\s*studies)?|droit|derecho|jurisprudence|\bllb\b|\bllm\b|\bjd\b)\b",
+            r"\b(law|legal(?:\s*studies)?|droit|derecho|jurisprudence|jura|rechtswissenschaften|حقوق|\bllb\b|\bllm\b|\bjd\b)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "education_teaching",
         re.compile(
-            r"\b(education|[eé]ducation|teaching|pedagogy|enseignement|pedagog[ií]a)\b",
+            r"\b(education|[eé]ducation|teaching|pedagogy|enseignement|pedagog[ií]a|آموزش)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "arts_design",
         re.compile(
-            r"\b(design|architecture|fine\s*arts?|graphic(?:\s*design)?|visual\s*arts?|dise[nñ]o)\b",
+            r"\b(design|architecture|fine\s*arts?|graphic(?:\s*design)?|visual\s*arts?|dise[nñ]o|طراحی|معماری)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "agriculture",
         re.compile(
-            r"\b(agriculture|agronomy|forestry|veterinary|agronome|agronom[ií]a)\b",
+            r"\b(agriculture|agronomy|forestry|veterinary|agronome|agronom[ií]a|کشاورزی)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "logistics_supply_chain",
         re.compile(
-            r"\b(supply\s*chain|logistics?|procurement|log[ií]stica|approvisionnement)\b",
+            r"\b(supply\s*chain|logistics?|procurement|log[ií]stica|approvisionnement|لجستیک|زنجیره\s*تامین)\b",
             re.IGNORECASE,
         ),
     ),
@@ -632,16 +638,21 @@ def extract_education_discipline_context(text: str | None) -> tuple[str | None, 
 # Experience years extraction
 # ---------------------------------------------------------------------------
 
+_YEARS_UNIT = r"(?:years?|yrs?|a[nñ]os?|ans?|jahre?(?:n)?|سال|tahun)"
+_EXP_WORD = r"(?:experience|exp|d'exp[eé]rience|de\s+experiencia|berufserfahrung|erfahrung|سابقه|تجربه|pengalaman)"
+_MIN_PREFIX = r"(?:at\s+least|minimum|min\.?|more\s+than|>|\+|al\s+menos|m[ií]nimo|minimo|au\s+moins|mindestens|mind\.?|حداقل|minimal)"
+_RANGE_SEP = r"(?:-|to|a|al|à|bis|تا|sampai)"
+
 _YEARS_RANGE = re.compile(
-    r'\b(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*(?:\+)?\s*(?:years?|yrs?)(?:\s+(?:of\s+)?(?:relevant\s+|direct\s+)?experience)?\b',
+    rf'\b(\d{{1,2}})\s*{_RANGE_SEP}\s*(\d{{1,2}})\s*(?:\+)?\s*{_YEARS_UNIT}(?:\s+(?:of\s+)?(?:relevant\s+|direct\s+)?{_EXP_WORD})?\b',
     re.IGNORECASE,
 )
 _YEARS_MIN = re.compile(
-    r'\b(?:at\s+least|minimum|min\.?|more\s+than|>|\+)?\s*(\d{1,2})\s*(?:\+)?\s*(?:years?|yrs?)\s+(?:of\s+)?(?:relevant\s+|direct\s+)?experience\b',
+    rf'\b(?:{_MIN_PREFIX}\s*)?(\d{{1,2}})\s*(?:\+)?\s*{_YEARS_UNIT}\s+(?:of\s+)?(?:relevant\s+|direct\s+)?{_EXP_WORD}\b',
     re.IGNORECASE,
 )
 _YEARS_PLUS = re.compile(
-    r'\b(\d{1,2})\s*\+\s*(?:years?|yrs?)(?:\s+(?:of\s+)?(?:relevant\s+|direct\s+)?experience)?\b',
+    rf'\b(\d{{1,2}})\s*\+\s*{_YEARS_UNIT}(?:\s+(?:of\s+)?(?:relevant\s+|direct\s+)?{_EXP_WORD})?\b',
     re.IGNORECASE,
 )
 
@@ -677,27 +688,27 @@ def extract_experience_years(text: str | None) -> tuple[int | None, int | None]:
 # ---------------------------------------------------------------------------
 
 _EXECUTIVE_TITLES = re.compile(
-    r'\b(?:c[etfomio]o|chief\s+\w+\s+officer|vice\s+president|vp\b|managing\s+director|executive\s+director|partner|founder)\b',
+    r"\b(?:c[etfomio]o|chief\s+\w+\s+officer|vice\s+president|vp\b|managing\s+director|executive\s+director|partner|founder|director\s+general|gerente\s+general|geschäftsführer|vorstand|مدیر[\s\u200c]*عامل|مدیر[\s\u200c]*ارشد)\b",
     re.IGNORECASE,
 )
 _DIRECTOR_TITLES = re.compile(
-    r'\b(?:director(?:\s+of)?|head\s+of|group\s+head)\b',
+    r"\b(?:director(?:\s+of)?|head\s+of|group\s+head|directeur|leiter|abteilungsleiter|bereichsleiter|مدیر[\s\u200c]*کل|رئیس)\b",
     re.IGNORECASE,
 )
 _MANAGER_TITLES = re.compile(
-    r'\b(?:manager|general\s+manager|supervisor|superintendent)\b',
+    r"\b(?:manager|general\s+manager|supervisor|superintendent|gerente|encargado|responsable|gruppenleiter|مدیر|مسئول)\b",
     re.IGNORECASE,
 )
 _LEAD_TITLES = re.compile(
-    r'\b(?:team\s+lead|tech\s+lead|lead\s+(?:engineer|developer|designer|analyst|architect|consultant)|lead)\b',
+    r"\b(?:team\s+lead|tech\s+lead|lead\s+(?:engineer|developer|designer|analyst|architect|consultant)|lead|líder|chef\s+d'équipe|teamleiter|سرپرست|لید)\b",
     re.IGNORECASE,
 )
 _IC_TITLES = re.compile(
-    r'\b(?:intern|junior|entry\s*level|associate|specialist|engineer|developer|analyst|consultant|coordinator|officer|staff|principal|senior)\b',
+    r"\b(?:intern|junior|entry\s*level|associate|specialist|engineer|developer|analyst|consultant|coordinator|officer|staff|principal|senior|desarrollador|ingeniero|analista|especialista|stagiaire|développeur|ingénieur|\w*entwickler|\w*ingenieur|sachbearbeiter|berater|کارشناس|مهندس|توسعه[\s\u200c]*دهنده|برنامه[\s\u200c]*نویس|طراح|کارآموز)\b",
     re.IGNORECASE,
 )
 _MANAGEMENT_TEXT = re.compile(
-    r'\b(?:manage\s+(?:a\s+)?team|direct\s+reports|supervise\s+(?:staff|team|employees)|leading\s+a\s+team\s+of)\b',
+    r"\b(?:manage\s+(?:a\s+)?team|direct\s+reports|supervise\s+(?:staff|team|employees)|leading\s+a\s+team\s+of|dirigir\s+(?:un\s+)?equipo|gestionar\s+(?:un\s+)?equipo|teamführung|führung\s+von\s+mitarbeitern|مدیریت\s+تیم|سرپرستی\s+تیم)\b",
     re.IGNORECASE,
 )
 
@@ -734,11 +745,11 @@ def extract_seniority_and_management(
 # ---------------------------------------------------------------------------
 
 _SCHEDULE_PATTERNS = [
-    ("night_shift", re.compile(r'\b(?:night\s*shift|third\s*shift|graveyard\s*shift|overnights?)\b', re.IGNORECASE)),
-    ("weekend", re.compile(r'\b(?:weekend\s*shift|weekends?\s*only|weekend\s*work)\b', re.IGNORECASE)),
-    ("rotational", re.compile(r'\b(?:rotational\s*shift|rotating\s*shift|shift\s*work)\b', re.IGNORECASE)),
-    ("flexible", re.compile(r'\b(?:flexible\s*(?:working\s*)?(?:hours|schedule)|flexitime|flextime)\b', re.IGNORECASE)),
-    ("standard_day", re.compile(r'\b(?:day\s*shift|standard\s*business\s*hours|9\s*(?:am)?\s*(?:-|to)\s*5\s*(?:pm)?|monday\s*(?:-|to)\s*friday)\b', re.IGNORECASE)),
+    ("night_shift", re.compile(r'\b(?:night\s*shift|third\s*shift|graveyard\s*shift|overnights?|turno\s+de\s+noche|nocturno|nachtschicht|travail\s+de\s+nuit|شیفت\s*شب)\b', re.IGNORECASE)),
+    ("weekend", re.compile(r'\b(?:weekend\s*shift|weekends?\s*only|weekend\s*work|fines\s+de\s+semana|wochenendarbeit|آخر\s*هفته)\b', re.IGNORECASE)),
+    ("rotational", re.compile(r'\b(?:rotational\s*shift|rotating\s*shift|shift\s*work|turno\s+rotativo|schichtarbeit|travail\s+posté|شیفت\s*چرخشی)\b', re.IGNORECASE)),
+    ("flexible", re.compile(r'\b(?:flexible\s*(?:working\s*)?(?:hours|schedule)|flexitime|flextime|horario\s+flexible|gleitzeit|horaires\s+flexibles|ساعت\s*کاری\s*منعطف|ساعات\s*کاری\s*منعطف)\b', re.IGNORECASE)),
+    ("standard_day", re.compile(r'\b(?:day\s*shift|standard\s*business\s*hours|9\s*(?:am)?\s*(?:-|to)\s*5\s*(?:pm)?|monday\s*(?:-|to)\s*friday|lunes\s+a\s+viernes|montag\s+bis\s+freitag|du\s+lundi\s+au\s+vendredi|شنبه\s+تا\s+چهارشنبه)\b', re.IGNORECASE)),
 ]
 
 
@@ -757,15 +768,15 @@ def extract_work_schedule(text: str | None) -> str | None:
 # ---------------------------------------------------------------------------
 
 _BENEFIT_TAXONOMY = [
-    ("health_insurance", re.compile(r'\b(?:health|medical)\s+(?:insurance|coverage|care|plan|benefits?)\b', re.IGNORECASE)),
-    ("dental_vision", re.compile(r'\b(?:dental|vision)\s+(?:insurance|coverage|plan|benefits?)\b', re.IGNORECASE)),
-    ("retirement_401k", re.compile(r'\b(?:401\(?k\)?|pension|retirement\s*(?:plan|fund|benefits?)|superannuation)\b', re.IGNORECASE)),
-    ("paid_time_off", re.compile(r'\b(?:paid\s+time\s+off|pto|vacation\s+days|annual\s+leave)\b', re.IGNORECASE)),
-    ("equity_stock_options", re.compile(r'\b(?:equity|stock\s+options|esop|rsu|company\s+shares)\b', re.IGNORECASE)),
-    ("parental_leave", re.compile(r'\b(?:parental|maternity|paternity)\s+leave\b', re.IGNORECASE)),
-    ("tuition_reimbursement", re.compile(r'\b(?:tuition\s+(?:reimbursement|assistance)|education\s+stipend|learning\s+budget)\b', re.IGNORECASE)),
-    ("relocation_assistance", re.compile(r'\b(?:relocation\s+(?:assistance|package|support|allowance))\b', re.IGNORECASE)),
-    ("wellness_perks", re.compile(r'\b(?:gym\s+membership|wellness\s+stipend|mental\s+health\s+support)\b', re.IGNORECASE)),
+    ("health_insurance", re.compile(r"\b(?:(?:health|medical)\s+(?:insurance|coverage|care|plan|benefits?)|seguro\s+m[eé]dico|seguro\s+de\s+salud|seguro\s+privado|seguro\s+de\s+vida|krankenversicherung|mutuelle(?:\s+sant[eé])?|بیمه(?:\s+تامین\s+اجتماعی|\s+تکمیلی)?)\b", re.IGNORECASE)),
+    ("dental_vision", re.compile(r"\b(?:(?:dental|vision)\s+(?:insurance|coverage|plan|benefits?)|seguro\s+dental|zahnzusatzversicherung)\b", re.IGNORECASE)),
+    ("retirement_401k", re.compile(r"\b(?:401\(?k\)?|pension|retirement\s*(?:plan|fund|benefits?)|superannuation|plan\s+de\s+pensiones|fondo\s+de\s+jubilaci[oó]n|betriebliche\s+altersvorsorge)\b", re.IGNORECASE)),
+    ("paid_time_off", re.compile(r"\b(?:paid\s+time\s+off|pto|vacation\s+days|annual\s+leave|vacaciones\s+pagadas|d[ií]as\s+de\s+vacaciones|urlaubstage|cong[eé]s\s+pay[eé]s|مرخصی)\b", re.IGNORECASE)),
+    ("equity_stock_options", re.compile(r"\b(?:equity|stock\s+options|esop|rsu|company\s+shares|opciones\s+sobre\s+acciones|aktienoptionen)\b", re.IGNORECASE)),
+    ("parental_leave", re.compile(r"\b(?:(?:parental|maternity|paternity)\s+leave|baja\s+por\s+maternidad|elternzeit|cong[eé]\s+maternit[eé])\b", re.IGNORECASE)),
+    ("tuition_reimbursement", re.compile(r"\b(?:tuition\s+(?:reimbursement|assistance)|education\s+stipend|learning\s+budget|formaci[oó]n\s+continua|weiterbildung|آموزش|بودجه\s*آموزشی)\b", re.IGNORECASE)),
+    ("relocation_assistance", re.compile(r"\b(?:relocation\s+(?:assistance|package|support|allowance)|ayuda\s+de\s+relocalizaci[oó]n|umzugshilfe)\b", re.IGNORECASE)),
+    ("wellness_perks", re.compile(r"\b(?:gym\s+membership|wellness\s+stipend|mental\s+health\s+support|gimnasio|fitnessstudio|صبحانه|ناهار|سرویس\s+رفت\s+و\s+برگشت)\b", re.IGNORECASE)),
 ]
 
 
