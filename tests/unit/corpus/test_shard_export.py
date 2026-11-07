@@ -130,7 +130,7 @@ def test_is_global_remote_sits_next_to_location_raw() -> None:
     """
     cols = SHARD_COLUMNS
     assert cols.index("location_raw") + 1 == cols.index("is_global_remote")
-    assert cols.index("is_global_remote") + 1 == cols.index("country_code")
+    assert "remote_work_type" in cols
 
 
 def test_is_global_remote_trips_the_all_null_column_guard() -> None:

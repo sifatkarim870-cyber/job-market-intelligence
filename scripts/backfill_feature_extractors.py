@@ -53,8 +53,7 @@ FROM core.jobs j
 JOIN core.job_descriptions d
     ON d.job_id = j.job_id AND d.posting_date = j.posting_date
 WHERE
-    ({lang_filter})
-    AND (d.description_en IS NOT NULL OR j.job_title_en IS NOT NULL)
+    {filter_clause}
 ORDER BY j.job_id, j.posting_date
 {limit_clause}
 """
@@ -115,14 +114,16 @@ def extract_all(title: str, text: str, edu_map: dict, exp_map: dict) -> dict:
     }
 
 
-def run_backfill(limit: int | None = None, also_english: bool = False) -> None:
-    if also_english:
-        lang_filter = "j.language_code IS NOT NULL"
+def run_backfill(limit: int | None = None, also_english: bool = False, step3_only: bool = False) -> None:
+    if step3_only:
+        filter_clause = "j.updated_at > now() - interval '4 hours'"
+    elif also_english:
+        filter_clause = "j.language_code IS NOT NULL AND (d.description_en IS NOT NULL OR j.job_title_en IS NOT NULL)"
     else:
-        lang_filter = "j.language_code IS NOT NULL AND j.language_code != 'en'"
+        filter_clause = "j.language_code IS NOT NULL AND j.language_code != 'en' AND (d.description_en IS NOT NULL OR j.job_title_en IS NOT NULL)"
 
     limit_clause = f"LIMIT {limit}" if limit else ""
-    sql = FETCH_SQL.format(lang_filter=lang_filter, limit_clause=limit_clause)
+    sql = FETCH_SQL.format(filter_clause=filter_clause, limit_clause=limit_clause)
 
     t0 = time.time()
     total_fetched = 0
@@ -223,14 +224,21 @@ def main():
     parser = argparse.ArgumentParser(description="Backfill feature extractors for non-EN rows")
     parser.add_argument("--limit", type=int, default=None, help="Max rows to process (for testing)")
     parser.add_argument("--also-english", action="store_true", help="Also re-run on English rows")
+    parser.add_argument("--step3-only", action="store_true", help="Process only recently updated Step 3 rows")
     args = parser.parse_args()
 
-    mode = "ALL languages" if args.also_english else "non-English only"
+    if args.step3_only:
+        mode = "Step 3 rows only (updated in last 4 hours)"
+    elif args.also_english:
+        mode = "ALL languages"
+    else:
+        mode = "non-English only"
+
     print(f"Starting backfill [{mode}] ...")
     if args.limit:
         print(f"  *** TEST MODE: limited to {args.limit:,} rows ***")
 
-    run_backfill(limit=args.limit, also_english=args.also_english)
+    run_backfill(limit=args.limit, also_english=args.also_english, step3_only=args.step3_only)
 
 
 if __name__ == "__main__":
