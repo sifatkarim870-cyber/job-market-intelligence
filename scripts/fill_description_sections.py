@@ -28,9 +28,8 @@ you want after improving the extractor.
 
 Why a temp table rather than executemany
 ----------------------------------------
-One set-based UPDATE per batch. 112k individual row updates over a WAN
-connection to Neon would take hours; this takes minutes, and the local laptop
-run is seconds.
+One set-based UPDATE per batch. 112k individual row updates would take hours;
+this takes minutes, and the local laptop run is seconds.
 
 Usage:
     python scripts/fill_description_sections.py --dry-run
@@ -49,8 +48,7 @@ from sqlalchemy import text
 
 #: Overridable via --dsn. A hardcoded DSN here once made a test write to the
 #: live corpus, where the statements happened to match nothing -- but only by
-#: luck. .env points DATABASE_URL at Neon, so a bare run would write to the
-#: wrong database.
+#: luck. Use --dsn so a run cannot silently target the wrong database.
 LOCAL_DSN = "postgresql+psycopg://app_user:changeme@localhost:5432/job_market_intelligence"
 
 BATCH = 2000
@@ -80,11 +78,11 @@ CREATE TEMP TABLE IF NOT EXISTS section_stage (
 
 SECTION_UPDATE = """
 UPDATE core.job_descriptions d
-   SET requirements               = s.requirements,
-       responsibilities           = s.responsibilities,
-       required_skills_text       = s.required_skills_text,
-       preferred_skills_text      = s.preferred_skills_text,
-       language_requirements_text = s.language_requirements_text,
+   SET requirements               = COALESCE(s.requirements, d.requirements),
+       responsibilities           = COALESCE(s.responsibilities, d.responsibilities),
+       required_skills_text       = COALESCE(s.required_skills_text, d.required_skills_text),
+       preferred_skills_text      = COALESCE(s.preferred_skills_text, d.preferred_skills_text),
+       language_requirements_text = COALESCE(s.language_requirements_text, d.language_requirements_text),
        updated_at                 = now()
   FROM section_stage s
  WHERE d.job_id = s.job_id
@@ -136,7 +134,7 @@ def fetch_batch(conn, *, overwrite: bool, limit: int) -> list[tuple]:
     ).all()
 
 
-def select_candidate_ids(session, *, overwrite: bool, limit: int | None) -> list[int]:
+def select_candidate_ids(session, *, overwrite: bool, limit: int | None, restore: bool = False) -> list[int]:
     """Return every job_id that still needs extraction, ordered.
 
     Resolved ONCE up front and paged in Python afterwards. The selection
@@ -144,11 +142,22 @@ def select_candidate_ids(session, *, overwrite: bool, limit: int | None) -> list
     re-running it per batch meant a full table scan per batch. That cost 38 full
     scans of 112,781 rows and the run did not finish in 50 minutes; the same
     work as a single scan plus cheap primary-key lookups finishes in minutes.
+
+    ``restore`` mode targets only rows where requirements or responsibilities is
+    NULL (using description_clean so original-language headings still match),
+    to recover content lost by a prior --overwrite run that used description_en.
     """
-    if overwrite:
-        where = "WHERE description_clean IS NOT NULL"
+    if restore:
+        # Target rows where req/resp dropped to NULL but description_clean exists.
+        where = (
+            "WHERE description_clean IS NOT NULL AND "
+            "((requirements IS NULL OR btrim(requirements) = '') OR "
+            " (responsibilities IS NULL OR btrim(responsibilities) = ''))"
+        )
+    elif overwrite:
+        where = "WHERE COALESCE(description_en, description_clean) IS NOT NULL"
     else:
-        where = "WHERE description_clean IS NOT NULL AND " + " AND ".join(
+        where = "WHERE COALESCE(description_en, description_clean) IS NOT NULL AND " + " AND ".join(
             f"({c} IS NULL OR btrim({c}) = '')" for c in COLUMNS
         )
     rows = (
@@ -169,6 +178,7 @@ def run_fill(
     limit: int | None,
     batch_size: int,
     offset: int = 0,
+    restore: bool = False,
 ) -> int:
     """Extract and write in batches until the selection runs dry.
 
@@ -176,20 +186,33 @@ def run_fill(
     testable with a stub and the module-level import stays out of the way of
     --help.
 
+    ``restore`` mode uses ``description_clean`` for the batch fetch (not the
+    COALESCE with description_en) so original-language headings still match,
+    and the SECTION_UPDATE uses COALESCE so it only fills NULL slots without
+    erasing any column that already has a value.
+
     Returns the number of rows updated.
     """
     session.execute(text(STAGE_DDL))
-    candidate_ids = select_candidate_ids(session, overwrite=overwrite, limit=limit)
+    candidate_ids = select_candidate_ids(session, overwrite=overwrite, limit=limit, restore=restore)
     if offset:
         candidate_ids = candidate_ids[offset:]
     logger.info("{} rows selected for extraction", f"{len(candidate_ids):,}")
+
+    # Restore mode always reads from description_clean so original-language
+    # section headings (Persian, Chinese, etc.) are still matched.
+    desc_expr = (
+        "description_clean"
+        if restore
+        else "COALESCE(description_en, description_clean)"
+    )
 
     total_updated = 0
     for start in range(0, len(candidate_ids), batch_size):
         chunk = candidate_ids[start : start + batch_size]
         batch = session.execute(
             text(
-                "SELECT job_id, description_clean AS description_clean "
+                f"SELECT job_id, {desc_expr} AS description_clean "  # noqa: S608
                 "FROM core.job_descriptions "
                 "WHERE job_id = ANY(:ids)"
             ),
@@ -214,6 +237,11 @@ def run_fill(
 
         processed = start + len(batch)
         if payload:
+            # Re-create the temp table before each write in case the connection
+            # was recycled by the pool (temp tables are session-scoped in
+            # Postgres; a recycled connection has no table). IF NOT EXISTS makes
+            # this a no-op when the table already exists.
+            session.execute(text(STAGE_DDL))
             session.execute(text("TRUNCATE section_stage"))
             session.execute(
                 text(
@@ -245,8 +273,8 @@ def main() -> int:
     parser.add_argument(
         "--dsn",
         help=(
-            "Target database. Without this, DATABASE_URL is used, which .env "
-            "points at NEON rather than the laptop."
+            "Target database. Without this, DATABASE_URL from the environment "
+            "is used."
         ),
     )
     parser.add_argument("--limit", type=int, help="Stop after N rows (testing).")
@@ -256,6 +284,15 @@ def main() -> int:
         "--overwrite",
         action="store_true",
         help="Re-extract rows that already have values.",
+    )
+    parser.add_argument(
+        "--restore",
+        action="store_true",
+        help=(
+            "Restoration pass: targets rows where requirements or responsibilities is NULL, "
+            "reads from description_clean so original-language headings still match, "
+            "and uses COALESCE update so no existing column is erased."
+        ),
     )
     parser.add_argument(
         "--dry-run",
@@ -282,7 +319,7 @@ def main() -> int:
             ids = select_candidate_ids(session, overwrite=args.overwrite, limit=args.limit or 1000)
             rows = session.execute(
                 text(
-                    "SELECT description_clean AS description_clean "
+                    "SELECT COALESCE(description_en, description_clean) AS description_clean "
                     "FROM core.job_descriptions WHERE job_id = ANY(:ids)"
                 ),
                 {"ids": ids},
@@ -304,6 +341,7 @@ def main() -> int:
             limit=args.limit,
             batch_size=args.batch,
             offset=args.offset,
+            restore=args.restore,
         )
         print_rates("AFTER", fetch_fill_rates(session))
         print(f"\nrows updated: {total_updated:,}")

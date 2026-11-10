@@ -175,23 +175,39 @@ _register(
     "responsibilities",
     "key responsibilities",
     "main responsibilities",
+    "core responsibilities",
+    "primary responsibilities",
     "job responsibilities",
     "your responsibilities",
     "duties",
     "job duties",
+    "key duties",
+    "primary duties",
+    "daily responsibilities",
     "what you'll do",
     "what you will do",
     "what you'll be doing",
+    "what you'd be doing",
+    "how you'll make an impact",
+    "how you will make an impact",
+    "in this role",
+    "in this role you will",
+    "in this position",
     "the role",
     "about the role",
     "role overview",
+    "role description",
     "job description",
     "job overview",
+    "position overview",
+    "position description",
     "day to day",
     "day-to-day",
     "the day-to-day",
-    "position overview",
     "your mission",
+    "your impact",
+    "what you'll be responsible for",
+    "as a",
 )
 _register(
     SectionKind.REQUIREMENTS,
@@ -203,46 +219,79 @@ _register(
     "qualifications",
     "basic qualifications",
     "who you are",
+    "about you",
     "what we are looking for",
+    "what we're looking for",
     "what we look for",
     "what you need",
+    "what you'll need",
+    "what you bring",
+    "what you will bring",
     "who we're looking for",
+    "who we are looking for",
     "must have",
     "must haves",
+    "must-have",
     "required",
+    "essential requirements",
+    "essential skills",
+    "mandatory requirements",
+    "you have",
+    "you'll have",
+    "you will have",
     "your profile",
     "candidate profile",
     "required conditions and characteristics",
     "skills and experience",
     "skills & experience",
     "skills and qualifications",
+    "experience and qualifications",
+    "experience & qualifications",
+    "what you offer",
+    "what you'll offer",
 )
 _register(
     SectionKind.SKILLS,
     "required skills",
     "skills",
     "technical skills",
+    "hard skills",
     "core skills",
+    "key skills",
+    "tools and technologies",
+    "tech stack",
+    "tools & technologies",
+    "competencies",
     "what you'll bring",
     "what you bring",
     "your skills",
+    "skills required",
+    "technical competencies",
 )
 _register(
     SectionKind.PREFERRED,
     "nice to have",
     "nice to haves",
+    "nice-to-have",
+    "nice-to-haves",
     "preferred",
     "preferred qualifications",
     "preferred experience",
+    "preferred skills",
     "bonus points",
     "bonus",
     "good to have",
     "good to haves",
     "pluses",
     "desirable",
+    "desirable skills",
+    "desirable experience",
     "advantageous",
     "we'd love to see",
     "extra credit",
+    "additional qualifications",
+    "would be a plus",
+    "plus if you have",
 )
 _register(SectionKind.LANGUAGE, "languages", "language", "language requirements")
 _register(
@@ -469,6 +518,215 @@ _register(SectionKind.PREFERRED, "مميزات", "ميزة", "يفضل")
 _register(SectionKind.LANGUAGE, "اللغات", "اللغة")
 _register(SectionKind.EDUCATION, "المؤهلات العلمية", "الخبرة", "الدرجة العلمية")
 
+
+# -- German (de) -------------------------------------------------------------
+_register(
+    SectionKind.RESPONSIBILITIES,
+    "aufgaben",
+    "ihre aufgaben",
+    "deine aufgaben",
+    "deine aufgaben und verantwortlichkeiten",
+    "tätigkeiten",
+    "tätigkeitsbeschreibung",
+    "was dich erwartet",
+    "was du tust",
+    "was erwartet dich",
+    "stellenbeschreibung",
+    "dein beitrag",
+    "deine rolle",
+    "kernaufgaben",
+    "hauptaufgaben",
+)
+_register(
+    SectionKind.REQUIREMENTS,
+    "anforderungen",
+    "dein profil",
+    "ihr profil",
+    "was du mitbringst",
+    "was wir erwarten",
+    "was wir uns wünschen",
+    "deine qualifikationen",
+    "ihre qualifikationen",
+    "voraussetzungen",
+    "wir suchen",
+    "das bringst du mit",
+    "das bringen sie mit",
+    "pflichtanforderungen",
+    "mindestanforderungen",
+    "zwingend erforderlich",
+)
+_register(
+    SectionKind.SKILLS,
+    "fähigkeiten",
+    "kenntnisse",
+    "technische kenntnisse",
+    "kompetenzen",
+    "deine kenntnisse",
+)
+_register(
+    SectionKind.PREFERRED,
+    "von vorteil",
+    "wünschenswert",
+    "nice to have",
+    "idealerweise",
+    "zusätzlich wünschenswert",
+    "optionale anforderungen",
+)
+_register(SectionKind.LANGUAGE, "sprachkenntnisse", "sprachen", "sprachanforderungen")
+_register(
+    SectionKind.EDUCATION,
+    "ausbildung",
+    "studium",
+    "abschluss",
+    "berufserfahrung",
+    "erfahrung",
+)
+_register(SectionKind.BENEFITS, "was wir bieten", "unser angebot", "benefits", "vorteile")
+
+# -- Spanish (es) ------------------------------------------------------------
+_register(
+    SectionKind.RESPONSIBILITIES,
+    "responsabilidades",
+    "tus responsabilidades",
+    "funciones",
+    "actividades",
+    "actividades a realizar",
+    "descripción del puesto",
+    "qué harás",
+    "que haras",
+    "descripción del cargo",
+    "tus funciones",
+    "misiones principales",
+)
+_register(
+    SectionKind.REQUIREMENTS,
+    "requisitos",
+    "perfil requerido",
+    "qué buscamos",
+    "que buscamos",
+    "lo que buscamos",
+    "competencias requeridas",
+    "formación requerida",
+    "requisitos del puesto",
+    "conocimientos requeridos",
+    "experiencia requerida",
+    "requisitos mínimos",
+    "requisitos indispensables",
+    "lo que necesitas",
+)
+_register(
+    SectionKind.SKILLS,
+    "habilidades",
+    "conocimientos",
+    "habilidades técnicas",
+    "competencias técnicas",
+    "conocimientos técnicos",
+)
+_register(
+    SectionKind.PREFERRED,
+    "se valorará",
+    "se valora",
+    "valorable",
+    "deseable",
+    "se considerará un plus",
+    "plus si tienes",
+    "conocimientos deseables",
+    "requisitos deseables",
+)
+_register(SectionKind.LANGUAGE, "idiomas", "conocimiento de idiomas", "requisitos de idioma")
+_register(
+    SectionKind.EDUCATION,
+    "formación",
+    "educación",
+    "titulación",
+    "experiencia",
+    "experiencia laboral",
+    "experiencia previa",
+)
+_register(SectionKind.BENEFITS, "qué ofrecemos", "que ofrecemos", "beneficios", "lo que ofrecemos")
+
+# -- Portuguese (pt) ---------------------------------------------------------
+_register(
+    SectionKind.RESPONSIBILITIES,
+    "responsabilidades",
+    "suas responsabilidades",
+    "atividades",
+    "o que você vai fazer",
+    "o que voce vai fazer",
+    "descrição do cargo",
+    "descricao do cargo",
+    "descrição da vaga",
+    "o que farás",
+    "principais atividades",
+)
+_register(
+    SectionKind.REQUIREMENTS,
+    "requisitos",
+    "o que precisamos",
+    "o que você precisa",
+    "o que voce precisa",
+    "habilidades necessárias",
+    "habilidades necessarias",
+    "perfil desejado",
+    "o que buscamos",
+    "pré-requisitos",
+    "pre-requisitos",
+    "requisitos obrigatórios",
+    "requisitos obrigatorios",
+    "o que esperamos de você",
+)
+_register(
+    SectionKind.SKILLS,
+    "habilidades",
+    "competências",
+    "competencias",
+    "habilidades técnicas",
+    "conhecimentos técnicos",
+    "conhecimentos necessários",
+)
+_register(
+    SectionKind.PREFERRED,
+    "diferenciais",
+    "será um diferencial",
+    "desejável",
+    "desejavel",
+    "conhecimentos desejáveis",
+    "nice to have",
+)
+_register(SectionKind.LANGUAGE, "idiomas", "requisitos de idioma", "conhecimento de idiomas")
+_register(
+    SectionKind.EDUCATION,
+    "formação",
+    "formacao",
+    "escolaridade",
+    "experiência",
+    "experiencia",
+    "experiência profissional",
+)
+_register(SectionKind.BENEFITS, "o que oferecemos", "benefícios", "beneficios", "o que você ganha")
+
+# -- Dutch (nl) --------------------------------------------------------------
+_register(
+    SectionKind.RESPONSIBILITIES,
+    "verantwoordelijkheden",
+    "jouw taken",
+    "wat ga je doen",
+    "functieomschrijving",
+    "taken en verantwoordelijkheden",
+)
+_register(
+    SectionKind.REQUIREMENTS,
+    "vereisten",
+    "wat zoeken we",
+    "jouw profiel",
+    "functie-eisen",
+    "wat verwachten we",
+)
+_register(SectionKind.SKILLS, "vaardigheden", "kennis en vaardigheden")
+_register(SectionKind.PREFERRED, "pré", "is een pré", "nice to have", "wenselijk")
+_register(SectionKind.LANGUAGE, "taalvereisten", "talen")
+_register(SectionKind.EDUCATION, "opleiding", "ervaring", "werkervaring")
+_register(SectionKind.BENEFITS, "wat bieden wij", "arbeidsvoorwaarden", "voordelen")
 
 # --------------------------------------------------------------------------
 # Locating headings inside flattened text
