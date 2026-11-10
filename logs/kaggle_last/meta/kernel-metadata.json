@@ -1,0 +1,24 @@
+{
+  "id": "mskarim870/jmi-translate-hf",
+  "id_no": 137865039,
+  "title": "jmi-translate-hf",
+  "code_file": "jmi-translate-hf.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": [
+    "scheduled",
+    "gpu"
+  ],
+  "dataset_sources": [
+    "mskarim870/jmi-translate-creds"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-private-byod/python@sha256:2757e0c7d1e0a9cb43da657b97e223c321a98f5014bdf64f44f2f6b083ad2b2f",
+  "machine_shape": "NvidiaTeslaT4"
+}
