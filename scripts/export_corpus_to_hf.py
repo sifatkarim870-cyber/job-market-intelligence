@@ -278,20 +278,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.keep_local_tree:
             delete = [f for f in delete if not f.startswith("shards_local/")]
 
-        logger.info("uploading snapshot to {} (upload_large_folder -- single commit)", REPO)
-        # upload_large_folder pre-uploads all LFS blobs then creates exactly
-        # ONE commit, staying well within the 128 commits/hour rate limit that
-        # upload_folder(multi_commits=True) would exhaust on a 133-shard repo.
-        api.upload_large_folder(
+        logger.info("uploading snapshot to {}", REPO)
+        api.upload_folder(
             folder_path=str(work / "shards"),
             repo_id=REPO,
             repo_type="dataset",
             path_in_repo="shards",
-            private=False,
+            commit_message=f"full local snapshot {dt_partition}: {rows:,} rows",
         )
-        logger.info("LFS upload complete; committing shards in one operation")
-        # upload_large_folder does its own final commit internally; the files
-        # are now on HF. Now delete the superseded shards in a single commit.
         if delete:
             logger.info("deleting {} superseded shard file(s) in one commit", len(delete))
             api.create_commit(
