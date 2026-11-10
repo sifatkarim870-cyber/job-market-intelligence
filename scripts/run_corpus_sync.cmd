@@ -49,10 +49,20 @@ REM pull-only sync cannot deliver that: any correction made on this laptop (a
 REM re-resolved location, a merged row, an applied translation) would sit here
 REM while HF kept serving the old values. That is exactly how 87,486 rows kept
 REM a stale location on HF.
-"%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\export_corpus_to_hf.py" >> "%DEST%\logs\sync.log" 2>&1
-if errorlevel 1 (
-  echo [run_corpus_sync] export to HF FAILED, see sync.log
+REM
+REM Export is SKIPPED when the merge failed. Export rebuilds shards/ from local
+REM and deletes every shard it did not just write, so exporting after a failed
+REM merge would delete the CI rows the merge was supposed to fold in. Failing
+REM the sync is recoverable; deleting unmerged rows is not.
+if "%MERGE_RC%"=="1" (
+  echo [run_corpus_sync] merge FAILED -- SKIPPING export so unmerged CI shards are not deleted
   set "EXPORT_RC=1"
+) else (
+  "%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\export_corpus_to_hf.py" >> "%DEST%\logs\sync.log" 2>&1
+  if errorlevel 1 (
+    echo [run_corpus_sync] export to HF FAILED, see sync.log
+    set "EXPORT_RC=1"
+  )
 )
 
 if not "%PULL_RC%"=="0"   set "PULL_RC=1"

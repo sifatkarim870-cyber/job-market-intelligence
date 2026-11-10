@@ -206,8 +206,8 @@
       "script": "scripts/run_themuse_scraper.py",
       "timeout": 25,
       "max_env": "THEMUSE_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "themuse.com/api/public/jobs - free key-free JSON API; ~20,000 pages of company-authored postings, so the largest untapped source measured. Rich company objects, levels, categories and locations. Page-based pagination. Added 2026-10-12."
+      "enabled": false,
+      "notes": "themuse.com/api/public/jobs - free key-free JSON API; endpoint returning 404 (disabled pending new scraper). Added 2026-10-12."
     },
     {
       "code": "jobbank",

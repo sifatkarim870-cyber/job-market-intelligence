@@ -77,11 +77,6 @@ jobs:
     services:
       # An EPHEMERAL database, seeded from the HF corpus repo.
       #
-      # The hosted Neon database is gone: its free quota is exhausted ("Your
-      # account or project has exceeded the quota") and every run now dies at
-      # its first write. Supabase's free tier is a drop-in replacement, but it
-      # just moves the same silent failure to another vendor.
-      #
       # This container is created fresh per job, seeded from `state/` in the
       # corpus dataset repo (scripts/export_state_snapshot.py publishes it; see
       # that script for why core.jobs is deliberately NOT seeded), and thrown
@@ -95,7 +90,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -118,10 +113,9 @@ jobs:
       - name: Seed the ephemeral database from the HF state snapshot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
         run: |
           uv run python scripts/restore_state_snapshot.py --source hf \
-            --dsn "${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
+            --dsn "postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci"
 
       - name: Apply the row-cap override
         # Each scraper reads its own env var (registry `max_env`); GitHub cannot
@@ -143,8 +137,7 @@ jobs:
         # this was previously declared and never applied.
         timeout-minutes: ${{ matrix.timeout }}
         env:
-          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
           # Reed's ReedSettings.api_key is a required field with no default, so
           # without this the run dies on
           #   ValidationError: api_key  Field required
@@ -164,24 +157,44 @@ jobs:
           USAJOBS_API_KEY: ${{ secrets.USAJOBS_API_KEY }}
         run: uv run python ${{ matrix.script }}
 
+      - name: Did the scraper persist any rows?
+        # Runs even when the scraper exited non-zero. A partially failed scrape
+        # must still publish the rows it did persist; only a run with zero rows
+        # is skipped. The ephemeral database starts without core.jobs, so a
+        # non-zero count means this run wrote something.
+        id: persisted
+        if: always()
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
+          SOURCE_CODE: ${{ matrix.code }}
+        run: |
+          count=$(uv run python scripts/count_source_rows.py --source "$SOURCE_CODE")
+          echo "rows=$count" >> "$GITHUB_OUTPUT"
+          if [ "$count" -gt 0 ]; then
+            echo "has_rows=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_rows=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Extract description sections
         if: success()
         env:
-          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
         run: uv run python scripts/fill_description_sections.py
 
       - name: Export new rows to a Hugging Face shard
-        # Neon Free refuses writes past 1 GB, so the analysis-ready rows also go
-        # out as zstd Parquet (measured 692 B/row, ~7x smaller than the
-        # relational tables). Incremental: a per-source watermark in the dataset
-        # repo means this costs one indexed scan, not a table copy. Fail-open --
-        # the exporter never exits non-zero, so a Hugging Face outage cannot turn
-        # a green scrape red.
-        if: success()
+        # The analysis-ready rows also go out as zstd Parquet (measured 692 B/row,
+        # ~7x smaller than the relational tables). Incremental: a per-source
+        # watermark in the dataset repo means this costs one indexed scan, not a
+        # table copy. Fail-open -- the exporter never exits non-zero, so a
+        # Hugging Face outage cannot turn a green scrape red.
+        #
+        # always(): a scraper that persisted rows and then failed (or timed out)
+        # must still publish them. The guard above is what keeps an empty run
+        # from exporting nothing.
+        if: always() && steps.persisted.outputs.has_rows == 'true'
         env:
-          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           CORPUS_HF_REPO: ${{ vars.CORPUS_HF_REPO }}
         run: uv run python scripts/export_corpus_shards.py --source ${{ matrix.code }}

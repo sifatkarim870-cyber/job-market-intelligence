@@ -35,23 +35,15 @@ name: Title classification
 # See normalization/translation.py's module docstring for the full design.
 
 on:
-  workflow_run:
-    # Chain to the LIVE scrape workflows, by their exact `name:` values.
-    #
-    # This listed only ["Scheduled scraping"], which is scrape.yml -- the
-    # superseded single-workflow version whose cron was commented out on
-    # 2026-10-09 when scraping was split into three grouped workflows. It
-    # therefore only ever fired on a manual dispatch of that obsolete file, and
-    # the last one was 2026-10-09T06:50Z. Nothing has classified a title since:
-    # 112,484 of 112,484 rows still have title_classification_status IS NULL
-    # and only 218 carry a normalized_title_id. That is the "titles are not
-    # classified correctly" symptom, and it was a dead trigger, not a model.
-    #
-    # Matching is exact and case-sensitive, so these three strings must stay in
-    # sync with the `name:` of each scrape workflow.
-    workflows: ["Scrape (API)", "Scrape (HTML)", "Scrape (browser)"]
-    types: [completed]
-  workflow_dispatch: {}   # lets you trigger a classification run manually, independent of a scrape
+  # Automatic triggering is retired. Every job in this workflow restores a
+  # reference-only database (core.jobs is deliberately not seeded), so it can
+  # only ever classify zero rows -- a green no-op. The real batch runs against
+  # the database of record:
+  #
+  #     python scripts/run_title_classification_batch.py
+  #
+  # Re-enable workflow_run only when the state snapshot can seed core.jobs.
+  workflow_dispatch: {}   # manual dispatch, for a future job-seeded setup
 
 # Serialize classification runs. Two batches running at once both take
 # row locks on the same title rows and deadlock (observed 2026-10-06:
@@ -65,7 +57,7 @@ concurrency:
 jobs:
   classify:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'skipped' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     # 60 (raised from 30 on 2026-10-07): the backfill era doubled the
     # pending corpus (jobvision 1,200+ rows, irantalent 400, reed/glints
     # growing every run) — translation alone was 663 titles in ~7.5
@@ -76,8 +68,8 @@ jobs:
     # ~2.4GB) so a big backfill cannot get killed mid-write; public repo
     # → unlimited minutes anyway.
     timeout-minutes: 60
-    # Ephemeral database seeded from the HF corpus repo; the hosted Neon quota
-    # is exhausted. See scrape_api.yml for the full reasoning.
+    # Ephemeral database seeded from the HF corpus repo.
+    # See scrape_api.yml for the full reasoning.
     services:
       postgres:
         image: postgres:18-alpine
@@ -88,7 +80,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -111,10 +103,9 @@ jobs:
       - name: Seed the ephemeral database from the HF state snapshot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
         run: |
           uv run python scripts/restore_state_snapshot.py --source hf \
-            --dsn "${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
+            --dsn "postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci"
 
       - name: Cache sentence-transformers model
         uses: actions/cache@v4
@@ -123,16 +114,16 @@ jobs:
           key: sentence-transformers-paraphrase-multilingual-MiniLM-L12-v2
 
       # Same idea as the embedding-model cache above: without this, every
-      # run re-downloads the ~2.4GB NLLB translation weights from
-      # Hugging Face before it can translate a single title. The cache
-      # lives under ~/.cache/huggingface (where transformers puts it) and
-      # is shared across runs via the key below -- bump the -v suffix if
+      # run re-downloads the ~5GB NLLB translation weights from Hugging
+      # Face before it can translate a single title. The cache lives under
+      # ~/.cache/huggingface (where transformers puts it) and is shared
+      # across runs via the key below -- bump the -v suffix if
       # TRANSLATE_MODEL_NAME ever changes.
       - name: Cache NLLB translation model
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: nllb-200-distilled-600M-v1
+          key: nllb-200-distilled-1.3B-v1
 
       # Translate non-English titles BEFORE classification so the
       # classifier matches the English taxonomy with English text.
@@ -146,12 +137,10 @@ jobs:
       - name: Translate non-English titles (before classification)
         continue-on-error: true
         env:
-          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
         run: uv run python scripts/run_translation_batch.py --scope titles
 
       - name: Run title classification batch
         env:
-          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
         run: uv run python scripts/run_title_classification_batch.py

@@ -34,9 +34,8 @@ jobs:
   dump:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Ephemeral database seeded from the HF corpus repo; the hosted Neon quota is
-    # exhausted ("Your account or project has exceeded the quota"). See
-    # scrape_api.yml for the full reasoning.
+    # Ephemeral database seeded from the HF corpus repo.
+    # See scrape_api.yml for the full reasoning.
     services:
       postgres:
         image: postgres:18-alpine
@@ -47,7 +46,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -65,8 +64,8 @@ jobs:
           python-version: "3.11"
 
       - name: Install a pg_dump that matches the server
-        # Neon runs PostgreSQL 18. ubuntu-latest ships an older postgresql-client,
-        # and pg_dump refuses outright ("aborting because of server version
+        # The service container runs PostgreSQL 18. ubuntu-latest ships an older
+        # postgresql-client, and pg_dump refuses outright ("aborting because of server version
         # mismatch") rather than downgrading -- so the client has to be pinned to
         # the server's major version from the PGDG apt repository.
         run: |
@@ -102,18 +101,16 @@ jobs:
       - name: Seed the ephemeral database from the HF state snapshot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
         run: |
           uv run python scripts/restore_state_snapshot.py --source hf \
-            --dsn "${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
+            --dsn "postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci"
 
       - name: Export any rows scraped since the last shard export
         # Ordering matters: dump the shards first so the dump contains the
         # description_en values for rows exported earlier, keeping the two
         # copies consistent within a run.
         env:
-          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           CORPUS_HF_REPO: ${{ vars.CORPUS_HF_REPO }}
         run: |
@@ -125,13 +122,9 @@ jobs:
 
       - name: Dump the database
         env:
-          # The DSN the seed step used, so the dump is of the SAME database the
-          # shards came from. This previously read secrets.DATABASE_URL -- Neon
-          # -- while the rest of the job had already been repointed at the
-          # container, so the two halves of this workflow were talking to
-          # different databases and the dump half is the reason Corpus dumps
-          # has been red on every scheduled run.
-          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          # The same container the seed and shard-export steps used, so the
+          # dump is of the database the shards came from.
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci
         run: |
           set -euo pipefail
           # Parse the DSN with Python rather than shell parameter expansion.
@@ -150,7 +143,7 @@ jobs:
           # heredoc-fed python cannot see the shell's positional parameters, so
           # sys.argv[1] raised IndexError and every field came out empty -- a
           # failure that then looks like an authentication problem.
-          JMI_DSN="${CI_DATABASE_URL:-postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci}"
+          JMI_DSN="postgresql+psycopg://postgres:postgres@localhost:5432/jmi_ci"
           export JMI_DSN
           eval "$(uv run python - <<'PY'
           import os
