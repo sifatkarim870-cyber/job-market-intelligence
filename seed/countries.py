@@ -53,6 +53,9 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("PH", "PHL", "Philippines", "Asia", "PHP"),
     ("AZ", "AZE", "Azerbaijan", "Asia", "AZN"),
     ("SO", "SOM", "Somalia", "Africa", "SOS"),
+    # Added for Emploitic (Algeria). The resolver's SOURCE_HOME_COUNTRY map
+    # said FR for years; the board is Algerian, and DZD is already seeded.
+    ("DZ", "DZA", "Algeria", "Africa", "DZD"),
     ("NP", "NPL", "Nepal", "Asia", "NPR"),
     ("ID", "IDN", "Indonesia", "Asia", "IDR"),
     ("MY", "MYS", "Malaysia", "Asia", "MYR"),
@@ -107,6 +110,11 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("CO", "COL", "Colombia", "South America", "COP"),
     ("PE", "PER", "Peru", "South America", None),
     ("UY", "URY", "Uruguay", "South America", None),
+    # Tunisia backs tanitjobs.com (source code "tanitjobs"). Africa previously
+    # held only DZ/EG/KE/NG, and a SOURCE_HOME_COUNTRY fallback pointing at a
+    # country the seed lacks is silently a no-op -- the same failure Angola and
+    # Rwanda were added to fix -- so TN must be seeded for the fallback to land.
+    ("TN", "TUN", "Tunisia", "Africa", "TND"),
 ]
 
 

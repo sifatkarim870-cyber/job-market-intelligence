@@ -897,7 +897,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "51job": "CN",
     "hrge": "GE",
     "myjob": "MU",
-    "emploitic": "FR",
+    "emploitic": "DZ",  # Algeria, not France -- the board is emploitic.com (DZ)
     "jobam": "AM",
     "jobmaster": "IL",
     "usajobs": "US",
@@ -958,6 +958,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: net_empregos: Portugal. Every posting measured carried addressCountry
     #:   'PT', so this is a measured fact about the board.
     "net_empregos": "PT",
+    #: tanitjobs: Tunisia. The board is tanitjobs.com (TN) and its postings
+    #:   carry addressCountry name 'Tunisie'; ref.countries had no TN row until
+    #:   this source was added, so any posting whose locality is a bare town
+    #:   ("Marsa", "Nabeul") would otherwise collapse onto the global-remote
+    #:   location and lose its country.
+    "tanitjobs": "TN",
 }
 
 

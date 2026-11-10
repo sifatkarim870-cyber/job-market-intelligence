@@ -13,6 +13,7 @@ import argparse
 import os
 import sys
 
+from job_market_intel.common.runner import runner_exit_code
 from job_market_intel.scrapers.html_scraper import HtmlScraperPipeline, HtmlScraperSettings
 from job_market_intel.scrapers.html_scraper.config import load_site_config
 
@@ -80,7 +81,7 @@ def main() -> int:
         )
         return 1
 
-    return 0
+    return runner_exit_code(result, store_db=not args.no_db)
 
 
 if __name__ == "__main__":

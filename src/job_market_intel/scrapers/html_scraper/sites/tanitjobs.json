@@ -1,0 +1,45 @@
+{
+  "source_code": "tanitjobs",
+  "source_name": "Tanitjobs.com",
+  "country": "Tunisia",
+  "base_url": "https://www.tanitjobs.com",
+  "listing_path": "/jobs/",
+  "listing_pagination": "?page={page}",
+  "max_pages": 10,
+  "max_jobs_per_run": 60,
+  "selectors": {
+    "job_card": "",
+    "job_link": ".sj-card-title a",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/job/\\d+/[^/]+/?$",
+  "id_from_url": true,
+  "id_url_regex": "/job/(\\d+)/",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion"
+    ],
+    "description": [
+      "description"
+    ],
+    "employment_type": "employmentType",
+    "posted_date": "datePosted"
+  },
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "TND",
+  "pay_period": "monthly",
+  "country_fallback": "Tunisia"
+}
