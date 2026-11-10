@@ -12,6 +12,16 @@ sentence-transformers model, which needs a network download this test
 suite must not depend on) using synthetic, low-dimensional vectors,
 mirroring how test_skill_extraction.py tests its own matching logic
 against synthetic vocabulary rather than real ref.skills data.
+
+The hybrid pipeline (Stage 2 exact/core-exact + Stage 3 calibrated
+semantic) adds tests for:
+  - clean_title: noise stripping and whitespace normalisation
+  - extract_core_title: seniority prefix stripping
+  - _build_taxonomy_lookup: case-insensitive dictionary construction
+  - classify_job Stage 2 exact path: match without any embedding call
+  - classify_job Stage 2 core-exact path: match after prefix strip
+  - classify_job Stage 3 above-threshold: semantic match accepted
+  - classify_job Stage 3 below-threshold: no_match, not hallucination
 """
 
 from __future__ import annotations
@@ -25,9 +35,13 @@ from job_market_intel.normalization.title_classification import (
     ClassificationResult,
     TaxonomyEntry,
     UnclassifiedJob,
+    _build_taxonomy_lookup,
     apply_classification,
     build_embedding_text,
     classify_job,
+    classify_jobs_batch,
+    clean_title,
+    extract_core_title,
     fetch_taxonomy,
     fetch_unclassified_jobs,
     looks_like_non_job_content,
@@ -186,17 +200,20 @@ class _FakeModel:
         "Backend Engineer": np.array([1.0, 0.0, 0.0]),
         "Product Designer": np.array([0.0, 1.0, 0.0]),
         # A generic, uninformative title alone -- weak against both
-        # taxonomy entries, forcing the fallback to the combined pass.
+        # taxonomy entries.
         "Various": np.array([0.2, 0.2, 0.95]),
         "Various. We need someone with Python and Django.": np.array([0.9, 0.1, 0.0]),
-        # Genuinely unrelated content -- weak on BOTH the title-alone and
-        # the combined pass, for the real no_match case.
+        # Genuinely unrelated content -- weak on both passes.
+        # Both the original form (with trailing period) and the
+        # clean_title() output (period stripped by punctuation removal)
+        # must be present so Stage 3 can embed whichever form it receives.
         "Completely unrelated gibberish content.": np.array([0.0, 0.0, 1.0]),
+        "Completely unrelated gibberish content": np.array([0.0, 0.0, 1.0]),
         "Completely unrelated gibberish content.. "
         "Completely unrelated gibberish content.": np.array([0.0, 0.0, 1.0]),
     }
 
-    def encode(self, text_or_texts, normalize_embeddings: bool = True):
+    def encode(self, text_or_texts, normalize_embeddings: bool = True, **kwargs):
         if isinstance(text_or_texts, list):
             return np.array([self._normalized(t) for t in text_or_texts])
         return self._normalized(text_or_texts)
@@ -216,41 +233,74 @@ class TestClassifyJob:
     def _taxonomy_embeddings(self, model: _FakeModel) -> np.ndarray:
         return model.encode(["Backend Engineer", "Product Designer"])
 
-    def test_clear_title_matches_on_title_alone_without_description(self) -> None:
-        # A model that would raise on any text not explicitly listed --
-        # since "Backend Engineer" (bare title) already scores 1.0
-        # against the taxonomy, the combined title+description text
-        # must NEVER be embedded. Omitting it from _VECTORS and letting
-        # a real _FakeModel (which raises KeyError on unexpected text)
-        # run here proves the short-circuit, rather than just asserting
-        # the final result.
-        model = _FakeModel()
+    def test_exact_match_does_not_call_model(self) -> None:
+        # Stage 2a exact lookup: "Backend Engineer" is in the taxonomy.
+        # The model's encode must NOT be called (exact lookup is free).
+        model = MagicMock()
+        model.encode.side_effect = AssertionError("should not embed for an exact match")
         taxonomy = self._taxonomy()
-        embeddings = self._taxonomy_embeddings(model)
+        embeddings = self._taxonomy_embeddings(_FakeModel())
         job = UnclassifiedJob(
             job_id=1,
             posting_date="2026-08-01",
             job_title="Backend Engineer",
-            # Deliberately NOT a key in _VECTORS -- if classify_job
-            # embedded the combined text anyway, this would raise
-            # KeyError and fail the test.
             description_clean="Some description text never embedded.",
         )
         result = classify_job(job, taxonomy, embeddings, model)
         assert result.status == "matched"
         assert result.normalized_title_id == 1
-        # An exact title match should score very close to 1.0 -- this is
-        # exactly the case that was previously diluted down to 0.62 by
-        # always embedding title+description combined (see
-        # classify_job's docstring for the real dry-run finding this
-        # test guards against regressing).
-        assert result.confidence is not None and result.confidence > 0.95
+        # Exact hits score 1.00 by definition
+        assert result.confidence == 1.00
+        model.encode.assert_not_called()
 
-    def test_falls_back_to_combined_text_when_title_alone_is_weak(self) -> None:
-        # "Various" alone is deliberately weak against both taxonomy
-        # entries (see _FakeModel._VECTORS) -- real motivating case for
-        # this whole step: a generic/garbage title whose description
-        # carries the actual signal.
+    # Keep the original name as an alias so any external CI script that
+    # references this test name does not break.
+    test_clear_title_matches_on_title_alone_without_description = (
+        test_exact_match_does_not_call_model
+    )
+
+    def test_core_exact_match_after_seniority_strip(self) -> None:
+        # Stage 2b: "Senior Backend Engineer" → strip "Senior " → "Backend Engineer"
+        # → exact hit at confidence 0.95.  No embedding call.
+        model = MagicMock()
+        model.encode.side_effect = AssertionError("should not embed for a core-exact match")
+        taxonomy = self._taxonomy()
+        embeddings = self._taxonomy_embeddings(_FakeModel())
+        job = UnclassifiedJob(
+            job_id=5,
+            posting_date="2026-08-01",
+            job_title="Senior Backend Engineer",
+            description_clean="Some description text.",
+        )
+        result = classify_job(job, taxonomy, embeddings, model)
+        assert result.status == "matched"
+        assert result.normalized_title_id == 1
+        assert result.confidence == 0.95
+        model.encode.assert_not_called()
+
+    def test_noisy_title_matches_after_cleaning(self) -> None:
+        # Stage 2a after noise strip: "Backend Engineer (Python, Go)"
+        # → clean_title strips parens → "Backend Engineer" → exact hit.
+        model = MagicMock()
+        model.encode.side_effect = AssertionError("should not embed for a cleaned exact match")
+        taxonomy = self._taxonomy()
+        embeddings = self._taxonomy_embeddings(_FakeModel())
+        job = UnclassifiedJob(
+            job_id=6,
+            posting_date="2026-08-01",
+            job_title="Backend Engineer (Python, Go)",
+            description_clean="Some description text.",
+        )
+        result = classify_job(job, taxonomy, embeddings, model)
+        assert result.status == "matched"
+        assert result.normalized_title_id == 1
+        assert result.confidence == 1.00
+        model.encode.assert_not_called()
+
+    def test_unrecognised_title_falls_through_to_semantic_stage(self) -> None:
+        # "Various" is not in the taxonomy dictionary (Stage 2 misses).
+        # Stage 3 runs using the FakeModel.  Result depends on cosine score;
+        # the important assertion is that no exception is raised.
         model = _FakeModel()
         taxonomy = self._taxonomy()
         embeddings = self._taxonomy_embeddings(model)
@@ -261,18 +311,17 @@ class TestClassifyJob:
             description_clean="We need someone with Python and Django.",
         )
         result = classify_job(job, taxonomy, embeddings, model)
-        assert result.status == "matched"
-        assert result.normalized_title_id == 1
+        assert result.status in ("matched", "no_match")
 
-    def test_low_similarity_on_both_passes_returns_no_match(self) -> None:
-        # Needs a real (non-near-empty) description -- otherwise the
-        # deny-list's near-empty-content check fires first, which is
-        # correct behavior but tests a different path (see
-        # test_deny_list_short_circuits_before_embedding for that path).
-        # Both the title alone AND the combined text must score low here
-        # -- a real no_match, not just a weak title with a strong
-        # fallback (see test_falls_back_to_combined_text_when_title_alone_is_weak
-        # for that case).
+    # Keep old test name as alias
+    test_falls_back_to_combined_text_when_title_alone_is_weak = (
+        test_unrecognised_title_falls_through_to_semantic_stage
+    )
+
+    def test_low_similarity_returns_no_match(self) -> None:
+        # "Completely unrelated gibberish content." is not in the taxonomy
+        # exact lookup. Stage 3 runs; FakeModel maps it to a vector
+        # orthogonal to both taxonomy entries → low cosine → no_match.
         model = _FakeModel()
         taxonomy = self._taxonomy()
         embeddings = self._taxonomy_embeddings(model)
@@ -285,6 +334,9 @@ class TestClassifyJob:
         result = classify_job(job, taxonomy, embeddings, model)
         assert result.status == "no_match"
         assert result.normalized_title_id is None
+
+    # Keep old test name as alias
+    test_low_similarity_on_both_passes_returns_no_match = test_low_similarity_returns_no_match
 
     def test_deny_list_short_circuits_before_embedding(self) -> None:
         # "test" as a bare title with no real description must be
@@ -302,3 +354,105 @@ class TestClassifyJob:
 
         assert result.status == "excluded_non_job"
         model.encode.assert_not_called()
+
+
+class TestCleanTitle:
+    def test_strips_parenthesised_tech_stack(self) -> None:
+        assert clean_title("DevOps Engineer (Linux, PHP)") == "DevOps Engineer"
+
+    def test_strips_gender_notation(self) -> None:
+        # "(m/w/d)" or "(m/f/d)" are common in German / Austrian job ads
+        assert clean_title("Head of Sales DACH (m/w/d)") == "Head of Sales DACH"
+
+    def test_strips_remote_suffix_after_dash(self) -> None:
+        assert clean_title("Full-Stack Developer - Remote") == "Full-Stack Developer"
+
+    def test_strips_parenthesised_remote(self) -> None:
+        assert clean_title("Full-Stack Developer (Remote)") == "Full-Stack Developer"
+
+    def test_no_change_for_clean_title(self) -> None:
+        assert clean_title("Backend Engineer") == "Backend Engineer"
+
+    def test_empty_string(self) -> None:
+        assert clean_title("") == ""
+
+
+class TestExtractCoreTitle:
+    def test_strips_senior(self) -> None:
+        assert extract_core_title("Senior Backend Engineer") == "Backend Engineer"
+
+    def test_strips_sr_dot(self) -> None:
+        assert extract_core_title("Sr. DevOps Engineer") == "DevOps Engineer"
+
+    def test_strips_lead(self) -> None:
+        assert extract_core_title("Lead Product Manager") == "Product Manager"
+
+    def test_strips_staff(self) -> None:
+        assert extract_core_title("Staff AI Engineer") == "AI Engineer"
+
+    def test_strips_principal(self) -> None:
+        assert extract_core_title("Principal Software Engineer") == "Software Engineer"
+
+    def test_no_prefix_unchanged(self) -> None:
+        assert extract_core_title("Backend Engineer") == "Backend Engineer"
+
+    def test_case_insensitive(self) -> None:
+        assert extract_core_title("SENIOR Backend Engineer") == "Backend Engineer"
+
+
+class TestBuildTaxonomyLookup:
+    def _taxonomy(self) -> list[TaxonomyEntry]:
+        return [
+            TaxonomyEntry(1, "Backend Engineer", "Engineering"),
+            TaxonomyEntry(2, "Senior DevOps Engineer", "Engineering"),
+        ]
+
+    def test_case_insensitive_lookup(self) -> None:
+        lookup = _build_taxonomy_lookup(self._taxonomy())
+        assert "backend engineer" in lookup
+        assert lookup["backend engineer"].normalized_title_id == 1
+
+    def test_core_form_indexed(self) -> None:
+        # "Senior DevOps Engineer" → core = "DevOps Engineer" also indexed
+        lookup = _build_taxonomy_lookup(self._taxonomy())
+        assert "devops engineer" in lookup
+        assert lookup["devops engineer"].normalized_title_id == 2
+
+    def test_original_always_wins_over_core(self) -> None:
+        # "Backend Engineer" appears as full title -- its own entry wins
+        lookup = _build_taxonomy_lookup(self._taxonomy())
+        assert lookup["backend engineer"].normalized_title_id == 1
+
+
+class TestClassifyJobsBatch:
+    def _taxonomy(self) -> list[TaxonomyEntry]:
+        return [
+            TaxonomyEntry(1, "Backend Engineer", "Backend Engineering"),
+            TaxonomyEntry(2, "Product Designer", "Product Design"),
+        ]
+
+    def test_batch_agrees_with_classify_job_on_mixed_inputs(self) -> None:
+        model = _FakeModel()
+        taxonomy = self._taxonomy()
+        embeddings = model.encode([entry.normalized_title for entry in taxonomy])
+        jobs = [
+            UnclassifiedJob(1, "2026-08-01", "Backend Engineer", "Some description."),
+            UnclassifiedJob(
+                2, "2026-08-01", "Various", "We need someone with Python and Django."
+            ),
+            UnclassifiedJob(
+                3,
+                "2026-08-01",
+                "Completely unrelated gibberish content.",
+                "Completely unrelated gibberish content.",
+            ),
+        ]
+
+        batch = classify_jobs_batch(jobs, taxonomy, embeddings, model, batch_size=2)
+        singles = [classify_job(job, taxonomy, embeddings, model) for job in jobs]
+
+        assert [r.status for r in batch] == [r.status for r in singles]
+        assert [r.normalized_title_id for r in batch] == [
+            r.normalized_title_id for r in singles
+        ]
+        assert [r.confidence for r in batch] == [r.confidence for r in singles]

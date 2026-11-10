@@ -44,12 +44,19 @@ if errorlevel 1 (
   set "MERGE_RC=1"
 )
 
+REM Pull and apply Kaggle GPU translations from HF before enriching
+echo [run_corpus_sync] applying Kaggle translations overlay from HF...
+"%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\apply_translations.py" >> "%DEST%\logs\sync.log" 2>&1
+
 REM Enrich and classify newly merged rows before exporting back to HF
 echo [run_corpus_sync] filling description sections...
 "%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\fill_description_sections.py" >> "%DEST%\logs\sync.log" 2>&1
 
 echo [run_corpus_sync] classifying titles...
 "%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\run_title_classification_batch.py" >> "%DEST%\logs\sync.log" 2>&1
+
+echo [run_corpus_sync] applying Kaggle classification overlay from HF...
+"%REPO%\.venv\Scripts\python.exe" "%REPO%\scripts\apply_classifications.py" >> "%DEST%\logs\sync.log" 2>&1
 
 REM Push local -> HF. The requirement is that local and HF always agree, and a
 REM pull-only sync cannot deliver that: any correction made on this laptop (a

@@ -26,29 +26,31 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import sys
 
 from loguru import logger
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # Windows cp1252 fix
 
 from job_market_intel.common.config import get_settings
 from job_market_intel.common.logger import configure_logging
 from job_market_intel.db.session import get_session
 from job_market_intel.normalization import (
     DEFAULT_CLASSIFIED_BY,
-    apply_classification,
-    classify_job,
+    apply_classifications_bulk,
+    classify_jobs_batch,
     fetch_taxonomy,
     fetch_unclassified_jobs,
 )
 
-#: Rows written between commits -- bounds re-work after an interruption
-#: (uncommitted rows are simply retried next run), matching
-#: run_translation_batch.py's title cadence. A CI timeout kills the
-#: process without a clean exit, so without periodic commits a killed
-#: run would throw away every classification since the last
-#: fully-successful one (observed 2026-10-07: the old 30-minute ceiling
-#: killed run 37559141124 mid-batch and the whole in-flight batch was
-#: lost).
-_COMMIT_EVERY = 25
+#: Rows written between commits -- bounds re-work after an interruption.
+#: Bulk updates make a larger cadence cheap; 25 was the per-row era.
+_COMMIT_EVERY = 500
+
+#: Jobs embedded per pass. Encoding all 174k titles in one call peaked at
+#: >4 GB and made progress invisible; 2k keeps memory flat and commits work
+#: as it goes.
+_CHUNK = 2_000
 
 
 def main() -> int:
@@ -61,12 +63,31 @@ def main() -> int:
             "distribution, without writing anything."
         ),
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=0,
+        help="Max jobs to process this run; 0 = all pending.",
+    )
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=3,
+        help="Max CPU threads for embedding model (default: 3 = 25% of 12 cores).",
+    )
     args = parser.parse_args()
 
     settings = get_settings()
     configure_logging(log_dir="logs", console_level=settings.log_level, file_level="DEBUG")
 
-    logger.info("Starting title classification batch (dry_run={}).", args.dry_run)
+    # Bound PyTorch & BLAS CPU usage so the laptop remains responsive
+    import os
+    import torch
+    max_threads = max(1, args.threads)
+    torch.set_num_threads(max_threads)
+    os.environ["OMP_NUM_THREADS"] = str(max_threads)
+    os.environ["MKL_NUM_THREADS"] = str(max_threads)
+    logger.info("Starting title classification batch (dry_run={}, max_threads={}/25% CPU).", args.dry_run, max_threads)
 
     # Imported here, matching normalization.title_classification's own
     # deferred import -- keeps this script's --help usable even in an
@@ -89,21 +110,36 @@ def main() -> int:
         taxonomy_embeddings = model.encode(taxonomy_texts, normalize_embeddings=True)
 
         jobs = fetch_unclassified_jobs(session)
+        if args.limit:
+            jobs = jobs[: args.limit]
+            logger.info("--limit: processing only {} pending jobs", len(jobs))
 
-        results = []
-        for index, job in enumerate(jobs, start=1):
-            result = classify_job(job, taxonomy, taxonomy_embeddings, model)
-            results.append((job, result))
+        results: list[tuple] = []
+        for job_start in range(0, len(jobs), _CHUNK):
+            job_chunk = jobs[job_start : job_start + _CHUNK]
+            chunk_results = classify_jobs_batch(
+                job_chunk, taxonomy, taxonomy_embeddings, model
+            )
+            results.extend(zip(job_chunk, chunk_results, strict=True))
+
             if not args.dry_run:
-                apply_classification(
-                    session, job, result, classified_by_label=DEFAULT_CLASSIFIED_BY
-                )
-                if index % _COMMIT_EVERY == 0:
+                for start in range(0, len(chunk_results), _COMMIT_EVERY):
+                    part = list(
+                        zip(
+                            job_chunk[start : start + _COMMIT_EVERY],
+                            chunk_results[start : start + _COMMIT_EVERY],
+                            strict=True,
+                        )
+                    )
+                    apply_classifications_bulk(
+                        session, part, classified_by_label=DEFAULT_CLASSIFIED_BY
+                    )
                     session.commit()
-                    logger.info("Title classification: committed after {} rows.", index)
-        # Dry-run: nothing was written, so exiting the `with` block
-        # cleanly still commits a no-op transaction -- fine, since this
-        # loop only reads/computes when --dry-run is set.
+            logger.info(
+                "Title classification: {:,}/{:,} jobs processed.",
+                min(job_start + _CHUNK, len(jobs)),
+                len(jobs),
+            )
 
     matched = [(j, r) for j, r in results if r.status == "matched"]
     no_match = [(j, r) for j, r in results if r.status == "no_match"]
