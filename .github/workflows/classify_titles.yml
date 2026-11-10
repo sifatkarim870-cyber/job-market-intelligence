@@ -35,20 +35,13 @@ name: Title classification
 # See normalization/translation.py's module docstring for the full design.
 
 on:
-  # Automatic triggering is retired. Every job in this workflow restores a
-  # reference-only database (core.jobs is deliberately not seeded), so it can
-  # only ever classify zero rows -- a green no-op. The real batch runs against
-  # the database of record:
-  #
-  #     python scripts/run_title_classification_batch.py
-  #
-  # Re-enable workflow_run only when the state snapshot can seed core.jobs.
-  workflow_dispatch: {}   # manual dispatch, for a future job-seeded setup
+  workflow_run:
+    workflows: ["Scrape (API)", "Scrape (HTML)", "Scrape (browser)"]
+    types: [completed]
+  workflow_dispatch: {}   # manual dispatch option
 
 # Serialize classification runs. Two batches running at once both take
-# row locks on the same title rows and deadlock (observed 2026-10-06:
-# a manual dispatch overlapped the workflow_run-triggered run and
-# psycopg raised DeadlockDetected, failing the victim run). Queuing
+# row locks on the same title rows and deadlock. Queuing
 # instead of cancelling keeps both batches -- they just take turns.
 concurrency:
   group: classify-titles-${{ github.ref }}
@@ -57,7 +50,7 @@ concurrency:
 jobs:
   classify:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'skipped' }}
     # 60 (raised from 30 on 2026-10-07): the backfill era doubled the
     # pending corpus (jobvision 1,200+ rows, irantalent 400, reed/glints
     # growing every run) — translation alone was 663 titles in ~7.5
