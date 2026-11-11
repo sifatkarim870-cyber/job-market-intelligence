@@ -1111,6 +1111,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   fallback gives a country to rows whose locality does not resolve
     #:   instead of collapsing to global-remote.
     "ss_lv": "LV",
+    #: cpjobs_hk: Hong Kong. The JSON-LD jobLocation.address carries
+    #:   addressCountry "HK" plus a locality, so rows usually resolve on their
+    #:   own; the fallback keeps an ad whose address omits the country field
+    #:   from collapsing to global-remote.
+    "cpjobs_hk": "HK",
 }
 
 
