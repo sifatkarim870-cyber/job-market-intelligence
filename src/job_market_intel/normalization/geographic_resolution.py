@@ -1030,6 +1030,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   seeded), so without this fallback every row collapsed to the shared
     #:   global-remote location instead of Russia.
     "trudvsem_ru": "RU",
+    #: duunitori_fi: Finland. The feed names only the municipality
+    #:   ("Espoo", "Kuopio", "Seinäjoki") and ref.cities carries just Helsinki,
+    #:   so this fallback gives rows a country instead of collapsing them into
+    #:   the shared global-remote location.
+    "duunitori_fi": "FI",
 }
 
 
