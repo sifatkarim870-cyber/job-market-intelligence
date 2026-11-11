@@ -1024,6 +1024,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   ref.countries needed a Montenegro row and this fallback gives a country
     #:   to those rows instead of collapsing to global-remote.
     "zaposli_me": "ME",
+    #: trudvsem_ru: Russia. The feed names the region in Russian
+    #:   ("Город Санкт-Петербург", "Ставропольский край") and appends a street
+    #:   address, none of which resolves against ref.cities (only Moscow is
+    #:   seeded), so without this fallback every row collapsed to the shared
+    #:   global-remote location instead of Russia.
+    "trudvsem_ru": "RU",
 }
 
 

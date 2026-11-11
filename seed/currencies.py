@@ -120,6 +120,10 @@ CURRENCIES: list[dict] = [
     # the home-market currency for CleanedJob's required currency column even
     # when an ad discloses no salary.
     {"iso_code": "BYN", "currency_name": "Belarusian Ruble", "symbol": "Br"},
+    # Added for trudvsem_ru (Russia's official open-data vacancy feed): the
+    # cleaner asserts the home-market currency on every row, and ref.currencies
+    # carried no RUB row even though superjob_ru also names RUB.
+    {"iso_code": "RUB", "currency_name": "Russian Ruble", "symbol": "₽"},
 ]
 
 
