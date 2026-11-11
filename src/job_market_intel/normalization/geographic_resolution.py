@@ -1179,6 +1179,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   Laoghaire, Co Dublin") with no country code, so the fallback supplies
     #:   Ireland and keeps rows off global-remote.
     "activelink_ie": "IE",
+    #: jobsinmalta_mt: Malta. Its JSON-LD names the island regions ("Central
+    #:   Malta", "Gozo") and the country, so the fallback only covers ads whose
+    #:   address object is absent.
+    "jobsinmalta_mt": "MT",
 }
 
 
