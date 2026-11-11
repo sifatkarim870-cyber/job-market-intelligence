@@ -36,7 +36,13 @@
     "employment_type": "employmentType",
     "posted_date": "datePosted"
   },
-  "user_agent": "job-market-intel-research (research@example.org)",
+  "impersonate": "chrome",
+  "extra_headers": {
+    "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+    "Referer": "https://www.tanitjobs.com/jobs/",
+    "Upgrade-Insecure-Requests": "1"
+  },
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
   "request_timeout_seconds": 30,
   "inter_request_delay_seconds": 1.0,
   "currency_iso_code": "TND",
