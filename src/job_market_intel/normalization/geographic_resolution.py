@@ -1035,6 +1035,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   so this fallback gives rows a country instead of collapsing them into
     #:   the shared global-remote location.
     "duunitori_fi": "FI",
+    #: myjobs_mm: Myanmar. The board's JSON-LD addressCountry is the name
+    #:   "Myanmar" and the locality is a township ("Yankin Township"), which
+    #:   does not resolve against ref.cities, so this fallback gives rows a
+    #:   country instead of collapsing them into the shared global-remote
+    #:   location.
+    "myjobs_mm": "MM",
 }
 
 

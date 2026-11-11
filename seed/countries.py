@@ -181,6 +181,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # here to resolve against; a fallback aimed at a country the seed lacks is
     # silently a no-op.
     ("ME", "MNE", "Montenegro", "Europe", "EUR"),
+    # Myanmar backs myjobs.com.mm (source code "myjobs_mm"). Its JSON-LD
+    # addressCountry is the name "Myanmar" and the locality is a township
+    # ("Yankin Township", "Mayangon Township"), so both the cleaner's name
+    # normalization and the SOURCE_HOME_COUNTRY fallback need a row here; a
+    # fallback aimed at a country the seed lacks is silently a no-op.
+    ("MM", "MMR", "Myanmar", "Asia", "MMK"),
 ]
 
 

@@ -124,6 +124,10 @@ CURRENCIES: list[dict] = [
     # cleaner asserts the home-market currency on every row, and ref.currencies
     # carried no RUB row even though superjob_ru also names RUB.
     {"iso_code": "RUB", "currency_name": "Russian Ruble", "symbol": "₽"},
+    # Added for myjobs_mm (Myanmar): the board's JSON-LD baseSalary currency is
+    # MMK and the cleaner needs the home-market currency for rows that disclose
+    # no pay.
+    {"iso_code": "MMK", "currency_name": "Myanmar Kyat", "symbol": "K"},
 ]
 
 
