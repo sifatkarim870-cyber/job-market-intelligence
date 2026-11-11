@@ -161,6 +161,13 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # rows whose locality is a district or abroad; a fallback aimed at a country
     # the seed lacks is silently a no-op.
     ("BY", "BLR", "Belarus", "Europe", "BYN"),
+    # Lithuania backs cvbankas.lt (source code "cvbankas_lt"). Its detail pages
+    # name only the city ("Vilnius"/"Kaunas"/"Panevėžys") and carry no country,
+    # so the SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
+    # fallback aimed at a country the seed lacks is silently a no-op. (The older
+    # cv.lt source points at the same country and had the same silent no-op, so
+    # its rows gain a country on their next run too.)
+    ("LT", "LTU", "Lithuania", "Europe", "EUR"),
 ]
 
 

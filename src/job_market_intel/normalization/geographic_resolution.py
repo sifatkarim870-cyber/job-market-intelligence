@@ -1007,6 +1007,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   ("Kampala"), so this fallback gives a country to rows whose locality
     #:   resolves to nothing instead of collapsing to global-remote.
     "brightermonday_co_ug": "UG",
+    #: cvbankas_lt: Lithuania. The board's detail pages name only the city
+    #:   ("Vilnius"/"Kaunas"/...), so this fallback gives a country to rows
+    #:   whose locality is a bare unseeded city instead of collapsing to
+    #:   global-remote.
+    "cvbankas_lt": "LT",
 }
 
 
