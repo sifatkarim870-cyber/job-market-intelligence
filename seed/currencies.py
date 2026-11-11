@@ -128,6 +128,9 @@ CURRENCIES: list[dict] = [
     # MMK and the cleaner needs the home-market currency for rows that disclose
     # no pay.
     {"iso_code": "MMK", "currency_name": "Myanmar Kyat", "symbol": "K"},
+    # Added for hh_kz (HeadHunter Kazakhstan): the board's home-market currency
+    # and the cleaner needs it for rows that disclose no pay.
+    {"iso_code": "KZT", "currency_name": "Kazakhstani Tenge", "symbol": "₸"},
 ]
 
 

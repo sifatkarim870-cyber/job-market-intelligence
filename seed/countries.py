@@ -187,6 +187,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # normalization and the SOURCE_HOME_COUNTRY fallback need a row here; a
     # fallback aimed at a country the seed lacks is silently a no-op.
     ("MM", "MMR", "Myanmar", "Asia", "MMK"),
+    # Kazakhstan backs hh.kz (source code "hh_kz"). The board's JSON-LD
+    # addressCountry is the ISO code "KZ" and the locality is Cyrillic
+    # ("Астана", "Алматы"), which does not resolve against ref.cities, so the
+    # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
+    # fallback aimed at a country the seed lacks is silently a no-op.
+    ("KZ", "KAZ", "Kazakhstan", "Asia", "KZT"),
 ]
 
 

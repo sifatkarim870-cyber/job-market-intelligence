@@ -1,0 +1,48 @@
+{
+  "source_code": "hh_kz",
+  "source_name": "hh.kz / HeadHunter Kazakhstan (hh.kz)",
+  "country": "Kazakhstan",
+  "base_url": "https://hh.kz",
+  "listing_path": "/search/vacancy?area=40",
+  "listing_pagination": "&page={offset}",
+  "listing_page_size": 1,
+  "max_pages": 4,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href^=\"/vacancy/\"], a[href^=\"https://hh.kz/vacancy/\"]",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/vacancy/[0-9]+",
+  "id_from_url": true,
+  "id_url_regex": "/vacancy/(\\d+)",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 45,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "KZT",
+  "pay_period": "monthly",
+  "country_fallback": "Kazakhstan"
+}
