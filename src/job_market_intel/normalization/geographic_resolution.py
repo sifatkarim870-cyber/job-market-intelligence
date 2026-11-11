@@ -964,6 +964,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   ("Marsa", "Nabeul") would otherwise collapse onto the global-remote
     #:   location and lose its country.
     "tanitjobs": "TN",
+    #: sv_tecoloco_com: El Salvador. The board is tecoloco.com.sv (SV). Its
+    #:   detail pages publish addressCountry as the NAME 'El Salvador' (not the
+    #:   ISO code) and some postings carry only a department ("La Libertad"),
+    #:   so ref.countries needed an El Salvador row and this fallback gives a
+    #:   country to the rows whose locality resolves to nothing.
+    "sv_tecoloco_com": "SV",
 }
 
 

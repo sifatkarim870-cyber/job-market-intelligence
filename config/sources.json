@@ -1293,6 +1293,15 @@
       "notes": "Computrabajo SV (sv.computrabajo.com) - El Salvador; No key, no registration, no proxy. Uses the generic HTML scraper framework. Registered 2026-10-21. Fixed 2026-10-26: HTTP 403 was caused by default bot user agent; updated to standard browser UA, listing_path=/empleos-en-san-salvador, pagination=?p={page}, currency=USD. Verified 2026-10-26: 10/10 fetched, 10 parsed, batch validation PASSED."
     },
     {
+      "code": "sv_tecoloco_com",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 60,
+      "max_env": "SV_TECOLOCO_COM_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "Tecoloco El Salvador (tecoloco.com.sv) - El Salvador; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/sv_tecoloco_com.json. Server-rendered: robots.txt is 'User-agent: * / Allow: /' (only /SelectNewsReader.aspx, /AddRssLink.aspx, /partners/ads-data, /company-questionnaire and /WebService/AjaxWS.asmx/ are disallowed for '*'; the agent-specific Disallow lines name AI bots, and the site also emits 'Content-Signal: search=yes,ai-train=no'). The listing is /empleos?page=N with 40 posting links a page; each detail page /<id>/<slug>.aspx publishes a schema.org JobPosting block read through detail_json_ld + detail_json_map (title, hiringOrganization.name, jobLocation.address locality/region/country, datePosted, description), taking the stable numeric ad id with id_url_regex. El Salvador is also the first country the seed/countries.py row and SOURCE_HOME_COUNTRY['sv_tecoloco_com']='SV' fallback were added for, so its addressCountry name 'El Salvador' (not the ISO code) resolves instead of collapsing to global-remote. Currency USD, monthly. Registered 2026-11-11. Verified locally: 6 fetched / 6 parsed, every row resolved to El Salvador with title, employer, posting date and description, batch validation PASSED."
+    },
+    {
       "code": "gt_computrabajo_com",
       "group": "html",
       "script": "scripts/run_html_scraper.py",

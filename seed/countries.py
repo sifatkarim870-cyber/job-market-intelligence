@@ -115,6 +115,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # country the seed lacks is silently a no-op -- the same failure Angola and
     # Rwanda were added to fix -- so TN must be seeded for the fallback to land.
     ("TN", "TUN", "Tunisia", "Africa", "TND"),
+    # El Salvador backs tecoloco.com.sv (source code "sv_tecoloco_com"). Its
+    # postings name the country as 'El Salvador' rather than the ISO code and
+    # often carry only a department ("La Libertad"), so the SOURCE_HOME_COUNTRY
+    # fallback needs a row here to resolve against; a fallback aimed at a
+    # country the seed lacks is silently a no-op (the Angola/Rwanda failure).
+    ("SV", "SLV", "El Salvador", "North America", "USD"),
 ]
 
 
