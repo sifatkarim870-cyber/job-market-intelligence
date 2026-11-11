@@ -1071,6 +1071,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   not resolve against ref.cities, so this fallback gives rows a country
     #:   instead of collapsing them into the shared global-remote location.
     "bumeran_ve": "VE",
+    #: laborum_cl: Chile. The board is the Navent platform (same as
+    #:   konzerta_pa/multitrabajos_ec/bumeran_ve) and its API location detail is
+    #:   the name "Santiago de Chile, Región Metropolitana, Chile"; the region
+    #:   segment does not resolve against ref.cities, so this fallback gives
+    #:   those rows a country instead of relying only on the trailing country
+    #:   name.
+    "laborum_cl": "CL",
 }
 
 
