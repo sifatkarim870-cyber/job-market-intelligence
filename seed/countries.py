@@ -243,6 +243,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback aimed at a country the seed lacks is silently
     # a no-op, so this row is required.
     ("JO", "JOR", "Jordan", "Asia", "JOD"),
+    # Qatar backs bayt_com_qa (source code "bayt_com_qa"). The qatarliving_com
+    # source named Qatar but its rows were almost all "Worldwide / remote", so
+    # no ref.countries row was ever needed; Bayt's Qatar ads carry real Doha
+    # localities and the ISO code "QA", and a SOURCE_HOME_COUNTRY fallback aimed
+    # at a country the seed lacks is silently a no-op, so this row is required.
+    ("QA", "QAT", "Qatar", "Asia", "QAR"),
 ]
 
 

@@ -1098,6 +1098,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   locality/region are Amman; both resolve, but this fallback keeps a row
     #:   whose address is missing a country out of global-remote.
     "bayt_com_jo": "JO",
+    #: bayt_com_qa: Qatar. The board's JSON-LD addressCountry is "QA" and its
+    #:   locality is Doha; the fallback keeps a row whose address is missing a
+    #:   country out of global-remote.
+    "bayt_com_qa": "QA",
 }
 
 
