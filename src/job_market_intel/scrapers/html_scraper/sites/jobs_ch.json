@@ -1,0 +1,51 @@
+{
+  "source_code": "jobs_ch",
+  "source_name": "jobs.ch (JobCloud, Switzerland)",
+  "country": "Switzerland",
+  "base_url": "https://www.jobs.ch",
+  "listing_path": "",
+  "listing_pagination": "",
+  "max_pages": 3,
+  "listing_page_size": 20,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/vacancies/detail/",
+  "id_from_url": true,
+  "id_url_regex": "/detail/([0-9a-f-]+)/",
+  "listing_json_url": "https://www.jobs.ch/api/v1/public/search?rows=20&start={offset}&term=",
+  "listing_json_path": "documents",
+  "listing_json_id_field": "job_id",
+  "listing_json_url_field": "_links.detail_en.href",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "CHF",
+  "pay_period": "yearly",
+  "country_fallback": "Switzerland"
+}

@@ -1163,6 +1163,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   as a postal district (with an isOverseas flag) but no country code, so
     #:   the fallback supplies Singapore and keeps rows off global-remote.
     "mycareersfuture_sg": "SG",
+    #: jobs_ch: Switzerland. JobCloud's jobs.ch carries each ad's workplace as
+    #:   an addressRegion (city) plus the country code "CH"; the fallback keeps
+    #:   an ad whose address omits the country from collapsing to global-remote.
+    "jobs_ch": "CH",
 }
 
 
