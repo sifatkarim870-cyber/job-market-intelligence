@@ -1106,6 +1106,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   "Kuwait" and locality "Kuwait City"; both resolve, but the fallback
     #:   keeps a row whose address is missing a country out of global-remote.
     "gulftalent_kw": "KW",
+    #: ss_lv: Latvia. The board prints Latvian locality strings ("Rīga,
+    #:   centrs", "Gulbene un raj., Stradu pag.") with no country, so this
+    #:   fallback gives a country to rows whose locality does not resolve
+    #:   instead of collapsing to global-remote.
+    "ss_lv": "LV",
 }
 
 

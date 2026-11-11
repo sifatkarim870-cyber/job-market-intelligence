@@ -255,6 +255,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback aimed at a country the seed lacks is silently
     # a no-op, so this row is required.
     ("KW", "KWT", "Kuwait", "Asia", "KWD"),
+    # Latvia backs ss_lv (source code "ss_lv"). SS.lv is the country's large
+    # classifieds board and its work ads carry no ISO code -- the resolver sees
+    # Latvian locality strings ("Rīga, centrs") only -- so the
+    # SOURCE_HOME_COUNTRY fallback needs this row to resolve; a fallback aimed
+    # at a country the seed lacks is silently a no-op.
+    ("LV", "LVA", "Latvia", "Europe", "EUR"),
 ]
 
 
