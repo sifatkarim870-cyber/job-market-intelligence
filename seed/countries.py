@@ -237,6 +237,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # this row to resolve; the disabled mwnation_com source named Malawi too but
     # no ref.countries row ever existed.
     ("MW", "MWI", "Malawi", "Africa", "MWK"),
+    # Jordan backs bayt_com_jo (source code "bayt_com_jo"). Bayt's JSON-LD
+    # addressCountry is the code "JO", but no ref.countries row existed, so the
+    # akhtaboot_com source's few Jordan rows never attributed either. A
+    # SOURCE_HOME_COUNTRY fallback aimed at a country the seed lacks is silently
+    # a no-op, so this row is required.
+    ("JO", "JOR", "Jordan", "Asia", "JOD"),
 ]
 
 
