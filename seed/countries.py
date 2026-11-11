@@ -288,6 +288,14 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # this row to resolve an ad whose address omits the country; a fallback aimed
     # at a country the seed lacks is silently a no-op.
     ("ZW", "ZWE", "Zimbabwe", "Africa", "ZWG"),
+    # Taiwan backs 518_tw (source code "518_tw"). 518.com.tw (518 熊班) is one of
+    # Taiwan's large job boards and Taiwan had ZERO postings before this source.
+    # Its JSON-LD jobLocation.address carries addressCountry "TW" alongside the
+    # city/district, so rows usually resolve on their own; the
+    # SOURCE_HOME_COUNTRY fallback needs this row to resolve an ad whose address
+    # omits the country; a fallback aimed at a country the seed lacks is
+    # silently a no-op.
+    ("TW", "TWN", "Taiwan", "Asia", "TWD"),
 ]
 
 

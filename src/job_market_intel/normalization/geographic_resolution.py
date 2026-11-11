@@ -1167,6 +1167,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   an addressRegion (city) plus the country code "CH"; the fallback keeps
     #:   an ad whose address omits the country from collapsing to global-remote.
     "jobs_ch": "CH",
+    #: 518_tw: Taiwan. 518.com.tw carries each ad's workplace as a city +
+    #:   district with the country code "TW"; the fallback keeps an ad whose
+    #:   address omits the country from collapsing to global-remote.
+    "518_tw": "TW",
 }
 
 
