@@ -126,6 +126,11 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
     # fallback aimed at a country the seed lacks is silently a no-op.
     ("MK", "MKD", "North Macedonia", "Europe", "MKD"),
+    # Guatemala backs tecoloco.com.gt (source code "gt_tecoloco_com"). Its
+    # postings name the country 'Guatemala' (not the ISO code) and often carry
+    # only a department/city, so the SOURCE_HOME_COUNTRY fallback needs a row
+    # here to resolve against.
+    ("GT", "GTM", "Guatemala", "North America", "GTQ"),
 ]
 
 

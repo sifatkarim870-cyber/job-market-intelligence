@@ -1,0 +1,45 @@
+{
+  "source_code": "gt_tecoloco_com",
+  "source_name": "Tecoloco Guatemala (tecoloco.com.gt)",
+  "country": "Guatemala",
+  "base_url": "https://www.tecoloco.com.gt",
+  "listing_path": "/empleos",
+  "listing_pagination": "?page={page}",
+  "max_pages": 5,
+  "max_jobs_per_run": 60,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a.btn-see-offer",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/\\d+/[^/]+\\.aspx$",
+  "id_from_url": true,
+  "id_url_regex": "/(\\d+)/",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted"
+  },
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "GTQ",
+  "pay_period": "monthly",
+  "country_fallback": "Guatemala"
+}

@@ -106,6 +106,12 @@ CURRENCIES: list[dict] = [
     # CleanedJob's required currency field, and a country whose default
     # currency cannot resolve is a hole in the reference data.
     {"iso_code": "MKD", "currency_name": "Macedonian Denar", "symbol": "ден"},
+    # Added for the Tecoloco Central-America siblings (gt/ni/hn): each board
+    # carries no salary field, but the cleaner asserts the home-market currency
+    # for CleanedJob's required currency field.
+    {"iso_code": "GTQ", "currency_name": "Guatemalan Quetzal", "symbol": "Q"},
+    {"iso_code": "NIO", "currency_name": "Nicaraguan Cordoba", "symbol": "C$"},
+    {"iso_code": "HNL", "currency_name": "Honduran Lempira", "symbol": "L"},
 ]
 
 

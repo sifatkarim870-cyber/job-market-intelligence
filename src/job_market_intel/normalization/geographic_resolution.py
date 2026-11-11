@@ -975,6 +975,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   never the country, so without this fallback every posting would
     #:   collapse onto the global-remote location and lose its country.
     "kariera_mk": "MK",
+    #: gt_tecoloco_com: Guatemala. Same board family as sv_tecoloco_com; the
+    #:   JSON-LD addressCountry is the NAME 'Guatemala', so this fallback gives
+    #:   a country to rows whose locality resolves to nothing.
+    "gt_tecoloco_com": "GT",
 }
 
 
