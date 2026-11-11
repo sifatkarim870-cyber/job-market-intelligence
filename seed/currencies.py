@@ -152,6 +152,10 @@ CURRENCIES: list[dict] = [
     # Added for tecoloco_do (Dominican Republic): the board's home-market
     # currency, which the cleaner needs for rows that disclose no pay.
     {"iso_code": "DOP", "currency_name": "Dominican Peso", "symbol": "RD$"},
+    # Added for jobszimbabwe_co_zw (Zimbabwe): the board's home-market currency
+    # (Zimbabwe Gold, the ZiG introduced in 2024), which the cleaner needs for
+    # rows that disclose no pay.
+    {"iso_code": "ZWG", "currency_name": "Zimbabwe Gold", "symbol": "ZiG"},
 ]
 
 

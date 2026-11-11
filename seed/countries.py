@@ -281,6 +281,13 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # country, so the SOURCE_HOME_COUNTRY fallback needs this row to resolve; a
     # fallback aimed at a country the seed lacks is silently a no-op.
     ("ET", "ETH", "Ethiopia", "Africa", "ETB"),
+    # Zimbabwe backs jobszimbabwe_co_zw (source code "jobszimbabwe_co_zw").
+    # Zimbabwe had ZERO postings before this source. The board's JSON-LD
+    # jobLocation.address carries addressCountry "ZW" alongside the locality, so
+    # rows usually resolve on their own; the SOURCE_HOME_COUNTRY fallback needs
+    # this row to resolve an ad whose address omits the country; a fallback aimed
+    # at a country the seed lacks is silently a no-op.
+    ("ZW", "ZWE", "Zimbabwe", "Africa", "ZWG"),
 ]
 
 

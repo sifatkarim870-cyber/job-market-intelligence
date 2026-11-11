@@ -1149,6 +1149,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   "state" field ("Oromia", "Amhara", "Addis Ababa") with no country, so
     #:   the fallback supplies Ethiopia and keeps rows off global-remote.
     "ethiojobs_et": "ET",
+    #: jobszimbabwe_co_zw: Zimbabwe. The board's JSON-LD addressCountry is the
+    #:   code "ZW", so rows usually resolve on their own; the fallback keeps an
+    #:   ad whose address omits the country from collapsing to global-remote.
+    "jobszimbabwe_co_zw": "ZW",
 }
 
 
