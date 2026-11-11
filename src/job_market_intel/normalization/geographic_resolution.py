@@ -1116,6 +1116,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   own; the fallback keeps an ad whose address omits the country field
     #:   from collapsing to global-remote.
     "cpjobs_hk": "HK",
+    #: trademe_nz: New Zealand. Trade Me's JSON-LD jobLocation.address carries
+    #:   addressCountry "NZ" plus locality/region, so rows usually resolve on
+    #:   their own; the fallback keeps an ad whose address omits the country
+    #:   field from collapsing to global-remote.
+    "trademe_nz": "NZ",
 }
 
 
