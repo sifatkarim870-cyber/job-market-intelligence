@@ -1329,6 +1329,15 @@
       "notes": "Tecoloco Nicaragua (tecoloco.com.ni) - Nicaragua; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ni_tecoloco_com.json. Same board family as sv_tecoloco_com/gt_tecoloco_com: robots.txt is 'User-agent: * / Allow: /' (agent-specific Disallow lines name AI bots; the site also emits 'Content-Signal: search=yes,ai-train=no'). The listing is /empleos?page=N and each detail page /<id>/<slug>.aspx publishes a schema.org JobPosting block read through detail_json_ld + detail_json_map (title, hiringOrganization.name, jobLocation.address locality/region/country, datePosted, description), taking the stable numeric ad id with id_url_regex. Nicaragua is a new country: seed/countries.py gained the NI row, seed/currencies.py the NIO row, and SOURCE_HOME_COUNTRY['ni_tecoloco_com']='NI' resolves the board's addressCountry name 'Nicaragua' instead of collapsing to global-remote. Currency NIO, monthly. Registered 2026-11-11. Verified locally with the committed runner: fetched / parsed / inserted with title, employer, posting date and description, every row resolved to Nicaragua, batch validation PASSED."
     },
     {
+      "code": "hn_tecoloco_com",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 60,
+      "max_env": "HN_TECOLOCO_COM_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "Tecoloco Honduras (tecoloco.com.hn) - Honduras; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hn_tecoloco_com.json. Same board family as sv/gt/ni_tecoloco_com: robots.txt is 'User-agent: * / Allow: /' (agent-specific Disallow lines name AI bots; the site also emits 'Content-Signal: search=yes,ai-train=no'). The listing is /empleos?page=N and each detail page /<id>/<slug>.aspx publishes a schema.org JobPosting block read through detail_json_ld + detail_json_map (title, hiringOrganization.name, jobLocation.address locality/region/country, datePosted, description), taking the stable numeric ad id with id_url_regex. Honduras is a new country: seed/countries.py gained the HN row, seed/currencies.py the HNL row, and SOURCE_HOME_COUNTRY['hn_tecoloco_com']='HN' resolves the board's addressCountry name 'Honduras' instead of collapsing to global-remote. Currency HNL, monthly. Registered 2026-11-11. Verified locally with the committed runner: fetched / parsed / inserted with title, employer, posting date and description, every row resolved to Honduras, batch validation PASSED."
+    },
+    {
       "code": "gt_computrabajo_com",
       "group": "html",
       "script": "scripts/run_html_scraper.py",
