@@ -1019,6 +1019,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   global-remote -- which is what left this source's earlier rows
     #:   country-less.
     "rekrute_com": "MA",
+    #: zaposli_me: Montenegro. The board's detail pages print the locality as
+    #:   "Podgorica, Crna Gora" (city + country name) and carry no ISO code, so
+    #:   ref.countries needed a Montenegro row and this fallback gives a country
+    #:   to those rows instead of collapsing to global-remote.
+    "zaposli_me": "ME",
 }
 
 

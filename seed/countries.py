@@ -175,6 +175,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # fallback aimed at a country the seed lacks is silently a no-op -- which is
     # exactly what left this source's earlier rows country-less.
     ("MA", "MAR", "Morocco", "Africa", "MAD"),
+    # Montenegro backs zaposli.me (source code "zaposli_me"). Its detail pages
+    # name the locality as "Podgorica, Crna Gora" (city + country name) and
+    # carry no ISO country code, so the SOURCE_HOME_COUNTRY fallback needs a row
+    # here to resolve against; a fallback aimed at a country the seed lacks is
+    # silently a no-op.
+    ("ME", "MNE", "Montenegro", "Europe", "EUR"),
 ]
 
 

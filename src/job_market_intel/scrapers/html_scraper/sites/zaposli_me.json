@@ -1,0 +1,32 @@
+{
+  "source_code": "zaposli_me",
+  "source_name": "Zaposli.ME (zaposli.me)",
+  "country": "Montenegro",
+  "base_url": "https://www.zaposli.me",
+  "listing_path": "/",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": ".jv-card",
+    "job_link": "a[href*='/posao/']",
+    "job_title": "h1.jv-title",
+    "company": "a.jv-company",
+    "location": "ul.jv-meta i.fe-map-pin + span",
+    "description": "[class*='__text']",
+    "posted_date": "",
+    "salary": "",
+    "skills": "",
+    "employment_type": ""
+  },
+  "detail_url_pattern": "/posao/\\d+/[^/]+/?$",
+  "id_from_url": true,
+  "id_url_regex": "/posao/(\\d+)/",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "EUR",
+  "pay_period": "monthly",
+  "country_fallback": "Montenegro"
+}
