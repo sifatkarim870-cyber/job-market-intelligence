@@ -970,6 +970,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   so ref.countries needed an El Salvador row and this fallback gives a
     #:   country to the rows whose locality resolves to nothing.
     "sv_tecoloco_com": "SV",
+    #: kariera_mk: North Macedonia. The board is kariera.mk (MK) and its
+    #:   detail pages name only the city ("Скопје", "Куманово", "Тетово"),
+    #:   never the country, so without this fallback every posting would
+    #:   collapse onto the global-remote location and lose its country.
+    "kariera_mk": "MK",
 }
 
 

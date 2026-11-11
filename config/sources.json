@@ -1302,6 +1302,15 @@
       "notes": "Tecoloco El Salvador (tecoloco.com.sv) - El Salvador; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/sv_tecoloco_com.json. Server-rendered: robots.txt is 'User-agent: * / Allow: /' (only /SelectNewsReader.aspx, /AddRssLink.aspx, /partners/ads-data, /company-questionnaire and /WebService/AjaxWS.asmx/ are disallowed for '*'; the agent-specific Disallow lines name AI bots, and the site also emits 'Content-Signal: search=yes,ai-train=no'). The listing is /empleos?page=N with 40 posting links a page; each detail page /<id>/<slug>.aspx publishes a schema.org JobPosting block read through detail_json_ld + detail_json_map (title, hiringOrganization.name, jobLocation.address locality/region/country, datePosted, description), taking the stable numeric ad id with id_url_regex. El Salvador is also the first country the seed/countries.py row and SOURCE_HOME_COUNTRY['sv_tecoloco_com']='SV' fallback were added for, so its addressCountry name 'El Salvador' (not the ISO code) resolves instead of collapsing to global-remote. Currency USD, monthly. Registered 2026-11-11. Verified locally: 6 fetched / 6 parsed, every row resolved to El Salvador with title, employer, posting date and description, batch validation PASSED."
     },
     {
+      "code": "kariera_mk",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 60,
+      "max_env": "KARIERA_MK_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "KARIERA.mk (kariera.mk) - North Macedonia; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/kariera_mk.json. Server-rendered ASP.NET WebForms: robots.txt carries only a Googlebot-Image rule and a Sitemap line, so '*' is unrestricted, and there is a public sitemap. The listing is /vrabotuvanje (single page, ~80 postings; the ?page= parameter is ignored, so max_pages=1) and each card links to /job/<id>/<slug>. Detail pages publish no schema.org block, so fields come from CSS selectors: h1.v2-job-heading (title), .v2-job-company-name (employer), .v2-job-body (ad body) and the location fact selected with .v2-job-fact:has(i.fa-map-marker-alt) span, taking the URL id with id_url_regex. The site prints the posted date only as relative text ('Објавен пред една недела'), which no date parser can turn into a calendar date, so posted_date is left empty rather than mislabelling the 'Активен до' (closes on) date as the posting date. North Macedonia is a new country (ref.countries had no MK row): seed/countries.py gained the MK row, seed/currencies.py the MKD row, and SOURCE_HOME_COUNTRY['kariera_mk']='MK' gives the city-only postings a country instead of collapsing to global-remote. Currency MKD, monthly. Registered 2026-11-11. Verified locally: 6 fetched / 6 parsed, each with title, employer, city and description, every row resolved to North Macedonia, batch validation PASSED."
+    },
+    {
       "code": "gt_computrabajo_com",
       "group": "html",
       "script": "scripts/run_html_scraper.py",

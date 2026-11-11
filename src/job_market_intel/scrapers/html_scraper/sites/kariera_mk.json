@@ -1,0 +1,33 @@
+{
+  "source_code": "kariera_mk",
+  "source_name": "KARIERA.mk (kariera.mk)",
+  "country": "North Macedonia",
+  "base_url": "https://kariera.mk",
+  "listing_path": "/vrabotuvanje",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "article.job-item",
+    "job_link": "a.job-visual",
+    "job_title": "h1.v2-job-heading",
+    "company": ".v2-job-company-name",
+    "location": ".v2-job-fact:has(i.fa-map-marker-alt) span",
+    "description": ".v2-job-body",
+    "posted_date": "",
+    "salary": "",
+    "employment_type": "",
+    "skills": ""
+  },
+  "detail_url_pattern": "/job/[^/]+/[^/]+$",
+  "id_from_url": true,
+  "id_url_regex": "/job/([^/]+)/",
+  "title_priority": "selector",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "MKD",
+  "pay_period": "monthly",
+  "country_fallback": "North Macedonia"
+}

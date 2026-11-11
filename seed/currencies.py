@@ -101,6 +101,11 @@ CURRENCIES: list[dict] = [
     {"iso_code": "QAR", "currency_name": "Qatari Riyal", "symbol": "ر.ق"},
     {"iso_code": "OMR", "currency_name": "Omani Rial", "symbol": "ر.ع."},
     {"iso_code": "LBP", "currency_name": "Lebanese Pound", "symbol": "£"},
+    # Added for KARIERA.mk (North Macedonia). The board carries no salary
+    # field, but the cleaner asserts the home-market currency for
+    # CleanedJob's required currency field, and a country whose default
+    # currency cannot resolve is a hole in the reference data.
+    {"iso_code": "MKD", "currency_name": "Macedonian Denar", "symbol": "ден"},
 ]
 
 
