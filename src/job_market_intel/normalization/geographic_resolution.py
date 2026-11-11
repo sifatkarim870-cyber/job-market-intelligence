@@ -1078,6 +1078,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   those rows a country instead of relying only on the trailing country
     #:   name.
     "laborum_cl": "CL",
+    #: ergodotisi_cy: Cyprus. The board's JSON-LD addressCountry is the name
+    #:   "Cyprus" and its locality is a bare city ("Nicosia", "Limassol"), so
+    #:   this fallback gives a country to rows whose locality resolves to
+    #:   nothing instead of collapsing to global-remote.
+    "ergodotisi_cy": "CY",
 }
 
 

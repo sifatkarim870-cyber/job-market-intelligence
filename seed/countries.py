@@ -219,6 +219,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
     # fallback aimed at a country the seed lacks is silently a no-op.
     ("VE", "VEN", "Venezuela", "South America", "VES"),
+    # Cyprus backs ergodotisi_cy (source code "ergodotisi_cy"). The board's
+    # JSON-LD addressCountry is the name "Cyprus" and its locality is a bare
+    # city ("Nicosia"), so the SOURCE_HOME_COUNTRY fallback needs a row here to
+    # resolve against; a fallback aimed at a country the seed lacks is silently
+    # a no-op.
+    ("CY", "CYP", "Cyprus", "Europe", "EUR"),
 ]
 
 
