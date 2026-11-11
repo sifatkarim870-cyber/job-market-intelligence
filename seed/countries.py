@@ -225,6 +225,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # resolve against; a fallback aimed at a country the seed lacks is silently
     # a no-op.
     ("CY", "CYP", "Cyprus", "Europe", "EUR"),
+    # Trinidad and Tobago backs trinidadjob_tt (source code "trinidadjob_tt").
+    # The board publishes no ISO code and its JSON-LD jobLocation.address is a
+    # bare list of localities ("Port of Spain/ St James/ Morvant"), so the
+    # SOURCE_HOME_COUNTRY fallback needs this row to resolve; a fallback aimed
+    # at a country the seed lacks is silently a no-op.
+    ("TT", "TTO", "Trinidad and Tobago", "North America", "TTD"),
 ]
 
 

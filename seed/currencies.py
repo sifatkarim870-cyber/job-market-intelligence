@@ -140,6 +140,9 @@ CURRENCIES: list[dict] = [
     # Added for bumeran_ve (Bumeran Venezuela): the board's Navent locale
     # formats salary as "Bs." (bolívares), so the cleaner needs VES.
     {"iso_code": "VES", "currency_name": "Venezuelan Bolívar Soberano", "symbol": "Bs."},
+    # Added for trinidadjob_tt (Trinidad and Tobago): the board's home-market
+    # currency, which the cleaner needs for rows that disclose no pay.
+    {"iso_code": "TTD", "currency_name": "Trinidad and Tobago Dollar", "symbol": "TT$"},
 ]
 
 
