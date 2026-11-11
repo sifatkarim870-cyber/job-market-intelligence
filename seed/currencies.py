@@ -112,6 +112,10 @@ CURRENCIES: list[dict] = [
     {"iso_code": "GTQ", "currency_name": "Guatemalan Quetzal", "symbol": "Q"},
     {"iso_code": "NIO", "currency_name": "Nicaraguan Cordoba", "symbol": "C$"},
     {"iso_code": "HNL", "currency_name": "Honduran Lempira", "symbol": "L"},
+    # Added for rabota.md (Moldova): the board carries salary text but not
+    # always a numeric field, and the cleaner needs the home-market currency
+    # for CleanedJob's required currency column.
+    {"iso_code": "MDL", "currency_name": "Moldovan Leu", "symbol": "L"},
 ]
 
 

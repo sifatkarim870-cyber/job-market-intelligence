@@ -992,6 +992,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   or the country name, so this fallback gives those rows a country
     #:   instead of collapsing to global-remote.
     "ci_educarriere": "CI",
+    #: rabota_md: Moldova. The board names the city ("Chișinău") and its JSON-LD
+    #:   addressCountry is the code "MD", so this fallback gives a country to
+    #:   rows whose locality is a district or abroad instead of collapsing to
+    #:   global-remote.
+    "rabota_md": "MD",
 }
 
 

@@ -143,6 +143,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
     # fallback aimed at a country the seed lacks is silently a no-op.
     ("CI", "CIV", "Côte d'Ivoire", "Africa", "XOF"),
+    # Moldova backs rabota.md (source code "rabota_md"). Its postings name the
+    # city ("Chișinău") and the JSON-LD addressCountry code "MD", but the
+    # SOURCE_HOME_COUNTRY fallback still needs a row here to resolve against for
+    # rows whose locality is a district or abroad; a fallback aimed at a country
+    # the seed lacks is silently a no-op.
+    ("MD", "MDA", "Moldova", "Europe", "MDL"),
 ]
 
 

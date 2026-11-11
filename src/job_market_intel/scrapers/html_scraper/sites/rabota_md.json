@@ -1,0 +1,33 @@
+{
+  "source_code": "rabota_md",
+  "source_name": "Rabota.md (Moldova)",
+  "country": "Moldova",
+  "base_url": "https://www.rabota.md",
+  "listing_path": "/ro/all",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href^=\"/ro/locuri-de-munca/\"]",
+    "job_title": "h1",
+    "company": "h1 + div a[href^=\"/ro/companies/\"]",
+    "location": "h1 + div [data-js-vacancy-hidden-city]",
+    "description": ".vacancy-view-vip-body",
+    "posted_date": "",
+    "salary": "h1 + div > div:nth-of-type(2)",
+    "employment_type": "",
+    "skills": ""
+  },
+  "detail_url_pattern": "/ro/locuri-de-munca/[^/]+/\\d+$",
+  "id_from_url": true,
+  "id_url_regex": "/locuri-de-munca/[^/]+/(\\d+)$",
+  "detail_json_ld_fill": true,
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.5,
+  "currency_iso_code": "MDL",
+  "pay_period": "monthly",
+  "country_fallback": "Moldova"
+}
