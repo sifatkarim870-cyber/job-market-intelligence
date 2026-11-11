@@ -231,6 +231,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback needs this row to resolve; a fallback aimed
     # at a country the seed lacks is silently a no-op.
     ("TT", "TTO", "Trinidad and Tobago", "North America", "TTD"),
+    # Malawi backs jobsearchmalawi_com (source code "jobsearchmalawi_com"). The
+    # board's JSON-LD jobLocation.address is a bare locality ("Lilongwe",
+    # "Mangochi") with no country, so the SOURCE_HOME_COUNTRY fallback needs
+    # this row to resolve; the disabled mwnation_com source named Malawi too but
+    # no ref.countries row ever existed.
+    ("MW", "MWI", "Malawi", "Africa", "MWK"),
 ]
 
 

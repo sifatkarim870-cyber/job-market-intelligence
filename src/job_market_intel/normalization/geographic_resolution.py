@@ -1089,6 +1089,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   whose locality resolves to nothing instead of collapsing to
     #:   global-remote.
     "trinidadjob_tt": "TT",
+    #: jobsearchmalawi_com: Malawi. The board's JSON-LD jobLocation.address is
+    #:   a bare locality ("Lilongwe", "Mangochi") with no country, so this
+    #:   fallback gives a country to rows whose locality resolves to nothing
+    #:   instead of collapsing to global-remote.
+    "jobsearchmalawi_com": "MW",
 }
 
 

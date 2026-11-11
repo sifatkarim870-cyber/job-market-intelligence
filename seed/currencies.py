@@ -143,6 +143,9 @@ CURRENCIES: list[dict] = [
     # Added for trinidadjob_tt (Trinidad and Tobago): the board's home-market
     # currency, which the cleaner needs for rows that disclose no pay.
     {"iso_code": "TTD", "currency_name": "Trinidad and Tobago Dollar", "symbol": "TT$"},
+    # Added for jobsearchmalawi_com (Malawi): the board's home-market currency,
+    # which the cleaner needs for rows that disclose no pay.
+    {"iso_code": "MWK", "currency_name": "Malawian Kwacha", "symbol": "MK"},
 ]
 
 
