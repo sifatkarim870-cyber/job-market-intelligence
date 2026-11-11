@@ -193,6 +193,13 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
     # fallback aimed at a country the seed lacks is silently a no-op.
     ("KZ", "KAZ", "Kazakhstan", "Asia", "KZT"),
+    # Uzbekistan backs hh.uz (source code "hh_uz"), the same HeadHunter platform
+    # as its Kazakh sibling. The JSON-LD addressCountry is the ISO code "UZ" and
+    # the locality is Cyrillic ("Ташкент"), which does not resolve against
+    # ref.cities, so the SOURCE_HOME_COUNTRY fallback needs a row here to
+    # resolve against; a fallback aimed at a country the seed lacks is silently
+    # a no-op.
+    ("UZ", "UZB", "Uzbekistan", "Asia", "UZS"),
 ]
 
 

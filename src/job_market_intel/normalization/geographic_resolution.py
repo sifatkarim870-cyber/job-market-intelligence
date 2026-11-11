@@ -1047,6 +1047,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   fallback gives rows a country instead of collapsing them into the
     #:   shared global-remote location.
     "hh_kz": "KZ",
+    #: hh_uz: Uzbekistan. The SERP is filtered to area 97 and the JSON-LD
+    #:   addressCountry is the ISO code "UZ", but the locality is Cyrillic
+    #:   ("Ташкент") and does not resolve against ref.cities, so this fallback
+    #:   gives rows a country instead of collapsing them into the shared
+    #:   global-remote location.
+    "hh_uz": "UZ",
 }
 
 

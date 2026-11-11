@@ -131,6 +131,9 @@ CURRENCIES: list[dict] = [
     # Added for hh_kz (HeadHunter Kazakhstan): the board's home-market currency
     # and the cleaner needs it for rows that disclose no pay.
     {"iso_code": "KZT", "currency_name": "Kazakhstani Tenge", "symbol": "₸"},
+    # Added for hh_uz (HeadHunter Uzbekistan): same reason as its Kazakh
+    # sibling.
+    {"iso_code": "UZS", "currency_name": "Uzbekistani Som", "symbol": "so'm"},
 ]
 
 
