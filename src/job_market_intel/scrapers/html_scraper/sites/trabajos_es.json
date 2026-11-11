@@ -1,0 +1,33 @@
+{
+  "source_code": "trabajos_es",
+  "source_name": "Trabajos.com (Spain)",
+  "country": "Spain",
+  "base_url": "https://www.trabajos.com",
+  "listing_path": "/ofertas-empleo/?IDPAIS=100&ORD=F",
+  "listing_pagination": "&DESDE={offset}",
+  "listing_page_size": 40,
+  "max_pages": 3,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a.oferta",
+    "job_title": "#veroferta h2.nombre",
+    "company": "#veroferta a.empresa",
+    "location": "#veroferta .localizacion",
+    "description": "#veroferta .subtitulo",
+    "posted_date": "#veroferta .fecha",
+    "salary": "",
+    "employment_type": "#veroferta .requisitos .detalle:nth-of-type(2) strong",
+    "skills": ""
+  },
+  "detail_url_pattern": "/ofertas/\\d+/",
+  "id_from_url": true,
+  "id_url_regex": "/ofertas/(\\d+)/",
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "EUR",
+  "pay_period": "yearly",
+  "country_fallback": "Spain"
+}

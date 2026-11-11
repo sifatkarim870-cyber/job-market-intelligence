@@ -1171,6 +1171,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   district with the country code "TW"; the fallback keeps an ad whose
     #:   address omits the country from collapsing to global-remote.
     "518_tw": "TW",
+    #: trabajos_es: Spain. Trabajos.com labels each ad with its province/city
+    #:   but no country code, so the fallback supplies Spain and keeps rows off
+    #:   global-remote.
+    "trabajos_es": "ES",
 }
 
 
