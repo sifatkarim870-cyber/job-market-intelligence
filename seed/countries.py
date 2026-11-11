@@ -102,6 +102,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("AF", "AFG", "Afghanistan", "Asia", "AFN"),
     ("NG", "NGA", "Nigeria", "Africa", "NGN"),
     ("KE", "KEN", "Kenya", "Africa", "KES"),
+    # Uganda backs brightermonday.co.ug (source code "brightermonday_co_ug"). The
+    # board's JSON-LD carries addressCountry "UG" and usually only the city
+    # ("Kampala"), so the SOURCE_HOME_COUNTRY fallback needs a row here to
+    # resolve against; a fallback aimed at a country the seed lacks is silently
+    # a no-op.
+    ("UG", "UGA", "Uganda", "Africa", "UGX"),
     ("EG", "EGY", "Egypt", "Africa", "EGP"),
     ("GH", "GHA", "Ghana", "Africa", None),
     ("BR", "BRA", "Brazil", "South America", "BRL"),

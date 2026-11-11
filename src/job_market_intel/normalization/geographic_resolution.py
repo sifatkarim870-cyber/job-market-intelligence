@@ -1002,6 +1002,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   this fallback gives a country to rows whose locality is a district or
     #:   abroad instead of collapsing to global-remote.
     "rabota_by": "BY",
+    #: brightermonday_co_ug: Uganda. The board's JSON-LD carries the country
+    #:   code "UG" and the location selector usually yields only the city
+    #:   ("Kampala"), so this fallback gives a country to rows whose locality
+    #:   resolves to nothing instead of collapsing to global-remote.
+    "brightermonday_co_ug": "UG",
 }
 
 
