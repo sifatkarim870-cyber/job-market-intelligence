@@ -131,6 +131,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # only a department/city, so the SOURCE_HOME_COUNTRY fallback needs a row
     # here to resolve against.
     ("GT", "GTM", "Guatemala", "North America", "GTQ"),
+    # Nicaragua and Honduras back the tecoloco.com.ni / tecoloco.com.hn
+    # siblings (source codes "ni_tecoloco_com" / "hn_tecoloco_com"); their
+    # JSON-LD addressCountry is the NAME ('Nicaragua' / 'Honduras'), so the
+    # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against.
+    ("NI", "NIC", "Nicaragua", "North America", "NIO"),
+    ("HN", "HND", "Honduras", "North America", "HNL"),
 ]
 
 
