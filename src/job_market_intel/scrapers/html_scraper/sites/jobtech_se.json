@@ -1,0 +1,53 @@
+{
+  "source_code": "jobtech_se",
+  "source_name": "Arbetsförmedlingen Platsbanken (JobTech, jobsearch.api.jobtechdev.se)",
+  "country": "Sweden",
+  "base_url": "https://arbetsformedlingen.se",
+  "listing_path": "",
+  "listing_pagination": "",
+  "max_pages": 2,
+  "listing_page_size": 100,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/platsbanken/annonser/\\d+",
+  "id_from_url": false,
+  "listing_json_url": "https://jobsearch.api.jobtechdev.se/search?limit=100&offset={offset}",
+  "listing_json_path": "hits",
+  "listing_json_id_field": "id",
+  "listing_json_url_field": "webpage_url",
+  "detail_json_from_listing": true,
+  "detail_json_map": {
+    "title": "headline",
+    "company": "employer.name",
+    "location": [
+      "workplace_address.municipality",
+      "workplace_address.region"
+    ],
+    "description": [
+      "description.text_formatted"
+    ],
+    "posted_date": "publication_date",
+    "employment_type": "employment_type.label"
+  },
+  "extra_headers": {
+    "Accept": "application/json"
+  },
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 0.5,
+  "currency_iso_code": "SEK",
+  "pay_period": "monthly",
+  "country_fallback": "Sweden"
+}

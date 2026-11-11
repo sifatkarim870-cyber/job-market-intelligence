@@ -1153,6 +1153,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   code "ZW", so rows usually resolve on their own; the fallback keeps an
     #:   ad whose address omits the country from collapsing to global-remote.
     "jobszimbabwe_co_zw": "ZW",
+    #: jobtech_se: Sweden. Sweden's public employment service (Arbetsförmedlingen
+    #:   Platsbanken) publishes each ad's workplace as municipality + region with
+    #:   no country, so the fallback supplies Sweden and keeps rows off
+    #:   global-remote.
+    "jobtech_se": "SE",
 }
 
 
