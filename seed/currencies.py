@@ -149,6 +149,9 @@ CURRENCIES: list[dict] = [
     # Added for tecoloco_cr (Costa Rica): the board's home-market currency, which
     # the cleaner needs for rows that disclose no pay.
     {"iso_code": "CRC", "currency_name": "Costa Rican Colon", "symbol": "CRC"},
+    # Added for tecoloco_do (Dominican Republic): the board's home-market
+    # currency, which the cleaner needs for rows that disclose no pay.
+    {"iso_code": "DOP", "currency_name": "Dominican Peso", "symbol": "RD$"},
 ]
 
 

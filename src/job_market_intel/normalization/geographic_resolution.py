@@ -1140,6 +1140,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   resolve on their own. The fallback keeps an ad whose address omits the
     #:   country from collapsing to global-remote.
     "tecoloco_cr": "CR",
+    #: tecoloco_do: Dominican Republic. Same tecoloco family; its JSON-LD
+    #:   addressCountry is the NAME "Republica Dominicana", which does not match
+    #:   the seed's English country name, so the fallback is what resolves every
+    #:   row to DO and keeps them off the global-remote location.
+    "tecoloco_do": "DO",
 }
 
 

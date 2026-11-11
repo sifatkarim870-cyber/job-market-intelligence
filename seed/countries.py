@@ -267,6 +267,14 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # fallback needs this row to resolve; a fallback aimed at a country the seed
     # lacks is silently a no-op. Costa Rica had ZERO postings before this source.
     ("CR", "CRI", "Costa Rica", "North America", "CRC"),
+    # Dominican Republic backs tecoloco_do (source code "tecoloco_do"). The board
+    # is tecoloco.com.do (DO) and its JSON-LD addressCountry is the NAME
+    # "Republica Dominicana" (which does NOT match this seed's English name, so
+    # rows resolve through the SOURCE_HOME_COUNTRY fallback instead), with
+    # Spanish localities. A fallback aimed at a country the seed lacks is
+    # silently a no-op, so this row is required. The country had ZERO postings
+    # before this source.
+    ("DO", "DOM", "Dominican Republic", "North America", "DOP"),
 ]
 
 
