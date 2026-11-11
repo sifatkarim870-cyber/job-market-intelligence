@@ -1175,6 +1175,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   but no country code, so the fallback supplies Spain and keeps rows off
     #:   global-remote.
     "trabajos_es": "ES",
+    #: activelink_ie: Ireland. Activelink's ads print a county/town ("Dun
+    #:   Laoghaire, Co Dublin") with no country code, so the fallback supplies
+    #:   Ireland and keeps rows off global-remote.
+    "activelink_ie": "IE",
 }
 
 
