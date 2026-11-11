@@ -1188,6 +1188,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   not resolved on its own, so without this the whole feed collapses onto
     #:   global-remote; the fallback pins every ad to Indonesia.
     "loker_id": "ID",
+    #: incruit_kr: South Korea. Its JSON-LD names the district and province
+    #:   ("Gangnam-gu, Seoul, KR") but the country is the bare two-letter code,
+    #:   which the resolver does not match on its own; the Korean place names
+    #:   are not in ref.cities, so without this the whole feed collapses onto
+    #:   global-remote and the fallback pins every ad to South Korea.
+    "incruit_kr": "KR",
 }
 
 
