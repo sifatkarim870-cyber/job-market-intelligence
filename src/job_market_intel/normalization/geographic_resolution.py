@@ -1158,6 +1158,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   no country, so the fallback supplies Sweden and keeps rows off
     #:   global-remote.
     "jobtech_se": "SE",
+    #: mycareersfuture_sg: Singapore. MyCareersFuture is the Singapore
+    #:   government's national job portal; its API carries each ad's workplace
+    #:   as a postal district (with an isOverseas flag) but no country code, so
+    #:   the fallback supplies Singapore and keeps rows off global-remote.
+    "mycareersfuture_sg": "SG",
 }
 
 

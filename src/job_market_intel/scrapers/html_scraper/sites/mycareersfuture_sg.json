@@ -1,0 +1,58 @@
+{
+  "source_code": "mycareersfuture_sg",
+  "source_name": "MyCareersFuture (mycareersfuture.gov.sg)",
+  "country": "Singapore",
+  "base_url": "https://www.mycareersfuture.gov.sg",
+  "listing_path": "",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "listing_page_size": 100,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/job/[^/]+$",
+  "id_from_url": false,
+  "listing_json_url": "https://api.mycareersfuture.gov.sg/v2/jobs?limit=100&page={zero_page}",
+  "listing_json_path": "results",
+  "listing_json_id_field": "uuid",
+  "listing_json_url_field": "metadata.jobDetailsUrl",
+  "detail_json_from_listing": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "postedCompany.name",
+    "location": [
+      "address.districts[].location",
+      "address.districts[].region"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "metadata.newPostingDate",
+    "employment_type": "employmentTypes[].employmentType"
+  },
+  "detail_json_salary": {
+    "min": "salary.minimum",
+    "max": "salary.maximum",
+    "unit": "salary.type.salaryType"
+  },
+  "extra_headers": {
+    "Accept": "application/json"
+  },
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 0.5,
+  "currency_iso_code": "SGD",
+  "pay_period": "monthly",
+  "country_fallback": "Singapore"
+}
