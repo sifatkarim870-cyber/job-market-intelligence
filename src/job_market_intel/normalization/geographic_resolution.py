@@ -1130,6 +1130,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   locality and region (no country), so the fallback supplies Italy for
     #:   every ad and keeps rows from collapsing to global-remote.
     "lavoratorio_it": "IT",
+    #: keejob_tn: Tunisia. The JSON-LD jobLocation.address carries locality,
+    #:   region and the country code "TN", so rows usually resolve on their
+    #:   own; the fallback keeps an ad whose address omits the country from
+    #:   collapsing to global-remote.
+    "keejob_tn": "TN",
 }
 
 
