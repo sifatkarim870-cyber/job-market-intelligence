@@ -1135,6 +1135,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   own; the fallback keeps an ad whose address omits the country from
     #:   collapsing to global-remote.
     "keejob_tn": "TN",
+    #: tecoloco_cr: Costa Rica. Same tecoloco family as gt_tecoloco_com; its
+    #:   JSON-LD addressCountry is the NAME "Costa Rica", so rows usually
+    #:   resolve on their own. The fallback keeps an ad whose address omits the
+    #:   country from collapsing to global-remote.
+    "tecoloco_cr": "CR",
 }
 
 

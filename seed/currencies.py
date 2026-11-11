@@ -146,6 +146,9 @@ CURRENCIES: list[dict] = [
     # Added for jobsearchmalawi_com (Malawi): the board's home-market currency,
     # which the cleaner needs for rows that disclose no pay.
     {"iso_code": "MWK", "currency_name": "Malawian Kwacha", "symbol": "MK"},
+    # Added for tecoloco_cr (Costa Rica): the board's home-market currency, which
+    # the cleaner needs for rows that disclose no pay.
+    {"iso_code": "CRC", "currency_name": "Costa Rican Colon", "symbol": "CRC"},
 ]
 
 

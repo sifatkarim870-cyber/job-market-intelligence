@@ -261,6 +261,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback needs this row to resolve; a fallback aimed
     # at a country the seed lacks is silently a no-op.
     ("LV", "LVA", "Latvia", "Europe", "EUR"),
+    # Costa Rica backs tecoloco_cr (source code "tecoloco_cr"). The board is
+    # tecoloco.co.cr (CR) and its JSON-LD addressCountry is the NAME ("Costa
+    # Rica") with Spanish localities ("San Jose"), so the SOURCE_HOME_COUNTRY
+    # fallback needs this row to resolve; a fallback aimed at a country the seed
+    # lacks is silently a no-op. Costa Rica had ZERO postings before this source.
+    ("CR", "CRI", "Costa Rica", "North America", "CRC"),
 ]
 
 
