@@ -1059,6 +1059,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   resolve against ref.cities, so this fallback gives rows a country
     #:   instead of collapsing them into the shared global-remote location.
     "konzerta_pa": "PA",
+    #: multitrabajos_ec: Ecuador. The board is the Navent platform (same as
+    #:   konzerta_pa/zonajobs_com_ar) and its API location detail is the name
+    #:   "Quito, Pichincha, Ecuador", which carries no ISO code and does not
+    #:   resolve against ref.cities, so this fallback gives rows a country
+    #:   instead of collapsing them into the shared global-remote location.
+    "multitrabajos_ec": "EC",
 }
 
 

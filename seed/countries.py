@@ -206,6 +206,13 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
     # fallback aimed at a country the seed lacks is silently a no-op.
     ("PA", "PAN", "Panama", "North America", "PAB"),
+    # Ecuador backs multitrabajos_ec (source code "multitrabajos_ec"), the same
+    # Navent platform as konzerta_pa/zonajobs_com_ar. The API's location detail
+    # is the name "Quito, Pichincha, Ecuador" and carries no ISO code, so the
+    # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
+    # fallback aimed at a country the seed lacks is silently a no-op. Ecuador
+    # is dollarized, so its default currency is USD (already seeded).
+    ("EC", "ECU", "Ecuador", "South America", "USD"),
 ]
 
 
