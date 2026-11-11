@@ -1183,6 +1183,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   Malta", "Gozo") and the country, so the fallback only covers ads whose
     #:   address object is absent.
     "jobsinmalta_mt": "MT",
+    #: loker_id: Indonesia. Its JSON-LD names the locality and region plus the
+    #:   bare ISO code ("Karawang, Jawa Barat, ID"), and a two-letter segment is
+    #:   not resolved on its own, so without this the whole feed collapses onto
+    #:   global-remote; the fallback pins every ad to Indonesia.
+    "loker_id": "ID",
 }
 
 
