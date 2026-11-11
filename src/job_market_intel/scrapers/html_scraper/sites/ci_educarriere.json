@@ -1,0 +1,47 @@
+{
+  "source_code": "ci_educarriere",
+  "source_name": "Educarriere Cote d'Ivoire (emploi.educarriere.ci)",
+  "country": "Côte d'Ivoire",
+  "base_url": "https://emploi.educarriere.ci",
+  "listing_path": "/page/all",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "div.ej-card",
+    "job_link": "a.ej-poste",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/offre-\\d+-[^/]+\\.html$",
+  "id_from_url": true,
+  "id_url_regex": "/offre-(\\d+)-",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "XOF",
+  "pay_period": "monthly",
+  "country_fallback": "Côte d'Ivoire"
+}

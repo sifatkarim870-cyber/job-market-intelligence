@@ -1338,6 +1338,15 @@
       "notes": "Tecoloco Honduras (tecoloco.com.hn) - Honduras; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/hn_tecoloco_com.json. Same board family as sv/gt/ni_tecoloco_com: robots.txt is 'User-agent: * / Allow: /' (agent-specific Disallow lines name AI bots; the site also emits 'Content-Signal: search=yes,ai-train=no'). The listing is /empleos?page=N and each detail page /<id>/<slug>.aspx publishes a schema.org JobPosting block read through detail_json_ld + detail_json_map (title, hiringOrganization.name, jobLocation.address locality/region/country, datePosted, description), taking the stable numeric ad id with id_url_regex. Honduras is a new country: seed/countries.py gained the HN row, seed/currencies.py the HNL row, and SOURCE_HOME_COUNTRY['hn_tecoloco_com']='HN' resolves the board's addressCountry name 'Honduras' instead of collapsing to global-remote. Currency HNL, monthly. Registered 2026-11-11. Verified locally with the committed runner: fetched / parsed / inserted with title, employer, posting date and description, every row resolved to Honduras, batch validation PASSED."
     },
     {
+      "code": "ci_educarriere",
+      "group": "html",
+      "script": "scripts/run_html_scraper.py",
+      "timeout": 60,
+      "max_env": "CI_EDUCARRIERE_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "Educarriere Côte d'Ivoire (emploi.educarriere.ci) - Côte d'Ivoire; No key, no registration, no proxy. Uses the generic HTML scraper framework with CSS selectors from scrapers/html_scraper/sites/ci_educarriere.json. Server-rendered WordPress (nemesis theme) job section: the emploi subdomain publishes no robots.txt (404) and the www host's robots.txt only names specific agents, so '*' is unrestricted. The listing is /page/all (~28 posting cards, each an a.ej-poste link; the board's pagination is JS-only -- changePage() rewrites the URL but every page>=2 returns the same first-page HTML, so max_pages=1). Each card links to /offre-<id>-<slug>.html, whose detail page publishes a schema.org JobPosting block read through detail_json_ld + detail_json_map (title, hiringOrganization.name, jobLocation.address locality/region/country, employmentType, datePosted, description), taking the stable numeric ad id with id_url_regex. Côte d'Ivoire is a new country: seed/countries.py gained the CI row, the XOF currency row already existed, and SOURCE_HOME_COUNTRY['ci_educarriere']='CI' resolves the board's addressCountry code 'CI' and bare-city localities instead of collapsing to global-remote. Currency XOF, monthly. Registered 2026-11-11. Verified locally with the committed runner: fetched / parsed / inserted with title, employer, posting date and description, every row resolved to Côte d'Ivoire, batch validation PASSED."
+    },
+    {
       "code": "gt_computrabajo_com",
       "group": "html",
       "script": "scripts/run_html_scraper.py",

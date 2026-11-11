@@ -987,6 +987,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   addressCountry is the NAME 'Honduras', so this fallback gives a
     #:   country to rows whose locality resolves to nothing.
     "hn_tecoloco_com": "HN",
+    #: ci_educarriere: Côte d'Ivoire. The board's JSON-LD addressCountry is the
+    #:   ISO code "CI" and the locality is often just a bare city ("Abidjan")
+    #:   or the country name, so this fallback gives those rows a country
+    #:   instead of collapsing to global-remote.
+    "ci_educarriere": "CI",
 }
 
 

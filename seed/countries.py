@@ -137,6 +137,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against.
     ("NI", "NIC", "Nicaragua", "North America", "NIO"),
     ("HN", "HND", "Honduras", "North America", "HNL"),
+    # Côte d'Ivoire backs emploi.educarriere.ci (source code "ci_educarriere").
+    # Its JSON-LD addressCountry is the ISO code "CI" and the addressLocality is
+    # often just the country or a bare city ("Abidjan"), so the
+    # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
+    # fallback aimed at a country the seed lacks is silently a no-op.
+    ("CI", "CIV", "Côte d'Ivoire", "Africa", "XOF"),
 ]
 
 
