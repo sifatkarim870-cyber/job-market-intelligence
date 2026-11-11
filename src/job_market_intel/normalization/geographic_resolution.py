@@ -979,12 +979,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   JSON-LD addressCountry is the NAME 'Guatemala', so this fallback gives
     #:   a country to rows whose locality resolves to nothing.
     "gt_tecoloco_com": "GT",
-    #: ni_tecoloco_com / hn_tecoloco_com: Nicaragua / Honduras. Same board
-    #:   family; the JSON-LD addressCountry is the NAME ('Nicaragua' /
-    #:   'Honduras'), so these fallbacks give a country to rows whose locality
-    #:   resolves to nothing.
+    #: ni_tecoloco_com: Nicaragua. Same board family; the JSON-LD
+    #:   addressCountry is the NAME 'Nicaragua', so this fallback gives a
+    #:   country to rows whose locality resolves to nothing.
     "ni_tecoloco_com": "NI",
-    "hn_tecoloco_com": "HN",
 }
 
 
