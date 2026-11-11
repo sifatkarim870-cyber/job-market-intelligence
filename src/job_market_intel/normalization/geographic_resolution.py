@@ -1012,6 +1012,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   whose locality is a bare unseeded city instead of collapsing to
     #:   global-remote.
     "cvbankas_lt": "LT",
+    #: rekrute_com: Morocco. The board's JSON-LD addressCountry is the NAME
+    #:   "Maroc" (not an ISO code) and its locality is a bare city
+    #:   ("Casablanca"/"Rabat"), so ref.countries needed a Morocco row and this
+    #:   fallback gives a country to those rows instead of collapsing to
+    #:   global-remote -- which is what left this source's earlier rows
+    #:   country-less.
+    "rekrute_com": "MA",
 }
 
 

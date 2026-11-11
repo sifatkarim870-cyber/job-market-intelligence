@@ -168,6 +168,13 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # cv.lt source points at the same country and had the same silent no-op, so
     # its rows gain a country on their next run too.)
     ("LT", "LTU", "Lithuania", "Europe", "EUR"),
+    # Morocco backs rekrute.com (source code "rekrute_com"). Its JSON-LD
+    # addressCountry is the country name "Maroc", not an ISO code, and the
+    # locality is a bare city ("Casablanca"/"Rabat"), so the
+    # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
+    # fallback aimed at a country the seed lacks is silently a no-op -- which is
+    # exactly what left this source's earlier rows country-less.
+    ("MA", "MAR", "Morocco", "Africa", "MAD"),
 ]
 
 
