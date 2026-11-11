@@ -1145,6 +1145,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   the seed's English country name, so the fallback is what resolves every
     #:   row to DO and keeps them off the global-remote location.
     "tecoloco_do": "DO",
+    #: ethiojobs_et: Ethiopia. EthioJobs publishes each ad's region as the
+    #:   "state" field ("Oromia", "Amhara", "Addis Ababa") with no country, so
+    #:   the fallback supplies Ethiopia and keeps rows off global-remote.
+    "ethiojobs_et": "ET",
 }
 
 

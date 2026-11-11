@@ -275,6 +275,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # silently a no-op, so this row is required. The country had ZERO postings
     # before this source.
     ("DO", "DOM", "Dominican Republic", "North America", "DOP"),
+    # Ethiopia backs ethiojobs_et (source code "ethiojobs_et"). Ethiopia had ZERO
+    # postings before this source. EthioJobs publishes each ad's region as the
+    # JSON-LD-style "state" field ("Oromia", "Amhara", "Addis Ababa") with no
+    # country, so the SOURCE_HOME_COUNTRY fallback needs this row to resolve; a
+    # fallback aimed at a country the seed lacks is silently a no-op.
+    ("ET", "ETH", "Ethiopia", "Africa", "ETB"),
 ]
 
 
