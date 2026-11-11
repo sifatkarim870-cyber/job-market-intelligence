@@ -249,6 +249,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # localities and the ISO code "QA", and a SOURCE_HOME_COUNTRY fallback aimed
     # at a country the seed lacks is silently a no-op, so this row is required.
     ("QA", "QAT", "Qatar", "Asia", "QAR"),
+    # Kuwait backs gulftalent_kw (source code "gulftalent_kw"). GulfTalent's
+    # Kuwait ads carry the country name "Kuwait" and the locality "Kuwait City",
+    # but no ref.countries row existed, so no Kuwaiti posting could attribute; a
+    # SOURCE_HOME_COUNTRY fallback aimed at a country the seed lacks is silently
+    # a no-op, so this row is required.
+    ("KW", "KWT", "Kuwait", "Asia", "KWD"),
 ]
 
 

@@ -1,0 +1,60 @@
+{
+  "source_code": "gulftalent_kw",
+  "source_name": "GulfTalent Kuwait (www.gulftalent.com)",
+  "country": "Kuwait",
+  "base_url": "https://www.gulftalent.com",
+  "listing_path": "/kuwait/jobs",
+  "listing_pagination": "/{page}",
+  "max_pages": 3,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a.ga-job-click[href^='/kuwait/jobs/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": "",
+    "employment_type": "#employment_type",
+    "education_level": "",
+    "experience_level": "",
+    "remote_work_type": "",
+    "job_category": ""
+  },
+  "detail_url_pattern": "/kuwait/jobs/[^/]+[-_]\\d+/?$",
+  "id_from_url": true,
+  "id_url_regex": "(\\d+)/?$",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": "description",
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "detail_json_salary": {
+    "currency": "baseSalary.currency",
+    "min": "baseSalary.value.minValue",
+    "max": "baseSalary.value.maxValue",
+    "unit": "baseSalary.value.unitText"
+  },
+  "impersonate": "chrome",
+  "extra_headers": {
+    "Accept": "text/html,application/xhtml+xml",
+    "Accept-Language": "en-US,en;q=0.9"
+  },
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 60,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "KWD",
+  "pay_period": "monthly",
+  "country_fallback": "Kuwait"
+}
