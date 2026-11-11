@@ -149,6 +149,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # rows whose locality is a district or abroad; a fallback aimed at a country
     # the seed lacks is silently a no-op.
     ("MD", "MDA", "Moldova", "Europe", "MDL"),
+    # Belarus backs rabota.by (source code "rabota_by"). Its postings name the
+    # city ("Минск") and the JSON-LD addressCountry code "BY", but the
+    # SOURCE_HOME_COUNTRY fallback still needs a row here to resolve against for
+    # rows whose locality is a district or abroad; a fallback aimed at a country
+    # the seed lacks is silently a no-op.
+    ("BY", "BLR", "Belarus", "Europe", "BYN"),
 ]
 
 

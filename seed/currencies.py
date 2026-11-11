@@ -116,6 +116,10 @@ CURRENCIES: list[dict] = [
     # always a numeric field, and the cleaner needs the home-market currency
     # for CleanedJob's required currency column.
     {"iso_code": "MDL", "currency_name": "Moldovan Leu", "symbol": "L"},
+    # Added for rabota.by (Belarus): same board family, and the cleaner needs
+    # the home-market currency for CleanedJob's required currency column even
+    # when an ad discloses no salary.
+    {"iso_code": "BYN", "currency_name": "Belarusian Ruble", "symbol": "Br"},
 ]
 
 

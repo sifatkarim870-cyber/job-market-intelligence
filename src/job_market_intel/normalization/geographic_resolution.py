@@ -997,6 +997,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   rows whose locality is a district or abroad instead of collapsing to
     #:   global-remote.
     "rabota_md": "MD",
+    #: rabota_by: Belarus. Same hh.ru-family board; its JSON-LD addressCountry
+    #:   is the code "BY" and the locality is usually the city ("Минск"), so
+    #:   this fallback gives a country to rows whose locality is a district or
+    #:   abroad instead of collapsing to global-remote.
+    "rabota_by": "BY",
 }
 
 
