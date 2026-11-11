@@ -200,6 +200,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # resolve against; a fallback aimed at a country the seed lacks is silently
     # a no-op.
     ("UZ", "UZB", "Uzbekistan", "Asia", "UZS"),
+    # Panama backs konzerta_pa (source code "konzerta_pa"), the same Navent
+    # platform as the already-built zonajobs_com_ar. The API's location detail
+    # is the name "Panamá, Panamá, Panama" and carries no ISO code, so the
+    # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
+    # fallback aimed at a country the seed lacks is silently a no-op.
+    ("PA", "PAN", "Panama", "North America", "PAB"),
 ]
 
 

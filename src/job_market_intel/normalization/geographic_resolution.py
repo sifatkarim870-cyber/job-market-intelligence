@@ -1053,6 +1053,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   gives rows a country instead of collapsing them into the shared
     #:   global-remote location.
     "hh_uz": "UZ",
+    #: konzerta_pa: Panama. The board is the Navent platform (same as
+    #:   zonajobs_com_ar) and its API location detail is the name
+    #:   "Panamá, Panamá, Panama", which carries no ISO code and does not
+    #:   resolve against ref.cities, so this fallback gives rows a country
+    #:   instead of collapsing them into the shared global-remote location.
+    "konzerta_pa": "PA",
 }
 
 

@@ -134,6 +134,9 @@ CURRENCIES: list[dict] = [
     # Added for hh_uz (HeadHunter Uzbekistan): same reason as its Kazakh
     # sibling.
     {"iso_code": "UZS", "currency_name": "Uzbekistani Som", "symbol": "so'm"},
+    # Added for konzerta_pa (Konzerta Panamá): the board's home-market currency,
+    # matching the already-built pa_computrabajo_com.
+    {"iso_code": "PAB", "currency_name": "Panamanian Balboa", "symbol": "B/."},
 ]
 
 
