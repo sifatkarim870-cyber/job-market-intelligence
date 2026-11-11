@@ -1065,6 +1065,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   resolve against ref.cities, so this fallback gives rows a country
     #:   instead of collapsing them into the shared global-remote location.
     "multitrabajos_ec": "EC",
+    #: bumeran_ve: Venezuela. The board is the Navent platform (same as
+    #:   konzerta_pa/multitrabajos_ec) and its API location detail is the name
+    #:   "El Tigre, Anzoátegui, Venezuela", which carries no ISO code and does
+    #:   not resolve against ref.cities, so this fallback gives rows a country
+    #:   instead of collapsing them into the shared global-remote location.
+    "bumeran_ve": "VE",
 }
 
 

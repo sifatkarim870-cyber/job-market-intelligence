@@ -213,6 +213,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # fallback aimed at a country the seed lacks is silently a no-op. Ecuador
     # is dollarized, so its default currency is USD (already seeded).
     ("EC", "ECU", "Ecuador", "South America", "USD"),
+    # Venezuela backs bumeran_ve (source code "bumeran_ve"), the same Navent
+    # platform as konzerta_pa/zonajobs_com_ar. The API's location detail is the
+    # name "El Tigre, Anzoátegui, Venezuela" and carries no ISO code, so the
+    # SOURCE_HOME_COUNTRY fallback needs a row here to resolve against; a
+    # fallback aimed at a country the seed lacks is silently a no-op.
+    ("VE", "VEN", "Venezuela", "South America", "VES"),
 ]
 
 
