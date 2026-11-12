@@ -1,0 +1,47 @@
+{
+  "source_code": "doda_jp",
+  "source_name": "doda (Japan)",
+  "country": "Japan",
+  "base_url": "https://doda.jp",
+  "listing_path": "/DodaFront/View/JobSearchList.action?tp=1",
+  "listing_pagination": "&page={page}",
+  "max_pages": 2,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "listing_json_path": "props.pageProps.initialState.jobList.jobList.entity.results",
+  "listing_json_id_field": "jid",
+  "listing_json_url_template": "/DodaFront/View/JobSearchDetail/j_jid__{id}/-tab__pr/",
+  "detail_json_next_data": true,
+  "detail_json_path": "props.pageProps.job.job",
+  "detail_json_map": {
+    "title": "occupationName",
+    "company": "corporateName",
+    "location": "recruit.jobState",
+    "description": [
+      "recruit.jobContentOutline",
+      "recruit.jobContentDetail",
+      "recruit.targetMemberOutline"
+    ],
+    "posted_date": "publishingPeriodDate",
+    "employment_type": "recruit.formDivision"
+  },
+  "posted_date_regex": "\\d{4}/\\d{2}/\\d{2}",
+  "detail_url_pattern": "/JobSearchDetail/j_jid__\\d+/",
+  "impersonate": "chrome",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "country_fallback": "Japan"
+}

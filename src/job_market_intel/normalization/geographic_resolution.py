@@ -1205,6 +1205,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   without this the feed would leave some rows unresolved. The fallback
     #:   pins every ad to Vietnam.
     "vietnamworks_vn": "VN",
+    #: doda_jp: Japan. Its ad payload names the work area as a slash-joined
+    #:   free-text string ("東京/神奈川/千葉"), which is not a place the resolver
+    #:   can match, so without this the feed would leave every ad unresolved;
+    #:   the fallback pins every ad to Japan.
+    "doda_jp": "JP",
 }
 
 
