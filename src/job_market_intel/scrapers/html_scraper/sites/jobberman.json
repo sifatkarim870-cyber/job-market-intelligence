@@ -1,0 +1,39 @@
+{
+  "source_code": "jobberman",
+  "source_name": "Jobberman (Nigeria)",
+  "country": "Nigeria",
+  "base_url": "https://www.jobberman.com",
+  "listing_path": "/jobs",
+  "listing_pagination": "?page={page}",
+  "max_pages": 4,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='/listings/']",
+    "job_title": "h1",
+    "company": "h2.text-base",
+    "location": "article.job__details a.inline-flex.items-center.gap-x-2",
+    "description": "article.job__details .prose",
+    "posted_date": "",
+    "salary": "script[type='application/ld+json']",
+    "employment_type": "",
+    "skills": ""
+  },
+  "detail_url_pattern": "/listings/[a-z0-9-]+$",
+  "id_from_url": true,
+  "id_url_regex": "/listings/([a-z0-9-]+)",
+  "detail_json_ld_fill": true,
+  "detail_label_map": {
+    "education_level": "Min Qualification",
+    "experience_level": "Experience Level"
+  },
+  "salary_text_regex": "\"currency\":\\s*\"(?P<currency>[A-Z]{3})\"[\\s\\S]*?\"minValue\":\\s*(?P<min>[\\d.]+)[\\s\\S]*?\"maxValue\":\\s*(?P<max>[\\d.]+)[\\s\\S]*?\"unitText\":\\s*\"(?P<unit>[A-Z]+)\"",
+  "impersonate": "chrome",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "NGN",
+  "pay_period": "monthly",
+  "country_fallback": "Nigeria"
+}

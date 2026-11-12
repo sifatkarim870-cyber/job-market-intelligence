@@ -1237,6 +1237,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   ("Donegal") do not all match ref.cities, so the fallback pins every
     #:   ad to Ireland.
     "jobalert_ie": "IE",
+    #: jobberman: Nigeria. Its schema.org JobPosting names only the bare ISO
+    #:   code "NG" as ``addressCountry`` and the country name as ``addressRegion``
+    #:   (no locality), so the fallback pins every ad to Nigeria while the
+    #:   visible city (Abuja, Lagos, "Rest of Nigeria (Kano)") stays the location.
+    "jobberman": "NG",
 }
 
 
