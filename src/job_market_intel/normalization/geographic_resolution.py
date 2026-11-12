@@ -1194,6 +1194,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   are not in ref.cities, so without this the whole feed collapses onto
     #:   global-remote and the fallback pins every ad to South Korea.
     "incruit_kr": "KR",
+    #: staff_am: Armenia. Its Next.js payload names the city and the country
+    #:   as English names ("Yerevan, Armenia") but the ad's own city values are
+    #:   not in ref.cities, so without this the feed resolves to nowhere; the
+    #:   fallback pins every ad to Armenia.
+    "staff_am": "AM",
 }
 
 

@@ -1,0 +1,52 @@
+{
+  "source_code": "staff_am",
+  "source_name": "Staff.am (Armenia)",
+  "country": "Armenia",
+  "base_url": "https://staff.am",
+  "listing_path": "/en/jobs",
+  "listing_pagination": "?page={page}",
+  "max_pages": 2,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "listing_json_path": "props.pageProps.jobs",
+  "listing_json_id_field": "id",
+  "listing_json_url_template": "/en/jobs/{category.code}/{slug.en}",
+  "detail_json_next_data": true,
+  "detail_json_path": "props.pageProps.job",
+  "detail_json_map": {
+    "title": "title.en",
+    "company": "companiesStruct.title.en",
+    "location": [
+      "job_city.title.en",
+      "job_country.title.en"
+    ],
+    "description": [
+      "description.en",
+      "responsibilities.en",
+      "required_qualifications.en",
+      "additional_information.en"
+    ],
+    "posted_date": "listing.activated_at.staffam",
+    "employment_type": "job_type.title.en"
+  },
+  "posted_date_regex": "\\d{4}-\\d{2}-\\d{2}",
+  "impersonate": "chrome",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "AMD",
+  "pay_period": "monthly",
+  "country_fallback": "Armenia"
+}
