@@ -27,6 +27,10 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("FR", "FRA", "France", "Europe", "EUR"),
     ("ES", "ESP", "Spain", "Europe", "EUR"),
     ("PT", "PRT", "Portugal", "Europe", "EUR"),
+    # Added for the mojedelo source. Without this row the resolver cannot place
+    # a single Slovenian posting: it would leave country_id NULL on every row
+    # and fall back to the global-remote location.
+    ("SI", "SVN", "Slovenia", "Europe", "EUR"),
     ("IT", "ITA", "Italy", "Europe", "EUR"),
     ("NL", "NLD", "Netherlands", "Europe", "EUR"),
     ("BE", "BEL", "Belgium", "Europe", "EUR"),

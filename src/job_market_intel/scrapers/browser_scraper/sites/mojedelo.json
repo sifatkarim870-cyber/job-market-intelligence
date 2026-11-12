@@ -1,0 +1,56 @@
+{
+  "source_code": "mojedelo",
+  "source_name": "MojeDelo (Slovenia)",
+  "country": "Slovenia",
+  "base_url": "https://www.mojedelo.com",
+  "listing_path": "/iskanje-zaposlitve",
+  "listing_pagination": "?jobSearchPage={page}",
+  "max_pages": 4,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "listing_ready_selector": "a[href*='/oglas/']",
+  "listing_wait_seconds": 16,
+  "detail_ready_selector": "h1",
+  "detail_wait_seconds": 15,
+  "detail_settle_seconds": 3.0,
+  "scroll_count": 2,
+  "scroll_pause_seconds": 1.5,
+  "uc_mode": true,
+  "headless": true,
+  "ignore_challenge_markers": "g-recaptcha",
+  "max_detail_pages": 60,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='/oglas/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/oglas/[^/]+/[0-9a-f-]{36}$",
+  "id_from_url": true,
+  "id_url_regex": "/oglas/[^/]+/([0-9a-f-]{36})$",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion"
+    ],
+    "description": [
+      "description",
+      "qualifications"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "EUR",
+  "pay_period": "monthly",
+  "country_fallback": "Slovenia"
+}

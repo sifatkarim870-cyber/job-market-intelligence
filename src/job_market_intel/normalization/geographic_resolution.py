@@ -1248,6 +1248,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: bare two-letter code does not resolve on its own; the fallback pins every
     #: ad to Pakistan.
     "rozee_pk": "PK",
+    #: mojedelo: Slovenia. Its schema.org JobPosting names the work town in
+    #:   ``addressLocality`` and a statistical region in ``addressRegion``
+    #:   (e.g. "Ljubljana", "Osrednjeslovenska") but no ``addressCountry``, so
+    #:   without this the resolver leaves rural ads unresolved; the fallback
+    #:   pins every ad to Slovenia while the town stays the location.
+    "mojedelo": "SI",
 }
 
 
