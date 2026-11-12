@@ -1199,6 +1199,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   not in ref.cities, so without this the feed resolves to nowhere; the
     #:   fallback pins every ad to Armenia.
     "staff_am": "AM",
+    #: vietnamworks_vn: Vietnam. Its listing payload names the work city as an
+    #:   English name ("Hai Phong", "Ho Chi Minh") and carries a bare street
+    #:   address; the Vietnamese city spellings are not all in ref.cities, so
+    #:   without this the feed would leave some rows unresolved. The fallback
+    #:   pins every ad to Vietnam.
+    "vietnamworks_vn": "VN",
 }
 
 
