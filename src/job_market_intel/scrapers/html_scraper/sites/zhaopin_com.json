@@ -1,0 +1,31 @@
+{
+  "source_code": "zhaopin_com",
+  "source_name": "Zhaopin (China)",
+  "country": "China",
+  "base_url": "https://www.zhaopin.com",
+  "listing_path": "/jobs/?jl=530",
+  "listing_pagination": "&p={page}",
+  "max_pages": 3,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='/jobdetail/'][href$='.htm']",
+    "job_title": "h1",
+    "company": ".company-info__name",
+    "location": ".address-info__content",
+    "description": ".describtion-card__detail-content",
+    "posted_date": "",
+    "salary": "",
+    "employment_type": "",
+    "skills": ""
+  },
+  "detail_url_pattern": "/jobdetail/[A-Z0-9]+\\.htm",
+  "id_from_url": true,
+  "id_url_regex": "/jobdetail/([A-Z0-9]+)\\.htm",
+  "impersonate": "chrome",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "country_fallback": "China"
+}

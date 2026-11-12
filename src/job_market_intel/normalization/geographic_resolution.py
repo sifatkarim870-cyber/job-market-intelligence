@@ -1210,6 +1210,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   can match, so without this the feed would leave every ad unresolved;
     #:   the fallback pins every ad to Japan.
     "doda_jp": "JP",
+    #: zhaopin_com: China. Its ad page names the work city but masks the rest
+    #:   ("北京*************"), a token the resolver cannot match, so without
+    #:   this the feed would leave each ad unresolved; the fallback pins every
+    #:   ad to China.
+    "zhaopin_com": "CN",
 }
 
 
