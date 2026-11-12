@@ -564,3 +564,20 @@ before it was written off. The reason is measured, not assumed:
   HTTP response is a JS shell (recorded as a 403/Cloudflare wall in 2026-10-22),
   so it is the browser framework that makes it buildable.
 
+- **`landing_jobs`** (Portugal, landing.jobs) -- 2026-11-13. A Lisbon-based
+  pan-European tech board; the listing at `https://landing.jobs/jobs` renders 50
+  ad cards (plain HTTP returns a ~5 KB shell, so it needs the browser). The SPA
+  paginates only client-side (`?page=N` renders 4 more on a click but a direct
+  GET always serves page 1), so `max_pages` is 1. Each detail page publishes a
+  schema.org `JobPosting` **JSON-LD** block, so `detail_json_ld` maps title,
+  employer (`hiringOrganization.name`), locality+country, description
+  (1,495-12,845 chars), posted date, employment type and the structured EUR
+  yearly `baseSalary` (15/50 ads). `detail_url_pattern` is `/at/[^/]+/[^/]+$`.
+  Portugal is already seeded (country_id 9), so no seed or `SOURCE_HOME_COUNTRY`
+  change was needed -- all 50 rows resolved from the location text (49 Portugal,
+  1 Poland). Verified locally: 50 fetched / 50 parsed / 50 inserted, batch
+  validation PASSED, 0 failed. **Disabled in CI**: runs 43311284418 and
+  43311901554 both had the runner's datacenter IP served a Cloudflare
+  `challenge-platform` page instead of the listing, so it is kept BUILT
+  (Disabled in CI) -- the same datacenter-IP wall as `tanitjobs`.
+

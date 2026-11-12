@@ -11,7 +11,7 @@ in the matrix.
 
 | Disposition | Rows |
 |---|---:|
-| Built and CI-verified in this pass (or earlier) | 10 |
+| Built and CI-verified in this pass (or earlier) | 11 |
 | Already registered / built earlier | 22 |
 | HTTP 403 bot or login wall | 63 |
 | DNS / SSL / timeout | 37 |
@@ -20,7 +20,7 @@ in the matrix.
 | Nuxt (unsupported config-only) | 0 |
 | Next.js shell, ads client-fetched | 0 |
 | HTTP 200, no discoverable detail links | 0 |
-| Measured per-site rejection (named reason) | 53 |
+| Measured per-site rejection (named reason) | 52 |
 | Other measured blocker | 0 |
 | **Total** | **188** |
 
@@ -208,7 +208,7 @@ in the matrix.
 | 178 | jobup.ch | Switzerland | 200 | 22 | JS shell: the listing carries no server-rendered ad links |
 | 179 | 104.com.tw | Taiwan | 200 | 0 | detail pages bot-blocked (HTTP 403) |
 | 180 | 1111.com.tw | Taiwan | 200 | 54 | detail pages bot-blocked (HTTP 403) |
-| 181 | landing.jobs | Tech | 200 | 14 | JS shell: no server-rendered ad links |
+| 181 | landing.jobs | Tech | 200 | 14 | landing_jobs (Portugal) - built via the browser framework 2026-11-13; disabled in CI (runner datacenter IP served a Cloudflare challenge) |
 | 182 | jobbkk.com | Thailand | 200 | 32 | Next.js App Router (self.__next_f); unsupported config-only |
 | 183 | ugandajobline.com | Uganda | 200 | 0 | listing exposes no ad links on the home page |
 | 184 | robota.ua | Ukraine | 200 | 0 | tiny JS/consent shell |
@@ -369,7 +369,7 @@ in the matrix.
 - **anpe.bj** (Benin) - HTTP 503 - the origin refuses automated requests
 - **next.rikunabi.com** (Japan) - HTTP 503 - the origin refuses automated requests
 
-### Measured per-site rejection (named reason) (53)
+### Measured per-site rejection (named reason) (52)
 
 - **au.jora.com** (Australia) - JS aggregator shell
 - **bdjobs.com** (Bangladesh) - home redirects to /h/ and exposes no ad links; search is JS/POST-driven
@@ -416,7 +416,7 @@ in the matrix.
 - **jobup.ch** (Switzerland) - JS shell: the listing carries no server-rendered ad links
 - **104.com.tw** (Taiwan) - detail pages bot-blocked (HTTP 403)
 - **1111.com.tw** (Taiwan) - detail pages bot-blocked (HTTP 403)
-- **landing.jobs** (Tech) - JS shell: no server-rendered ad links
+- **landing.jobs** (Tech) - built via the browser framework 2026-11-13 (`landing_jobs`); the listing at `https://landing.jobs/jobs` renders 50 ads whose detail pages publish full JobPosting JSON-LD, but CI runs 43311284418/43311901554 were served a Cloudflare challenge from the runner's datacenter IP, so it is kept BUILT (Disabled in CI)
 - **jobbkk.com** (Thailand) - Next.js App Router (self.__next_f); unsupported config-only
 - **ugandajobline.com** (Uganda) - listing exposes no ad links on the home page
 - **robota.ua** (Ukraine) - tiny JS/consent shell
