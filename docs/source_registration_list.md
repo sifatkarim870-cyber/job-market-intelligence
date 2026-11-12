@@ -47,6 +47,14 @@ table -- was measured afresh and is now built as `jobberman` (60 rows). It is no
 captcha-walled from a home IP; the earlier "captcha challenge" note was taken
 against a datacenter IP.
 
+A tenth board, **Rozee.pk (Pakistan)** -- recorded in section B/C as
+Cloudflare-walled (plain HTTP returns a shell / 403) -- is now built as
+`rozee_pk` (54 rows) on the **browser (Selenium)** framework: the listing at
+`https://www.rozee.pk/` renders ~320 posting links and every detail page
+publishes a full schema.org `JobPosting` JSON-LD block that `detail_json_ld`
+maps (title, employer, description, PKR salary, posted date). Verified
+2026-11-13; CI run 43298965524 SUCCESS, 54 inserted.
+
 ---
 
 ## A. Blocked on a registration or an API key
@@ -540,3 +548,19 @@ before it was written off. The reason is measured, not assumed:
 | `alwatwan` | https://www.alwatwan.net/ | NOT_POSTINGS | a Comorian newspaper; sections are politics, economy, sport, culture |
 | `agenceemploijeunes` | https://agenceemploijeunes.civ/ | DNS_FAIL | the host did not resolve |
 <!-- browser-sweep:end -->
+
+### Built after the 2026-10-22 sweep
+
+- **`rozee_pk`** (Pakistan, rozee.pk) -- 2026-11-13. The listing at
+  `https://www.rozee.pk/` renders ~320 posting links of the form
+  `/<slug>-jobs-<id>`; the detail DOM is React/MUI with unstable generated
+  classes, but each ad publishes a schema.org `JobPosting` **JSON-LD** block, so
+  `detail_json_ld` maps title, employer (`hiringOrganization.name`), description
+  (1,605-9,733 chars), posted date and the structured PKR-monthly `baseSalary`.
+  `detail_url_pattern` is `-jobs-\d+$`. Verified locally and in CI (run
+  43298965524): 54 fetched, 54 parsed, batch validation PASSED, 54 inserted; all
+  54 rows country Pakistan. Pakistan was already seeded (country_id 38, PKR), so
+  only `SOURCE_HOME_COUNTRY["rozee_pk"] = "PK"` was added. This board's plain
+  HTTP response is a JS shell (recorded as a 403/Cloudflare wall in 2026-10-22),
+  so it is the browser framework that makes it buildable.
+

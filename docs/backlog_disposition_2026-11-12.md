@@ -11,9 +11,9 @@ in the matrix.
 
 | Disposition | Rows |
 |---|---:|
-| Built and CI-verified in this pass (or earlier) | 9 |
+| Built and CI-verified in this pass (or earlier) | 10 |
 | Already registered / built earlier | 22 |
-| HTTP 403 bot or login wall | 64 |
+| HTTP 403 bot or login wall | 63 |
 | DNS / SSL / timeout | 37 |
 | HTTP 503 / 523 refuses automated requests | 3 |
 | Next.js App Router (unsupported config-only) | 0 |
@@ -197,7 +197,7 @@ in the matrix.
 | 167 | werk.nl | Netherlands | 200 | 0 | JS shell |
 | 168 | vrabotuvanje.com.mk | North Macedonia | 200 | 19 | Nuxt (__NUXT_DATA__); unsupported config-only |
 | 169 | finn.no | Norway | 200 | 13 | JSON-LD wrapped in a single-key script envelope the framework cannot unwrap |
-| 170 | rozee.pk | Pakistan | 200 | 810 | detail pages return HTTP 403 (bot wall) |
+| 170 | rozee.pk | Pakistan | 200 | 810 | rozee_pk (Pakistan) - built via the browser framework 2026-11-13; plain HTTP 403s but the rendered detail page publishes full JobPosting JSON-LD |
 | 171 | aptitus.com | Peru | 200 | 0 | redirects cross-brand to bumeran.com.pe (Peru already covered) |
 | 172 | emprego.pt | Portugal | 200 | 0 | general job portal landing page; no ad links on the probed URL |
 | 173 | mojedelo.com | Slovenia | 200 | 0 | tiny JS shell |
@@ -405,7 +405,7 @@ in the matrix.
 - **werk.nl** (Netherlands) - JS shell
 - **vrabotuvanje.com.mk** (North Macedonia) - Nuxt (__NUXT_DATA__); unsupported config-only
 - **finn.no** (Norway) - JSON-LD wrapped in a single-key script envelope the framework cannot unwrap
-- **rozee.pk** (Pakistan) - detail pages return HTTP 403 (bot wall)
+- **rozee.pk** (Pakistan) - built via the browser framework 2026-11-13 (`rozee_pk`); plain HTTP 403s but the rendered detail page publishes full JobPosting JSON-LD
 - **aptitus.com** (Peru) - redirects cross-brand to bumeran.com.pe (Peru already covered)
 - **emprego.pt** (Portugal) - general job portal landing page; no ad links on the probed URL
 - **mojedelo.com** (Slovenia) - tiny JS shell
