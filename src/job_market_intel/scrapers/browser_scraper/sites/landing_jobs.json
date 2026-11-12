@@ -1,0 +1,60 @@
+{
+  "source_code": "landing_jobs",
+  "source_name": "Landing.Jobs (Europe tech)",
+  "country": "Portugal",
+  "base_url": "https://landing.jobs",
+  "listing_path": "/jobs",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "listing_ready_selector": "a[class*='JobDetails-module_title']",
+  "listing_wait_seconds": 20,
+  "detail_ready_selector": "h1",
+  "detail_wait_seconds": 15,
+  "detail_settle_seconds": 2.5,
+  "scroll_count": 2,
+  "scroll_pause_seconds": 1.5,
+  "uc_mode": true,
+  "headless": true,
+  "max_detail_pages": 60,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[class*='JobDetails-module_title']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/at/[^/]+/[^/]+$",
+  "id_from_url": true,
+  "id_url_regex": "/at/[^/]+/([^/]+)$",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "detail_json_salary": {
+    "currency": "baseSalary.currency",
+    "min": "baseSalary.value.minValue",
+    "max": "baseSalary.value.maxValue",
+    "unit": "baseSalary.value.unitText"
+  },
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "EUR",
+  "pay_period": "yearly",
+  "country_fallback": "Portugal"
+}
