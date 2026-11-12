@@ -1231,6 +1231,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   code does not resolve on its own, so the fallback pins every ad to
     #:   Mozambique once the country row is seeded.
     "emprego_co_mz": "MZ",
+    #: jobalert_ie: Ireland. Its page publishes schema.org JobPosting
+    #:   *microdata* whose addressCountry is the bare ISO code "IE"; a bare
+    #:   2-letter code does not resolve on its own, and county names
+    #:   ("Donegal") do not all match ref.cities, so the fallback pins every
+    #:   ad to Ireland.
+    "jobalert_ie": "IE",
 }
 
 
