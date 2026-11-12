@@ -581,3 +581,25 @@ before it was written off. The reason is measured, not assumed:
   `challenge-platform` page instead of the listing, so it is kept BUILT
   (Disabled in CI) -- the same datacenter-IP wall as `tanitjobs`.
 
+- **`mojedelo`** (Slovenia, mojedelo.com) -- 2026-11-13. Slovenia's largest
+  job board; the listing at `https://www.mojedelo.com/iskanje-zaposlitve`
+  renders 20 ad cards per page and `?jobSearchPage={page}` was measured
+  serving 20 distinct ads per page with 0 overlap, so it needs the browser
+  (plain HTTP returns a shell). Each detail page publishes a schema.org
+  `JobPosting` **JSON-LD** block, so `detail_json_ld` maps title, employer,
+  locality+region, description+qualifications (145-1,245 chars), posted date
+  and employment type; `detail_url_pattern` is `/oglas/[^/]+/[0-9a-f-]{36}$`.
+  MojeDelo embeds a **passive reCAPTCHA** widget on every ad, so its markup
+  always contains `g-recaptcha` and the built-in challenge markers rejected
+  every page -- this is what the new config-gated
+  `ignore_challenge_markers` field exists for. Verified locally and in CI
+  (run 43324675623): 60 fetched, 60 parsed, 60 inserted, batch validation
+  PASSED, 0 failed. Slovenia was seeded (`ref.countries` SI) and
+  `SOURCE_HOME_COUNTRY["mojedelo"] = "SI"` added; note Slovenia already had
+  `optius_com` built, but its 120 rows were all country-NULL because the
+  country was unseeded, so `mojedelo` is the first Slovenian source to
+  resolve a country. Slovenian cities/regions are not yet in
+  `ref.cities`/`ref.regions`, so the resolver places every ad at one
+  country-level location (the platform's documented fallback); seeding a
+  curated Slovenian city set is the follow-up for city-level rows.
+

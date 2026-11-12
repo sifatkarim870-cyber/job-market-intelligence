@@ -11,7 +11,7 @@ in the matrix.
 
 | Disposition | Rows |
 |---|---:|
-| Built and CI-verified in this pass (or earlier) | 11 |
+| Built and CI-verified in this pass (or earlier) | 12 |
 | Already registered / built earlier | 22 |
 | HTTP 403 bot or login wall | 63 |
 | DNS / SSL / timeout | 37 |
@@ -20,7 +20,7 @@ in the matrix.
 | Nuxt (unsupported config-only) | 0 |
 | Next.js shell, ads client-fetched | 0 |
 | HTTP 200, no discoverable detail links | 0 |
-| Measured per-site rejection (named reason) | 52 |
+| Measured per-site rejection (named reason) | 51 |
 | Other measured blocker | 0 |
 | **Total** | **188** |
 
@@ -200,7 +200,7 @@ in the matrix.
 | 170 | rozee.pk | Pakistan | 200 | 810 | rozee_pk (Pakistan) - built via the browser framework 2026-11-13; plain HTTP 403s but the rendered detail page publishes full JobPosting JSON-LD |
 | 171 | aptitus.com | Peru | 200 | 0 | redirects cross-brand to bumeran.com.pe (Peru already covered) |
 | 172 | emprego.pt | Portugal | 200 | 0 | general job portal landing page; no ad links on the probed URL |
-| 173 | mojedelo.com | Slovenia | 200 | 0 | tiny JS shell |
+| 173 | mojedelo.com | Slovenia | 200 | 0 | mojedelo (Slovenia) - built via the browser framework 2026-11-13; the listing is JS-rendered but each detail page publishes full JobPosting JSON-LD (its passive reCAPTCHA badge needed a config-gated ignore) |
 | 174 | jobkorea.co.kr | South Korea | 200 | 24 | Next.js App Router (self.__next_f); unsupported config-only |
 | 175 | saramin.co.kr | South Korea | 200 | 86 | listing links go through a login relay page; no anonymous ad HTML |
 | 176 | infojobs.net | Spain | 200 | 5 | listing exposes only city/company links; ads are JS-loaded |
@@ -369,7 +369,7 @@ in the matrix.
 - **anpe.bj** (Benin) - HTTP 503 - the origin refuses automated requests
 - **next.rikunabi.com** (Japan) - HTTP 503 - the origin refuses automated requests
 
-### Measured per-site rejection (named reason) (52)
+### Measured per-site rejection (named reason) (51)
 
 - **au.jora.com** (Australia) - JS aggregator shell
 - **bdjobs.com** (Bangladesh) - home redirects to /h/ and exposes no ad links; search is JS/POST-driven
@@ -408,7 +408,7 @@ in the matrix.
 - **rozee.pk** (Pakistan) - built via the browser framework 2026-11-13 (`rozee_pk`); plain HTTP 403s but the rendered detail page publishes full JobPosting JSON-LD
 - **aptitus.com** (Peru) - redirects cross-brand to bumeran.com.pe (Peru already covered)
 - **emprego.pt** (Portugal) - general job portal landing page; no ad links on the probed URL
-- **mojedelo.com** (Slovenia) - tiny JS shell
+- **mojedelo.com** (Slovenia) - built via the browser framework 2026-11-13 (`mojedelo`); the listing renders client-side but every ad publishes full JobPosting JSON-LD, and its passive reCAPTCHA badge is declared inert with the new config-gated `ignore_challenge_markers`; verified in CI (run 43324675623)
 - **jobkorea.co.kr** (South Korea) - Next.js App Router (self.__next_f); unsupported config-only
 - **saramin.co.kr** (South Korea) - listing links go through a login relay page; no anonymous ad HTML
 - **infojobs.net** (Spain) - listing exposes only city/company links; ads are JS-loaded
