@@ -1242,6 +1242,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   (no locality), so the fallback pins every ad to Nigeria while the
     #:   visible city (Abuja, Lagos, "Rest of Nigeria (Kano)") stays the location.
     "jobberman": "NG",
+    #: rozee_pk: Pakistan. Rozee.pk's schema.org JobPosting names only the bare
+    #: ISO code "PK" as ``addressCountry`` with no locality (the rendered page
+    #: adds "Pakistan (Hybrid)" but the address object carries no city), and a
+    #: bare two-letter code does not resolve on its own; the fallback pins every
+    #: ad to Pakistan.
+    "rozee_pk": "PK",
 }
 
 

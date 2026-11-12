@@ -1,0 +1,58 @@
+{
+  "source_code": "rozee_pk",
+  "source_name": "Rozee.pk (Pakistan)",
+  "country": "Pakistan",
+  "base_url": "https://www.rozee.pk",
+  "listing_path": "/",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "listing_ready_selector": "a[href*='-jobs-']",
+  "listing_wait_seconds": 16,
+  "detail_ready_selector": "h1",
+  "detail_wait_seconds": 15,
+  "detail_settle_seconds": 2.0,
+  "scroll_count": 2,
+  "scroll_pause_seconds": 1.5,
+  "uc_mode": true,
+  "headless": true,
+  "max_detail_pages": 60,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='-jobs-']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "-jobs-\\d+$",
+  "id_from_url": true,
+  "id_url_regex": "-jobs-(\\d+)$",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "detail_json_salary": {
+    "currency": "baseSalary.currency",
+    "value": "baseSalary.value.value",
+    "unit": "baseSalary.value.unitText"
+  },
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "PKR",
+  "pay_period": "monthly",
+  "country_fallback": "Pakistan"
+}
