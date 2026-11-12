@@ -69,6 +69,14 @@ class BrowserSiteConfig(SiteConfig):
     chrome_args: str = Field(default="")
     #: Page text that means "we were served a challenge, not the site".
     challenge_markers: str = Field(default="")
+    #: Built-in challenge markers to ignore for this site, comma separated.
+    #: A board can legitimately embed a passive CAPTCHA widget and still serve
+    #: ordinary content -- MojeDelo renders the reCAPTCHA badge on every ad --
+    #: and the built-in marker list would reject those pages. Naming the marker
+    #: here suppresses only that marker; every other built-in and every
+    #: :attr:`challenge_markers` entry still fires, so a real challenge on the
+    #: same board is still caught.
+    ignore_challenge_markers: str = Field(default="")
     #: Cap on detail pages per run, independent of max_jobs.
     max_detail_pages: int = Field(default=40, ge=1, le=500)
 

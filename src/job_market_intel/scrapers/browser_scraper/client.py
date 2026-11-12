@@ -101,6 +101,21 @@ def _challenge_markers(config: BrowserSiteConfig) -> tuple[str, ...]:
     return DEFAULT_CHALLENGE_TEXT_MARKERS + extra
 
 
+def _ignored_markers(config: BrowserSiteConfig) -> frozenset[str]:
+    """Markers this site has explicitly declared inert (comma separated).
+
+    A board can embed a passive CAPTCHA widget -- MojeDelo renders the
+    reCAPTCHA badge on every ad -- and still serve ordinary content. Naming
+    the marker here keeps the built-in list honest for every other site while
+    letting that one board through. Only the named markers are skipped.
+    """
+    return frozenset(
+        marker.strip().lower()
+        for marker in (config.ignore_challenge_markers or "").split(",")
+        if marker.strip()
+    )
+
+
 def _visible_text(html: str) -> str:
     """The text a person would see, with scripts and styles removed."""
     soup = BeautifulSoup(html, "html.parser")
@@ -278,12 +293,17 @@ class BrowserScraperClient:
 
     def _check_challenge(self, html: str, url: str) -> None:
         """Raise when the rendered page is a bot challenge rather than content."""
+        ignored = _ignored_markers(self._site_config)
         lowered_html = html[:200000].lower()
         for marker in DEFAULT_CHALLENGE_HTML_MARKERS:
+            if marker in ignored:
+                continue
             if marker in lowered_html:
                 raise BrowserChallengeError(f"{url} returned a bot challenge (matched {marker!r})")
         text = _visible_text(html[:200000])
         for marker in _challenge_markers(self._site_config):
+            if marker in ignored:
+                continue
             if marker in text:
                 raise BrowserChallengeError(f"{url} returned a bot challenge (matched {marker!r})")
 

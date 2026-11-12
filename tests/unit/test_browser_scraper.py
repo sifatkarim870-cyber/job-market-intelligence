@@ -98,6 +98,40 @@ def test_a_cloudflare_marker_in_the_markup_is_a_challenge() -> None:
     raise AssertionError("the challenge platform marker must be treated as a challenge")
 
 
+def test_an_ignored_html_marker_is_not_a_challenge() -> None:
+    """A site that embeds a passive reCAPTCHA badge can declare it inert.
+
+    MojeDelo renders a reCAPTCHA widget on every ad while serving ordinary
+    content, and its detail pages carry ``g-recaptcha`` in the markup. Naming
+    the marker in ``ignore_challenge_markers`` lets that board through without
+    weakening the built-in list for every other site.
+    """
+    html = (
+        '<html><body><h1>Pravnik</h1><div class="g-recaptcha"></div>'
+        '<textarea name="g-recaptcha-response"></textarea></body></html>'
+    )
+    client = _StubClient(_config(ignore_challenge_markers="g-recaptcha"))
+    client._check_challenge(html, "https://example.com/oglas/x")  # must not raise
+
+
+def test_ignoring_one_marker_keeps_every_other_marker() -> None:
+    """Ignoring ``g-recaptcha`` must not stop a real Cloudflare challenge firing."""
+    html = '<html><head><script src="/cdn-cgi/challenge-platform/x"></script></head></html>'
+    client = _StubClient(_config(ignore_challenge_markers="g-recaptcha"))
+    try:
+        client._check_challenge(html, "https://example.com/jobs")
+    except BrowserChallengeError:
+        return
+    raise AssertionError("a non-ignored challenge marker must still raise")
+
+
+def test_an_ignored_text_marker_is_not_a_challenge() -> None:
+    """The ignore list also covers the visible-text markers, not just the markup."""
+    html = '<html><body><div class="captcha">Please complete the captcha</div></body></html>'
+    client = _StubClient(_config(ignore_challenge_markers="captcha"))
+    client._check_challenge(html, "https://example.com/jobs")  # must not raise
+
+
 def test_a_rendered_page_has_a_heading_and_text() -> None:
     body = "<h1>Senior Engineer</h1><p>" + ("We are hiring. " * 400) + "</p>"
     html = f"<html><body>{body}</body></html>"
