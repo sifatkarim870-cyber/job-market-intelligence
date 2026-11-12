@@ -302,6 +302,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # omits the country; a fallback aimed at a country the seed lacks is
     # silently a no-op.
     ("TW", "TWN", "Taiwan", "Asia", "TWD"),
+    # Mozambique backs emprego_co_mz. The board was seeded so this row exists:
+    # its JobPosting block names addressCountry "MZ", but a bare 2-letter code
+    # does not resolve on its own, and the SOURCE_HOME_COUNTRY fallback aimed at
+    # a country the seed lacks is silently a no-op. Add it before using the
+    # fallback (MZN is already seeded).
+    ("MZ", "MOZ", "Mozambique", "Africa", "MZN"),
 ]
 
 

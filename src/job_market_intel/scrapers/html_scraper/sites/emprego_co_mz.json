@@ -1,0 +1,32 @@
+{
+  "source_code": "emprego_co_mz",
+  "source_name": "emprego.co.mz (Mozambique)",
+  "country": "Mozambique",
+  "base_url": "https://www.emprego.co.mz",
+  "listing_path": "/",
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "li.grid-list-el",
+    "job_link": "a[href*='/vaga/']",
+    "job_title": "h1",
+    "company": "h3.h4",
+    "location": "",
+    "description": ".medium-large-text",
+    "posted_date": "",
+    "salary": "",
+    "employment_type": "",
+    "skills": ""
+  },
+  "detail_json_ld_fill": true,
+  "detail_url_pattern": "/vaga/[^/]+/?$",
+  "id_from_url": true,
+  "id_url_regex": "/vaga/([a-z0-9-]+)/?$",
+  "impersonate": "chrome",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "country_fallback": "Mozambique"
+}

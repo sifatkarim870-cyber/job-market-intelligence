@@ -1220,6 +1220,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   2-letter code does not resolve on its own; the fallback pins every ad
     #:   to Poland.
     "olx_pl": "PL",
+    #: emprego_co_mz: Mozambique. Its JobPosting block carries a bare ISO code
+    #:   in addressCountry ("MZ") plus Maputo as the locality; a bare 2-letter
+    #:   code does not resolve on its own, so the fallback pins every ad to
+    #:   Mozambique once the country row is seeded.
+    "emprego_co_mz": "MZ",
 }
 
 
