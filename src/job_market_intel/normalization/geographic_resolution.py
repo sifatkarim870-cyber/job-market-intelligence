@@ -1215,6 +1215,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   this the feed would leave each ad unresolved; the fallback pins every
     #:   ad to China.
     "zhaopin_com": "CN",
+    #: olx_pl: Poland. Its JobPosting block carries a bare ISO code in
+    #:   addressCountry ("PL") and a town the resolver may not hold, and a bare
+    #:   2-letter code does not resolve on its own; the fallback pins every ad
+    #:   to Poland.
+    "olx_pl": "PL",
 }
 
 

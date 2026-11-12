@@ -1,0 +1,54 @@
+{
+  "source_code": "olx_pl",
+  "source_name": "OLX Praca (Poland)",
+  "country": "Poland",
+  "base_url": "https://www.olx.pl",
+  "listing_path": "/praca/",
+  "listing_pagination": "?page={page}",
+  "max_pages": 3,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='/oferta/praca/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "ID[0-9a-zA-Z]+\\.html",
+  "id_from_url": true,
+  "id_url_regex": "(ID[0-9a-zA-Z]+)\\.html",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "detail_json_salary": {
+    "currency": "baseSalary.currency",
+    "min": "baseSalary.value.minValue",
+    "max": "baseSalary.value.maxValue",
+    "unit": "baseSalary.value.unitText"
+  },
+  "impersonate": "chrome",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 30,
+  "inter_request_delay_seconds": 1.0,
+  "currency_iso_code": "PLN",
+  "pay_period": "monthly",
+  "country_fallback": "Poland"
+}
