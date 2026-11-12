@@ -9,15 +9,43 @@ recorded, because reciting an API endpoint from memory is how people end up
 signing up for one that has moved. Where a URL failed to resolve today, that is
 said rather than quietly dropped.
 
-Nothing in sections A-E has been built. Nothing here needs the scraper to exist
-first -- each entry is blocked purely on a credential, a network capability, or
-the fact that the page is not what it claims to be.
+Nothing here needs the scraper to exist first -- each entry is blocked purely on
+a credential, a network capability, or the fact that the page is not what it
+claims to be. Several entries have since been built anyway; the reconciliation
+below records which, before the historical tables.
 
 **The three verdicts are different and are kept apart deliberately:**
 
 - **A / B** -- blocked. Needs an account (A) or a residential IP (B).
 - **C** -- buildable. Needs engineering time, not money.
 - **D** -- rejected. Not a posting list at all, so no amount of the above helps.
+
+## STATUS RECONCILIATION -- 2026-11-13
+
+The tables below are the **2026-10-16/18 measurement record** and are kept as
+written. Eight entries that this page recorded as blocked or unbuilt have since
+been built and are **enabled in `config/sources.json`** (verified 2026-11-13
+against the registry and `core.jobs`):
+
+| Earlier verdict here | Registry code | Rows | How it was cleared |
+|---|---|---|---|
+| Section B -- hh.ru captcha-walled | `hh_ru` | 57 | `impersonate: "chrome"`; HeadHunter HTML listing, JSON-LD details |
+| Section B -- Jobs.ch captcha | `jobs_ch` | 60 | JSON-LD details; server-rendered listing |
+| Section B -- BrighterMonday captcha | `brightermonday_co_ug` | 60 | Uganda; `detail_json_ld_fill` |
+| Section B -- net-empregos captcha | `net_empregos` | 1,509 | server-rendered listing; largest of the eight |
+| Section B -- jobsnepal captcha | `jobsnepal` | 172 | now **enabled** (no longer the `enabled: false` example in the B paragraph) |
+| Section B / C -- keejob.com `cloudflare` marker | `keejob_tn` | 60 | Tunisia; unwalled from a home IP |
+| Section B / C -- careercenter.am `cloudflare` marker | `careercenter_am` | 49 | browser group; unwalled from a home IP |
+| Section C -- shine.com "browser viable, not yet built" | `shine` | 72 | built server-side, no browser needed |
+
+Two section-D "rejected directory" entries have likewise been built since:
+`minajobs` (154 rows) and `staff_am` (37 rows). The entries below that are *not*
+marked BUILT remain unbuilt and are still blocked exactly as described.
+
+A ninth board, **Jobberman (Nigeria)** -- mislabelled "Kenya/Ghana" in the B
+table -- was measured afresh and is now built as `jobberman` (60 rows). It is not
+captcha-walled from a home IP; the earlier "captcha challenge" note was taken
+against a datacenter IP.
 
 ---
 
@@ -117,22 +145,22 @@ what GitHub Actions runners have.
 |---|---|---|
 | Naukri | India | HTTP 403 on `/` and `/njkhr/login` (368b -- a block page, not content) |
 | InfoJobs (ES) | Spain | captcha challenge; `/` returned **HTTP 405** |
-| Jobs.ch | Switzerland | captcha challenge |
+| Jobs.ch | Switzerland | captcha challenge -- **BUILT** as `jobs_ch` |
 | Akhtaboot | Middle East | captcha challenge **and** robots `Disallow` for `*` |
 | CV-Library | UK | HTTP 403 (Cloudflare, `/cdn-cgi/l/email-protection`) |
 | HelloWork | France | robots **disallows** `/jobs`; also ReadTimeout on a 400 KB+ page |
 | ZipRecruiter | Global/US | robots **disallows** the job paths |
 | Jora | Australia/global | robots **disallows** the job paths |
 | Dubizzle | UAE | Incapsula challenge |
-| hh.ru / HeadHunter | Russia/CIS | captcha challenge |
-| BrighterMonday | Kenya/Uganda | captcha challenge |
-| Jobberman | Kenya/Ghana | captcha challenge |
+| hh.ru / HeadHunter | Russia/CIS | captcha challenge -- **BUILT** as `hh_ru` (`impersonate: "chrome"`) |
+| BrighterMonday | Kenya/Uganda | captcha challenge -- **BUILT** as `brightermonday_co_ug` (Uganda) |
+| Jobberman | Nigeria | captcha challenge from a datacenter IP -- **BUILT** as `jobberman` (unwalled from a home IP) |
 | Laimoon | Middle East | HTTP 503 |
-| net-empregos | Portugal | captcha challenge |
-| jobsnepal | Nepal | captcha challenge |
-| keejob.com | Tunisia | `cloudflare` marker in the body (see section C) |
+| net-empregos | Portugal | captcha challenge -- **BUILT** as `net_empregos` |
+| jobsnepal | Nepal | captcha challenge -- **BUILT** as `jobsnepal` (now enabled) |
+| keejob.com | Tunisia | `cloudflare` marker in the body (see section C) -- **BUILT** as `keejob_tn` |
 | emploipartner.com | Luxembourg | `cloudflare` marker in the body |
-| careercenter.am | Armenia | `cloudflare` marker in the body |
+| careercenter.am | Armenia | `cloudflare` marker in the body -- **BUILT** as `careercenter_am` (browser group) |
 | jobwebkenya.com | Kenya | `cloudflare` marker in the body |
 
 **A residential proxy unblocks more coverage than anything else on this page.**
@@ -143,10 +171,11 @@ it has not been purchased.
 IrishJobs, Stellenanzeigen and Nationale Vacaturebank and returned the *same*
 Access-Denied / 63-byte / privacy-gate responses as plain HTTP. A browser does
 not clear a challenge that is keyed to the IP, so "just render it" is not a way
-around this section. `jobsnepal` is the working example of what does happen: its
-scraper is correct and green locally, but CI came back with a Cloudflare
-"Just a moment..." page, so it sits in `config/sources.json` with
-`enabled: false` until it can run from a home IP.
+around this section. `jobsnepal` was the working example of what happens (correct
+and green locally, a Cloudflare "Just a moment..." page in CI), and it sat in
+`config/sources.json` with `enabled: false` until it could run from a home IP --
+it is **enabled now** (172 rows, 2026-11-13). The point it illustrated still
+stands for every entry below not marked BUILT.
 
 ---
 
@@ -166,10 +195,10 @@ headless Chromium, and the two responses compared.
 | **jobsireland.ie** | Ireland | 200, 176 KB, 3,898 postings | no | **SHIPPED** -- `jobsireland`, 108 rows, **no browser** |
 | **jobmail.co.za** | South Africa | 200, 142 KB, 8,000+ postings | no | **SHIPPED** -- `jobmail`, 197 rows, **no browser** |
 | **forasna.com** | Egypt | 200, 281 KB, 2,852 postings | no | **SHIPPED** -- `forasna`, 60 rows, **no browser** |
-| shine.com | India | 200, 36 KB, 0 anchors | no | browser viable, not yet built |
-| keejob.com | Tunisia | 200, 221 KB | **yes** | moved to section B |
+| shine.com | India | 200, 36 KB, 0 anchors | no | **SHIPPED** -- `shine`, 72 rows, no browser |
+| keejob.com | Tunisia | 200, 221 KB | **yes** | moved to section B -- now **BUILT** as `keejob_tn` |
 | emploipartner.com | Luxembourg | 200, 92 KB | **yes** | moved to section B |
-| careercenter.am | Armenia | 200, 599 KB | **yes** | moved to section B |
+| careercenter.am | Armenia | 200, 599 KB | **yes** | moved to section B -- now **BUILT** as `careercenter_am` |
 | jobwebkenya.com | Kenya | 200, 363 KB | **yes** | moved to section B |
 
 **The split that matters is not JS-vs-HTML, it is Cloudflare-vs-not.** Four
@@ -235,6 +264,11 @@ hotnigerianjobs.com, jobfind.gr, jobwebkenya.com, bdjobs.com,
 arbetsformedlingen.se, jobbnorge.no, jobnet.dk, ngcareers.com, kariera.sk,
 saramin.co.kr, skill.jobs, staff.am.
 
+**Update 2026-11-13:** two of these were later built anyway, because their
+*detail* pages are postings even though the page listed here is a navigation
+hub: `minajobs` (154 rows) and `staff.am` (37 rows). The rest of the list still
+stands exactly as measured.
+
 This is a different verdict from sections B and C and is worth stating
 separately: **no amount of proxying, credentials or browser time will make these
 into postings.** They are navigation, and a board behind them may still be
@@ -253,9 +287,9 @@ worth building.
 
 ## Recommended order
 
-1. **shine.com** -- the last remaining unwalled JS-rendered board. The
-   machinery exists; this is days of work, not a purchase. India is thinly
-   covered (51job carries it, 3,696 rows).
+1. ~~**shine.com**~~ -- **DONE.** Built and shipped as `shine` (72 rows,
+   server-side, no browser). It was the last remaining unwalled JS-rendered
+   board; India is thinly covered (51job carries it, 3,696 rows).
 2. **France Travail** -- an entire country, authoritative source, documented API.
    Blocked only on registration.
 3. **A residential proxy** -- unblocks the whole of section B, several of them
