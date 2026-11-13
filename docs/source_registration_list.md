@@ -621,4 +621,16 @@ before it was written off. The reason is measured, not assumed:
   Taiwan is already seeded (`ref.countries` TW, country_id 5216), and
   `SOURCE_HOME_COUNTRY["104_tw"] = "TW"` was added.
 
+- **`1111_tw`** (Taiwan, 1111.com.tw) -- 2026-11-14. Taiwan's second largest
+  job portal. The search listing at `https://www.1111.com.tw/search/job`
+  requires JavaScript execution to clear an initial loader challenge, which
+  SeleniumBase undetected Chrome bypasses cleanly without incident. Each detail
+  page publishes a schema.org `JobPosting` **JSON-LD** block, which `detail_json_ld`
+  maps: title, employer (`hiringOrganization.name`), locality+region, description,
+  posted date, employment type, and salary (`baseSalary.value.minValue`).
+  `detail_url_pattern` is `^/job/\\d+/?` and `id_url_regex` is `/job/(\\d+)`.
+  Verified locally: 5 fetched / 5 parsed / 5 cleaned / 5 inserted, batch
+  validation PASSED, 0 failed. `SOURCE_HOME_COUNTRY["1111_tw"] = "TW"` added.
+
+
 

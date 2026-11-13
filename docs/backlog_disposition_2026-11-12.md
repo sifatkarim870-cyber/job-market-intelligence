@@ -207,7 +207,7 @@ in the matrix.
 | 177 | xpress.jobs | Sri Lanka | 200 | 0 | 1.7 KB JS shell |
 | 178 | jobup.ch | Switzerland | 200 | 22 | JS shell: the listing carries no server-rendered ad links |
 | 179 | 104.com.tw | Taiwan | 200 | 20 | 104_tw (Taiwan) - built via the browser framework 2026-11-14; plain HTTP 403s on Cloudflare but SeleniumBase UC mode renders search & detail with full JobPosting JSON-LD |
-| 180 | 1111.com.tw | Taiwan | 200 | 54 | detail pages bot-blocked (HTTP 403) |
+| 180 | 1111.com.tw | Taiwan | 200 | 33 | 1111_tw (Taiwan) - built via the browser framework 2026-11-14; JS loader challenge bypassed by SeleniumBase UC mode, detail page publishes full JobPosting JSON-LD |
 | 181 | landing.jobs | Tech | 200 | 14 | landing_jobs (Portugal) - built via the browser framework 2026-11-13; disabled in CI (runner datacenter IP served a Cloudflare challenge) |
 | 182 | jobbkk.com | Thailand | 200 | 32 | Next.js App Router (self.__next_f); unsupported config-only |
 | 183 | ugandajobline.com | Uganda | 200 | 0 | listing exposes no ad links on the home page |
@@ -415,7 +415,7 @@ in the matrix.
 - **xpress.jobs** (Sri Lanka) - 1.7 KB JS shell
 - **jobup.ch** (Switzerland) - JS shell: the listing carries no server-rendered ad links
 - **104.com.tw** (Taiwan) - built via the browser framework 2026-11-14 (`104_tw`); plain HTTP 403s on Cloudflare but SeleniumBase UC mode renders search & detail with full JobPosting JSON-LD
-- **1111.com.tw** (Taiwan) - detail pages bot-blocked (HTTP 403)
+- **1111.com.tw** (Taiwan) - built via the browser framework 2026-11-14 (`1111_tw`); JS loader challenge bypassed by SeleniumBase UC mode, detail page publishes full JobPosting JSON-LD
 - **landing.jobs** (Tech) - built via the browser framework 2026-11-13 (`landing_jobs`); the listing at `https://landing.jobs/jobs` renders 50 ads whose detail pages publish full JobPosting JSON-LD, but CI runs 43311284418/43311901554 were served a Cloudflare challenge from the runner's datacenter IP, so it is kept BUILT (Disabled in CI)
 - **jobbkk.com** (Thailand) - Next.js App Router (self.__next_f); unsupported config-only
 - **ugandajobline.com** (Uganda) - listing exposes no ad links on the home page

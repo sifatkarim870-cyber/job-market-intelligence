@@ -1256,6 +1256,8 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "mojedelo": "SI",
     #: 104_tw: Taiwan. 104 Job Bank is Taiwan's largest job board.
     "104_tw": "TW",
+    #: 1111_tw: Taiwan. 1111 Job Bank is Taiwan's second largest job portal.
+    "1111_tw": "TW",
 }
 
 

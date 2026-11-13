@@ -14,6 +14,7 @@ produce the same record shape, so the two frameworks cannot drift apart.
 from __future__ import annotations
 
 import os
+import re
 import time
 from typing import Any
 from urllib.parse import urljoin, urlparse
@@ -514,9 +515,15 @@ class BrowserScraperClient:
                     failures[job["url"]] = str(exc)
                     logger.warning("browser_scraper {}", exc)
                     continue
+                clean_url = job["url"].split("?", 1)[0].rstrip("/")
+                job_id = clean_url.rsplit("/", 1)[-1]
+                if self._site_config.id_url_regex:
+                    match = re.search(self._site_config.id_url_regex.strip(), job["url"])
+                    if match:
+                        job_id = match.group(1)
                 records.append(
                     {
-                        "job_id": job["url"].rsplit("/", 1)[-1]
+                        "job_id": job_id
                         if self._site_config.id_from_url
                         else job["url"],
                         "html": html,

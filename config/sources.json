@@ -2029,6 +2029,15 @@
       "max_env": "104_TW_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "104 Job Bank (104.com.tw) - Taiwan; No key, no registration, no proxy. 104 is Taiwan's largest job bank. Plain HTTP 403s on Cloudflare TLS fingerprinting; SeleniumBase undetected Chrome renders the listing at https://www.104.com.tw/jobs/search/ without challenge. Every ad publishes a schema.org JobPosting JSON-LD block inside a list container, which detail_json_ld maps: title=title, company=hiringOrganization.name, location=[jobLocation.address.addressLocality, jobLocation.address.addressRegion], description=description, posted_date=datePosted, employment_type=employmentType, salary=baseSalary.value.value. SOURCE_HOME_COUNTRY['104_tw']='TW' added (Taiwan seeded as country_id 5216). Verified locally 2026-11-14: 5 fetched, 5 parsed, 5 cleaned, 5 inserted, batch validation PASSED, 0 failed."
+    },
+    {
+      "code": "1111_tw",
+      "group": "browser",
+      "script": "scripts/run_browser_scraper.py",
+      "timeout": 45,
+      "max_env": "1111_TW_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "1111 Job Bank (1111.com.tw) - Taiwan; No key, no registration, no proxy. 1111 is Taiwan's second largest job portal. Plain HTTP hits a JS captcha challenge; SeleniumBase undetected Chrome renders the search listing at https://www.1111.com.tw/search/job without challenge and discovers detail links. Each detail page publishes a schema.org JobPosting JSON-LD block, which detail_json_ld maps: title=title, company=hiringOrganization.name, location=[jobLocation.address.addressLocality, jobLocation.address.addressRegion], description=description, posted_date=datePosted, employment_type=employmentType, salary=baseSalary.value.minValue. SOURCE_HOME_COUNTRY['1111_tw']='TW' added (Taiwan seeded as country_id 5216). Verified locally 2026-11-14: 5 fetched, 5 parsed, 5 cleaned, 5 inserted, batch validation PASSED, 0 failed."
     }
   ]
 }
