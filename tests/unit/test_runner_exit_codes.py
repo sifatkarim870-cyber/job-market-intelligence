@@ -1,4 +1,4 @@
-"""A run that collected nothing must not exit 0.
+"""Every scraper runner must exit non-zero when a run stored nothing.
 
 Discovered 2026-10-18 on Vagas.com.br. After aggressive probing the site returned
 HTTP 429 for every request and the run reported::
@@ -11,69 +11,92 @@ indistinguishable from success by reading the tick.
 
 The rule is deliberately narrow. Over-broad failure exits break healthy
 degraded feeds: a run that fetches 15 of 25 and inserts 14 is a working scraper
-on a quiet board, and must stay green. Only ``persisted == 0`` **and**
-``validation_passed is False`` is breakage.
+on a quiet board, and must stay green. Only ``persisted == 0`` or a per-row
+persistence failure is breakage.
 
-Run with:  uv run pytest tests/unit/test_runner_exit_codes.py -q
+This file now tests the shared contract in ``common.runner`` and asserts every
+runner uses it, instead of checking literal guard strings in three files.
 """
 
 from __future__ import annotations
 
 import ast
 import pathlib
+from dataclasses import dataclass
 
 import pytest
 
+from job_market_intel.common.runner import runner_exit_code
+
 REPO = pathlib.Path(__file__).resolve().parents[2]
-
-#: The runners this rule is pinned on. Extend the list as sources are added --
-#: a rule enforced on two of thirty runners is not a convention.
-RUNNERS = [
-    "scripts/run_vagas_com_br_scraper.py",
-    "scripts/run_angola_emprego_scraper.py",
-    "scripts/run_html_scraper.py",
-]
+RUNNERS = sorted((REPO / "scripts").glob("run_*_scraper.py"))
 
 
-def _main_source(rel: str) -> str:
-    return (REPO / rel).read_text(encoding="utf-8")
+@dataclass
+class _Result:
+    inserted_count: int = 0
+    updated_count: int = 0
+    unchanged_count: int = 0
+    failed_count: int = 0
+    validation_passed: bool = True
 
 
-@pytest.mark.parametrize("rel", RUNNERS)
-class TestZeroYieldRunsExitNonZero:
-    def test_the_guard_is_present(self, rel: str) -> None:
-        src = _main_source(rel)
-        assert "persisted nothing" in src, f"{rel} has no zero-yield guard"
+def test_dry_run_is_always_green() -> None:
+    assert runner_exit_code(_Result(), store_db=False) == 0
+    assert runner_exit_code(None, store_db=False) == 0
 
-    def test_it_actually_returns_one(self, rel: str) -> None:
-        """Not just a printed message -- the process exit code matters."""
-        assert "return 1" in _main_source(rel), f"{rel} never returns non-zero"
 
-    def test_the_guard_is_inside_main(self, rel: str) -> None:
-        """A module-level return would be a syntax error; a guard in the wrong
-        function would never run."""
-        tree = ast.parse(_main_source(rel))
-        fn = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "main")
-        body = ast.dump(fn)
-        assert "persisted" in body, f"{rel}: the guard is not inside main()"
+def test_a_zero_yield_failed_validation_is_red() -> None:
+    """The exact Vagas.com.br case: 45 fetched, 45 failed, 0 inserted."""
+    assert runner_exit_code(_Result(validation_passed=False), store_db=True) == 1
 
-    def test_a_degraded_but_productive_run_still_exits_zero(self, rel: str) -> None:
-        """The guard must not fire when rows were persisted.
 
-        This is the case a naive 'exit non-zero on validation failure' would
-        break: a board with fewer live postings than the configured floor.
-        """
-        src = _main_source(rel)
-        assert "persisted == 0" in src, (
-            f"{rel}: the guard must be conditioned on zero persisted rows, not "
-            f"on validation failure alone"
+def test_a_degraded_but_productive_run_stays_green() -> None:
+    """14 stored out of 25 fetched is a quiet board, not a broken scraper."""
+    assert (
+        runner_exit_code(
+            _Result(inserted_count=14, validation_passed=False),
+            store_db=True,
         )
-        assert "not result.validation_passed and persisted == 0" in src, (
-            f"{rel}: the guard must require BOTH conditions"
-        )
+        == 0
+    )
 
 
-@pytest.mark.parametrize("rel", RUNNERS)
-def test_runner_is_syntactically_valid(rel: str) -> None:
-    """A patched runner that does not parse is worse than an unguarded one."""
-    ast.parse(_main_source(rel))
+def test_unchanged_rows_count_as_persisted() -> None:
+    """Re-scraping known postings is a successful observation."""
+    assert runner_exit_code(_Result(unchanged_count=5), store_db=True) == 0
+
+
+def test_any_persistence_failure_is_red() -> None:
+    assert runner_exit_code(_Result(inserted_count=3, failed_count=1), store_db=True) == 1
+
+
+def test_list_of_results_aggregates() -> None:
+    assert runner_exit_code([_Result(inserted_count=1), _Result(unchanged_count=2)], store_db=True) == 0
+    assert runner_exit_code([_Result(inserted_count=1), _Result(failed_count=1)], store_db=True) == 1
+    assert runner_exit_code([], store_db=True) == 1
+
+
+def test_dict_result_is_supported() -> None:
+    assert runner_exit_code({"inserted_count": 2}, store_db=True) == 0
+    assert runner_exit_code({"inserted_count": 0}, store_db=True) == 1
+
+
+@pytest.mark.parametrize("rel", RUNNERS, ids=lambda p: p.name)
+def test_every_runner_uses_the_shared_contract(rel: pathlib.Path) -> None:
+    """A rule enforced on three of fifty-two runners is not a convention."""
+    src = rel.read_text(encoding="utf-8")
+    assert "runner_exit_code" in src, f"{rel.name} has no shared exit contract"
+
+    tree = ast.parse(src)
+    main = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name == "main"
+    )
+    assert "runner_exit_code" in ast.dump(main), f"{rel.name}: contract not reached from main()"
+
+
+@pytest.mark.parametrize("rel", RUNNERS, ids=lambda p: p.name)
+def test_runner_is_syntactically_valid(rel: pathlib.Path) -> None:
+    ast.parse(rel.read_text(encoding="utf-8"))
