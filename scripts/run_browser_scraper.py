@@ -13,6 +13,7 @@ import argparse
 import os
 import sys
 
+from job_market_intel.common.runner import runner_exit_code
 from job_market_intel.scrapers.browser_scraper import (
     BrowserScraperPipeline,
     BrowserScraperSettings,
@@ -70,14 +71,15 @@ def main() -> int:
         for issue in result.issues[:10]:
             print(f"  - {issue}")
 
-    if not args.no_db and not result.validation_passed and result.inserted_count == 0:
+    store_db = not args.no_db
+    if store_db and not result.validation_passed and result.inserted_count == 0:
         print(
             "ERROR: the run persisted 0 rows and batch validation FAILED. This is "
             "breakage, not a quiet board -- exiting non-zero so CI cannot report "
             "success on a source that collected nothing."
         )
         return 1
-    return 0
+    return runner_exit_code(result, store_db=store_db)
 
 
 if __name__ == "__main__":

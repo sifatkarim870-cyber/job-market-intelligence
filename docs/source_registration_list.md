@@ -603,3 +603,19 @@ before it was written off. The reason is measured, not assumed:
   country-level location (the platform's documented fallback); seeding a
   curated Slovenian city set is the follow-up for city-level rows.
 
+- **`104_tw`** (Taiwan, 104.com.tw) -- 2026-11-14. Taiwan's largest job bank.
+  The search listing at `https://www.104.com.tw/jobs/search/` renders 20 ad
+  cards per page, and pagination `?page={page}` serves 20 distinct ads per page.
+  Plain HTTP encounters a Cloudflare `403 Forbidden` TLS fingerprint check;
+  SeleniumBase undetected Chrome bypasses it cleanly with no challenge. Each
+  detail page publishes a schema.org `JobPosting` **JSON-LD** block inside a
+  list container, which `detail_json_ld` maps: title, employer
+  (`hiringOrganization.name`), locality+region, description (HTML decoded),
+  posted date, employment type, and salary (`baseSalary.value.value`).
+  `detail_url_pattern` is `^/job/[a-zA-Z0-9]+` and `id_url_regex` is
+  `/job/([a-zA-Z0-9]+)`. Verified locally: 5 fetched / 5 parsed / 5 cleaned /
+  5 inserted, batch validation PASSED, 0 failed. Taiwan is already seeded
+  (`ref.countries` TW, country_id 5216), and `SOURCE_HOME_COUNTRY["104_tw"] = "TW"`
+  was added.
+
+

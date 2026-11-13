@@ -1254,6 +1254,8 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   without this the resolver leaves rural ads unresolved; the fallback
     #:   pins every ad to Slovenia while the town stays the location.
     "mojedelo": "SI",
+    #: 104_tw: Taiwan. 104 Job Bank is Taiwan's largest job board.
+    "104_tw": "TW",
 }
 
 
