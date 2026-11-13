@@ -614,8 +614,11 @@ before it was written off. The reason is measured, not assumed:
   posted date, employment type, and salary (`baseSalary.value.value`).
   `detail_url_pattern` is `^/job/[a-zA-Z0-9]+` and `id_url_regex` is
   `/job/([a-zA-Z0-9]+)`. Verified locally: 5 fetched / 5 parsed / 5 cleaned /
-  5 inserted, batch validation PASSED, 0 failed. Taiwan is already seeded
-  (`ref.countries` TW, country_id 5216), and `SOURCE_HOME_COUNTRY["104_tw"] = "TW"`
-  was added.
+  5 inserted, batch validation PASSED, 0 failed. CI SUCCESS 2026-11-14: browser-group
+  run 43519426253 rendered the search listing and detail pages in headless Chrome
+  via seleniumbase UC mode on Ubuntu with no Cloudflare challenge, parsed and
+  persisted postings, extracted sections, and exported a Hugging Face shard.
+  Taiwan is already seeded (`ref.countries` TW, country_id 5216), and
+  `SOURCE_HOME_COUNTRY["104_tw"] = "TW"` was added.
 
 
