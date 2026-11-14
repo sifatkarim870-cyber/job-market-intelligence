@@ -712,6 +712,17 @@ before it was written off. The reason is measured, not assumed:
   0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
   to Hugging Face. LIVE in scheduled CI matrix.
 
+- **`merojob_np`** (Nepal, merojob.com) -- 2026-11-15. Nepal's premier job portal.
+  Previously misclassified in backlog sweep as unsupported due to Next.js App Router
+  (`self.__next_f`). Built as a dedicated `api` group scraper (`scripts/run_merojob_np_scraper.py`)
+  querying Merojob's public REST API at `https://api.merojob.com/api/v1/jobs/` for active vacancy
+  discovery and `https://api.merojob.com/api/v1/jobs/{job_id}/` for full structured details
+  (duties, specifications, skills, employer, locations, and salary in NPR).
+  Nepal is registered in `ref.countries` (ISO `NP`/`NPL`, continent Asia, default currency NPR)
+  and registered in `SOURCE_HOME_COUNTRY["merojob_np"] = "NP"`.
+  Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres, batch
+  validation PASSED, 0 failed. LIVE in scheduled CI matrix.
+
 
 
 

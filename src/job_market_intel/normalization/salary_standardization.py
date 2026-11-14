@@ -116,6 +116,7 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "ZAR": 0.0608742393,  # 1 ZAR = 0.0608742393 USD (20 Oct 2026; 1 USD = 16.42731 ZAR)
     "IRT": 6.036086175e-07,  # 1 IRT = 6.036e-07 USD (19 Oct 2026; 1 USD = 1,656,703 IRT;
     #  the old ISO code, which is what the corpus stores)
+    "NPR": 0.00746,  # 1 NPR = 0.00746 USD (1 USD ~ 134 NPR)
 }
 
 

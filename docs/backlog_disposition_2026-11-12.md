@@ -192,7 +192,7 @@ in the matrix.
 | 162 | lexpress.mu | Mauritius | 200 | 124 | classifieds: detail pages are ad listings, not job postings |
 | 163 | zangia.mn | Mongolia | 200 | 0 | Next.js App Router (self.__next_f); unsupported config-only |
 | 164 | posao.me | Montenegro | 200 | 0 | tiny JS shell |
-| 165 | merojob.com | Nepal | 200 | 9 | Next.js App Router (self.__next_f); unsupported config-only |
+| 165 | merojob.com | Nepal | BUILT | 182 | public REST API endpoints at api.merojob.com/api/v1/jobs/ and /api/v1/jobs/{id}/; built as merojob_np API scraper 2026-11-15 |
 | 166 | nationalevacaturebank.nl | Netherlands | 200 | 0 | tiny JS/consent shell |
 | 167 | werk.nl | Netherlands | 200 | 0 | JS shell |
 | 168 | vrabotuvanje.com.mk | North Macedonia | BUILT | 68 | homepage + /rabotni-mesta directory + Nuxt 3 state deserializer; built as vrabotuvanje_mk API scraper 2026-11-15 |
@@ -400,7 +400,7 @@ in the matrix.
 - **lexpress.mu** (Mauritius) - classifieds: detail pages are ad listings, not job postings
 - **zangia.mn** (Mongolia) - Next.js App Router (self.__next_f); unsupported config-only
 - **posao.me** (Montenegro) - tiny JS shell
-- **merojob.com** (Nepal) - Next.js App Router (self.__next_f); unsupported config-only
+- **merojob.com** (Nepal) - RESOLVED 2026-11-15: public REST API endpoints at api.merojob.com/api/v1/jobs/ and /api/v1/jobs/{id}/ mapped; built as merojob_np API scraper.
 - **nationalevacaturebank.nl** (Netherlands) - tiny JS/consent shell
 - **werk.nl** (Netherlands) - JS shell
 - **vrabotuvanje.com.mk** (North Macedonia) - RESOLVED 2026-11-15: Nuxt 3 __NUXT_DATA__ state deserializer implemented; built as vrabotuvanje_mk API scraper.
