@@ -173,7 +173,7 @@ in the matrix.
 | 143 | workinnonprofits.ca | Canada | 200 | 0 | listing exposes no ad links on the home page |
 | 144 | chiletrabajos.cl | Chile | ERR | 0 | timeout during the live sweep |
 | 145 | burzarada.hzz.hr | Croatia | 200 | 4 | detail pages carry no job description body |
-| 146 | moj-posao.net | Croatia | 200 | 44 | Nuxt (__NUXT_DATA__); unsupported config-only |
+| 146 | moj-posao.net | Croatia | BUILT | 100 | server-rendered search pagination + Nuxt 3 state deserializer; built as mojposao_hr API scraper 2026-11-15 |
 | 147 | revolico.com | Cuba | 200 | 29 | Cuba classifieds; data lives in Apollo __APOLLO_STATE__, and the site is not a job board |
 | 148 | jobindex.dk | Denmark | 200 | 2 | listing exposes no ad links; search is JS-driven |
 | 149 | tyomarkkinatori.fi | Finland | 200 | 6 | no job-list route on the site (JS portal) |
@@ -381,7 +381,7 @@ in the matrix.
 - **workinnonprofits.ca** (Canada) - listing exposes no ad links on the home page
 - **chiletrabajos.cl** (Chile) - timeout during the live sweep
 - **burzarada.hzz.hr** (Croatia) - detail pages carry no job description body
-- **moj-posao.net** (Croatia) - Nuxt (__NUXT_DATA__); unsupported config-only
+- **moj-posao.net** (Croatia) - RESOLVED 2026-11-15: Nuxt 3 __NUXT_DATA__ state deserializer implemented; built as mojposao_hr API scraper.
 - **revolico.com** (Cuba) - Cuba classifieds; data lives in Apollo __APOLLO_STATE__, and the site is not a job board
 - **jobindex.dk** (Denmark) - listing exposes no ad links; search is JS-driven
 - **tyomarkkinatori.fi** (Finland) - no job-list route on the site (JS portal)

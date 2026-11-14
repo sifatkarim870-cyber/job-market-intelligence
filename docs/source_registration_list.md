@@ -683,6 +683,19 @@ before it was written off. The reason is measured, not assumed:
   persisted 58 jobs (0 failed) in 1m37s on Ubuntu runner, extracted description sections,
   and exported Parquet shard to Hugging Face. LIVE in scheduled CI matrix.
 
+- **`mojposao_hr`** (Croatia, moj-posao.net) -- 2026-11-15. Leading job board in Croatia.
+  Previously misclassified in backlog sweep as unsupported due to Nuxt 3 state
+  (`__NUXT_DATA__`). Analysis revealed that the search portal server-renders 100 job
+  links per page at `https://www.moj-posao.net/Pretraga-Poslova/`, and detail pages
+  embed a deserializable Nuxt 3 object graph containing full job titles, hiring
+  organizations, locations, complete duties/requirements/benefits, and validity dates.
+  Built as a dedicated `api` group scraper (`scripts/run_mojposao_hr_scraper.py`).
+  Croatia is seeded in `ref.countries` (ISO `HR`/`HRV`, continent Europe, default
+  currency EUR) and registered in `SOURCE_HOME_COUNTRY["mojposao_hr"] = "HR"`.
+  Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres,
+  batch validation PASSED, 0 failed. LIVE in scheduled CI matrix.
+
+
 
 
 
