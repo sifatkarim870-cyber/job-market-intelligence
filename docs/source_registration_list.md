@@ -634,5 +634,21 @@ before it was written off. The reason is measured, not assumed:
   not yield ad cards (never showed `a[href*='/job/']`), so it is kept BUILT
   (Disabled in CI) until residential proxy support is added.
 
+- **`adem_lu`** (Luxembourg, adem.public.lu) -- 2026-11-15. Public employment agency
+  of Luxembourg (Agence pour le développement de l'emploi). Previously misclassified
+  in backlog sweep as having no job list route; reverse-engineering the site's AEM
+  JobBoard component revealed the direct CTIE REST endpoint at
+  `https://adem.public.lu/ctie/jobboard?id=...`, which streams all active Luxembourg
+  job vacancies (over 2,600 live postings) in NDJSON chunks without bot challenges,
+  captchas, or authentication. Offers are enriched with full descriptions via the
+  accompanying REST endpoint `/ctie/jobboard/offer?id=...&ref={ref}`. Built as a
+  dedicated `api` group scraper (`scripts/run_adem_lu_scraper.py`), mapping reference,
+  title, employer, locality/canton, contract type, duration, schedule, and languages.
+  Luxembourg is seeded in `ref.countries` (ISO `LU`/`LUX`, continent Europe, default
+  currency EUR) and registered in `SOURCE_HOME_COUNTRY["adem_lu"] = "LU"`. Verified
+  locally: 2,639 raw discovered, parsed, normalized, persisted to Postgres, batch
+  validation PASSED, 0 failed.
+
+
 
 

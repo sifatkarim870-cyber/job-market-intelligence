@@ -2038,6 +2038,15 @@
       "max_env": "1111_TW_MAX_JOBS_PER_RUN",
       "enabled": false,
       "notes": "1111 Job Bank (1111.com.tw) - Taiwan; No key, no registration. 1111 is Taiwan's second largest job portal. Browser scraper (SeleniumBase UC mode) renders search listing at https://www.1111.com.tw/search/job and extracts schema.org JobPosting JSON-LD (title, employer, locality/region, description, datePosted, employmentType, salary). Verified locally: 5 fetched / 5 parsed / 5 cleaned / 5 inserted, batch validation PASSED. DISABLED IN CI 2026-11-14: In GitHub Actions (CI runs 43522012440 and 43618507110), Azure datacenter IP hits 1111.com.tw captcha_ch challenge that never yields job listings (never showed a[href*='/job/']). Kept BUILT (Disabled in CI) so it runs locally or when residential proxy / unblocking is available."
+    },
+    {
+      "code": "adem_lu",
+      "group": "api",
+      "script": "scripts/run_adem_lu_scraper.py",
+      "timeout": 15,
+      "max_env": "ADEM_LU_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "ADEM Luxembourg (adem.public.lu) - Luxembourg; Public employment agency CTIE JobBoard REST endpoint (https://adem.public.lu/ctie/jobboard?id=...) streams active postings in NDJSON format with commune/canton, contract, duration, hours, languages, skills. Offers enriched with detail descriptions via /ctie/jobboard/offer?id=...&ref={ref}. SOURCE_HOME_COUNTRY['adem_lu']='LU' (Luxembourg seeded in ref.countries as LU/LUX). Verified locally 2026-11-15: 2639 raw discovered, parsed, normalized, persisted to Postgres, batch validation PASSED."
     }
   ]
 }

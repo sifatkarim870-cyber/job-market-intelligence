@@ -890,6 +890,7 @@ def get_or_create_location(
 #:   absent onto the global-remote row and lose the country, which is how
 #:   builtin lost 9 of 40 and usajobs/jobbank lost 42 between them.
 SOURCE_HOME_COUNTRY: dict[str, str] = {
+    "adem_lu": "LU",
     "jobvision": "IR",
     "jobinja": "IR",
     "irantalent": "IR",

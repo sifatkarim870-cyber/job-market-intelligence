@@ -186,7 +186,7 @@ in the matrix.
 | 156 | subito.it | Italy | 200 | 13 | Next.js App Router (self.__next_f); unsupported config-only |
 | 157 | work.kz | Kazakhstan | 200 | 0 | tiny JS shell |
 | 158 | jobs.kg | Kyrgyzstan | 200 | 0 | Next.js App Router (self.__next_f); unsupported config-only |
-| 159 | adem.public.lu | Luxembourg | 200 | 6 | no job-list route on the site (JS public-employment portal) |
+| 159 | adem.public.lu | Luxembourg | 200 | 6 | adem_lu (Luxembourg) - built as dedicated API scraper 2026-11-15; CTIE JobBoard REST endpoint streams NDJSON feed |
 | 160 | maukerja.my | Malaysia | 200 | 1 | only 10 featured ads on the home page; no working listing path |
 | 161 | jobsplus.gov.mt | Malta | 200 | 6 | JS shell: no server-rendered ad links |
 | 162 | lexpress.mu | Mauritius | 200 | 124 | classifieds: detail pages are ad listings, not job postings |
@@ -394,7 +394,7 @@ in the matrix.
 - **subito.it** (Italy) - Next.js App Router (self.__next_f); unsupported config-only
 - **work.kz** (Kazakhstan) - tiny JS shell
 - **jobs.kg** (Kyrgyzstan) - Next.js App Router (self.__next_f); unsupported config-only
-- **adem.public.lu** (Luxembourg) - no job-list route on the site (JS public-employment portal)
+- **adem.public.lu** (Luxembourg) - built as dedicated API scraper 2026-11-15 (`adem_lu`); CTIE JobBoard REST endpoint streams NDJSON feed with >2,600 live vacancies, enriched via offer endpoint without bot walls
 - **maukerja.my** (Malaysia) - only 10 featured ads on the home page; no working listing path
 - **jobsplus.gov.mt** (Malta) - JS shell: no server-rendered ad links
 - **lexpress.mu** (Mauritius) - classifieds: detail pages are ad listings, not job postings
