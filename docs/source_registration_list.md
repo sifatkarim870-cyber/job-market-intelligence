@@ -708,7 +708,9 @@ before it was written off. The reason is measured, not assumed:
   North Macedonia is registered in `ref.countries` (ISO `MK`/`MKD`, continent Europe,
   default currency MKD) and registered in `SOURCE_HOME_COUNTRY["vrabotuvanje_mk"] = "MK"`.
   Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres, batch
-  validation PASSED, 0 failed. LIVE in scheduled CI matrix.
+  validation PASSED, 0 failed. CI verification run 43639056689 succeeded: 60 inserted,
+  0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
+  to Hugging Face. LIVE in scheduled CI matrix.
 
 
 
