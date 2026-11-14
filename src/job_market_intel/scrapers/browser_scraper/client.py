@@ -236,7 +236,7 @@ class BrowserScraperClient:
             self._driver.get(url)
         except Exception as exc:  # noqa: BLE001 - any driver failure is a fetch
             # failure from the pipeline's point of view.
-            raise BrowserFetchError(f"failed to load {url}") from exc
+            raise BrowserFetchError(f"failed to load {url}: {exc}") from exc
 
         if ready_selector:
             try:
@@ -409,7 +409,7 @@ class BrowserScraperClient:
         try:
             self._driver.get(url)
         except Exception as exc:  # noqa: BLE001
-            raise BrowserFetchError(f"failed to load detail page {url}") from exc
+            raise BrowserFetchError(f"failed to load detail page {url}: {exc}") from exc
         html = self._wait_for_detail()
         self._detail_pages_visited += 1
         return html
