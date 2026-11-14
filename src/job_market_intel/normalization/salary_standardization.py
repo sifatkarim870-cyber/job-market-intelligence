@@ -117,6 +117,7 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "IRT": 6.036086175e-07,  # 1 IRT = 6.036e-07 USD (19 Oct 2026; 1 USD = 1,656,703 IRT;
     #  the old ISO code, which is what the corpus stores)
     "NPR": 0.00746,  # 1 NPR = 0.00746 USD (1 USD ~ 134 NPR)
+    "THB": 0.0274,  # 1 THB = 0.0274 USD (1 USD ~ 36.5 THB)
 }
 
 

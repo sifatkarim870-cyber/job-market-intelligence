@@ -209,7 +209,7 @@ in the matrix.
 | 179 | 104.com.tw | Taiwan | 200 | 20 | 104_tw (Taiwan) - built via the browser framework 2026-11-14; plain HTTP 403s on Cloudflare but SeleniumBase UC mode renders search & detail with full JobPosting JSON-LD |
 | 180 | 1111.com.tw | Taiwan | 200 | 33 | 1111_tw (Taiwan) - built via browser framework; runs locally (33 ads/page), kept BUILT (Disabled in CI) because runner datacenter IP hits persistent captcha_ch wall |
 | 181 | landing.jobs | Tech | 200 | 14 | landing_jobs (Portugal) - built via the browser framework 2026-11-13; disabled in CI (runner datacenter IP served a Cloudflare challenge) |
-| 182 | jobbkk.com | Thailand | 200 | 32 | Next.js App Router (self.__next_f); unsupported config-only |
+| 182 | jobbkk.com | Thailand | BUILT | 25 | server-rendered pagination /jobs/lists/{page} + JobPosting JSON-LD; built as jobbkk_th API scraper 2026-11-15 |
 | 183 | ugandajobline.com | Uganda | 200 | 0 | listing exposes no ad links on the home page |
 | 184 | robota.ua | Ukraine | 200 | 0 | tiny JS/consent shell |
 | 185 | ziprecruiter.com | United States | 200 | 3 | bot-blocked (HTTP 403 / challenge) |
@@ -417,7 +417,7 @@ in the matrix.
 - **104.com.tw** (Taiwan) - built via the browser framework 2026-11-14 (`104_tw`); plain HTTP 403s on Cloudflare but SeleniumBase UC mode renders search & detail with full JobPosting JSON-LD
 - **1111.com.tw** (Taiwan) - built via browser framework (`1111_tw`); runs locally (33 ads/page), kept BUILT (Disabled in CI) because runner datacenter IP hits persistent captcha_ch wall
 - **landing.jobs** (Tech) - built via the browser framework 2026-11-13 (`landing_jobs`); the listing at `https://landing.jobs/jobs` renders 50 ads whose detail pages publish full JobPosting JSON-LD, but CI runs 43311284418/43311901554 were served a Cloudflare challenge from the runner's datacenter IP, so it is kept BUILT (Disabled in CI)
-- **jobbkk.com** (Thailand) - Next.js App Router (self.__next_f); unsupported config-only
+- **jobbkk.com** (Thailand) - RESOLVED 2026-11-15: server-rendered search pagination + JobPosting JSON-LD mapped; built as jobbkk_th API scraper.
 - **ugandajobline.com** (Uganda) - listing exposes no ad links on the home page
 - **robota.ua** (Ukraine) - tiny JS/consent shell
 - **ziprecruiter.com** (United States) - bot-blocked (HTTP 403 / challenge)

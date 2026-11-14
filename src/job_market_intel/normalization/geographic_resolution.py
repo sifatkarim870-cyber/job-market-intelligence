@@ -946,6 +946,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "hiiraan_jobs": "SO",
     "jobsnepal": "NP",
     "merojob_np": "NP",
+    "jobbkk_th": "TH",
     "karriere_at": "AT",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
