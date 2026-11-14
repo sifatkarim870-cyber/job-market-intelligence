@@ -647,7 +647,10 @@ before it was written off. The reason is measured, not assumed:
   Luxembourg is seeded in `ref.countries` (ISO `LU`/`LUX`, continent Europe, default
   currency EUR) and registered in `SOURCE_HOME_COUNTRY["adem_lu"] = "LU"`. Verified
   locally: 2,639 raw discovered, parsed, normalized, persisted to Postgres, batch
-  validation PASSED, 0 failed.
+  validation PASSED, 0 failed. CI SUCCESS 2026-11-15: Scrape (API) run 43629165500
+  streamed the NDJSON feed, enriched 60 offers with full descriptions in 1m19s on
+  Ubuntu runner, 60 inserted / 0 failed, description sections extracted, and Parquet
+  shard exported to Hugging Face. LIVE in scheduled CI matrix.
 
 
 
