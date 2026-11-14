@@ -693,7 +693,10 @@ before it was written off. The reason is measured, not assumed:
   Croatia is seeded in `ref.countries` (ISO `HR`/`HRV`, continent Europe, default
   currency EUR) and registered in `SOURCE_HOME_COUNTRY["mojposao_hr"] = "HR"`.
   Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres,
-  batch validation PASSED, 0 failed. LIVE in scheduled CI matrix.
+  batch validation PASSED, 0 failed. CI SUCCESS 2026-11-15: Scrape (API) run 43636942644
+  fetched listings, deserialized Nuxt 3 data for 60 postings in 1m22s, 60 inserted /
+  0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
+  to Hugging Face. LIVE in scheduled CI matrix.
 
 
 
