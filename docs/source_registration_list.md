@@ -678,8 +678,10 @@ before it was written off. The reason is measured, not assumed:
   (`scripts/run_finn_no_scraper.py`). Norway is registered in `ref.countries` (ISO
   `NO`/`NOR`, continent Europe, default currency NOK) and registered in
   `SOURCE_HOME_COUNTRY["finn_no"] = "NO"`. Verified locally: 5 raw discovered,
-  parsed, normalized, persisted to Postgres, batch validation PASSED, 0 failed. LIVE
-  in scheduled CI matrix.
+  parsed, normalized, persisted to Postgres, batch validation PASSED, 0 failed. CI SUCCESS
+  2026-11-15: Scrape (API) run 43636028568 retrieved search listings and details,
+  persisted 58 jobs (0 failed) in 1m37s on Ubuntu runner, extracted description sections,
+  and exported Parquet shard to Hugging Face. LIVE in scheduled CI matrix.
 
 
 
