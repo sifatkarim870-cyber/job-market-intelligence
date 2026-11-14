@@ -892,6 +892,7 @@ def get_or_create_location(
 SOURCE_HOME_COUNTRY: dict[str, str] = {
     "adem_lu": "LU",
     "ajira_tz": "TZ",
+    "finn_no": "NO",
     "jobvision": "IR",
     "jobinja": "IR",
     "irantalent": "IR",

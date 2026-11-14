@@ -2056,6 +2056,15 @@
       "max_env": "AJIRA_TZ_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Ajira Portal (portal.ajira.go.tz) - Tanzania; Public Service Recruitment Secretariat (PSRS) vacancy portal. Public GraphQL API at https://portal.ajira.go.tz/candidates/graphql requires no auth/API keys. Queries getVacancies and getVacancy(vacancyId) provide vacancy title, scheme, duties, qualifications, salary scale, employer, open/close dates, and post count. SOURCE_HOME_COUNTRY['ajira_tz']='TZ' (Tanzania seeded in ref.countries as TZ/TZA with default currency TZS)."
+    },
+    {
+      "code": "finn_no",
+      "group": "api",
+      "script": "scripts/run_finn_no_scraper.py",
+      "timeout": 15,
+      "max_env": "FINN_NO_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "FINN.no (finn.no) - Norway; Norway's primary job and classifieds portal. Paginates server-rendered search listings at https://www.finn.no/job/search to discover /job/ad/{id} postings, then concurrently retrieves ad HTML. Detail pages wrap Schema.org JobPosting JSON-LD inside a single-key script envelope (script:ld+json) containing full job title, hiring organization, locality, dates, employment type, and descriptions. SOURCE_HOME_COUNTRY['finn_no']='NO' (Norway seeded as NO/NOR with default currency NOK)."
     }
   ]
 }

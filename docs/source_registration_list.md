@@ -668,6 +668,20 @@ before it was written off. The reason is measured, not assumed:
   for all 16 postings, 16 inserted / 0 failed in 1m29s, description sections extracted,
   and Parquet shard exported to Hugging Face. LIVE in scheduled CI matrix.
 
+- **`finn_no`** (Norway, finn.no) -- 2026-11-15. Norway's primary job portal.
+  Previously misclassified in backlog sweep as having an unsupported JSON-LD single-key
+  wrapper (`script:ld+json`). Analysis of the search portal revealed server-rendered
+  pagination at `https://www.finn.no/job/search` with 50+ job links per page, and detail
+  pages embedding full schema.org `JobPosting` JSON-LD under `script:ld+json` with
+  job title, hiring organization, locality, posting dates, expiration dates, employment
+  type, and complete HTML descriptions. Built as a dedicated `api` group scraper
+  (`scripts/run_finn_no_scraper.py`). Norway is registered in `ref.countries` (ISO
+  `NO`/`NOR`, continent Europe, default currency NOK) and registered in
+  `SOURCE_HOME_COUNTRY["finn_no"] = "NO"`. Verified locally: 5 raw discovered,
+  parsed, normalized, persisted to Postgres, batch validation PASSED, 0 failed. LIVE
+  in scheduled CI matrix.
+
+
 
 
 
