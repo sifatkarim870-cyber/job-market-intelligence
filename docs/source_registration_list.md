@@ -663,8 +663,10 @@ before it was written off. The reason is measured, not assumed:
   scraper (`scripts/run_ajira_tz_scraper.py`). Tanzania is seeded in `ref.countries`
   (ISO `TZ`/`TZA`, continent Africa, default currency TZS) and registered in
   `SOURCE_HOME_COUNTRY["ajira_tz"] = "TZ"`. Verified locally: 16 raw discovered,
-  parsed, normalized, persisted to Postgres, batch validation PASSED, 0 failed. LIVE
-  in scheduled CI matrix.
+  parsed, normalized, persisted to Postgres, batch validation PASSED, 0 failed. CI SUCCESS
+  2026-11-15: Scrape (API) run 43635137308 queried the GraphQL API, retrieved details
+  for all 16 postings, 16 inserted / 0 failed in 1m29s, description sections extracted,
+  and Parquet shard exported to Hugging Face. LIVE in scheduled CI matrix.
 
 
 
