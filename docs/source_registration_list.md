@@ -735,7 +735,9 @@ before it was written off. The reason is measured, not assumed:
   Thailand is registered in `ref.countries` (ISO `TH`/`THA`, continent Asia, default currency THB)
   and registered in `SOURCE_HOME_COUNTRY["jobbkk_th"] = "TH"`.
   Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres, batch
-  validation PASSED, 0 failed. LIVE in scheduled CI matrix.
+  validation PASSED, 0 failed. CI verification run 43643325864 succeeded: 60 inserted,
+  0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
+  to Hugging Face. LIVE in scheduled CI matrix.
 
 
 
