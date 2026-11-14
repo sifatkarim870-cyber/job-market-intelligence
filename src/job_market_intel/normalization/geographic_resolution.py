@@ -894,6 +894,7 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "ajira_tz": "TZ",
     "finn_no": "NO",
     "mojposao_hr": "HR",
+    "vrabotuvanje_mk": "MK",
     "jobvision": "IR",
     "jobinja": "IR",
     "irantalent": "IR",

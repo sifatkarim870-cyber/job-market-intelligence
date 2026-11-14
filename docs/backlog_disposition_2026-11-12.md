@@ -195,7 +195,7 @@ in the matrix.
 | 165 | merojob.com | Nepal | 200 | 9 | Next.js App Router (self.__next_f); unsupported config-only |
 | 166 | nationalevacaturebank.nl | Netherlands | 200 | 0 | tiny JS/consent shell |
 | 167 | werk.nl | Netherlands | 200 | 0 | JS shell |
-| 168 | vrabotuvanje.com.mk | North Macedonia | 200 | 19 | Nuxt (__NUXT_DATA__); unsupported config-only |
+| 168 | vrabotuvanje.com.mk | North Macedonia | BUILT | 68 | homepage + /rabotni-mesta directory + Nuxt 3 state deserializer; built as vrabotuvanje_mk API scraper 2026-11-15 |
 | 169 | finn.no | Norway | BUILT | 51 | server-rendered search pagination + JobPosting JSON-LD under script:ld+json; built as finn_no API scraper 2026-11-15 |
 | 170 | rozee.pk | Pakistan | 200 | 810 | rozee_pk (Pakistan) - built via the browser framework 2026-11-13; plain HTTP 403s but the rendered detail page publishes full JobPosting JSON-LD |
 | 171 | aptitus.com | Peru | 200 | 0 | redirects cross-brand to bumeran.com.pe (Peru already covered) |
@@ -403,7 +403,7 @@ in the matrix.
 - **merojob.com** (Nepal) - Next.js App Router (self.__next_f); unsupported config-only
 - **nationalevacaturebank.nl** (Netherlands) - tiny JS/consent shell
 - **werk.nl** (Netherlands) - JS shell
-- **vrabotuvanje.com.mk** (North Macedonia) - Nuxt (__NUXT_DATA__); unsupported config-only
+- **vrabotuvanje.com.mk** (North Macedonia) - RESOLVED 2026-11-15: Nuxt 3 __NUXT_DATA__ state deserializer implemented; built as vrabotuvanje_mk API scraper.
 - **finn.no** (Norway) - RESOLVED 2026-11-15: JSON-LD wrapped under script:ld+json unwrapped and mapped; built as finn_no API scraper.
 - **rozee.pk** (Pakistan) - built via the browser framework 2026-11-13 (`rozee_pk`); plain HTTP 403s but the rendered detail page publishes full JobPosting JSON-LD
 - **aptitus.com** (Peru) - redirects cross-brand to bumeran.com.pe (Peru already covered)

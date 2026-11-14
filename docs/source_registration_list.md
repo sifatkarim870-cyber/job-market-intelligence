@@ -698,6 +698,19 @@ before it was written off. The reason is measured, not assumed:
   0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
   to Hugging Face. LIVE in scheduled CI matrix.
 
+- **`vrabotuvanje_mk`** (North Macedonia, vrabotuvanje.com.mk) -- 2026-11-15. Leading job
+  portal in North Macedonia (Alma Career South). Previously misclassified in backlog
+  sweep as unsupported due to Nuxt 3 state (`__NUXT_DATA__`). Gathers active
+  `/rabota/{uuid}/{slug}` postings across the homepage and `/rabotni-mesta` directory,
+  then deserializes each posting's embedded Nuxt 3 object graph containing title,
+  employer, locality, full job descriptions, qualifications, and validity dates.
+  Built as a dedicated `api` group scraper (`scripts/run_vrabotuvanje_mk_scraper.py`).
+  North Macedonia is registered in `ref.countries` (ISO `MK`/`MKD`, continent Europe,
+  default currency MKD) and registered in `SOURCE_HOME_COUNTRY["vrabotuvanje_mk"] = "MK"`.
+  Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres, batch
+  validation PASSED, 0 failed. LIVE in scheduled CI matrix.
+
+
 
 
 
