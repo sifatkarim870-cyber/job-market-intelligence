@@ -721,7 +721,9 @@ before it was written off. The reason is measured, not assumed:
   Nepal is registered in `ref.countries` (ISO `NP`/`NPL`, continent Asia, default currency NPR)
   and registered in `SOURCE_HOME_COUNTRY["merojob_np"] = "NP"`.
   Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres, batch
-  validation PASSED, 0 failed. LIVE in scheduled CI matrix.
+  validation PASSED, 0 failed. CI verification run 43642434020 succeeded: 60 inserted,
+  0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
+  to Hugging Face. LIVE in scheduled CI matrix.
 
 
 
