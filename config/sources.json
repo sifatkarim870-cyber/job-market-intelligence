@@ -2047,6 +2047,15 @@
       "max_env": "ADEM_LU_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "ADEM Luxembourg (adem.public.lu) - Luxembourg; Public employment agency CTIE JobBoard REST endpoint (https://adem.public.lu/ctie/jobboard?id=...) streams active postings in NDJSON format with commune/canton, contract, duration, hours, languages, skills. Offers enriched with detail descriptions via /ctie/jobboard/offer?id=...&ref={ref}. SOURCE_HOME_COUNTRY['adem_lu']='LU' (Luxembourg seeded in ref.countries as LU/LUX). Verified locally 2026-11-15: 2639 raw discovered, parsed, normalized, persisted to Postgres, batch validation PASSED."
+    },
+    {
+      "code": "ajira_tz",
+      "group": "api",
+      "script": "scripts/run_ajira_tz_scraper.py",
+      "timeout": 15,
+      "max_env": "AJIRA_TZ_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "Ajira Portal (portal.ajira.go.tz) - Tanzania; Public Service Recruitment Secretariat (PSRS) vacancy portal. Public GraphQL API at https://portal.ajira.go.tz/candidates/graphql requires no auth/API keys. Queries getVacancies and getVacancy(vacancyId) provide vacancy title, scheme, duties, qualifications, salary scale, employer, open/close dates, and post count. SOURCE_HOME_COUNTRY['ajira_tz']='TZ' (Tanzania seeded in ref.countries as TZ/TZA with default currency TZS)."
     }
   ]
 }

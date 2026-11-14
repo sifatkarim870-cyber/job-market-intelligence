@@ -652,6 +652,21 @@ before it was written off. The reason is measured, not assumed:
   Ubuntu runner, 60 inserted / 0 failed, description sections extracted, and Parquet
   shard exported to Hugging Face. LIVE in scheduled CI matrix.
 
+- **`ajira_tz`** (Tanzania, portal.ajira.go.tz) -- 2026-11-15. Public Service Recruitment
+  Secretariat (PSRS) vacancy portal for the United Republic of Tanzania. Previously
+  misclassified in backlog sweep as unreachable due to SSLError on apex `ajira.go.tz`.
+  Analysis of the portal application revealed an active, public GraphQL API at
+  `https://portal.ajira.go.tz/candidates/graphql` requiring no authentication or API keys.
+  The queries `GetVacancies` and `GetVacancy(vacancyId)` provide vacancy titles, scheme
+  definitions, duties & responsibilities, qualifications, salary scale grades, employer
+  names, opening and closing dates, and post counts. Built as a dedicated `api` group
+  scraper (`scripts/run_ajira_tz_scraper.py`). Tanzania is seeded in `ref.countries`
+  (ISO `TZ`/`TZA`, continent Africa, default currency TZS) and registered in
+  `SOURCE_HOME_COUNTRY["ajira_tz"] = "TZ"`. Verified locally: 16 raw discovered,
+  parsed, normalized, persisted to Postgres, batch validation PASSED, 0 failed. LIVE
+  in scheduled CI matrix.
+
+
 
 
 

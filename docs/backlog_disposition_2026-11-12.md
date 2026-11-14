@@ -152,7 +152,7 @@ in the matrix.
 | 122 | topjobs.lk | Sri Lanka | ERR | 0 | unreachable at probe time (SSLError) |
 | 123 | jobb.blocket.se | Sweden | ERR | 0 | unreachable at probe time (DNSError) |
 | 124 | job.tj | Tajikistan | ERR | 0 | unreachable at probe time (DNSError) |
-| 125 | ajira.go.tz | Tanzania | ERR | 0 | unreachable at probe time (SSLError) |
+| 125 | ajira.go.tz | Tanzania | BUILT | 16 | portal.ajira.go.tz has active public GraphQL endpoint (/candidates/graphql); built as ajira_tz API scraper 2026-11-15 |
 | 126 | newsday.co.tt | Trinidad and Tobago | ERR | 0 | unreachable at probe time (DNSError) |
 | 127 | emploi.nat.tn | Tunisia | ERR | 0 | unreachable at probe time (SSLError) |
 | 128 | nafis.gov.ae | United Arab Emirates | ERR | 0 | unreachable at probe time (Timeout) |
@@ -354,7 +354,7 @@ in the matrix.
 - **topjobs.lk** (Sri Lanka) - unreachable at probe time (SSLError)
 - **jobb.blocket.se** (Sweden) - unreachable at probe time (DNSError)
 - **job.tj** (Tajikistan) - unreachable at probe time (DNSError)
-- **ajira.go.tz** (Tanzania) - unreachable at probe time (SSLError)
+- **ajira.go.tz** (Tanzania) - RESOLVED 2026-11-15: SSLError was due to apex domain; portal at portal.ajira.go.tz provides public GraphQL endpoint /candidates/graphql with queries getVacancies and getVacancy(vacancyId). Built as ajira_tz API scraper.
 - **newsday.co.tt** (Trinidad and Tobago) - unreachable at probe time (DNSError)
 - **emploi.nat.tn** (Tunisia) - unreachable at probe time (SSLError)
 - **nafis.gov.ae** (United Arab Emirates) - unreachable at probe time (Timeout)

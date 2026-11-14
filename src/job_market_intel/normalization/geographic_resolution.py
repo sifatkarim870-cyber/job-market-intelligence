@@ -891,6 +891,7 @@ def get_or_create_location(
 #:   builtin lost 9 of 40 and usajobs/jobbank lost 42 between them.
 SOURCE_HOME_COUNTRY: dict[str, str] = {
     "adem_lu": "LU",
+    "ajira_tz": "TZ",
     "jobvision": "IR",
     "jobinja": "IR",
     "irantalent": "IR",
