@@ -120,6 +120,7 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "THB": 0.0274,  # 1 THB = 0.0274 USD (1 USD ~ 36.5 THB)
     "CAD": 0.735,  # 1 CAD = 0.735 USD (1 USD ~ 1.36 CAD)
     "BDT": 0.0082,  # 1 BDT = 0.0082 USD (1 USD ~ 122 BDT)
+    "KRW": 0.00072,  # 1 KRW = 0.00072 USD (1 USD ~ 1,390 KRW)
 }
 
 
