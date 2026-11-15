@@ -169,7 +169,7 @@ in the matrix.
 | 139 | vdab.be | Belgium | 200 | 9 | JS shell: no server-rendered ad links |
 | 140 | jobsbotswana.com | Botswana | 200 | 0 | 114-byte empty response |
 | 141 | bongthom.com | Cambodia | 200 | 0 | classifieds |
-| 142 | goodwork.ca | Canada | 200 | 3 | JS shell: no server-rendered ad links |
+| 142 | goodwork.ca | Canada | BUILT | 46 | server-rendered directory /jobs + structured section postings; built as goodwork_ca API scraper 2026-11-15 |
 | 143 | workinnonprofits.ca | Canada | 200 | 0 | listing exposes no ad links on the home page |
 | 144 | chiletrabajos.cl | Chile | ERR | 0 | timeout during the live sweep |
 | 145 | burzarada.hzz.hr | Croatia | 200 | 4 | detail pages carry no job description body |
@@ -377,7 +377,7 @@ in the matrix.
 - **vdab.be** (Belgium) - JS shell: no server-rendered ad links
 - **jobsbotswana.com** (Botswana) - 114-byte empty response
 - **bongthom.com** (Cambodia) - classifieds
-- **goodwork.ca** (Canada) - JS shell: no server-rendered ad links
+- **goodwork.ca** (Canada) - RESOLVED 2026-11-15: server-rendered directory /jobs + structured section postings mapped; built as goodwork_ca API scraper.
 - **workinnonprofits.ca** (Canada) - listing exposes no ad links on the home page
 - **chiletrabajos.cl** (Chile) - timeout during the live sweep
 - **burzarada.hzz.hr** (Croatia) - detail pages carry no job description body

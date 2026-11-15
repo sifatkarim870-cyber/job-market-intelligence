@@ -2101,6 +2101,15 @@
       "max_env": "JOBBKK_TH_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "JobBKK (https://www.jobbkk.com) - Thailand; Leading recruitment portal in Thailand. Paginates server-rendered search directories at https://www.jobbkk.com/jobs/lists/{page} discovering /jobs/(?:detail|detailurgent)/{emp_id}/{job_id} postings, and parses Schema.org JobPosting JSON-LD containing title, employer, locality, full job description, dates, and THB salary info. SOURCE_HOME_COUNTRY['jobbkk_th']='TH' (Thailand in ref.countries as TH/THA with default currency THB)."
+    },
+    {
+      "code": "goodwork_ca",
+      "group": "api",
+      "script": "scripts/run_goodwork_ca_scraper.py",
+      "timeout": 15,
+      "max_env": "GOODWORK_CA_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "GoodWork (https://www.goodwork.ca) - Canada; Canada's green and environmental jobs network. Queries server-rendered directory at https://www.goodwork.ca/jobs discovering /jobs/{slug}-{job_id} postings, then parses structured sections containing title, organization, locality, duties, qualifications, and remuneration in CAD. SOURCE_HOME_COUNTRY['goodwork_ca']='CA' (Canada in ref.countries as CA/CAN with default currency CAD)."
     }
   ]
 }

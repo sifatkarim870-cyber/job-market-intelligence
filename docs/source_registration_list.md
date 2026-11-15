@@ -739,6 +739,18 @@ before it was written off. The reason is measured, not assumed:
   0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
   to Hugging Face. LIVE in scheduled CI matrix.
 
+- **`goodwork_ca`** (Canada, goodwork.ca) -- 2026-11-15. Canada's leading green and environmental
+  employment network. Previously misclassified in backlog sweep as an unsupported JS shell
+  due to apex domain redirection. Built as a dedicated `api` group scraper
+  (`scripts/run_goodwork_ca_scraper.py`) querying server-rendered directory at
+  `https://www.goodwork.ca/jobs` to discover active `/jobs/{slug}-{job_id}` postings, then
+  parsing structured section content containing title, organization, locality, duties,
+  qualifications, and remuneration in CAD.
+  Canada is registered in `ref.countries` (ISO `CA`/`CAN`, continent North America, default currency CAD)
+  and registered in `SOURCE_HOME_COUNTRY["goodwork_ca"] = "CA"`.
+  Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres, batch
+  validation PASSED, 0 failed. LIVE in scheduled CI matrix.
+
 
 
 
