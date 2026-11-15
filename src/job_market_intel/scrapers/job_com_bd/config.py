@@ -18,8 +18,10 @@ class JobComBdSettings(BaseSettings):
     jobs_url: str = "https://job.com.bd/jobs"
     max_pages: int = 5
     max_jobs_per_run: int = 50
-    request_timeout: float = 15.0
-    rate_limit_delay: float = 0.2
+    request_timeout: float = 30.0
+    max_retries: int = 2
+    retry_delay: float = 2.0
+    rate_limit_delay: float = 0.5
     user_agent: str = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "

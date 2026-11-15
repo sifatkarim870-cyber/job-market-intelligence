@@ -24,22 +24,39 @@ class JobComBdClient:
         self.settings = settings or JobComBdSettings()
 
     def _fetch_html(self, url: str) -> str:
-        """Fetch content over HTTP with configured User-Agent and timeout."""
+        """Fetch content over HTTP with configured User-Agent and timeout with retries."""
         headers = {
             "User-Agent": self.settings.user_agent,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
         }
-        req = urllib.request.Request(url, headers=headers)
-        try:
-            with urllib.request.urlopen(req, timeout=self.settings.request_timeout) as resp:
-                return resp.read().decode("utf-8", errors="replace")
-        except urllib.error.HTTPError as exc:
-            raise JobComBdAPIError(f"HTTP {exc.code} fetching {url}: {exc.reason}") from exc
-        except urllib.error.URLError as exc:
-            raise JobComBdAPIError(f"Network error fetching {url}: {exc.reason}") from exc
-        except Exception as exc:
-            raise JobComBdAPIError(f"Unexpected error fetching {url}: {exc}") from exc
+        last_exc: Exception | None = None
+        for attempt in range(1, self.settings.max_retries + 1):
+            req = urllib.request.Request(url, headers=headers)
+            try:
+                with urllib.request.urlopen(req, timeout=self.settings.request_timeout) as resp:
+                    return resp.read().decode("utf-8", errors="replace")
+            except urllib.error.HTTPError as exc:
+                raise JobComBdAPIError(f"HTTP {exc.code} fetching {url}: {exc.reason}") from exc
+            except (urllib.error.URLError, TimeoutError) as exc:
+                last_exc = exc
+                if attempt < self.settings.max_retries:
+                    logger.warning(
+                        "Attempt %d/%d for %s failed (%s), retrying in %.1fs...",
+                        attempt,
+                        self.settings.max_retries,
+                        url,
+                        exc,
+                        self.settings.retry_delay,
+                    )
+                    time.sleep(self.settings.retry_delay)
+                    continue
+                raise JobComBdAPIError(f"Network error fetching {url}: {exc}") from exc
+            except Exception as exc:
+                raise JobComBdAPIError(f"Unexpected error fetching {url}: {exc}") from exc
+        raise JobComBdAPIError(f"Exhausted retries fetching {url}: {last_exc}")
 
     def fetch_job_urls(self, max_pages: int | None = None) -> list[tuple[str, str]]:
         """Paginate through directory pages and extract unique (url, job_id) pairs."""
