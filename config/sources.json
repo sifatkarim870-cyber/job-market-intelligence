@@ -2119,6 +2119,15 @@
       "max_env": "WORKINNONPROFITS_CA_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "WorkInNonProfits (https://workinnonprofits.ca) - Canada; Canada's non-profit and charitable sector employment network. Discovers active vacancies via public XML feed at https://workinnonprofits.ca/dynamic/job_feed_rss2.xml, then extracts structured job details and multi-section descriptions from detail pages. SOURCE_HOME_COUNTRY['workinnonprofits_ca']='CA' (Canada in ref.countries as CA/CAN with default currency CAD)."
+    },
+    {
+      "code": "job_com_bd",
+      "group": "api",
+      "script": "scripts/run_job_com_bd_scraper.py",
+      "timeout": 15,
+      "max_env": "JOB_COM_BD_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "Job.com.bd (https://job.com.bd) - Bangladesh; Major recruitment and jobs directory in Bangladesh. Paginates server-rendered search directories at https://job.com.bd/jobs?page={page} discovering /jobs/{slug}-{id} vacancies, then parses structured sections containing title, organization, locality, duties, qualifications, and remuneration in BDT. SOURCE_HOME_COUNTRY['job_com_bd']='BD' (Bangladesh in ref.countries as BD/BGD with default currency BDT)."
     }
   ]
 }

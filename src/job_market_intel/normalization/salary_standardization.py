@@ -119,6 +119,7 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "NPR": 0.00746,  # 1 NPR = 0.00746 USD (1 USD ~ 134 NPR)
     "THB": 0.0274,  # 1 THB = 0.0274 USD (1 USD ~ 36.5 THB)
     "CAD": 0.735,  # 1 CAD = 0.735 USD (1 USD ~ 1.36 CAD)
+    "BDT": 0.0082,  # 1 BDT = 0.0082 USD (1 USD ~ 122 BDT)
 }
 
 
