@@ -749,7 +749,9 @@ before it was written off. The reason is measured, not assumed:
   Canada is registered in `ref.countries` (ISO `CA`/`CAN`, continent North America, default currency CAD)
   and registered in `SOURCE_HOME_COUNTRY["goodwork_ca"] = "CA"`.
   Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres, batch
-  validation PASSED, 0 failed. LIVE in scheduled CI matrix.
+  validation PASSED, 0 failed. CI verification run 43754251004 succeeded: 46 inserted,
+  0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
+  to Hugging Face. LIVE in scheduled CI matrix.
 
 
 
