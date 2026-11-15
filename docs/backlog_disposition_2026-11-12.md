@@ -181,7 +181,7 @@ in the matrix.
 | 151 | skywalker.gr | Greece | 200 | 69 | detail pages return HTTP 403 |
 | 152 | cvonline.hu | Hungary | 200 | 0 | bot-check interstitial |
 | 153 | vinnumalastofnun.is | Iceland | 200 | 3 | Apollo/Next app; /starfatorg is 404 and ads are not discoverable config-only |
-| 154 | job.com.bd | India | 200 | 16 | listing exposes only employer/category links, no ad links |
+| 154 | job.com.bd | Bangladesh | BUILT | 60 | server-rendered search pagination /jobs?page={page} + clean semantic sections; built as job_com_bd API scraper 2026-11-16; kept BUILT (Disabled in CI) because origin drops Azure datacenter IPs |
 | 155 | infojobs.it | Italy | 200 | 0 | consent/JS interstitial |
 | 156 | subito.it | Italy | 200 | 13 | Next.js App Router (self.__next_f); unsupported config-only |
 | 157 | work.kz | Kazakhstan | 200 | 0 | tiny JS shell |

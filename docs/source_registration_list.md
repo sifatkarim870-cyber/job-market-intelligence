@@ -753,18 +753,17 @@ before it was written off. The reason is measured, not assumed:
   0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
   to Hugging Face. LIVE in scheduled CI matrix.
 
-- **`workinnonprofits_ca`** (Canada, workinnonprofits.ca) -- 2026-11-15. Canada's dedicated
-  employment portal for the non-profit, charitable, and public service sectors. Discovers active
-  vacancies via the live public XML feed at `https://workinnonprofits.ca/dynamic/job_feed_rss2.xml`
-  (falling back to Atom feed if needed), then retrieves detail pages from `https://workinnonprofits.ca/jobs/view/{job_id}/...`
-  extracting structured fields including title, organization, Canadian locality, closing date,
-  employment type, CAD salary ranges, and multi-section job descriptions.
-  Canada is registered in `ref.countries` (ISO `CA`/`CAN`, continent North America, default currency CAD)
-  and registered in `SOURCE_HOME_COUNTRY["workinnonprofits_ca"] = "CA"`.
-  Verified locally: 5 raw discovered, parsed, normalized, persisted to Postgres, batch
-  validation PASSED, 0 failed. CI verification run 43756045578 succeeded: 50 inserted,
-  0 failed on Ubuntu runner, description sections extracted, and Parquet shard exported
-  to Hugging Face. LIVE in scheduled CI matrix.
+- **`job_com_bd`** (Bangladesh, job.com.bd) -- 2026-11-16. Major recruitment directory in Bangladesh.
+  Paginates server-rendered search directories at `https://job.com.bd/jobs?page={page}` discovering
+  `/jobs/{slug}-{id}` postings, extracting structured semantic cards (`jd-title-block`, `jd-fact`,
+  `jd-card`) for duties, qualifications, and monthly BDT salaries.
+  Bangladesh is registered in `ref.countries` (ISO `BD`/`BGD`, continent Asia, default currency BDT)
+  and registered in `SOURCE_HOME_COUNTRY["job_com_bd"] = "BD"`.
+  Verified locally: 60 discovered across 5 pages, 5 parsed, normalized, persisted to Postgres (Session 118,
+  5 inserted, 0 failed, batch validation PASSED). In GitHub Actions CI (runs 43769324285 and 43769969723),
+  the origin server drops/times out all TCP/TLS connections from Azure US datacenter runners. Kept BUILT
+  (`enabled: false` in `config/sources.json`), status: `BUILT (Disabled in CI)`. Not included in scheduled matrix.
+
 
 
 
