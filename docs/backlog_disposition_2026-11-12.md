@@ -11,7 +11,7 @@ in the matrix.
 
 | Disposition | Rows |
 |---|---:|
-| Built and CI-verified in this pass (or earlier) | 12 |
+| Built and CI-verified in this pass (or earlier) | 13 |
 | Already registered / built earlier | 22 |
 | HTTP 403 bot or login wall | 63 |
 | DNS / SSL / timeout | 37 |
@@ -20,7 +20,7 @@ in the matrix.
 | Nuxt (unsupported config-only) | 0 |
 | Next.js shell, ads client-fetched | 0 |
 | HTTP 200, no discoverable detail links | 0 |
-| Measured per-site rejection (named reason) | 51 |
+| Measured per-site rejection (named reason) | 50 |
 | Other measured blocker | 0 |
 | **Total** | **188** |
 
@@ -170,7 +170,7 @@ in the matrix.
 | 140 | jobsbotswana.com | Botswana | 200 | 0 | 114-byte empty response |
 | 141 | bongthom.com | Cambodia | 200 | 0 | classifieds |
 | 142 | goodwork.ca | Canada | BUILT | 46 | server-rendered directory /jobs + structured section postings; built as goodwork_ca API scraper 2026-11-15 |
-| 143 | workinnonprofits.ca | Canada | 200 | 0 | listing exposes no ad links on the home page |
+| 143 | workinnonprofits.ca | Canada | 200 | 50 | workinnonprofits_ca (Canada) - built and CI-verified 2026-11-15 |
 | 144 | chiletrabajos.cl | Chile | ERR | 0 | timeout during the live sweep |
 | 145 | burzarada.hzz.hr | Croatia | 200 | 4 | detail pages carry no job description body |
 | 146 | moj-posao.net | Croatia | BUILT | 100 | server-rendered search pagination + Nuxt 3 state deserializer; built as mojposao_hr API scraper 2026-11-15 |
@@ -378,7 +378,7 @@ in the matrix.
 - **jobsbotswana.com** (Botswana) - 114-byte empty response
 - **bongthom.com** (Cambodia) - classifieds
 - **goodwork.ca** (Canada) - RESOLVED 2026-11-15: server-rendered directory /jobs + structured section postings mapped; built as goodwork_ca API scraper.
-- **workinnonprofits.ca** (Canada) - listing exposes no ad links on the home page
+- **workinnonprofits.ca** (Canada) - RESOLVED 2026-11-15: public XML feed /dynamic/job_feed_rss2.xml + central_content detail parser mapped; built as workinnonprofits_ca API scraper.
 - **chiletrabajos.cl** (Chile) - timeout during the live sweep
 - **burzarada.hzz.hr** (Croatia) - detail pages carry no job description body
 - **moj-posao.net** (Croatia) - RESOLVED 2026-11-15: Nuxt 3 __NUXT_DATA__ state deserializer implemented; built as mojposao_hr API scraper.
