@@ -2082,7 +2082,7 @@
       "timeout": 15,
       "max_env": "VRABOTUVANJE_MK_MAX_JOBS_PER_RUN",
       "enabled": true,
-      "notes": "Vrabotuvanje (vrabotuvanje.com.mk) - North Macedonia; North Macedonia's leading employment portal. Gathers active /rabota/{uuid}/{slug} vacancies from the homepage and /rabotni-mesta directory, then extracts structured job details from the embedded Nuxt 3 state (__NUXT_DATA__) including title, employer, locality, full job descriptions, qualifications, and validity dates. SOURCE_HOME_COUNTRY['vrabotuvanje_mk']='MK' (North Macedonia in ref.countries as MK/MKD with default currency MKD)."
+      "notes": "Vrabotuvanje (https://www.vrabotuvanje.com.mk) - North Macedonia; North Macedonia's leading employment portal. Gathers active /rabota/{uuid}/{slug} vacancies from the homepage and /rabotni-mesta directory, then extracts structured job details from the embedded Nuxt 3 state (__NUXT_DATA__) including title, employer, locality, full job descriptions, qualifications, and validity dates. SOURCE_HOME_COUNTRY['vrabotuvanje_mk']='MK' (North Macedonia in ref.countries as MK/MKD with default currency MKD)."
     },
     {
       "code": "merojob_np",
@@ -2110,6 +2110,15 @@
       "max_env": "GOODWORK_CA_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "GoodWork (https://www.goodwork.ca) - Canada; Canada's green and environmental jobs network. Queries server-rendered directory at https://www.goodwork.ca/jobs discovering /jobs/{slug}-{job_id} postings, then parses structured sections containing title, organization, locality, duties, qualifications, and remuneration in CAD. SOURCE_HOME_COUNTRY['goodwork_ca']='CA' (Canada in ref.countries as CA/CAN with default currency CAD)."
+    },
+    {
+      "code": "workinnonprofits_ca",
+      "group": "api",
+      "script": "scripts/run_workinnonprofits_ca_scraper.py",
+      "timeout": 15,
+      "max_env": "WORKINNONPROFITS_CA_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "WorkInNonProfits (https://workinnonprofits.ca) - Canada; Canada's non-profit and charitable sector employment network. Discovers active vacancies via public XML feed at https://workinnonprofits.ca/dynamic/job_feed_rss2.xml, then extracts structured job details and multi-section descriptions from detail pages. SOURCE_HOME_COUNTRY['workinnonprofits_ca']='CA' (Canada in ref.countries as CA/CAN with default currency CAD)."
     }
   ]
 }
