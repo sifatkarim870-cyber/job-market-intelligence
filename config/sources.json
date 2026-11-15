@@ -2126,8 +2126,8 @@
       "script": "scripts/run_job_com_bd_scraper.py",
       "timeout": 15,
       "max_env": "JOB_COM_BD_MAX_JOBS_PER_RUN",
-      "enabled": true,
-      "notes": "Job.com.bd (https://job.com.bd) - Bangladesh; Major recruitment and jobs directory in Bangladesh. Paginates server-rendered search directories at https://job.com.bd/jobs?page={page} discovering /jobs/{slug}-{id} vacancies, then parses structured sections containing title, organization, locality, duties, qualifications, and remuneration in BDT. SOURCE_HOME_COUNTRY['job_com_bd']='BD' (Bangladesh in ref.countries as BD/BGD with default currency BDT)."
+      "enabled": false,
+      "notes": "Job.com.bd (https://job.com.bd) - Bangladesh; Major recruitment and jobs directory in Bangladesh. Paginates server-rendered search directories at https://job.com.bd/jobs?page={page} discovering /jobs/{slug}-{id} vacancies. Verified locally (Session 118, 5 inserted). Kept BUILT (Disabled in CI) because origin drops foreign Microsoft Azure runner datacenter IPs (persistent timeout). SOURCE_HOME_COUNTRY['job_com_bd']='BD'."
     }
   ]
 }
