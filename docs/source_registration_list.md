@@ -778,6 +778,20 @@ before it was written off. The reason is measured, not assumed:
   batch validation PASSED). In GitHub Actions CI (run 43773212988), 100% SUCCESS: 50 inserted, 0 failed,
   description sections extracted, and Parquet shard exported to Hugging Face. LIVE and enabled in scheduled CI matrix.
 
+- **`gallito_uy`** (Uruguay, trabajo.gallito.com.uy) -- 2026-11-16. Uruguay's leading employment portal (Gallito).
+  Previously misclassified in backlog sweep — the main domain `gallito.com.uy` returns Cloudflare, but the
+  dedicated jobs subdomain `trabajo.gallito.com.uy` serves plain HTTP (no bot protection). Search directory
+  paginates at `https://trabajo.gallito.com.uy/buscar/page/{page}` (20 jobs/page, up to 42 pages). Detail pages
+  at `/anuncio/{slug}-{id}` carry Schema.org `JobPosting` JSON-LD with title, hiringOrganization,
+  jobLocation (UY/Montevideo), datePosted, validThrough, and employmentType. Salary fields are rare but parsed
+  when present. Description sections in `div.cuadro-aviso` containers (Responsabilidades, Funciones, Requisitos).
+  UYU inserted into `ref.currencies` (currency_id=5286), Uruguay's `default_currency_id` updated to 5286.
+  Added `UYU: 0.023` to `_USD_CONVERSION_RATES` in `salary_standardization.py`.
+  Registered `SOURCE_HOME_COUNTRY[""gallito_uy""] = ""UY""`.
+  Verified locally: 20 discovered, 5 parsed, normalized, persisted to Postgres (Session 121, 5 inserted, 0 failed,
+  batch validation PASSED). GitHub Actions CI run 43924056179: 100% SUCCESS — 50 inserted, 0 failed, 50 rows
+  exported to Hugging Face. LIVE and enabled in scheduled CI matrix.
+
 
 
 

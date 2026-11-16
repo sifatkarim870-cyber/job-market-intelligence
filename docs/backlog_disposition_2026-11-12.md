@@ -213,7 +213,7 @@ in the matrix.
 | 183 | ugandajobline.com | Uganda | 200 | 0 | listing exposes no ad links on the home page |
 | 184 | robota.ua | Ukraine | 200 | 0 | tiny JS/consent shell |
 | 185 | ziprecruiter.com | United States | 200 | 3 | bot-blocked (HTTP 403 / challenge) |
-| 186 | gallito.com.uy | Uruguay | 200 | 0 | listing URL returns HTTP 404 |
+| 186 | gallito.com.uy | Uruguay | 200 | 20 | BUILT as gallito_uy (trabajo.gallito.com.uy subdomain, plain HTTP, Schema.org JSON-LD) |
 | 187 | olx.uz | Uzbekistan | 200 | 9 | classifieds; no job-specific detail contract |
 | 188 | topcv.vn | Vietnam | 200 | 30 | bot-blocked after an earlier revert |
 
@@ -421,6 +421,6 @@ in the matrix.
 - **ugandajobline.com** (Uganda) - listing exposes no ad links on the home page
 - **robota.ua** (Ukraine) - tiny JS/consent shell
 - **ziprecruiter.com** (United States) - bot-blocked (HTTP 403 / challenge)
-- **gallito.com.uy** (Uruguay) - listing URL returns HTTP 404
+- **gallito.com.uy** (Uruguay) - BUILT as `gallito_uy`; subdomain trabajo.gallito.com.uy serves plain HTTP with Schema.org JSON-LD. CI run 43924056179: 50 inserted, exported to HF. LIVE.
 - **olx.uz** (Uzbekistan) - classifieds; no job-specific detail contract
 - **topcv.vn** (Vietnam) - bot-blocked after an earlier revert
