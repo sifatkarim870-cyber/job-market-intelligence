@@ -764,6 +764,21 @@ before it was written off. The reason is measured, not assumed:
   the origin server drops/times out all TCP/TLS connections from Azure US datacenter runners. Kept BUILT
   (`enabled: false` in `config/sources.json`), status: `BUILT (Disabled in CI)`. Not included in scheduled matrix.
 
+- **`jobkorea_kr`** (South Korea, jobkorea.co.kr) -- 2026-11-16. South Korea's premier employment and talent
+  acquisition network. Previously misclassified in backlog sweep as an unsupported Next.js App Router shell.
+  Reverse engineering revealed server-rendered search directory pagination at
+  `https://www.jobkorea.co.kr/recruit/joblist?Page={page}&menucode=local&localorder=1` discovering 115+
+  unique job IDs per page (`/Recruit/GI_Read/{job_id}`). Detail pages embed comprehensive Schema.org
+  `JobPosting` JSON-LD blocks including title, enterprise, locality, KRW remuneration, and closing dates,
+  with HTML fallback parsing.
+  South Korea is registered in `ref.countries` (country_id 30, ISO `KR`/`KOR`, continent Asia, default currency KRW)
+  and registered in `SOURCE_HOME_COUNTRY["jobkorea_kr"] = "KR"`. Added KRW conversion rate (`0.00072`) to
+  `_USD_CONVERSION_RATES` in `salary_standardization.py`.
+  Verified locally: 115 discovered, 5 parsed, normalized, persisted to Postgres (Session 119, 5 inserted, 0 failed,
+  batch validation PASSED). In GitHub Actions CI (run 43773212988), 100% SUCCESS: 50 inserted, 0 failed,
+  description sections extracted, and Parquet shard exported to Hugging Face. LIVE and enabled in scheduled CI matrix.
+
+
 
 
 

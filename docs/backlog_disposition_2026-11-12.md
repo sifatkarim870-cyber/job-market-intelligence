@@ -201,7 +201,7 @@ in the matrix.
 | 171 | aptitus.com | Peru | 200 | 0 | redirects cross-brand to bumeran.com.pe (Peru already covered) |
 | 172 | emprego.pt | Portugal | 200 | 0 | general job portal landing page; no ad links on the probed URL |
 | 173 | mojedelo.com | Slovenia | 200 | 0 | mojedelo (Slovenia) - built via the browser framework 2026-11-13; the listing is JS-rendered but each detail page publishes full JobPosting JSON-LD (its passive reCAPTCHA badge needed a config-gated ignore) |
-| 174 | jobkorea.co.kr | South Korea | 200 | 24 | Next.js App Router (self.__next_f); unsupported config-only |
+| 174 | jobkorea.co.kr | South Korea | 200 | 115 | jobkorea_kr (South Korea) - BUILT 2026-11-16; paginates server-rendered search directory at /recruit/joblist?Page={page}&menucode=local&localorder=1, extracting Schema.org JobPosting JSON-LD and detail sections; CI verified (run 43773212988: 50 inserted, 0 failed, exported to HF) |
 | 175 | saramin.co.kr | South Korea | 200 | 86 | listing links go through a login relay page; no anonymous ad HTML |
 | 176 | infojobs.net | Spain | 200 | 5 | listing exposes only city/company links; ads are JS-loaded |
 | 177 | xpress.jobs | Sri Lanka | 200 | 0 | 1.7 KB JS shell |
@@ -409,7 +409,7 @@ in the matrix.
 - **aptitus.com** (Peru) - redirects cross-brand to bumeran.com.pe (Peru already covered)
 - **emprego.pt** (Portugal) - general job portal landing page; no ad links on the probed URL
 - **mojedelo.com** (Slovenia) - built via the browser framework 2026-11-13 (`mojedelo`); the listing renders client-side but every ad publishes full JobPosting JSON-LD, and its passive reCAPTCHA badge is declared inert with the new config-gated `ignore_challenge_markers`; verified in CI (run 43324675623)
-- **jobkorea.co.kr** (South Korea) - Next.js App Router (self.__next_f); unsupported config-only
+- **jobkorea.co.kr** (South Korea) - built 2026-11-16 (`jobkorea_kr`); paginates server-rendered search directory at `/recruit/joblist?Page={page}&menucode=local&localorder=1` (115+ vacancies per page), extracting structured Schema.org `JobPosting` JSON-LD and detail sections with KRW salaries; verified in CI (run 43773212988: 50 inserted, 0 failed, Parquet shard exported to HF)
 - **saramin.co.kr** (South Korea) - listing links go through a login relay page; no anonymous ad HTML
 - **infojobs.net** (Spain) - listing exposes only city/company links; ads are JS-loaded
 - **xpress.jobs** (Sri Lanka) - 1.7 KB JS shell
