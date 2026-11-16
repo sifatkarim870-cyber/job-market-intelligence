@@ -121,6 +121,7 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "CAD": 0.735,  # 1 CAD = 0.735 USD (1 USD ~ 1.36 CAD)
     "BDT": 0.0082,  # 1 BDT = 0.0082 USD (1 USD ~ 122 BDT)
     "KRW": 0.00072,  # 1 KRW = 0.00072 USD (1 USD ~ 1,390 KRW)
+    "UYU": 0.023,  # 1 UYU = 0.023 USD (1 USD ~ 43.5 UYU)
 }
 
 

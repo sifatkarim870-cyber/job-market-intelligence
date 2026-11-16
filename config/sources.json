@@ -2137,6 +2137,15 @@
       "max_env": "JOBKOREA_KR_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Jobkorea (https://www.jobkorea.co.kr) - South Korea; South Korea's premier employment and talent acquisition network. Paginates server-rendered search directories at https://www.jobkorea.co.kr/recruit/joblist?Page={page}&menucode=local&localorder=1 discovering /Recruit/GI_Read/{job_id} vacancies, then extracts structured Schema.org JobPosting JSON-LD and Korean recruitment sections containing title, enterprise, locality, KRW remuneration, and closing dates. SOURCE_HOME_COUNTRY['jobkorea_kr']='KR' (South Korea in ref.countries as KR/KOR with default currency KRW)."
+    },
+    {
+      "code": "gallito_uy",
+      "group": "api",
+      "script": "scripts/run_gallito_uy_scraper.py",
+      "timeout": 15,
+      "max_env": "GALLITO_UY_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "Gallito (https://trabajo.gallito.com.uy) - Uruguay; Uruguay's leading employment portal powered by El País Uruguay. Paginates server-rendered search directories at https://trabajo.gallito.com.uy/buscar/page/{page} discovering /anuncio/{slug}-{id} vacancies, then extracts structured Schema.org JobPosting JSON-LD and Uruguayan recruitment sections containing title, enterprise, locality, UYU remuneration, and closing dates. SOURCE_HOME_COUNTRY['gallito_uy']='UY' (Uruguay in ref.countries as UY/URY with default currency UYU)."
     }
   ]
 }
