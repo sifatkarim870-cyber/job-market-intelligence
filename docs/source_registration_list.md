@@ -816,3 +816,17 @@ before it was written off. The reason is measured, not assumed:
   Verified locally: 30 discovered, 5 parsed, Session 122, 5 inserted, 0 failed, batch validation PASSED.
   GitHub Actions CI run 44611231120: 30 inserted, 0 failed, 30 rows exported to Hugging Face, PASSED.
   LIVE and enabled in scheduled CI matrix.
+
+
+- **`emploi_ci`** (Côte d'Ivoire, www.emploi.ci) — 2026-11-20. Ivory Coast's leading employment portal powered by AfricaWork.
+  Paginates server-rendered search directories at `https://www.emploi.ci/recherche-jobs-cote-ivoire?page={page}` (25 jobs/page).
+  Detail pages at `/offre-emploi-cote-ivoire/{slug}-{numeric_id}` carry Schema.org `JobPosting` JSON-LD with title,
+  hiringOrganization, jobLocation (locality, region, Côte d'Ivoire), datePosted (ISO format `YYYY-MM-DDTHH:MM:SS+00:00`),
+  validThrough, and employmentType (CDI, CDD, Stage, etc.). Includes regex unescape/repair for description HTML quotes in JSON-LD
+  with fallback to HTML `div.job-description`.
+  Added `SOURCE_HOME_COUNTRY["emploi_ci"] = "CI"`. Côte d'Ivoire in `ref.countries` (country_id=3060, alpha-2 CI),
+  XOF (West African CFA franc) in `ref.currencies` (currency_id=506). Added `"XOF": 0.0016` to
+  `_USD_CONVERSION_RATES` in `salary_standardization.py`.
+  Verified locally: 25 discovered, 5 parsed, Session 123, 5 inserted, 0 failed, batch validation PASSED.
+  GitHub Actions CI run 44613872590: 50 inserted, 0 failed, 50 rows exported to Hugging Face, PASSED.
+  LIVE and enabled in scheduled CI matrix.
