@@ -830,3 +830,26 @@ before it was written off. The reason is measured, not assumed:
   Verified locally: 25 discovered, 5 parsed, Session 123, 5 inserted, 0 failed, batch validation PASSED.
   GitHub Actions CI run 44613872590: 50 inserted, 0 failed, 50 rows exported to Hugging Face, PASSED.
   LIVE and enabled in scheduled CI matrix.
+
+- **`topjobs_lk`** (Sri Lanka, topjobs.lk) - 2026-11-20. Sri Lanka's long-running classifieds board, and the
+  first source for the country that actually resolves to a country: the pre-existing 750 `ikman_lk` rows all
+  carried a NULL country because `ref.countries` had no `LK` row at all.
+  The 2026-10-04 probe recorded an SSLError and reached nothing; re-probed 2026-11-20, the site answers HTTP 200
+  to plain requests and robots.txt permits the listing and `/employer/` paths. No key, no registration, no proxy.
+  Listing is server-rendered JSP at `/applicant/vacancybyfunctionalarea.jsp?jst=OPEN&pageNo={page}`: 6 open pages
+  holding 4,583 unique job codes, with consecutive pages overlapping by exactly one row (de-duplicated on `jc`).
+  TRAPS: (1) rows are not anchors - each `<tr>` opens a popup through `onclick="createAlert('rid','ac','jc','ec','id')"`
+  and the ad URL must be rebuilt from those four codes; (2) the listing carries opening date, closing date and town
+  that the ad page lacks, while the ad page carries the `ad-status` labels the listing lacks; (3) two date formats
+  (`Fri Nov 20 2026` on the listing, `03/12/2026` day-first on the ad page); (4) a trailing parenthetical on the title
+  is headcount, not part of the title; (5) 239 of 250 ads in the CI run were image-only, stored with
+  `description_clean = NULL` and `raw_payload['description_is_image'] = true` rather than dropped; (6) no salary
+  field anywhere (1 of 75 sampled bodies mentioned pay), so LKR/monthly state the home market, not an amount.
+  A capped run always takes the newest 120 rows and fills the rest of its budget from a tail window that advances
+  one window-width per day, so the older 4.5k ads are covered over successive runs instead of re-reading page 1.
+  Seeded `LK`/`LKA` (country_id 5634) with `LKR` (currency_id 5375) and 25 Sri Lankan cities; registered
+  `SOURCE_HOME_COUNTRY["topjobs_lk"] = "LK"` and `SOURCE_HOME_COUNTRY["ikman_lk"] = "LK"`.
+  Added `"LKR": 0.00300818` to `_USD_CONVERSION_RATES` in `salary_standardization.py` (19 Nov 2026, 1 USD = 332.43 LKR).
+  Verified locally: 60 inserted, 0 failed, 60/60 resolved to LK, batch validation PASSED.
+  GitHub Actions CI run 44623966782: 250 fetched, 250 inserted, 0 failed, 8 with body text / 239 image-only,
+  rows exported to Hugging Face, PASSED. LIVE and enabled in scheduled CI matrix.
