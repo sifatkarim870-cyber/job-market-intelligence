@@ -2155,6 +2155,15 @@
       "max_env": "JOBNET_MM_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "JobNet Myanmar (https://www.jobnet.com.mm) - Myanmar; Myanmar's premier jobs and recruitment portal. Paginates server-rendered search directories at https://www.jobnet.com.mm/jobs?page={page} discovering /job/{slug}/{job_id} vacancies, then extracts structured Schema.org JobPosting JSON-LD containing title, enterprise, locality, MMK remuneration, and closing dates. SOURCE_HOME_COUNTRY['jobnet_mm']='MM' (Myanmar in ref.countries as MM/MMR with default currency MMK)."
+    },
+    {
+      "code": "emploi_ci",
+      "group": "api",
+      "script": "scripts/run_emploi_ci_scraper.py",
+      "timeout": 15,
+      "max_env": "EMPLOI_CI_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "Emploi.ci (https://www.emploi.ci) - Côte d'Ivoire; Ivory Coast's leading employment portal powered by AfricaWork. Paginates server-rendered search directories at https://www.emploi.ci/recherche-jobs-cote-ivoire?page={page} discovering /offre-emploi-cote-ivoire/{slug}-{id} vacancies, then extracts structured Schema.org JobPosting JSON-LD and recruitment sections containing title, enterprise, locality, and dates. SOURCE_HOME_COUNTRY['emploi_ci']='CI' (Côte d'Ivoire in ref.countries as CI/CIV with default currency XOF)."
     }
   ]
 }
