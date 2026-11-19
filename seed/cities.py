@@ -426,6 +426,42 @@ _CITIES: list[tuple[str, str, str | None, float | None, float | None, str | None
     ("Nuwara Eliya", "LK", None, 6.9497, 80.7891, "Asia/Colombo"),
     ("Trincomalee", "LK", None, 8.5874, 81.2152, "Asia/Colombo"),
     ("Batticaloa", "LK", None, 7.7102, 81.6924, "Asia/Colombo"),
+    # DR Congo, for emploi_cd. The board names one city (Kinshasa, Goma,
+    # Lubumbashi) or a slash/space list of cities per ad; the resolver matches
+    # a city segment exactly, so the hubs that actually appear are seeded.
+    # Smaller towns in the long remote lists stay in raw_payload rather than
+    # being guessed at. Regions are left NULL: the seed has no DRC region rows.
+    ("Kinshasa", "CD", None, -4.4419, 15.2663, "Africa/Kinshasa"),
+    ("Lubumbashi", "CD", None, -11.6876, 27.5026, "Africa/Lubumbashi"),
+    ("Goma", "CD", None, -1.6771, 29.2285, "Africa/Lubumbashi"),
+    ("Bukavu", "CD", None, -2.5123, 28.8638, "Africa/Lubumbashi"),
+    ("Kisangani", "CD", None, 0.5153, 25.1910, "Africa/Lubumbashi"),
+    ("Matadi", "CD", None, -5.8167, 13.4500, "Africa/Kinshasa"),
+    ("Mbuji-Mayi", "CD", None, -6.1500, 23.6000, "Africa/Lubumbashi"),
+    ("Kananga", "CD", None, -5.8958, 22.4178, "Africa/Lubumbashi"),
+    ("Kolwezi", "CD", None, -10.7167, 25.4667, "Africa/Lubumbashi"),
+    ("Likasi", "CD", None, -10.9814, 26.7333, "Africa/Lubumbashi"),
+    ("Beni", "CD", None, 0.4917, 29.4731, "Africa/Lubumbashi"),
+    ("Butembo", "CD", None, 0.1416, 29.2912, "Africa/Lubumbashi"),
+    ("Bunia", "CD", None, 1.5594, 30.2522, "Africa/Lubumbashi"),
+    ("Uvira", "CD", None, -3.3953, 29.1378, "Africa/Lubumbashi"),
+    ("Tshikapa", "CD", None, -6.4167, 20.8000, "Africa/Lubumbashi"),
+    ("Kikwit", "CD", None, -5.0400, 18.8167, "Africa/Kinshasa"),
+    ("Kindu", "CD", None, -2.9500, 25.9500, "Africa/Lubumbashi"),
+    ("Mbandaka", "CD", None, 0.0478, 18.2561, "Africa/Kinshasa"),
+    ("Gbadolite", "CD", None, 4.2833, 21.0167, "Africa/Kinshasa"),
+    ("Gemena", "CD", None, 3.2500, 19.7667, "Africa/Kinshasa"),
+    ("Inongo", "CD", None, -1.9500, 18.2833, "Africa/Kinshasa"),
+    ("Isiro", "CD", None, 2.7667, 27.6167, "Africa/Lubumbashi"),
+    ("Kabinda", "CD", None, -6.1333, 24.4833, "Africa/Lubumbashi"),
+    ("Kalemie", "CD", None, -5.9475, 29.1947, "Africa/Lubumbashi"),
+    ("Kamina", "CD", None, -8.7386, 24.9906, "Africa/Lubumbashi"),
+    ("Kenge", "CD", None, -4.8000, 16.9000, "Africa/Kinshasa"),
+    ("Lisala", "CD", None, 2.1500, 21.5167, "Africa/Kinshasa"),
+    ("Lodja", "CD", None, -3.4833, 23.4333, "Africa/Lubumbashi"),
+    ("Luebo", "CD", None, -5.3500, 21.4167, "Africa/Lubumbashi"),
+    ("Boende", "CD", None, -0.2833, 20.8667, "Africa/Kinshasa"),
+    ("Buta", "CD", None, 2.8000, 24.7333, "Africa/Lubumbashi"),
 ]
 
 

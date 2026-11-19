@@ -318,6 +318,13 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # fallback is load-bearing -- and a fallback aimed at a country the seed
     # lacks is silently a no-op. LKR must be seeded first (currencies.py).
     ("LK", "LKA", "Sri Lanka", "Asia", "LKR"),
+    # DR Congo backs emploi_cd, the AfricaWork portal at emploi.cd. Its JSON-LD
+    # names addressCountry "RDC - République Démocratique du Congo", which is
+    # not a ref.countries name; the SOURCE_HOME_COUNTRY fallback is what
+    # actually assigns CD. A fallback aimed at a country the seed lacks is
+    # silently a no-op, so this row is load-bearing. CDF must be seeded first
+    # (currencies.py).
+    ("CD", "COD", "Democratic Republic of the Congo", "Africa", "CDF"),
 ]
 
 

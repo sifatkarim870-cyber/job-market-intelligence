@@ -161,6 +161,11 @@ CURRENCIES: list[dict] = [
     # currency for CleanedJob's required currency column, and Sri Lanka's
     # default currency had no ref row at all.
     {"iso_code": "LKR", "currency_name": "Sri Lankan Rupee", "symbol": "Rs"},
+    # Added for emploi_cd (DR Congo): the sampled ads publish no salary, but
+    # CleanedJob requires a currency for every row, and the Congolese franc had
+    # no ref row at all. The rate added to salary_standardization.py is the
+    # 19 Nov 2026 reference (1 USD = 2,311.79 CDF).
+    {"iso_code": "CDF", "currency_name": "Congolese Franc", "symbol": "FC"},
 ]
 
 

@@ -954,6 +954,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "gallito_uy": "UY",
     "jobnet_mm": "MM",
     "emploi_ci": "CI",
+    #: emploi_cd: DR Congo. Same AfricaWork platform as emploi_ci, but the
+    #: published country label is "RDC - République Démocratique du Congo",
+    #: which matches no ref.countries row. Without this entry the fallback is
+    #: a silent no-op and every posting lands with a NULL country.
+    "emploi_cd": "CD",
     "karriere_at": "AT",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
