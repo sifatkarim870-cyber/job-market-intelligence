@@ -853,3 +853,33 @@ before it was written off. The reason is measured, not assumed:
   Verified locally: 60 inserted, 0 failed, 60/60 resolved to LK, batch validation PASSED.
   GitHub Actions CI run 44623966782: 250 fetched, 250 inserted, 0 failed, 8 with body text / 239 image-only,
   rows exported to Hugging Face, PASSED. LIVE and enabled in scheduled CI matrix.
+
+- **`emploi_cd`** (DR Congo, emploi.cd) - 2026-11-20. The AfricaWork portal for the Democratic Republic of
+  the Congo, the same platform as `emploi_ci`, and the country had no coverage at all: `ref.countries` had
+  no `CD` row and `ref.currencies` no `CDF` row, so any DRC posting would have carried a NULL country.
+  The 2026-10-04 probe recorded HTTP 403 behind a Cloudflare challenge and reached nothing; re-probed
+  2026-11-20, the site answers HTTP 200 to plain requests and robots.txt permits the search and ad paths
+  (`Crawl-delay: 10`, honoured between every request). No key, no registration, no proxy.
+  Discovery is the server-rendered search directory `/recherche-jobs-congo-rdc?page={page}` (page 1 takes no
+  query string): 90 offers over 4 pages (24/25/25/15 ad links), 89 unique ad URLs, no page overlap, and the
+  page after the last one returns HTTP 200 with zero links, which is the stop signal.
+  TRAPS: (1) ad URLs are `/offre-emploi-rdc-republique-democratique-congo/{slug}` and some slugs carry no
+  trailing numeric id, so the URL is only the discovery key - the canonical id is JSON-LD `identifier.value`;
+  (2) some `description` values embed unescaped double quotes from inline HTML (`<p align="left">`), the same
+  defect `emploi_ci` repairs - the block is re-parsed with the description field dropped and the text is read
+  from `div.job-description`; (3) `employmentType` is frequently the multi-value
+  `CDI - CDD - Interim - Freelance`, which maps to no code rather than one guess (56 of 89 stored rows carry
+  no employment type for this reason); (4) `jobLocation.address.addressCountry` is the boilerplate
+  `RDC - Republique Democratique du Congo` on every ad, normalized to the seeded country name rather than
+  used as a per-ad country signal; (5) `baseSalary` was absent on every sampled ad, so `salary_disclosed` is
+  false and CDF/monthly state the home market, not an amount.
+  A capped run always takes the newest `fresh_rows` rows and fills the rest of its budget from a tail window
+  that advances one window-width per day, so the whole board is covered over successive runs.
+  Seeded `CD`/`COD` (country_id 5737) with `CDF` (currency_id 5465) and 31 DRC cities; registered
+  `SOURCE_HOME_COUNTRY["emploi_cd"] = "CD"`.
+  Added `"CDF": 0.00043257` to `_USD_CONVERSION_RATES` in `salary_standardization.py`
+  (19 Nov 2026, 1 USD = 2,311.79 CDF).
+  Verified locally: 89 fetched, 89 parsed, 79 inserted + 10 unchanged on an immediate re-run, 0 failed,
+  89/89 resolved to CD.
+  GitHub Actions CI run 44632202307: 89 fetched, 89 inserted, 0 failed, rows exported to Hugging Face, PASSED.
+  LIVE and enabled in scheduled CI matrix.
