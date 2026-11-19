@@ -1272,6 +1272,16 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     "104_tw": "TW",
     #: 1111_tw: Taiwan. 1111 Job Bank is Taiwan's second largest job portal.
     "1111_tw": "TW",
+    #: topjobs_lk: Sri Lanka. The board publishes a town column but never a
+    #: country, and its town field is a comma-separated list of areas
+    #: ("Battaramulla, Borella, Gampaha (Gampaha)") rather than one place, so
+    #: this pins the country even when the first town is not in ref.cities.
+    "topjobs_lk": "LK",
+    #: ikman_lk: Sri Lanka. Its location field was mostly unusable (the
+    #: scraped value was the label "Location" rather than a place), so all 750
+    #: rows predate the LK country row and carry a NULL country. The fallback
+    #: gives future runs the country their own board implies.
+    "ikman_lk": "LK",
 }
 
 

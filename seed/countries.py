@@ -312,6 +312,12 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # a country the seed lacks is silently a no-op. Add it before using the
     # fallback (MZN is already seeded).
     ("MZ", "MOZ", "Mozambique", "Africa", "MZN"),
+    # Sri Lanka backs topjobs_lk and the existing ikman_lk rows (750 of them,
+    # every one with a NULL country because this row did not exist). Both
+    # boards publish a town but never a country, so the SOURCE_HOME_COUNTRY
+    # fallback is load-bearing -- and a fallback aimed at a country the seed
+    # lacks is silently a no-op. LKR must be seeded first (currencies.py).
+    ("LK", "LKA", "Sri Lanka", "Asia", "LKR"),
 ]
 
 

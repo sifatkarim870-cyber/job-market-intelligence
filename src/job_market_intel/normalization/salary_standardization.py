@@ -124,6 +124,7 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "UYU": 0.023,  # 1 UYU = 0.023 USD (1 USD ~ 43.5 UYU)
     "MMK": 0.00048,  # 1 MMK = 0.00048 USD (1 USD ~ 2,100 MMK)
     "XOF": 0.0016,  # 1 XOF = 0.0016 USD (1 USD ~ 625 XOF, West African CFA franc)
+    "LKR": 0.00300818,  # 1 LKR = 0.00300818 USD (19 Nov 2026; 1 USD = 332.43 LKR)
 }
 
 

@@ -2164,6 +2164,15 @@
       "max_env": "EMPLOI_CI_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Emploi.ci (https://www.emploi.ci) - Côte d'Ivoire; Ivory Coast's leading employment portal powered by AfricaWork. Paginates server-rendered search directories at https://www.emploi.ci/recherche-jobs-cote-ivoire?page={page} discovering /offre-emploi-cote-ivoire/{slug}-{id} vacancies, then extracts structured Schema.org JobPosting JSON-LD and recruitment sections containing title, enterprise, locality, and dates. SOURCE_HOME_COUNTRY['emploi_ci']='CI' (Côte d'Ivoire in ref.countries as CI/CIV with default currency XOF)."
+    },
+    {
+      "code": "topjobs_lk",
+      "group": "html",
+      "script": "scripts/run_topjobs_lk_scraper.py",
+      "timeout": 45,
+      "max_env": "TOPJOBS_LK_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "TopJobs (https://topjobs.lk) - Sri Lanka; No key, no registration, no proxy. Sri Lanka had one source (ikman_lk, 750 rows) and ZERO country coverage: ref.countries had no LK row, so every ikman row carries a NULL country. The listing is a server-rendered JSP table at /applicant/vacancybyfunctionalarea.jsp?jst=OPEN&pageNo={page} (6 open pages, 4,583 unique job codes on 2026-11-20; consecutive pages overlap by one row, de-duplicated on jc). Rows are not anchors: each <tr> opens employer/JobAdvertismentServlet?rid=..&ac=..&jc=..&ec=.. through onclick=createAlert(...). The listing row carries title (with trailing headcount), employer, opening date (Fri Nov 20 2026), closing date and town; the ad page carries #position, #employer, #remark (the body), #endDate (03/12/2026), #jobRefNum and .ad-status labels (Full Time/Permanent/Onsite, with Contract/Internship as exceptions). TRAPS: (1) 71 of 75 sampled ads are image-only -- #remark holds an <img> and no text -- so description_clean is NULL with raw_payload.description_is_image=true rather than a parse failure; (2) two date formats, day-first on the ad page; (3) no salary field anywhere (1 of 75 bodies mentioned pay), so currency LKR and pay_period monthly state the home market, not an amount; (4) no country or city field, only a comma-separated town list, so SOURCE_HOME_COUNTRY['topjobs_lk']='LK' plus the new ref.countries LK row and LKR currency are required. The run always takes the newest 120 rows and fills the rest of its 250-row budget from a tail window that advances one window-width per day, so older ads are covered over successive runs instead of re-reading page 1 forever. Registered 2026-11-20."
     }
   ]
 }

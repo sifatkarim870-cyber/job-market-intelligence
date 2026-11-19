@@ -394,6 +394,38 @@ _CITIES: list[tuple[str, str, str | None, float | None, float | None, str | None
     ("شرم الشيخ", "EG", "جنوب سيناء", None, None, "Africa/Cairo"),
     # سوهاج
     ("سوهاج", "EG", "سوهاج", None, None, "Africa/Cairo"),
+    # Sri Lanka, for topjobs_lk. Every town in the seed is a real value from
+    # that board's "Town" column on 2026-11-20 -- it lists areas rather than
+    # provinces ("Battaramulla, Borella, Gampaha (Gampaha)"), and the resolver's
+    # "City, ..." fallback reads the first comma-separated town. Regions are
+    # left NULL on purpose: Sri Lanka's nine provinces are not what the board
+    # publishes, and province names such as "Central"/"Western" are ambiguous
+    # against other countries' seeded regions.
+    ("Colombo", "LK", None, 6.9271, 79.8612, "Asia/Colombo"),
+    ("Sri Jayawardenepura Kotte", "LK", None, 6.8940, 79.9026, "Asia/Colombo"),
+    ("Battaramulla", "LK", None, 6.8964, 79.9173, "Asia/Colombo"),
+    ("Dehiwala", "LK", None, 6.8511, 79.8636, "Asia/Colombo"),
+    ("Moratuwa", "LK", None, 6.7730, 79.8816, "Asia/Colombo"),
+    ("Nugegoda", "LK", None, 6.8649, 79.8997, "Asia/Colombo"),
+    ("Maharagama", "LK", None, 6.8480, 79.9265, "Asia/Colombo"),
+    ("Homagama", "LK", None, 6.8410, 80.0024, "Asia/Colombo"),
+    ("Kelaniya", "LK", None, 6.9553, 79.9219, "Asia/Colombo"),
+    ("Panadura", "LK", None, 6.7133, 79.9074, "Asia/Colombo"),
+    ("Kalutara", "LK", None, 6.5854, 79.9607, "Asia/Colombo"),
+    ("Gampaha", "LK", None, 7.0917, 79.9997, "Asia/Colombo"),
+    ("Negombo", "LK", None, 7.2083, 79.8358, "Asia/Colombo"),
+    ("Kandy", "LK", None, 7.2906, 80.6337, "Asia/Colombo"),
+    ("Galle", "LK", None, 6.0535, 80.2210, "Asia/Colombo"),
+    ("Matara", "LK", None, 5.9485, 80.5353, "Asia/Colombo"),
+    ("Jaffna", "LK", None, 9.6615, 80.0255, "Asia/Colombo"),
+    ("Kurunegala", "LK", None, 7.4863, 80.3623, "Asia/Colombo"),
+    ("Anuradhapura", "LK", None, 8.3114, 80.4037, "Asia/Colombo"),
+    ("Ratnapura", "LK", None, 6.6828, 80.3992, "Asia/Colombo"),
+    ("Kegalle", "LK", None, 7.2513, 80.3464, "Asia/Colombo"),
+    ("Badulla", "LK", None, 6.9934, 81.0550, "Asia/Colombo"),
+    ("Nuwara Eliya", "LK", None, 6.9497, 80.7891, "Asia/Colombo"),
+    ("Trincomalee", "LK", None, 8.5874, 81.2152, "Asia/Colombo"),
+    ("Batticaloa", "LK", None, 7.7102, 81.6924, "Asia/Colombo"),
 ]
 
 

@@ -156,6 +156,11 @@ CURRENCIES: list[dict] = [
     # (Zimbabwe Gold, the ZiG introduced in 2024), which the cleaner needs for
     # rows that disclose no pay.
     {"iso_code": "ZWG", "currency_name": "Zimbabwe Gold", "symbol": "ZiG"},
+    # Added for topjobs_lk (Sri Lanka) and the existing ikman_lk rows: the
+    # board carries no salary field, but its cleaner asserts the home-market
+    # currency for CleanedJob's required currency column, and Sri Lanka's
+    # default currency had no ref row at all.
+    {"iso_code": "LKR", "currency_name": "Sri Lankan Rupee", "symbol": "Rs"},
 ]
 
 
