@@ -2146,6 +2146,15 @@
       "max_env": "GALLITO_UY_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Gallito (https://trabajo.gallito.com.uy) - Uruguay; Uruguay's leading employment portal powered by El País Uruguay. Paginates server-rendered search directories at https://trabajo.gallito.com.uy/buscar/page/{page} discovering /anuncio/{slug}-{id} vacancies, then extracts structured Schema.org JobPosting JSON-LD and Uruguayan recruitment sections containing title, enterprise, locality, UYU remuneration, and closing dates. SOURCE_HOME_COUNTRY['gallito_uy']='UY' (Uruguay in ref.countries as UY/URY with default currency UYU)."
+    },
+    {
+      "code": "jobnet_mm",
+      "group": "api",
+      "script": "scripts/run_jobnet_mm_scraper.py",
+      "timeout": 15,
+      "max_env": "JOBNET_MM_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "JobNet Myanmar (https://www.jobnet.com.mm) - Myanmar; Myanmar's premier jobs and recruitment portal. Paginates server-rendered search directories at https://www.jobnet.com.mm/jobs?page={page} discovering /job/{slug}/{job_id} vacancies, then extracts structured Schema.org JobPosting JSON-LD containing title, enterprise, locality, MMK remuneration, and closing dates. SOURCE_HOME_COUNTRY['jobnet_mm']='MM' (Myanmar in ref.countries as MM/MMR with default currency MMK)."
     }
   ]
 }
