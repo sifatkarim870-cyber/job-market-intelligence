@@ -801,3 +801,18 @@ before it was written off. The reason is measured, not assumed:
 
 
 
+
+
+- **`jobnet_mm`** (Myanmar, www.jobnet.com.mm) — 2026-11-20. Myanmar's premier employment portal.
+  Paginates server-rendered listing at `https://www.jobnet.com.mm/jobs?page={page}` (30 jobs/page).
+  Detail pages at `/job/{slug}/{numeric_id}` carry Schema.org `JobPosting` JSON-LD with capitalized keys
+  (`Title`, `Description`), `hiringOrganization`, `jobLocation` (Yangon/Myanmar), `datePosted`
+  (`MM/DD/YYYY HH:MM:SS AM/PM` format), `validThrough`, `employmentType`.
+  Non-ASCII characters in URL paths are percent-encoded via `urllib.parse.quote`.
+  `json.loads(strict=False)` required for tab characters embedded in `Description` JSON strings.
+  Added `SOURCE_HOME_COUNTRY["jobnet_mm"] = "MM"`. Myanmar already in `ref.countries` (country_id=3686),
+  MMK already in `ref.currencies` (currency_id=3409). Added `"MMK": 0.00048` to
+  `_USD_CONVERSION_RATES` in `salary_standardization.py`.
+  Verified locally: 30 discovered, 5 parsed, Session 122, 5 inserted, 0 failed, batch validation PASSED.
+  GitHub Actions CI run 44611231120: 30 inserted, 0 failed, 30 rows exported to Hugging Face, PASSED.
+  LIVE and enabled in scheduled CI matrix.

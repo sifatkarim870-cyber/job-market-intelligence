@@ -424,3 +424,4 @@ in the matrix.
 - **gallito.com.uy** (Uruguay) - BUILT as `gallito_uy`; subdomain trabajo.gallito.com.uy serves plain HTTP with Schema.org JSON-LD. CI run 43924056179: 50 inserted, exported to HF. LIVE.
 - **olx.uz** (Uzbekistan) - classifieds; no job-specific detail contract
 - **topcv.vn** (Vietnam) - bot-blocked after an earlier revert
+- **jobnet.com.mm** (Myanmar) - RESOLVED 2026-11-20: server-rendered listing pagination + Schema.org `JobPosting` JSON-LD mapped; built as `jobnet_mm` API scraper. `json.loads(strict=False)` required for tab chars in Description; non-ASCII URL paths percent-encoded. CI run 44611231120: 30 inserted, 0 failed, exported to HF. LIVE in scheduled CI matrix.
