@@ -1311,6 +1311,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   province with no country: without it those would drop to the shared
     #:   global-remote location instead of Spain.
     "empleate_es": "ES",
+    #: chiletrabajos_cl: Chile. The ad's own address is
+    #: "<comuna>; <region>; CL", so most rows resolve from their own text; this
+    #: fallback covers an ad whose address block is incomplete (postal code
+    #: only, or a comuna with no seeded region) so it lands in Chile instead of
+    #: the shared global-remote location.
+    "chiletrabajos_cl": "CL",
 }
 
 

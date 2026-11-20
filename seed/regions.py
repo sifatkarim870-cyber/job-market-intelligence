@@ -433,6 +433,53 @@ _SA_REGIONS = [
     "تبوك",
 ]
 
+#: Chile's 16 regions, for chiletrabajos.cl.
+#:
+#: The board's ``JobPosting.jobLocation.address.addressRegion`` is the
+#: **ISO 3166-2:CL code** (``AT`` Atacama, ``AN`` Antofagasta, ``LL`` Los
+#: Lagos, ``LI`` O'Higgins, ``RM`` Metropolitana, ``BI`` Biobío measured),
+#: not a name. The parser maps the code onto these names, and the resolver
+#: matches ``region_name`` exactly, so this table and
+#: ``scrapers/chiletrabajos_cl/parser.py::_REGION_BY_CODE`` must stay
+#: byte-identical. ``region_code`` records the official ``CL-XX`` code.
+_CL_REGIONS = [
+    "Arica y Parinacota",
+    "Tarapacá",
+    "Antofagasta",
+    "Atacama",
+    "Coquimbo",
+    "Valparaíso",
+    "Metropolitana de Santiago",
+    "O'Higgins",
+    "Maule",
+    "Ñuble",
+    "Biobío",
+    "La Araucanía",
+    "Los Ríos",
+    "Los Lagos",
+    "Aysén",
+    "Magallanes",
+]
+
+_CL_REGION_CODES = {
+    "Arica y Parinacota": "CL-AP",
+    "Tarapacá": "CL-TA",
+    "Antofagasta": "CL-AN",
+    "Atacama": "CL-AT",
+    "Coquimbo": "CL-CO",
+    "Valparaíso": "CL-VS",
+    "Metropolitana de Santiago": "CL-RM",
+    "O'Higgins": "CL-LI",
+    "Maule": "CL-ML",
+    "Ñuble": "CL-NB",
+    "Biobío": "CL-BI",
+    "La Araucanía": "CL-AR",
+    "Los Ríos": "CL-LR",
+    "Los Lagos": "CL-LL",
+    "Aysén": "CL-AI",
+    "Magallanes": "CL-MA",
+}
+
 
 _BY_COUNTRY: dict[str, list[str]] = {
     "US": _US_STATES,
@@ -452,6 +499,7 @@ _BY_COUNTRY: dict[str, list[str]] = {
     "IE": _IE_COUNTIES,
     "EG": _EG_GOVERNORATES,
     "SA": _SA_REGIONS,
+    "CL": _CL_REGIONS,
 }
 
 
@@ -462,8 +510,15 @@ def seed_regions(conn: Connection) -> SeedResult:
     rows = []
     for iso2, names in _BY_COUNTRY.items():
         country_id = country_ids[iso2]
+        codes = _CL_REGION_CODES if iso2 == "CL" else {}
         for name in names:
-            rows.append({"country_id": country_id, "region_name": name, "region_code": None})
+            rows.append(
+                {
+                    "country_id": country_id,
+                    "region_name": name,
+                    "region_code": codes.get(name),
+                }
+            )
 
     return upsert_many(
         conn,
