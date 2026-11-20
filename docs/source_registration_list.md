@@ -155,7 +155,7 @@ what GitHub Actions runners have.
 | InfoJobs (ES) | Spain | captcha challenge; `/` returned **HTTP 405** |
 | Jobs.ch | Switzerland | captcha challenge -- **BUILT** as `jobs_ch` |
 | Akhtaboot | Middle East | captcha challenge **and** robots `Disallow` for `*` |
-| CV-Library | UK | HTTP 403 (Cloudflare, `/cdn-cgi/l/email-protection`) |
+| CV-Library | UK | HTTP 403 (Cloudflare, `/cdn-cgi/l/email-protection`). Re-measured 2026-11-20: a hard deny ("You triggered a security action"), not a challenge to solve. Only the cached `/` returns 200 (Next.js shell, no job links, no job API); robots.txt, sitemap, listings and job pages are 403 from both this host and a US datacenter, and a real Chrome (SeleniumBase UC) gets the same page. NOT BUILDABLE without a proxy: robots.txt itself is unreadable, so compliance cannot be established |
 | HelloWork | France | robots **disallows** `/jobs`; also ReadTimeout on a 400 KB+ page |
 | ZipRecruiter | Global/US | robots **disallows** the job paths |
 | Jora | Australia/global | robots **disallows** the job paths |
