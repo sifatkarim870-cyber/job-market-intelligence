@@ -179,6 +179,33 @@ _CITIES: list[tuple[str, str, str | None, float | None, float | None, str | None
     ("Seremban", "MY", "Negeri Sembilan", 2.7297, 101.9381, "Asia/Kuala_Lumpur"),
     ("Labuan", "MY", "Labuan", 5.2831, 115.2308, "Asia/Kuala_Lumpur"),
     ("Kangar", "MY", "Perlis", 6.4981, 100.1776, "Asia/Kuala_Lumpur"),
+    # More Malaysian job markets, added with the maukerja_my source
+    # (2026-11-20). MauKerja publishes "<town>; <state>; MY", and without
+    # these rows its postings in them resolved to region level rather than
+    # city level. Regions here match ref.regions exactly; the resolver matches
+    # them case-insensitively, and a wrong region would be invisible once
+    # cached, so only well-known town/state pairs are listed.
+    ("Puchong", "MY", "Selangor", 3.0030, 101.6179, "Asia/Kuala_Lumpur"),
+    ("Kajang", "MY", "Selangor", 2.9930, 101.7897, "Asia/Kuala_Lumpur"),
+    ("Rawang", "MY", "Selangor", 3.3210, 101.5760, "Asia/Kuala_Lumpur"),
+    ("Seri Kembangan", "MY", "Selangor", 3.0220, 101.7020, "Asia/Kuala_Lumpur"),
+    ("Ampang", "MY", "Selangor", 3.1510, 101.7620, "Asia/Kuala_Lumpur"),
+    ("Sungai Buloh", "MY", "Selangor", 3.2100, 101.5650, "Asia/Kuala_Lumpur"),
+    ("Bandar Baru Bangi", "MY", "Selangor", 2.9450, 101.7750, "Asia/Kuala_Lumpur"),
+    ("Semenyih", "MY", "Selangor", 2.9490, 101.8430, "Asia/Kuala_Lumpur"),
+    ("Banting", "MY", "Selangor", 2.8130, 101.5010, "Asia/Kuala_Lumpur"),
+    ("Sepang", "MY", "Selangor", 2.6930, 101.7490, "Asia/Kuala_Lumpur"),
+    ("Pasir Gudang", "MY", "Johor", 1.4740, 103.8800, "Asia/Kuala_Lumpur"),
+    ("Kulai", "MY", "Johor", 1.6560, 103.6040, "Asia/Kuala_Lumpur"),
+    ("Kluang", "MY", "Johor", 2.0300, 103.3180, "Asia/Kuala_Lumpur"),
+    ("Muar", "MY", "Johor", 2.0440, 102.5690, "Asia/Kuala_Lumpur"),
+    ("Nilai", "MY", "Negeri Sembilan", 2.8030, 101.7970, "Asia/Kuala_Lumpur"),
+    ("Port Dickson", "MY", "Negeri Sembilan", 2.5230, 101.7960, "Asia/Kuala_Lumpur"),
+    ("Taiping", "MY", "Perak", 4.8510, 100.7410, "Asia/Kuala_Lumpur"),
+    ("Teluk Intan", "MY", "Perak", 4.0260, 101.0210, "Asia/Kuala_Lumpur"),
+    ("Kulim", "MY", "Kedah", 5.3650, 100.5600, "Asia/Kuala_Lumpur"),
+    ("Bintulu", "MY", "Sarawak", 3.1710, 113.0430, "Asia/Kuching"),
+    ("Lahad Datu", "MY", "Sabah", 5.0250, 118.3350, "Asia/Kuching"),
     ("Bangkok", "TH", None, 13.7563, 100.5018, "Asia/Bangkok"),
     ("Ho Chi Minh City", "VN", None, 10.8231, 106.6297, "Asia/Ho_Chi_Minh"),
     ("Karachi", "PK", None, 24.8607, 67.0011, "Asia/Karachi"),

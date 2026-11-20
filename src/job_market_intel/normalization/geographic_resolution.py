@@ -1317,6 +1317,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: only, or a comuna with no seeded region) so it lands in Chile instead of
     #: the shared global-remote location.
     "chiletrabajos_cl": "CL",
+    #: maukerja_my: Malaysia. The ad's own address is
+    #: "<town>; <state>; MY", so most rows resolve from their own text; this
+    #: fallback covers an ad whose address block is incomplete (a bare town
+    #: with no seeded region, or a postal code) so it lands in Malaysia instead
+    #: of the shared global-remote location. The board is Malaysian and its few
+    #: Singapore ads carry their own "SG" segment, so the fallback is right.
+    "maukerja_my": "MY",
 }
 
 
