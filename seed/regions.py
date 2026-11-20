@@ -481,6 +481,73 @@ _CL_REGION_CODES = {
 }
 
 
+#: Switzerland's 26 cantons, for jobup.ch.
+#:
+#: The board writes a canton name (or a town, an internal path, or prose) into
+#: ``JobPosting.jobLocation.address.addressRegion``. The parser maps the
+#: recognised German/French/English spellings onto these canonical names, and
+#: the resolver matches ``region_name`` exactly, so this table and
+#: ``scrapers/jobup_ch/parser.py::_CANTON_ALIASES`` must stay byte-identical.
+#: ``region_code`` records the official ``CH-XX`` code.
+_CH_CANTONS = [
+    "Zürich",
+    "Bern",
+    "Luzern",
+    "Uri",
+    "Schwyz",
+    "Obwalden",
+    "Nidwalden",
+    "Glarus",
+    "Zug",
+    "Fribourg",
+    "Solothurn",
+    "Basel-Stadt",
+    "Basel-Landschaft",
+    "Schaffhausen",
+    "Appenzell Ausserrhoden",
+    "Appenzell Innerrhoden",
+    "St. Gallen",
+    "Graubünden",
+    "Aargau",
+    "Thurgau",
+    "Ticino",
+    "Vaud",
+    "Valais",
+    "Neuchâtel",
+    "Genève",
+    "Jura",
+]
+
+_CH_REGION_CODES = {
+    "Zürich": "CH-ZH",
+    "Bern": "CH-BE",
+    "Luzern": "CH-LU",
+    "Uri": "CH-UR",
+    "Schwyz": "CH-SZ",
+    "Obwalden": "CH-OW",
+    "Nidwalden": "CH-NW",
+    "Glarus": "CH-GL",
+    "Zug": "CH-ZG",
+    "Fribourg": "CH-FR",
+    "Solothurn": "CH-SO",
+    "Basel-Stadt": "CH-BS",
+    "Basel-Landschaft": "CH-BL",
+    "Schaffhausen": "CH-SH",
+    "Appenzell Ausserrhoden": "CH-AR",
+    "Appenzell Innerrhoden": "CH-AI",
+    "St. Gallen": "CH-SG",
+    "Graubünden": "CH-GR",
+    "Aargau": "CH-AG",
+    "Thurgau": "CH-TG",
+    "Ticino": "CH-TI",
+    "Vaud": "CH-VD",
+    "Valais": "CH-VS",
+    "Neuchâtel": "CH-NE",
+    "Genève": "CH-GE",
+    "Jura": "CH-JU",
+}
+
+
 _BY_COUNTRY: dict[str, list[str]] = {
     "US": _US_STATES,
     "CA": _CA_PROVINCES,
@@ -500,6 +567,7 @@ _BY_COUNTRY: dict[str, list[str]] = {
     "EG": _EG_GOVERNORATES,
     "SA": _SA_REGIONS,
     "CL": _CL_REGIONS,
+    "CH": _CH_CANTONS,
 }
 
 
@@ -510,7 +578,7 @@ def seed_regions(conn: Connection) -> SeedResult:
     rows = []
     for iso2, names in _BY_COUNTRY.items():
         country_id = country_ids[iso2]
-        codes = _CL_REGION_CODES if iso2 == "CL" else {}
+        codes = {"CL": _CL_REGION_CODES, "CH": _CH_REGION_CODES}.get(iso2, {})
         for name in names:
             rows.append(
                 {

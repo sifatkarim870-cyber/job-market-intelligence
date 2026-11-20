@@ -1324,6 +1324,14 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: of the shared global-remote location. The board is Malaysian and its few
     #: Singapore ads carry their own "SG" segment, so the fallback is right.
     "maukerja_my": "MY",
+    #: jobup_ch: Switzerland. The ad's own address is "<town>; <canton>; CH"
+    #: when the block is complete, so most rows resolve from their own text;
+    #: this fallback covers an ad whose address block is incomplete (no
+    #: addressLocality, an unseeded town, or a canton written only as a town)
+    #: so it lands in Switzerland instead of the shared global-remote location.
+    #: The board is Swiss and its ads' addressCountry was "CH" on 100% of a
+    #: 60-ad sample, so the fallback is right.
+    "jobup_ch": "CH",
 }
 
 

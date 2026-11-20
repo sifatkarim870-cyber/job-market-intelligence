@@ -94,7 +94,8 @@ _ANNUALIZATION_MULTIPLIERS: dict[str, float] = {
 #: Currency conversion rates to USD, as of 2026-10-02 mid-market close
 #: (exchangerates.org.uk / tradingeconomics daily reference rates).
 #: USD was the only entry until the audit-driven non-USD sources arrived
-#: (GBP for Reed, DZD for Emploitic, MUR for MyJob.mu, CNY for 51job) —
+#: (GBP for Reed, DZD for Emploitic, MUR for MyJob.mu, CNY for 51job,
+#: CHF for jobup.ch) —
 #: each addition is a rate this codebase now actually uses, not a
 #: speculative table.
 #: These are static reference rates for cross-job comparability, not
@@ -126,6 +127,7 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "XOF": 0.0016,  # 1 XOF = 0.0016 USD (1 USD ~ 625 XOF, West African CFA franc)
     "LKR": 0.00300818,  # 1 LKR = 0.00300818 USD (19 Nov 2026; 1 USD = 332.43 LKR)
     "CDF": 0.00043257,  # 1 CDF = 0.00043257 USD (19 Nov 2026; 1 USD = 2,311.79 CDF)
+    "CHF": 1.1856250,  # 1 CHF = 1.1856250 USD (20 Nov 2026; 1 USD = 0.843437 CHF)
 }
 
 
