@@ -1345,6 +1345,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: Danish and no sampled ad carried a foreign country, so the fallback is
     #: right. Complements the pre-existing state board ``jobnet_dk``.
     "jobindex_dk": "DK",
+    #: vdab_be: Belgium (Flanders). VDAB's ad payload names only the
+    #:   municipality ("OUDENAARDE", "SINT-NIKLAAS") in ALL CAPS and often no
+    #:   country at all, and ref.cities holds a single Belgian city (Brussels),
+    #:   so without this fallback nearly every row would collapse onto the
+    #:   shared global-remote location instead of Belgium.
+    "vdab_be": "BE",
 }
 
 
