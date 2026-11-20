@@ -495,6 +495,41 @@ _CITIES: list[tuple[str, str, str | None, float | None, float | None, str | None
     ("Allada", "BJ", None, 6.6653, 2.1511, "Africa/Porto-Novo"),
     ("Sakété", "BJ", None, 6.7361, 2.6586, "Africa/Porto-Novo"),
     ("Dogbo", "BJ", None, 6.8000, 1.7833, "Africa/Porto-Novo"),
+    # Cameroon, for emploi_cm. The board names the locality on its own and puts
+    # a longer list of the cities an ad is open to in addressRegion; that list
+    # is not stored, so the hubs that appear as localities are what matter.
+    # Regions are left NULL: the seed has no Cameroon region rows. All times
+    # Africa/Douala. Douala and Yaoundé carry most ads; the rest are the cities
+    # the board actually advertises in.
+    ("Douala", "CM", None, 4.0511, 9.7679, "Africa/Douala"),
+    ("Yaoundé", "CM", None, 3.8480, 11.5021, "Africa/Douala"),
+    ("Bafoussam", "CM", None, 5.4781, 10.4172, "Africa/Douala"),
+    ("Garoua", "CM", None, 9.3265, 13.3958, "Africa/Douala"),
+    ("Bamenda", "CM", None, 5.9631, 10.1591, "Africa/Douala"),
+    ("Maroua", "CM", None, 10.5910, 14.3159, "Africa/Douala"),
+    ("Buea", "CM", None, 4.1527, 9.2410, "Africa/Douala"),
+    ("Limbe", "CM", None, 4.0236, 9.1955, "Africa/Douala"),
+    ("Kribi", "CM", None, 2.9373, 9.9077, "Africa/Douala"),
+    ("Ngaoundéré", "CM", None, 7.3277, 13.5847, "Africa/Douala"),
+    ("Bertoua", "CM", None, 4.5776, 13.6846, "Africa/Douala"),
+    ("Ebolowa", "CM", None, 2.9000, 11.1500, "Africa/Douala"),
+    ("Kumba", "CM", None, 4.6363, 9.4469, "Africa/Douala"),
+    ("Edéa", "CM", None, 3.8000, 10.1333, "Africa/Douala"),
+    ("Dschang", "CM", None, 5.4460, 10.0533, "Africa/Douala"),
+    ("Foumban", "CM", None, 5.7167, 10.9000, "Africa/Douala"),
+    ("Mbouda", "CM", None, 5.6266, 10.2542, "Africa/Douala"),
+    ("Tiko", "CM", None, 4.0745, 9.3697, "Africa/Douala"),
+    ("Sangmélima", "CM", None, 2.9333, 11.9833, "Africa/Douala"),
+    ("Mbalmayo", "CM", None, 3.5167, 11.5000, "Africa/Douala"),
+    ("Nkongsamba", "CM", None, 4.9547, 9.9404, "Africa/Douala"),
+    ("Bafia", "CM", None, 4.7500, 11.2333, "Africa/Douala"),
+    ("Guider", "CM", None, 9.9342, 13.9486, "Africa/Douala"),
+    ("Mokolo", "CM", None, 10.7424, 13.8023, "Africa/Douala"),
+    ("Kousséri", "CM", None, 12.0769, 15.0306, "Africa/Douala"),
+    # Djibouti, for one measured emploi_cm ad (an on-site expatriation role).
+    # The board writes addressCountry "Cameroun" on it, so the city is what
+    # keeps the row truthful.
+    ("Djibouti", "DJ", None, 11.5721, 43.1456, "Africa/Djibouti"),
 ]
 
 

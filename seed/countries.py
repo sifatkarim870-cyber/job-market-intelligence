@@ -332,6 +332,19 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # resolve; a fallback aimed at a country the seed lacks is silently a
     # no-op. XOF is already seeded (currencies.py).
     ("BJ", "BEN", "Benin", "Africa", "XOF"),
+    # Cameroon backs emploi_cm (source code "emploi_cm"), the AfricaWork portal
+    # at emploi.cm. Cameroon had ZERO country coverage before this source even
+    # though two other Cameroonian boards are registered (minajobs, fne_cm):
+    # every one of their 328 rows carries a NULL country because there was no
+    # CM row for the resolver to land on. The board's JSON-LD names
+    # addressCountry "Cameroun", which is normalised to this name. XAF is
+    # already seeded (currencies.py).
+    ("CM", "CMR", "Cameroon", "Africa", "XAF"),
+    # Djibouti backs one measured emploi_cm ad: an on-site expatriation role
+    # whose addressLocality is "Djibouti" while addressCountry is the board's
+    # own label "Cameroun". City matching happens before country matching, so
+    # seeding the city is what keeps that row out of Cameroon.
+    ("DJ", "DJI", "Djibouti", "Africa", "DJF"),
 ]
 
 

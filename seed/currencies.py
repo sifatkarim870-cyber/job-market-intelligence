@@ -89,6 +89,7 @@ CURRENCIES: list[dict] = [
     {"iso_code": "RWF", "currency_name": "Rwandan Franc", "symbol": "RF"},
     {"iso_code": "XOF", "currency_name": "West African CFA Franc", "symbol": "CFA"},
     {"iso_code": "XAF", "currency_name": "Central African CFA Franc", "symbol": "FCFA"},
+    {"iso_code": "DJF", "currency_name": "Djiboutian Franc", "symbol": "Fdj"},
     {"iso_code": "AOA", "currency_name": "Angolan Kwanza", "symbol": "Kz"},
     {"iso_code": "ZMW", "currency_name": "Zambian Kwacha", "symbol": "ZK"},
     {"iso_code": "MZN", "currency_name": "Mozambican Metical", "symbol": "MT"},

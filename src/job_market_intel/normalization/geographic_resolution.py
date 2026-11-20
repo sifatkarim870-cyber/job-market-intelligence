@@ -964,6 +964,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: but a remote ad can carry an international city list in addressRegion
     #: with no country at all, so this fallback is what keeps those rows on BJ.
     "emploibenin_com": "BJ",
+    #: emploi_cm: Cameroon. Same AfricaWork platform as emploi_ci/emploi_cd/
+    #: emploibenin_com. addressCountry is the French label "Cameroun", which is
+    #: not a ref.countries name, so without this entry the fallback is a silent
+    #: no-op and every posting whose address omits a recognisable country lands
+    #: with a NULL country.
+    "emploi_cm": "CM",
     "karriere_at": "AT",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
