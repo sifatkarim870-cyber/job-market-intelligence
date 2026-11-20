@@ -34,6 +34,7 @@ from .myjob_validator import MyJobBatchValidator, MyJobValidationSettings
 from .reed_validator import ReedBatchValidator, ReedValidationSettings
 from .remoteok_validator import RemoteOKBatchValidator, RemoteOKValidationSettings
 from .remotive_validator import RemotiveBatchValidator, RemotiveValidationSettings
+from .timesjobs_in_validator import TimesjobsBatchValidator, TimesjobsValidationSettings
 from .weworkremotely_validator import WWRBatchValidator, WWRValidationSettings
 
 __all__ = [
@@ -65,6 +66,8 @@ __all__ = [
     "RemoteOKValidationSettings",
     "RemotiveBatchValidator",
     "RemotiveValidationSettings",
+    "TimesjobsBatchValidator",
+    "TimesjobsValidationSettings",
     "WWRBatchValidator",
     "WWRValidationSettings",
 ]

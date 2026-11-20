@@ -995,6 +995,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   city_exact misses on spelling and those postings fall through to the
     #:   source default instead of the global-remote row.
     "apna": "IN",
+    #: timesjobs_in: India. TimesJobs is India's board (every listing row
+    #:   carried currency "INR" and the default feed is India-dominated),
+    #:   so this is a fact about the board. Its location text varies (city
+    #:   names like "Gurugram", country names on the international minority
+    #:   of rows), and this fallback keeps an unresolvable row on IN rather
+    #:   than collapsing it onto the global-remote location.
+    "timesjobs_in": "IN",
     #: mustakbil: Pakistan. Every posting measured carried addressCountry
     #:   'PK' and currency PKR, so this is a measured fact about the board.
     "mustakbil": "PK",
