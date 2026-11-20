@@ -170,6 +170,7 @@ what GitHub Actions runners have.
 | emploipartner.com | Luxembourg | `cloudflare` marker in the body |
 | careercenter.am | Armenia | `cloudflare` marker in the body -- **BUILT** as `careercenter_am` (browser group) |
 | jobwebkenya.com | Kenya | `cloudflare` marker in the body |
+| Catho | Brazil | AWS ALB fixed-response **HTTP 403** (server: awselb/2.0, 520-byte static body, no challenge) on every path including `/robots.txt`; re-measured 2026-11-20 from this host, a US datacenter and a real Chrome, and with Googlebot/bingbot UAs. Brazil-IP-only, so it needs a proxy; robots.txt is unreadable, so compliance cannot be established |
 
 **A residential proxy unblocks more coverage than anything else on this page.**
 It is also the one item on this page that cannot be solved by writing code, and
