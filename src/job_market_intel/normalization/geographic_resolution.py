@@ -1338,6 +1338,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: The board is Swiss and its ads' addressCountry was "CH" on 100% of a
     #: 60-ad sample, so the fallback is right.
     "jobup_ch": "CH",
+    #: jobindex_dk: Denmark. The listing row's ``area`` (and ``addresses``) is
+    #: empty on many employer-paid rows, and the detail page's ``Lokation`` is a
+    #: bare town or a district such as "Kobenhavn K"; this fallback keeps such a
+    #: row in Denmark instead of the shared global-remote location. The board is
+    #: Danish and no sampled ad carried a foreign country, so the fallback is
+    #: right. Complements the pre-existing state board ``jobnet_dk``.
+    "jobindex_dk": "DK",
 }
 
 
