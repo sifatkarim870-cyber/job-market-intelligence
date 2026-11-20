@@ -34,6 +34,35 @@ def test_json_ld_with_raw_line_breaks_is_accepted() -> None:
     assert "Segunda linea" in payload["description"]
 
 
+def test_unescaped_html_attribute_quotes_inside_the_description_are_repaired() -> None:
+    """emploi.ma publishes inline HTML whose attribute quotes are not escaped.
+
+    ``data-olk-copy-source="MessageBody"`` inside the description string breaks
+    JSON parsing, which used to discard the whole block -- and with it the
+    company, location and dates -- even though only one field was malformed.
+    """
+    html = (
+        '<script type="application/ld+json">\n'
+        "{\n"
+        '  "@context": "http://schema.org/",\n'
+        '  "@type": "JobPosting",\n'
+        '  "title": "Technicien Regleur",\n'
+        '  "description": "<p>Nous recrutons.</p>'
+        '<p><b data-olk-copy-source="MessageBody">Missions :</b></p>",\n'
+        '  "hiringOrganization": {"@type": "Organization", "name": "AISCAN"},\n'
+        '  "jobLocation": {"@type": "Place", "address": {"addressLocality": "Tanger"}}\n'
+        "}\n"
+        "</script>"
+    )
+
+    payload = _json_ld_job_posting(html)
+
+    assert payload is not None
+    assert payload["hiringOrganization"]["name"] == "AISCAN"
+    assert payload["jobLocation"]["address"]["addressLocality"] == "Tanger"
+    assert 'data-olk-copy-source="MessageBody"' in payload["description"]
+
+
 def test_mapped_text_unescapes_html_entities() -> None:
     client = HtmlScraperClient(
         "unit_test",

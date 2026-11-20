@@ -77,6 +77,14 @@ class BrowserSiteConfig(SiteConfig):
     #: :attr:`challenge_markers` entry still fires, so a real challenge on the
     #: same board is still caught.
     ignore_challenge_markers: str = Field(default="")
+    #: Page text that means "the origin returned an error page, not the ad"
+    #: (a Cloudflare 502/503/504, an upstream proxy error). This is deliberately
+    #: separate from :attr:`challenge_markers`: a hit here is a per-ad fetch
+    #: failure and the run continues, so one bad minute at the origin does not
+    #: throw away the rest of the batch, while a real bot challenge still stops
+    #: the run. Measured on emploi.ma 2026-11-20, where origin 504s were stored
+    #: as 60-word "Gateway time-out" job descriptions before this existed.
+    error_markers: str = Field(default="")
     #: Cap on detail pages per run, independent of max_jobs.
     max_detail_pages: int = Field(default=40, ge=1, le=500)
 

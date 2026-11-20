@@ -970,6 +970,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: no-op and every posting whose address omits a recognisable country lands
     #: with a NULL country.
     "emploi_cm": "CM",
+    #: emploi_ma: Morocco. Same AfricaWork platform as emploi_ci/emploi_cd/
+    #: emploibenin_com/emploi_cm. The board is behind a Cloudflare managed
+    #: challenge, so it runs through the browser framework; its JobPosting
+    #: addressCountry is the French label "Maroc", which is not a ref.countries
+    #: name, so this fallback is what keeps every ad on MA.
+    "emploi_ma": "MA",
     "karriere_at": "AT",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about

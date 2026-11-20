@@ -117,6 +117,23 @@ def _ignored_markers(config: BrowserSiteConfig) -> frozenset[str]:
     )
 
 
+def _error_markers(config: BrowserSiteConfig) -> tuple[str, ...]:
+    """Markers that mean "the origin answered with an error page" (comma separated).
+
+    A hit is a per-ad fetch failure, not a bot challenge: the origin (or the
+    CDN in front of it) is briefly unhealthy and will likely serve the next ad
+    normally. Kept separate from :attr:`_challenge_markers` because the two
+    call for opposite behaviour -- skip this ad and continue versus stop the
+    run -- and because these strings ("gateway time-out") are ordinary English
+    that only an errored page, never a posting, contains in bulk.
+    """
+    return tuple(
+        marker.strip().lower()
+        for marker in (config.error_markers or "").split(",")
+        if marker.strip()
+    )
+
+
 def _visible_text(html: str) -> str:
     """The text a person would see, with scripts and styles removed."""
     soup = BeautifulSoup(html, "html.parser")
@@ -292,6 +309,22 @@ class BrowserScraperClient:
                 break
             time.sleep(self._site_config.listing_more_pause_seconds)
 
+    def _check_error_page(self, html: str, url: str) -> None:
+        """Raise when the rendered page is an origin error page, not content.
+
+        Cloudflare and friends answer with a 502/503/504 page that still has an
+        ``h1`` and a few sentences of text, so ``_looks_rendered`` accepts it
+        and the "job description" becomes "Gateway time-out". Callers treat
+        this as a per-ad failure and keep going: the next ad usually loads.
+        """
+        markers = _error_markers(self._site_config)
+        if not markers:
+            return
+        text = _visible_text(html[:200000])
+        for marker in markers:
+            if marker in text:
+                raise BrowserFetchError(f"{url} returned an error page (matched {marker!r})")
+
     def _check_challenge(self, html: str, url: str) -> None:
         """Raise when the rendered page is a bot challenge rather than content."""
         ignored = _ignored_markers(self._site_config)
@@ -356,6 +389,7 @@ class BrowserScraperClient:
                     self._site_config.listing_ready_selector,
                     self._site_config.listing_wait_seconds,
                 )
+                self._check_error_page(html, url)
                 self._check_challenge(html, url)
             except BrowserChallengeError as exc:
                 challenge = str(exc)
@@ -505,6 +539,7 @@ class BrowserScraperClient:
             for job in discovered[: min(budget, self._site_config.max_detail_pages)]:
                 try:
                     html = self._render_detail(job["url"])
+                    self._check_error_page(html, job["url"])
                     self._check_challenge(html, job["url"])
                     html = self._detail_html(html, job["url"])
                 except BrowserChallengeError as exc:

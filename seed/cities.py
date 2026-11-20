@@ -530,6 +530,40 @@ _CITIES: list[tuple[str, str, str | None, float | None, float | None, str | None
     # The board writes addressCountry "Cameroun" on it, so the city is what
     # keeps the row truthful.
     ("Djibouti", "DJ", None, 11.5721, 43.1456, "Africa/Djibouti"),
+    # Morocco, for emploi_ma (and the already-registered rekrute_com, whose
+    # rows currently fold onto one country-level row because no MA city was
+    # seeded). The board writes the city in addressLocality; regions are left
+    # NULL: the seed has no Moroccan region rows. All times Africa/Casablanca.
+    ("Casablanca", "MA", None, 33.5731, -7.5898, "Africa/Casablanca"),
+    ("Rabat", "MA", None, 34.0209, -6.8416, "Africa/Casablanca"),
+    ("Marrakech", "MA", None, 31.6295, -7.9811, "Africa/Casablanca"),
+    ("Fès", "MA", None, 34.0331, -5.0003, "Africa/Casablanca"),
+    ("Tanger", "MA", None, 35.7595, -5.8340, "Africa/Casablanca"),
+    ("Agadir", "MA", None, 30.4278, -9.5981, "Africa/Casablanca"),
+    ("Meknès", "MA", None, 33.8935, -5.5473, "Africa/Casablanca"),
+    ("Oujda", "MA", None, 34.6814, -1.9086, "Africa/Casablanca"),
+    ("Kénitra", "MA", None, 34.2610, -6.5802, "Africa/Casablanca"),
+    ("Tétouan", "MA", None, 35.5785, -5.3684, "Africa/Casablanca"),
+    ("Salé", "MA", None, 34.0531, -6.7985, "Africa/Casablanca"),
+    ("Mohammedia", "MA", None, 33.6866, -7.3830, "Africa/Casablanca"),
+    ("El Jadida", "MA", None, 33.2316, -8.5007, "Africa/Casablanca"),
+    ("Safi", "MA", None, 32.2994, -9.2372, "Africa/Casablanca"),
+    ("Béni Mellal", "MA", None, 32.3373, -6.3498, "Africa/Casablanca"),
+    ("Nador", "MA", None, 35.1681, -2.9335, "Africa/Casablanca"),
+    ("Khouribga", "MA", None, 32.8811, -6.9063, "Africa/Casablanca"),
+    ("Settat", "MA", None, 33.0010, -7.6166, "Africa/Casablanca"),
+    ("Berrechid", "MA", None, 33.2655, -7.5875, "Africa/Casablanca"),
+    ("Taza", "MA", None, 34.2100, -4.0100, "Africa/Casablanca"),
+    ("Essaouira", "MA", None, 31.5085, -9.7595, "Africa/Casablanca"),
+    ("Laâyoune", "MA", None, 27.1536, -13.2033, "Africa/Casablanca"),
+    ("Dakhla", "MA", None, 23.6848, -15.9580, "Africa/Casablanca"),
+    ("Errachidia", "MA", None, 31.9314, -4.4245, "Africa/Casablanca"),
+    ("Ouarzazate", "MA", None, 30.9335, -6.9370, "Africa/Casablanca"),
+    ("Al Hoceima", "MA", None, 35.2517, -3.9372, "Africa/Casablanca"),
+    ("Larache", "MA", None, 35.1932, -6.1557, "Africa/Casablanca"),
+    ("Khémisset", "MA", None, 33.8240, -6.0658, "Africa/Casablanca"),
+    ("Guelmim", "MA", None, 28.9870, -10.0574, "Africa/Casablanca"),
+    ("Tinghir", "MA", None, 31.5147, -5.5326, "Africa/Casablanca"),
 ]
 
 

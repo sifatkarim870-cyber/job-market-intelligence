@@ -19,6 +19,7 @@ from job_market_intel.scrapers.browser_scraper.client import (
 from job_market_intel.scrapers.browser_scraper.config import BrowserSiteConfig
 from job_market_intel.scrapers.browser_scraper.exceptions import (
     BrowserChallengeError,
+    BrowserFetchError,
 )
 
 
@@ -130,6 +131,61 @@ def test_an_ignored_text_marker_is_not_a_challenge() -> None:
     html = '<html><body><div class="captcha">Please complete the captcha</div></body></html>'
     client = _StubClient(_config(ignore_challenge_markers="captcha"))
     client._check_challenge(html, "https://example.com/jobs")  # must not raise
+
+
+CLOUDFLARE_504_PAGE = """
+<html><body><h1>Gateway time-out</h1>
+<p>Error code 504. Visit cloudflare.com for more information.</p>
+<p>What happened? The web server reported a gateway time-out error.</p>
+</body></html>
+"""
+
+
+def test_an_origin_error_page_is_a_fetch_failure_not_a_challenge() -> None:
+    """A Cloudflare 504 has an ``h1`` and text, so it would pass ``_looks_rendered``.
+
+    Before ``error_markers`` existed, emploi.ma's origin 504s were stored as
+    60-word "Gateway time-out" job descriptions. The check raises the
+    per-ad exception so the run skips the ad and keeps the rest.
+    """
+    client = _StubClient(_config(error_markers="gateway time-out,error code 504"))
+    try:
+        client._check_error_page(CLOUDFLARE_504_PAGE, "https://example.com/jobs/1")
+    except BrowserFetchError as exc:
+        assert "error page" in str(exc)
+    else:  # pragma: no cover - the call must raise
+        raise AssertionError("an origin 504 page must be a fetch failure")
+
+
+def test_a_long_error_page_is_still_rejected() -> None:
+    """Size is not the signal: a padded 504 page passes the rendered check."""
+    client = _StubClient(_config(error_markers="gateway time-out"))
+    long_page = CLOUDFLARE_504_PAGE.replace(
+        "</body>", "<p>" + ("Retry later. " * 400) + "</p></body>"
+    )
+    assert _looks_rendered(long_page) is True
+    try:
+        client._check_error_page(long_page, "https://example.com/jobs/1")
+    except BrowserFetchError:
+        return
+    raise AssertionError("a long 504 page must still be rejected")
+
+
+def test_a_site_without_error_markers_never_rejects_an_error_page() -> None:
+    """The check is opt-in: the ordinary site config keeps its old behaviour."""
+    client = _StubClient(_config())
+    client._check_error_page(CLOUDFLARE_504_PAGE, "https://example.com/jobs/1")
+
+
+def test_an_ordinary_posting_is_not_an_error_page() -> None:
+    html = (
+        "<html><body><h1>Comptable</h1>"
+        "<div class='job-description'>Nous recrutons un comptable experimente. "
+        + ("Missions et responsabilites. " * 50)
+        + "</div></body></html>"
+    )
+    client = _StubClient(_config(error_markers="gateway time-out,error code 504"))
+    client._check_error_page(html, "https://example.com/jobs/2")  # must not raise
 
 
 def test_a_rendered_page_has_a_heading_and_text() -> None:

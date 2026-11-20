@@ -1,0 +1,53 @@
+{
+  "source_code": "emploi_ma",
+  "source_name": "Emploi.ma (Morocco)",
+  "country": "Morocco",
+  "base_url": "https://www.emploi.ma",
+  "listing_path": "/recherche-jobs-maroc",
+  "listing_pagination": "?page={page}",
+  "max_pages": 6,
+  "max_jobs_per_run": 120,
+  "min_expected_jobs": 1,
+  "listing_ready_selector": "a[href*='/offre-emploi-maroc/']",
+  "listing_wait_seconds": 60,
+  "detail_ready_selector": "h1",
+  "detail_wait_seconds": 30,
+  "detail_settle_seconds": 2.0,
+  "scroll_count": 2,
+  "scroll_pause_seconds": 1.5,
+  "uc_mode": true,
+  "headless": true,
+  "ignore_challenge_markers": "challenge-platform",
+  "error_markers": "gateway time-out,gateway timeout,error code 502,error code 503,error code 504,web server reported a gateway time-out",
+  "max_detail_pages": 120,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='/offre-emploi-maroc/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description, div.job-description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "^/offre-emploi-maroc/.+-[0-9]+$",
+  "id_from_url": true,
+  "id_url_regex": "/offre-emploi-maroc/.+-([0-9]+)$",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality"
+    ],
+    "description": "description",
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "inter_request_delay_seconds": 2.0,
+  "currency_iso_code": "MAD",
+  "pay_period": "monthly",
+  "country_fallback": "Morocco"
+}
