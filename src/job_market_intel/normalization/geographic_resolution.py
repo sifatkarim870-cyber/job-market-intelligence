@@ -982,6 +982,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: with no country at all, so this fallback is what keeps those rows on RW.
     #: It shares the country with the already-built "jobinrwanda" source.
     "rwandajob_com": "RW",
+    #: revolico_cu: Cuba. Cuba had no coverage before this source and no Cuban
+    #: city is seeded, so this fallback is what assigns CU: an ad names a province
+    #: and a municipality (or nothing at all) but never the country, and a
+    #: fallback aimed at a country the seed lacks is silently a no-op.
+    "revolico_cu": "CU",
     "karriere_at": "AT",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about

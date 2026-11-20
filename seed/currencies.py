@@ -167,6 +167,14 @@ CURRENCIES: list[dict] = [
     # no ref row at all. The rate added to salary_standardization.py is the
     # 19 Nov 2026 reference (1 USD = 2,311.79 CDF).
     {"iso_code": "CDF", "currency_name": "Congolese Franc", "symbol": "FC"},
+    # Added for revolico_cu (Cuba): revolico.com is a Cuban classifieds site
+    # whose Empleos "Ofertas de Empleo" category is a jobs board, and Cuba had
+    # no ref.currencies row at all. CleanedJob needs the home-market currency for
+    # rows that disclose no pay. No FX rate is added to salary_standardization.py
+    # on purpose: revolico's ``price`` field is unreliable (55 of 102 sampled ads
+    # carry none, and many of the rest carry a placeholder "1"), so no row is
+    # treated as a disclosed salary and no conversion is ever attempted.
+    {"iso_code": "CUP", "currency_name": "Cuban Peso", "symbol": "$MN"},
 ]
 
 

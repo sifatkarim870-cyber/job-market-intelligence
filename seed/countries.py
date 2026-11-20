@@ -350,6 +350,15 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # own label "Cameroun". City matching happens before country matching, so
     # seeding the city is what keeps that row out of Cameroon.
     ("DJ", "DJI", "Djibouti", "Africa", "DJF"),
+    # Cuba backs revolico_cu, the Cuban classifieds site revolico.com whose
+    # Empleos > "Ofertas de Empleo" category is a jobs board. Cuba had ZERO
+    # country coverage before this source. Each ad names a province and a
+    # municipality but never the country, and no Cuban city is seeded (names
+    # like "Florida" collide with seeded cities elsewhere), so the
+    # SOURCE_HOME_COUNTRY fallback is load-bearing: without this row it is a
+    # silent no-op and every posting lands with a NULL country. CUP must be
+    # seeded first (currencies.py).
+    ("CU", "CUB", "Cuba", "North America", "CUP"),
 ]
 
 
