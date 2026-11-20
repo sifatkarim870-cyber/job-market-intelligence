@@ -1351,6 +1351,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   so without this fallback nearly every row would collapse onto the
     #:   shared global-remote location instead of Belgium.
     "vdab_be": "BE",
+    #: lexpress_mu: Mauritius. L'Express Petites Annonces is a Mauritius-only
+    #:   classifieds board; ads name a local place ("Moka", "Roches Noires")
+    #:   and never a country, so this fallback is what gives its rows a country.
+    "lexpress_mu": "MU",
 }
 
 
