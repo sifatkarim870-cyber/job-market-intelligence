@@ -26,6 +26,11 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("DE", "DEU", "Germany", "Europe", "EUR"),
     ("FR", "FRA", "France", "Europe", "EUR"),
     ("ES", "ESP", "Spain", "Europe", "EUR"),
+    # Added for the Empléate source (empleate_es). Its ``paisF`` facet carries
+    # two Andorran ads, and without this row the parser's "ANDORRA" -> "AD"
+    # country segment would match nothing and those postings would resolve to
+    # the global-remote fallback instead of Andorra.
+    ("AD", "AND", "Andorra", "Europe", "EUR"),
     ("PT", "PRT", "Portugal", "Europe", "EUR"),
     # Added for the mojedelo source. Without this row the resolver cannot place
     # a single Slovenian posting: it would leave country_id NULL on every row

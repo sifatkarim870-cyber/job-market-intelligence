@@ -258,6 +258,70 @@ _PT_REGIONS = [
     "Setubal",
 ]
 
+_ES_PROVINCES = [
+    # Spain's 50 provinces plus the autonomous cities of Ceuta and Melilla, for
+    # Empléate (empleate_es). The list is the portal's own ``provinciaF`` facet:
+    # exactly 52 distinct values were measured across all 26,073 visible ads on
+    # 2026-11-20, and the parser emits that value verbatim as the middle
+    # segment of "<ciudadF>; <provinciaF>; ES". Because ``_match_region`` is an
+    # exact case-insensitive match on ``region_name`` and never normalizes the
+    # seeded side, the spellings below must stay byte-identical to the source's
+    # (hence uppercase "A CORUÑA", "ILLES BALEARS", and the abbreviated
+    # "STA.CRUZ DE TENERIFE") rather than prettified.
+    "BARCELONA",
+    "MADRID",
+    "VALENCIA",
+    "VIZCAYA",
+    "ALICANTE",
+    "ASTURIAS",
+    "GIRONA",
+    "TARRAGONA",
+    "ZARAGOZA",
+    "MURCIA",
+    "GUIPUZCOA",
+    "MALAGA",
+    "LLEIDA",
+    "LEON",
+    "SEVILLA",
+    "LAS PALMAS",
+    "ALAVA",
+    "CASTELLON",
+    "A CORUÑA",
+    "ILLES BALEARS",
+    "BURGOS",
+    "BADAJOZ",
+    "STA.CRUZ DE TENERIFE",
+    "PONTEVEDRA",
+    "ZAMORA",
+    "TOLEDO",
+    "NAVARRA",
+    "VALLADOLID",
+    "HUESCA",
+    "LA RIOJA",
+    "CANTABRIA",
+    "GRANADA",
+    "CACERES",
+    "ALMERIA",
+    "CORDOBA",
+    "CADIZ",
+    "JAEN",
+    "ALBACETE",
+    "LUGO",
+    "GUADALAJARA",
+    "PALENCIA",
+    "HUELVA",
+    "SALAMANCA",
+    "OURENSE",
+    "SEGOVIA",
+    "TERUEL",
+    "SORIA",
+    "CIUDAD REAL",
+    "CUENCA",
+    "AVILA",
+    "CEUTA",
+    "MELILLA",
+]
+
 _MY_REGIONS = [
     # Malaysia's 13 states plus 3 federal territories, from hiredly (30 rows,
     # of which 29 read "Petaling Jaya, Selangor"). Before this, ref.regions had
@@ -383,6 +447,7 @@ _BY_COUNTRY: dict[str, list[str]] = {
     "GH": _GH_REGIONS,
     "ZA": _ZA_PROVINCES,
     "PT": _PT_REGIONS,
+    "ES": _ES_PROVINCES,
     "MY": _MY_REGIONS,
     "IE": _IE_COUNTIES,
     "EG": _EG_GOVERNORATES,

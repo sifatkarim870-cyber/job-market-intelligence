@@ -1304,6 +1304,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: rows predate the LK country row and carry a NULL country. The fallback
     #: gives future runs the country their own board implies.
     "ikman_lk": "LK",
+    #: empleate_es: Spain. This is Spain's own public employment service
+    #:   (SEPE) portal, and its location string already ends in an ISO-2
+    #:   country segment ("<city>; <province>; ES"), so rows resolve on their
+    #:   own. The fallback covers the handful of ads that publish a bare
+    #:   province with no country: without it those would drop to the shared
+    #:   global-remote location instead of Spain.
+    "empleate_es": "ES",
 }
 
 
