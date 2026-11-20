@@ -325,6 +325,13 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # silently a no-op, so this row is load-bearing. CDF must be seeded first
     # (currencies.py).
     ("CD", "COD", "Democratic Republic of the Congo", "Africa", "CDF"),
+    # Benin backs emploibenin_com, the AfricaWork portal at emploibenin.com.
+    # Benin had ZERO postings before this source. Its JSON-LD names
+    # addressCountry "Benin", which is already a ref.countries name, but BJ
+    # city rows and the SOURCE_HOME_COUNTRY fallback both need this row to
+    # resolve; a fallback aimed at a country the seed lacks is silently a
+    # no-op. XOF is already seeded (currencies.py).
+    ("BJ", "BEN", "Benin", "Africa", "XOF"),
 ]
 
 

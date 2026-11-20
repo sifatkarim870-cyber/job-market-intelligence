@@ -102,6 +102,9 @@ _CITIES: list[tuple[str, str, str | None, float | None, float | None, str | None
     ("Berlin", "DE", None, 52.5200, 13.4050, "Europe/Berlin"),
     ("Munich", "DE", None, 48.1351, 11.5820, "Europe/Berlin"),
     ("Paris", "FR", None, 48.8566, 2.3522, "Europe/Paris"),
+    # Poitiers backs emploibenin_com: the Benin board advertises on-site roles
+    # in France, and one measured ad names "Poitiers" as its locality.
+    ("Poitiers", "FR", None, 46.5802, 0.3404, "Europe/Paris"),
     ("Madrid", "ES", None, 40.4168, -3.7038, "Europe/Madrid"),
     ("Barcelona", "ES", None, 41.3851, 2.1734, "Europe/Madrid"),
     ("Lisbon", "PT", None, 38.7223, -9.1393, "Europe/Lisbon"),
@@ -462,6 +465,36 @@ _CITIES: list[tuple[str, str, str | None, float | None, float | None, str | None
     ("Luebo", "CD", None, -5.3500, 21.4167, "Africa/Lubumbashi"),
     ("Boende", "CD", None, -0.2833, 20.8667, "Africa/Kinshasa"),
     ("Buta", "CD", None, 2.8000, 24.7333, "Africa/Lubumbashi"),
+    # Benin, for emploibenin_com. The board names one city (Cotonou,
+    # Porto-Novo, Parakou) in addressLocality and puts a longer list of the
+    # cities an ad is open to in addressRegion -- that list is not stored, so
+    # the hubs that appear as localities are what matter. Regions are left
+    # NULL: the seed has no Benin region rows. All times Africa/Porto-Novo.
+    ("Cotonou", "BJ", None, 6.3654, 2.4183, "Africa/Porto-Novo"),
+    ("Porto-Novo", "BJ", None, 6.4969, 2.6289, "Africa/Porto-Novo"),
+    ("Parakou", "BJ", None, 9.3372, 2.6303, "Africa/Porto-Novo"),
+    ("Abomey-Calavi", "BJ", None, 6.4489, 2.3556, "Africa/Porto-Novo"),
+    ("Djougou", "BJ", None, 9.7085, 1.6660, "Africa/Porto-Novo"),
+    ("Bohicon", "BJ", None, 7.1783, 2.0667, "Africa/Porto-Novo"),
+    ("Natitingou", "BJ", None, 10.3042, 1.3796, "Africa/Porto-Novo"),
+    ("Kandi", "BJ", None, 11.1342, 2.9386, "Africa/Porto-Novo"),
+    ("Ouidah", "BJ", None, 6.3631, 2.0851, "Africa/Porto-Novo"),
+    ("Lokossa", "BJ", None, 6.6389, 1.7167, "Africa/Porto-Novo"),
+    ("Savalou", "BJ", None, 7.9281, 1.9756, "Africa/Porto-Novo"),
+    ("Abomey", "BJ", None, 7.1822, 1.9911, "Africa/Porto-Novo"),
+    ("Pobè", "BJ", None, 6.9800, 2.6647, "Africa/Porto-Novo"),
+    ("Aplahoué", "BJ", None, 6.9333, 1.6833, "Africa/Porto-Novo"),
+    ("Nikki", "BJ", None, 9.9400, 3.2100, "Africa/Porto-Novo"),
+    ("Malanville", "BJ", None, 11.8685, 3.3833, "Africa/Porto-Novo"),
+    ("Tchaourou", "BJ", None, 8.8869, 2.5972, "Africa/Porto-Novo"),
+    ("Banikoara", "BJ", None, 11.2985, 2.4386, "Africa/Porto-Novo"),
+    ("Kétou", "BJ", None, 7.3631, 2.5997, "Africa/Porto-Novo"),
+    ("Savè", "BJ", None, 8.0342, 2.4858, "Africa/Porto-Novo"),
+    ("Tanguiéta", "BJ", None, 10.6214, 1.2667, "Africa/Porto-Novo"),
+    ("Bassila", "BJ", None, 9.0081, 1.6656, "Africa/Porto-Novo"),
+    ("Allada", "BJ", None, 6.6653, 2.1511, "Africa/Porto-Novo"),
+    ("Sakété", "BJ", None, 6.7361, 2.6586, "Africa/Porto-Novo"),
+    ("Dogbo", "BJ", None, 6.8000, 1.7833, "Africa/Porto-Novo"),
 ]
 
 

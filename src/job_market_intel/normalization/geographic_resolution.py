@@ -959,6 +959,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: which matches no ref.countries row. Without this entry the fallback is
     #: a silent no-op and every posting lands with a NULL country.
     "emploi_cd": "CD",
+    #: emploibenin_com: Benin. Same AfricaWork platform as emploi_ci and
+    #: emploi_cd. The JSON-LD addressCountry is the plain label "Benin" here,
+    #: but a remote ad can carry an international city list in addressRegion
+    #: with no country at all, so this fallback is what keeps those rows on BJ.
+    "emploibenin_com": "BJ",
     "karriere_at": "AT",
     #: apna: India. All 30 postings measured carried addressCountry 'IN'
     #:   and applicantLocationRequirements name='India', so this is a fact about
