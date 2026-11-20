@@ -298,6 +298,33 @@ class TestCompany:
         assert job.company_name == "Unknown employer"
         assert job.raw["company_source"] == "none"
 
+    @pytest.mark.parametrize(
+        "body",
+        [
+            # Measured false captures: a place, a French "et" fragment, a bare
+            # generic noun, and a whole prose clause.
+            "A food service business in Port Louis is recruiting: Cooks wanted.",
+            "HUB IA Travel deploys to l'Ile Maurice et recherche son agent.",
+            "Le RM Club recrute des Agents de Nettoyage pour son equipe.",
+            "Branded Retail Store is actively recruiting its team to launch.",
+        ],
+    )
+    def test_places_and_prose_clauses_are_never_stored_as_an_employer(self, body):
+        html = f'<html><body><main><h1>Post</h1><p class="text-lg">{body}</p></main></body></html>'
+        job = parse_detail("x", html)
+        assert job.company_name == "Unknown employer"
+        assert job.raw["company_source"] == "none"
+
+    def test_a_real_name_survives_the_guards(self):
+        html = (
+            "<html><body><main><h1>Fleuriste</h1>"
+            '<p class="text-lg">Flowy Flowers recrute ! Rejoignez notre equipe.</p>'
+            "</main></body></html>"
+        )
+        job = parse_detail("x", html)
+        assert job.company_name == "Flowy Flowers"
+        assert job.raw["company_source"] == "body"
+
 
 class TestRemote:
     def test_a_french_remote_phrase_is_recorded(self):

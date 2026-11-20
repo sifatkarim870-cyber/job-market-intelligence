@@ -164,7 +164,133 @@ _STOP_FIRST = {
     "poste",
     "candidat",
     "candidats",
+    # Generic nouns that are not, on their own, an employer name. Measured on
+    # the live board: the body heuristic captured the bare word "Club" out of
+    # "Le RM Club recrute ...".
+    "club",
+    "store",
+    "shop",
+    "agency",
+    "team",
+    "staff",
+    "business",
+    "hotel",
+    "office",
+    "firm",
+    "center",
+    "centre",
+    "institute",
 }
+
+#: A candidate holding any of these words *anywhere* is prose, not a name.
+#: This is narrower than :data:`_STOP_FIRST` on purpose: it never contains a
+#: word that can legitimately be part of a company name (so "Accounting &
+#: Consulting Group Ltd" survives while "Branded Retail Store is actively" --
+#: captured whole by the "recruiting" pattern -- does not).
+_PROSE_TOKENS = {
+    "is",
+    "are",
+    "was",
+    "were",
+    "am",
+    "be",
+    "been",
+    "being",
+    "we",
+    "you",
+    "i",
+    "they",
+    "he",
+    "she",
+    "it",
+    "our",
+    "your",
+    "my",
+    "their",
+    "his",
+    "her",
+    "its",
+    "the",
+    "this",
+    "that",
+    "these",
+    "those",
+    "if",
+    "and",
+    "but",
+    "or",
+    "so",
+    "as",
+    "at",
+    "by",
+    "for",
+    "from",
+    "in",
+    "of",
+    "on",
+    "to",
+    "with",
+    "et",
+    "de",
+    "du",
+    "des",
+    "la",
+    "le",
+    "les",
+    "un",
+    "une",
+    "a",
+    "au",
+    "aux",
+    "ce",
+    "cette",
+    "ces",
+    "il",
+    "elle",
+    "nous",
+    "vous",
+    "ils",
+    "elles",
+    "looking",
+    "recruiting",
+    "seeking",
+    "hiring",
+    "currently",
+    "expanding",
+    "urgently",
+    "now",
+    "please",
+    "recrute",
+    "recherche",
+    "recrutons",
+    "cherche",
+    "cherchons",
+}
+
+#: If the token immediately before the captured name is one of these, the name
+#: is almost certainly a place, not an employer -- measured on
+#: "A food service business in Port Louis is recruiting", which captured
+#: "Port Louis".
+_PREPOSITIONS = {
+    "in",
+    "at",
+    "from",
+    "of",
+    "on",
+    "to",
+    "de",
+    "du",
+    "des",
+    "a",
+    "au",
+    "aux",
+    "dans",
+    "sur",
+    "pour",
+    "par",
+    "chez",
+}
+
 _PHONE = re.compile(r"\+?\d[\d\s\-]{5,}")
 
 
@@ -284,17 +410,51 @@ def _extract_maps_query(soup: BeautifulSoup) -> str | None:
     return None
 
 
+def _is_plausible_employer(candidate: str) -> bool:
+    """Reject prose and place fragments the body patterns would otherwise keep.
+
+    Three guards, all measured against the live board rather than guessed:
+
+    * the first word must not be a pronoun/determiner/generic noun
+      (:data:`_STOP_FIRST`);
+    * no word anywhere may be a function word or recruiting verb
+      (:data:`_PROSE_TOKENS`) -- this is what rejects "Maurice et" and
+      "Branded Retail Store is actively";
+    * a name whose preceding word is a preposition (:data:`_PREPOSITIONS`) is a
+      place, not an employer ("Port Louis" out of "... business in Port Louis
+      is recruiting").
+
+    A rejected candidate keeps "Unknown employer" rather than storing a wrong
+    name, matching the project's rule that no value beats a wrong guess.
+    """
+    candidate = candidate.strip()
+    if len(candidate) < 3:
+        return False
+    tokens = [t.lower().strip("&.,'-") for t in candidate.split() if t.strip("&.,'-")]
+    if not tokens:
+        return False
+    if tokens[0] in _STOP_FIRST:
+        return False
+    return all(token not in _PROSE_TOKENS for token in tokens)
+
+
 def _guess_company(body: str, maps_query: str | None) -> tuple[str, str]:
     """Return ``(company_name, source)``; source is maps/body/none."""
     if maps_query:
         return maps_query, "maps"
+    text = body or ""
     for pattern in (_COMPANY_BODY, _COMPANY_RECRUIT):
-        match = pattern.search(body or "")
-        if match:
+        for match in pattern.finditer(text):
             candidate = re.sub(r"\s+", " ", match.group(1)).strip(" .-")
-            first = candidate.split(" ", 1)[0].lower()
-            if len(candidate) >= 3 and first not in _STOP_FIRST:
-                return candidate, "body"
+            if not _is_plausible_employer(candidate):
+                continue
+            prefix = text[: match.start()].rstrip()
+            previous = ""
+            if prefix:
+                previous = re.split(r"\s+", prefix)[-1].lower().strip(".,;:()'\"")
+            if previous in _PREPOSITIONS:
+                continue
+            return candidate, "body"
     return "Unknown employer", "none"
 
 
