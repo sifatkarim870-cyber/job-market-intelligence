@@ -245,12 +245,32 @@ class BrowserScraperClient:
             return base
         return base + pagination.format(page=page)
 
+    def _navigate(self, url: str) -> None:
+        """Load ``url`` in the current tab.
+
+        A site behind a Cloudflare managed challenge can be given an opt-in
+        reconnect window (``uc_reconnect_seconds``): SeleniumBase's
+        ``uc_open_with_reconnect`` detaches from the tab, waits, and reattaches
+        after the challenge has had time to solve -- the live CDP session during
+        page load is itself a detection signal. Zero (the default) keeps the
+        plain ``driver.get`` navigation every existing source relies on.
+        """
+        seconds = self._site_config.uc_reconnect_seconds
+        if (
+            self._site_config.uc_mode
+            and seconds > 0
+            and hasattr(self._driver, "uc_open_with_reconnect")
+        ):
+            self._driver.uc_open_with_reconnect(url, seconds)
+        else:
+            self._driver.get(url)
+
     def _render(self, url: str, ready_selector: str, wait_seconds: int) -> str:
         """Navigate, wait for the page to render, return its HTML."""
         if self._driver is None:
             raise BrowserFetchError("render called before the session was opened")
         try:
-            self._driver.get(url)
+            self._navigate(url)
         except Exception as exc:  # noqa: BLE001 - any driver failure is a fetch
             # failure from the pipeline's point of view.
             raise BrowserFetchError(f"failed to load {url}: {exc}") from exc
@@ -441,7 +461,7 @@ class BrowserScraperClient:
         if self._driver is None:
             raise BrowserFetchError("render called before the session was opened")
         try:
-            self._driver.get(url)
+            self._navigate(url)
         except Exception as exc:  # noqa: BLE001
             raise BrowserFetchError(f"failed to load detail page {url}: {exc}") from exc
         html = self._wait_for_detail()
@@ -558,9 +578,7 @@ class BrowserScraperClient:
                         job_id = match.group(1)
                 records.append(
                     {
-                        "job_id": job_id
-                        if self._site_config.id_from_url
-                        else job["url"],
+                        "job_id": job_id if self._site_config.id_from_url else job["url"],
                         "html": html,
                         "url": job["url"],
                         "title_hint": job.get("title", ""),

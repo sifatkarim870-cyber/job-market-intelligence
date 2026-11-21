@@ -65,6 +65,15 @@ class BrowserSiteConfig(SiteConfig):
     #: exists for.
     uc_mode: bool = Field(default=True)
     headless: bool = Field(default=True)
+    #: SeleniumBase's ``uc_open_with_reconnect`` wait, in seconds. Zero (the
+    #: default) keeps the plain ``driver.get`` navigation every existing source
+    #: relies on. A site whose Cloudflare managed challenge is not cleared by an
+    #: ordinary undetected-Chrome load -- the live CDP session during page load
+    #: is itself a detection signal -- can be given a small reconnect window
+    #: here: the driver detaches from the tab, waits, and reattaches once the
+    #: challenge has had time to solve. Measured on Jobat.be/JobbSafari, whose
+    #: challenge the plain load did not clear from a CI runner's IP.
+    uc_reconnect_seconds: float = Field(default=0.0, ge=0.0, le=30.0)
     #: Extra Chrome flags, space separated.
     chrome_args: str = Field(default="")
     #: Page text that means "we were served a challenge, not the site".
