@@ -1407,6 +1407,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   ``placement``, which resolves on its own and never reaches the
     #:   fallback.)
     "blmis_bt": "BT",
+    #: bongthom_com: Cambodia. BongThom is one of Cambodia's largest job
+    #:   boards; its postings name a province ("Phnom Penh", "Siemreap
+    #:   Province"), a home-working label or, rarely, a neighbour ("Laos"),
+    #:   never a country, and no Cambodian city is seeded, so this fallback
+    #:   is what gives every local row its country instead of collapsing
+    #:   onto the shared global-remote location.
+    "bongthom_com": "KH",
 }
 
 

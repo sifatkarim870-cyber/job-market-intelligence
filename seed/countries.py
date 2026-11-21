@@ -402,6 +402,15 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # shared global-remote location instead of Bhutan. BTN is seeded in
     # currencies.py alongside this change.
     ("BT", "BTN", "Bhutan", "Asia", "BTN"),
+    # Added for bongthom_com (BongThom). BongThom is a Cambodian job board
+    # whose postings name a province ("Phnom Penh", "Siemreap Province"), a
+    # home-working label or, rarely, a neighbour ("Laos"), never a country,
+    # so the SOURCE_HOME_COUNTRY fallback is load-bearing and would be a
+    # silent no-op without this row. Cambodia's default currency is USD (a
+    # dollarised economy) and every BongThom salary figure is a "$" amount;
+    # USD is already seeded (currencies.py). This row also lets the earlier
+    # camhr_com source (whose postings were country-less) resolve.
+    ("KH", "KHM", "Cambodia", "Asia", "USD"),
 ]
 
 

@@ -24,6 +24,7 @@ from .anpe_bf_validator import AnpeBfBatchValidator, AnpeBfValidationSettings
 from .anpe_mali_validator import AnpeMaliBatchValidator, AnpeMaliValidationSettings
 from .bdjobs_com_validator import BdjobsBatchValidator, BdjobsValidationSettings
 from .blmis_bt_validator import BlmisBatchValidator, BlmisValidationSettings
+from .bongthom_com_validator import BongthomBatchValidator, BongthomValidationSettings
 from .common import BatchValidationReport, validate_batch
 from .emploitic_validator import EmploiticBatchValidator, EmploiticValidationSettings
 from .glints_validator import GlintsBatchValidator, GlintsValidationSettings
@@ -85,4 +86,6 @@ __all__ = [
     "BdjobsValidationSettings",
     "BlmisBatchValidator",
     "BlmisValidationSettings",
+    "BongthomBatchValidator",
+    "BongthomValidationSettings",
 ]
