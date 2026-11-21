@@ -121,6 +121,15 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "THB": 0.0274,  # 1 THB = 0.0274 USD (1 USD ~ 36.5 THB)
     "CAD": 0.735,  # 1 CAD = 0.735 USD (1 USD ~ 1.36 CAD)
     "BDT": 0.0082,  # 1 BDT = 0.0082 USD (1 USD ~ 122 BDT)
+    # Added with blmis_bt (Bhutan). BTN is pegged 1:1 to the Indian rupee, and
+    # the rupee is pegged to the Nepalese rupee at 1 INR = 1.6 NPR; applying
+    # that cross-rate to this table's own NPR entry (1 USD ~ 134 NPR) gives
+    # 1 USD ~ 83.75 INR/BTN, so 1 BTN = 0.011940 USD. An internally
+    # consistent derivation, not a separately quoted rate.
+    "BTN": 0.011940,  # 1 BTN = 0.011940 USD (1 USD ~ 83.75 BTN)
+    # Added with blmis_bt: the two overseas BLMIS postings quote QAR. Qatar's
+    # riyal has been pegged at 3.64 QAR per USD since 2001.
+    "QAR": 0.2747252747,  # 1 QAR = 0.2747252747 USD (1 USD = 3.64 QAR)
     "KRW": 0.00072,  # 1 KRW = 0.00072 USD (1 USD ~ 1,390 KRW)
     "UYU": 0.023,  # 1 UYU = 0.023 USD (1 USD ~ 43.5 UYU)
     "MMK": 0.00048,  # 1 MMK = 0.00048 USD (1 USD ~ 2,100 MMK)

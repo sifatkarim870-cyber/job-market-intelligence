@@ -1397,6 +1397,16 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   what gives a row whose address matches no seeded city a country
     #:   instead of collapsing onto the shared global-remote location.
     "bdjobs_com": "BD",
+    #: blmis_bt: Bhutan. The recorded workbook domain for this state jobs
+    #:   portal ("jobs.molhr") is NXDOMAIN; the portal is now BLMIS at
+    #:   www.blmis.gov.bt. Its vacancies name a Bhutanese dzongkhag
+    #:   ("Thimphu", "Chukha") and no country, and the curated seed holds no
+    #:   Bhutanese city, so this fallback is what gives every local row its
+    #:   country instead of collapsing onto the shared global-remote
+    #:   location. (The handful of overseas postings name a destination in
+    #:   ``placement``, which resolves on its own and never reaches the
+    #:   fallback.)
+    "blmis_bt": "BT",
 }
 
 

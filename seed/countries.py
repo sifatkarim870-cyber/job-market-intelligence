@@ -394,6 +394,14 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # land with a NULL country on the shared global-remote location. CHF is
     # already seeded (currencies.py, Switzerland).
     ("LI", "LIE", "Liechtenstein", "Europe", "CHF"),
+    # Added for blmis_bt (Bhutan). The recorded workbook domain for this state
+    # jobs portal ("jobs.molhr") is NXDOMAIN; the portal is now BLMIS at
+    # www.blmis.gov.bt, whose vacancies name a Bhutanese dzongkhag ("Thimphu",
+    # "Chukha") and never a country. Bhutan had no ref.countries row, so
+    # without this row every posting would land with a NULL country on the
+    # shared global-remote location instead of Bhutan. BTN is seeded in
+    # currencies.py alongside this change.
+    ("BT", "BTN", "Bhutan", "Asia", "BTN"),
 ]
 
 

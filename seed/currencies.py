@@ -66,6 +66,11 @@ CURRENCIES: list[dict] = [
     {"iso_code": "KRW", "currency_name": "South Korean Won", "symbol": "₩"},
     {"iso_code": "PKR", "currency_name": "Pakistani Rupee", "symbol": "₨"},
     {"iso_code": "BDT", "currency_name": "Bangladeshi Taka", "symbol": "৳"},
+    # Added for blmis_bt (Bhutan): BLMIS is Bhutan's state labour-market job
+    # portal and every posting quotes a numeric monthly starting salary in
+    # ngultrum. CleanedJob requires the home-market currency on every row, and
+    # Bhutan (BT) had no ref.currencies row at all.
+    {"iso_code": "BTN", "currency_name": "Bhutanese Ngultrum", "symbol": "Nu."},
     {"iso_code": "UAH", "currency_name": "Ukrainian Hryvnia", "symbol": "₴"},
     # Added for Emploitic (Algeria): listings carry no salary field, but
     # the cleaner asserts DZD as the home-market currency for CleanedJob's
