@@ -359,6 +359,14 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # silent no-op and every posting lands with a NULL country. CUP must be
     # seeded first (currencies.py).
     ("CU", "CUB", "Cuba", "North America", "CUP"),
+    # Mongolia backs zangia_mn, the country's long-running job board
+    # (zangia.mn). Mongolia had ZERO coverage before this source, and the
+    # board publishes only a district label (e.g. "Баянзүрх дүүрэг") in
+    # Cyrillic, which no seeded city or country name matches, so the
+    # SOURCE_HOME_COUNTRY fallback is load-bearing -- without this row every
+    # posting lands with a NULL country. A fallback aimed at a country the
+    # seed lacks is silently a no-op. MNT must be seeded first (currencies.py).
+    ("MN", "MNG", "Mongolia", "Asia", "MNT"),
 ]
 
 

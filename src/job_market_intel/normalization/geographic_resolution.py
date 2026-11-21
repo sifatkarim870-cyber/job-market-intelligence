@@ -1367,6 +1367,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   classifieds board; ads name a local place ("Moka", "Roches Noires")
     #:   and never a country, so this fallback is what gives its rows a country.
     "lexpress_mu": "MU",
+    #: zangia_mn: Mongolia. zangia.mn is Mongolia's long-running job board and
+    #:   Mongolia had ZERO coverage before this source; the board names only a
+    #:   district ("Баянзүрх дүүрэг") in Cyrillic, which matches no seeded city
+    #:   or country, so this fallback is what gives its rows a country.
+    "zangia_mn": "MN",
 }
 
 

@@ -175,6 +175,12 @@ CURRENCIES: list[dict] = [
     # carry none, and many of the rest carry a placeholder "1"), so no row is
     # treated as a disclosed salary and no conversion is ever attempted.
     {"iso_code": "CUP", "currency_name": "Cuban Peso", "symbol": "$MN"},
+    # Added for zangia_mn (Mongolia): zangia.mn is Mongolia's long-running
+    # job board and Mongolia had no ref.currencies row at all. CleanedJob
+    # needs the home-market currency for every row, and the board quotes a
+    # monthly wage in tugrik, so a MNT rate is added to
+    # salary_standardization.py (1 USD ~ 3,400 MNT).
+    {"iso_code": "MNT", "currency_name": "Mongolian Tugrik", "symbol": "MNT"},
 ]
 
 
