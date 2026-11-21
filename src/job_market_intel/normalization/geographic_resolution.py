@@ -1414,6 +1414,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   is what gives every local row its country instead of collapsing
     #:   onto the shared global-remote location.
     "bongthom_com": "KH",
+    #: cvonline_hu: Hungary. CVOnline.hu publishes each posting's place as
+    #: JSON-LD ``jobLocation.address`` with ``addressCountry: "HU"`` and a
+    #: Hungarian locality ("Budapest", "Szombathely"), and its few overseas ads
+    #: name a destination that resolves on its own, so the country is normally
+    #: explicit; this fallback covers a locality the curated seed does not hold.
+    "cvonline_hu": "HU",
 }
 
 

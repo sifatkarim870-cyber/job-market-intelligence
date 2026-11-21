@@ -1,0 +1,59 @@
+{
+  "source_code": "cvonline_hu",
+  "source_name": "CVOnline.hu (Hungary)",
+  "country": "Hungary",
+  "base_url": "https://www.cvonline.hu",
+  "listing_path": "/hu/allashirdetesek",
+  "listing_pagination": "?page={page}",
+  "max_pages": 8,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "listing_ready_selector": "a[href*='/allas/']",
+  "listing_wait_seconds": 20,
+  "detail_ready_selector": "div.node-job",
+  "detail_wait_seconds": 20,
+  "detail_settle_seconds": 3.0,
+  "scroll_count": 2,
+  "scroll_pause_seconds": 1.5,
+  "uc_mode": true,
+  "headless": true,
+  "challenge_markers": "bot check, verification required",
+  "max_detail_pages": 60,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='/allas/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "/(?:[a-z]+/)?allas/[^/]+-[0-9]+$",
+  "id_from_url": true,
+  "id_url_regex": "-([0-9]+)$",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation[].address.addressLocality",
+      "jobLocation[].address.addressCountry"
+    ],
+    "description": "description",
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "detail_json_salary": {
+    "currency": "baseSalary.currency",
+    "min": "baseSalary.value.minValue",
+    "max": "baseSalary.value.maxValue",
+    "unit": "baseSalary.value.unitText"
+  },
+  "inter_request_delay_seconds": 10.0,
+  "currency_iso_code": "HUF",
+  "pay_period": "monthly",
+  "country_fallback": "Hungary"
+}
