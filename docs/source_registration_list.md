@@ -1080,7 +1080,7 @@ before it was written off. The reason is measured, not assumed:
 
   LIVE and enabled in scheduled CI matrix.
 
-- **`cvonline_hu`** (Hungary, cvonline.hu) - 2026-11-21. CVOnline.hu is one of Hungary's main generalist job boards, built on Joomla. It is the first Hungarian source built (the country's only workbook row, profession.hu, is still BACKLOG). No key, no registration, no login, no cookie, no proxy; because the board serves a JavaScript 'Bot Check' interstitial to non-browsers, it is a BROWSER source (Selenium via seleniumbase undetected Chrome, `scripts/run_browser_scraper.py`). TLS verification stays ON (no `verify=False`).
+- **`cvonline_hu`** (Hungary, cvonline.hu) - 2026-11-22. CVOnline.hu is one of Hungary's main generalist job boards, built on Joomla. It is the first Hungarian source built (the country's only workbook row, profession.hu, is still BACKLOG). No key, no registration, no login, no cookie, no proxy; because the board serves a JavaScript 'Bot Check' interstitial to non-browsers, it is a BROWSER source (Selenium via seleniumbase undetected Chrome, `scripts/run_browser_scraper.py`). TLS verification stays ON (no `verify=False`).
 
   `robots.txt` on https://www.cvonline.hu/robots.txt (HTTP 200) is a generic `User-agent: *` group with `Crawl-delay: 10` (honoured through `inter_request_delay_seconds = 10.0`) and a list of Disallows that cover only Joomla infrastructure paths ('/includes/', '/misc/', '/modules/', '/profiles/', '/scripts/', '/themes/', '/admin/', '/comment/reply/', '/filter/tips/', '/node/add/', '/search/', ...). The search directory and the ad paths are not Disallowed, so the crawl-delay is the only constraint and the scraper honours it between requests.
 
