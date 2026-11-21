@@ -983,6 +983,14 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: can carry an international locality ("France") with the home country left
     #: on addressCountry, so this fallback is what keeps a country-less row on BF.
     "emploiburkina_com": "BF",
+    #: ghanajob_com: Ghana. The AfricaWork platform, same site family as
+    #: emploiburkina_com/emploi_ci/emploibenin_com. Its JSON-LD addressCountry is
+    #: the clean label "Ghana", but a remote ad can leave the home country on
+    #: addressCountry while carrying an international locality, so this fallback
+    #: is what keeps a country-less row on GH. Built as a BROWSER source because
+    #: the host sits behind a Cloudflare "Just a moment" challenge that plain
+    #: requests cannot clear.
+    "ghanajob_com": "GH",
     #: rwandajob_com: Rwanda. Same AfricaWork platform as emploi_ci/emploi_cd/
     #: emploibenin_com/emploi_cm. The JSON-LD addressCountry is the clean label
     #: "Rwanda" here, but a remote ad can carry a province list in addressRegion

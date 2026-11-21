@@ -2380,6 +2380,15 @@
       "max_env": "EMPLOIBURKINA_COM_MAX_JOBS_PER_RUN",
       "enabled": true,
       "notes": "Emploi Burkina (www.emploiburkina.com) - Burkina Faso; the AfricaWork portal for Burkina Faso and the live successor of the recorded (now NXDOMAIN) emploi.bf host. Server-rendered Drupal search directory /recherche-jobs-burkina-faso (paged ?page={page}) whose ad pages publish a schema.org JobPosting JSON-LD block, read through the generic HTML framework (scripts/run_html_scraper.py) with detail_json_ld + detail_json_map. No key, no registration, no login, no cookie, no proxy, no browser; TLS verification stays ON. robots.txt (HTTP 200) permits the /recherche-jobs and /offre-emploi paths and carries Crawl-delay: 10, honoured through inter_request_delay_seconds = 10.0. Ad URLs are /offre-emploi-burkina-faso/<slug>-<numeric id>; title, datePosted, hiringOrganization.name, jobLocation.address.{addressLocality,addressRegion,addressCountry} and employmentType come from the JSON-LD. baseSalary is absent on every sampled ad, so pay reads undisclosed (XOF, monthly). SOURCE_HOME_COUNTRY=emploiburkina_com -> BF; Burkina Faso (BF, country_id 7123) and XOF (currency_id 506) were already seeded."
+    },
+    {
+      "code": "ghanajob_com",
+      "group": "browser",
+      "script": "scripts/run_browser_scraper.py",
+      "timeout": 60,
+      "max_env": "GHANAJOB_COM_MAX_JOBS_PER_RUN",
+      "enabled": true,
+      "notes": "GhanaJob (www.ghanajob.com) - Ghana; the AfricaWork portal for Ghana and a board distinct from the already-built bespoke jobwebghana. The host sits behind a Cloudflare managed challenge (plain requests get HTTP 403 'Just a moment...'), so this is a BROWSER source on the generic browser framework (scripts/run_browser_scraper.py, SeleniumBase undetected Chrome); TLS verification stays ON (no verify=False). The challenge clears in about 6 s on the first navigation and the session cookie then carries every later request, so listing discovery and the detail reads are ordinary renders. robots.txt (HTTP 200, Cloudflare-managed) is a generic User-agent: * group with Allow: / (Content-Signal search=yes,ai-train=no,use=reference); only Amazonbot is Disallowed, so the search directory and the ad paths are allowed. Discovery is the server-rendered Drupal search directory /job-vacancies-search-ghana/ (paged ?page={page}, 25 ads per page); ad URLs are /job-vacancies-ghana/<slug>-<numeric id> and each publishes a schema.org JobPosting JSON-LD block (title, datePosted, validThrough, hiringOrganization.name, employmentType, jobLocation.address.{addressLocality,addressRegion,addressCountry}, HTML description) with the same unescaped-newline defect as the other AfricaWork boards, repaired by the shared JSON-LD reader. detail_json_ld + detail_json_map are used; the rendered listing keeps Cloudflare's passive challenge-platform script, declared inert through ignore_challenge_markers. baseSalary is absent on every sampled ad, so pay reads undisclosed (GHS, monthly). SOURCE_HOME_COUNTRY=ghanajob_com -> GH; Ghana (GH, country_id 49) is seeded and GHS is ref.currencies currency_id 501."
     }
   ]
 }

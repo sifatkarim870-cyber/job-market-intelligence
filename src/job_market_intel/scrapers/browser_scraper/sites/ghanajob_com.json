@@ -1,0 +1,56 @@
+{
+  "source_code": "ghanajob_com",
+  "source_name": "GhanaJob (ghanajob.com)",
+  "country": "Ghana",
+  "base_url": "https://www.ghanajob.com",
+  "listing_path": "/job-vacancies-search-ghana/",
+  "listing_pagination": "?page={page}",
+  "max_pages": 8,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "listing_ready_selector": "a[href*='/job-vacancies-ghana/']",
+  "listing_wait_seconds": 25,
+  "detail_ready_selector": "h1",
+  "detail_wait_seconds": 25,
+  "detail_settle_seconds": 2.0,
+  "scroll_count": 0,
+  "scroll_pause_seconds": 1.5,
+  "uc_mode": true,
+  "headless": true,
+  "ignore_challenge_markers": "challenge-platform",
+  "max_detail_pages": 60,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='/job-vacancies-ghana/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": "job-vacancies-ghana/[^/]+$",
+  "id_from_url": true,
+  "id_url_regex": "-([0-9]+)$",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "inter_request_delay_seconds": 3.0,
+  "currency_iso_code": "GHS",
+  "pay_period": "monthly",
+  "country_fallback": "Ghana"
+}
