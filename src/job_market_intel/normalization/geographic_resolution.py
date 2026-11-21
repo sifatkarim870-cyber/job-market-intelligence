@@ -1372,6 +1372,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   district ("Баянзүрх дүүрэг") in Cyrillic, which matches no seeded city
     #:   or country, so this fallback is what gives its rows a country.
     "zangia_mn": "MN",
+    #: anpe_bf: Burkina Faso. www.anpe.gov.bf is the national employment
+    #:   agency's WordPress site and Burkina Faso had ZERO coverage before
+    #:   this source; its notices name only a commune/mairie/province in
+    #:   French prose, which matches no seeded city or country name, so this
+    #:   fallback is what gives its rows a country.
+    "anpe_bf": "BF",
 }
 
 

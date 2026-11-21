@@ -367,6 +367,15 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # posting lands with a NULL country. A fallback aimed at a country the
     # seed lacks is silently a no-op. MNT must be seeded first (currencies.py).
     ("MN", "MNG", "Mongolia", "Asia", "MNT"),
+    # Burkina Faso backs anpe_bf, the national employment agency's site at
+    # www.anpe.gov.bf (WordPress, category "offres-demplois"). Burkina Faso
+    # had ZERO coverage before this source, and its notices name only a
+    # commune/mairie/province in prose -- no seeded city or country string
+    # matches -- so the SOURCE_HOME_COUNTRY fallback is load-bearing: without
+    # this row every posting lands with a NULL country. A fallback aimed at a
+    # country the seed lacks is silently a no-op. XOF is already seeded
+    # (currencies.py).
+    ("BF", "BFA", "Burkina Faso", "Africa", "XOF"),
 ]
 
 

@@ -20,6 +20,7 @@ its own settings, its own missing-field checks, calling the shared
 example (Step 18).
 """
 
+from .anpe_bf_validator import AnpeBfBatchValidator, AnpeBfValidationSettings
 from .common import BatchValidationReport, validate_batch
 from .emploitic_validator import EmploiticBatchValidator, EmploiticValidationSettings
 from .glints_validator import GlintsBatchValidator, GlintsValidationSettings
@@ -73,4 +74,6 @@ __all__ = [
     "WWRValidationSettings",
     "ZangiaBatchValidator",
     "ZangiaValidationSettings",
+    "AnpeBfBatchValidator",
+    "AnpeBfValidationSettings",
 ]
