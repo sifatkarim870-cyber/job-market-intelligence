@@ -991,6 +991,18 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: the host sits behind a Cloudflare "Just a moment" challenge that plain
     #: requests cannot clear.
     "ghanajob_com": "GH",
+    #: jobat_be: Belgium. Jobat's detail page carries schema.org microdata (not
+    #: a JSON-LD block); its jobLocation.addressLocality is a Belgian city
+    #: ("Eeklo"), but a remote ad can leave that label international, so this
+    #: fallback keeps a country-less row on BE. Built as a BROWSER source
+    #: because the listing renders its vacancy cards client-side.
+    "jobat_be": "BE",
+    #: jobbsafari_se: Sweden. JobbSafari's JobPosting JSON-LD prints a Swedish
+    #: county under jobLocation.address.addressLocality ("Stockholms lan") and
+    #: no addressCountry at all, so this fallback is what puts a row on SE. Built
+    #: as a BROWSER source because the host sits behind a Cloudflare "Just a
+    #: moment" challenge that plain requests cannot clear.
+    "jobbsafari_se": "SE",
     #: rwandajob_com: Rwanda. Same AfricaWork platform as emploi_ci/emploi_cd/
     #: emploibenin_com/emploi_cm. The JSON-LD addressCountry is the clean label
     #: "Rwanda" here, but a remote ad can carry a province list in addressRegion
