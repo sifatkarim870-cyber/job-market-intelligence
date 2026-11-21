@@ -1113,3 +1113,21 @@ before it was written off. The reason is measured, not assumed:
   GitHub Actions CI run 44944252512: 52 fetched, 52 parsed, 52 inserted, 0 failed, PASSED; 52 rows exported to Hugging Face (shards/source=emploiburkina_com/dt=2026-11-21/part-20261121T201625Z.parquet, 84.2 KiB).
 
   LIVE and enabled in scheduled CI matrix.
+
+- **`ghanajob_com`** (Ghana, ghanajob.com) - 2026-11-22. GhanaJob is the AfricaWork portal for Ghana and a board distinct from the bespoke jobwebghana source. No key, no registration, no login, no cookie, no proxy; because the host sits behind a Cloudflare managed challenge that plain requests cannot clear, it is a BROWSER source (Selenium via seleniumbase undetected Chrome, `scripts/run_browser_scraper.py`). TLS verification stays ON (no verify=False).
+
+  `robots.txt` on https://www.ghanajob.com/robots.txt (HTTP 200) is a Cloudflare-managed generic `User-agent: *` group with `Allow: /` and a Content-Signal line (`search=yes,ai-train=no,use=reference`); only `Amazonbot` is Disallowed, so the search directory and the ad paths are allowed. There is no Crawl-delay, and the scraper keeps a polite `inter_request_delay_seconds = 3.0`.
+
+  The challenge clears in about 6 seconds on the first navigation and the session cookie then carries every later request, so listing discovery and the detail reads are ordinary renders. Discovery is the server-rendered Drupal search directory `GET https://www.ghanajob.com/job-vacancies-search-ghana/`, paged `?page={page}` (page 1 takes no query string); it held 25 ad links per page and the config walks up to 8 pages. `job_link` is `a[href*='/job-vacancies-ghana/']`; the ad id is the trailing run of digits (`id_url_regex` `-([0-9]+)$`) and `detail_url_pattern` is `job-vacancies-ghana/[^/]+$`.
+
+  Field map: each ad at `/job-vacancies-ghana/<slug>-<numeric id>` publishes a schema.org `JobPosting` block in `application/ld+json` (title, `datePosted`, `validThrough`, `hiringOrganization.name`, `employmentType`, `jobLocation.address.addressLocality`/`.addressRegion`/`.addressCountry`, and an HTML `description`), read through `detail_json_ld` plus `detail_json_map`. The block carries the same unescaped-newline defect as the other AfricaWork boards, repaired by the shared JSON-LD reader. The rendered listing keeps Cloudflare's passive `challenge-platform` script, declared inert through `ignore_challenge_markers`.
+
+  TRAPS: (1) the rendered listing HTML contains Cloudflare's `challenge-platform` marker on a fully rendered page, so it must be ignored or every listing would be rejected as a bot challenge; (2) `baseSalary` was absent on every sampled ad, so `salary_disclosed` is false and GHS/monthly states the home market, not an amount; (3) the ad body is an HTML `description` that the shared reader repairs from the JSON-LD's raw newlines.
+
+  Ghana (GH, country_id 49) was already seeded and GHS is `ref.currencies` currency_id 501; the board resolves its country from the ad's clean `addressCountry` label with `SOURCE_HOME_COUNTRY["ghanajob_com"] = "GH"` as the fallback for a country-less row.
+
+  Verified locally: 6 fetched, 6 parsed, 6 cleaned, 0 failed, batch validation PASSED.
+
+  GitHub Actions CI run 44950153873: 60 fetched, 0 fetch failures, 59 parsed, 59 cleaned, 59 inserted, 0 failed, batch validation PASSED (1.7% skip rate); 59 rows exported to Hugging Face (shards/source=ghanajob_com/dt=2026-11-21/part-20261121T212034Z.parquet, 83.7 KiB).
+
+  LIVE and enabled in scheduled CI matrix.
