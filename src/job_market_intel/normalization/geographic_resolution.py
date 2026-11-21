@@ -1391,6 +1391,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   no ref.countries row and no seeded city matches, so this fallback is
     #:   what gives its rows a country instead of the global-remote location.
     "llv_li": "LI",
+    #: bdjobs_com: Bangladesh. bdjobs.com is Bangladesh's largest job board;
+    #:   its postings name a free-text place ("Dhaka", "Chattogram", a bare
+    #:   "Bangladesh") and the board is country-specific, so this fallback is
+    #:   what gives a row whose address matches no seeded city a country
+    #:   instead of collapsing onto the shared global-remote location.
+    "bdjobs_com": "BD",
 }
 
 
