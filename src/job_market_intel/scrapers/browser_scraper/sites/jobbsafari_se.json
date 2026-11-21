@@ -17,6 +17,7 @@
   "scroll_pause_seconds": 1.5,
   "uc_mode": true,
   "headless": true,
+  "ignore_challenge_markers": "challenge-platform",
   "max_detail_pages": 60,
   "selectors": {
     "job_card": "",
