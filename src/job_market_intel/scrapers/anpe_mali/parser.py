@@ -1,0 +1,43 @@
+"""Validates raw ANPE Mali listings into typed ``RawAnpeMaliJob`` objects."""
+
+from __future__ import annotations
+
+from loguru import logger
+
+from .models import RawAnpeMaliJob
+
+
+class AnpeMaliParser:
+    """Turns raw WP Job Manager listing dictionaries into validated models."""
+
+    def parse_jobs(self, raw_jobs: list[dict]) -> list[RawAnpeMaliJob]:
+        """Validate every raw listing, skipping malformed ones.
+
+        Args:
+            raw_jobs: Raw listing objects from ``AnpeMaliClient.fetch_raw_jobs()``.
+
+        Returns:
+            The validated models that parsed, in input order.
+        """
+        parsed_jobs: list[RawAnpeMaliJob] = []
+
+        for index, raw_job in enumerate(raw_jobs):
+            try:
+                validated_job = RawAnpeMaliJob.from_payload(raw_job)
+            except Exception as exc:  # noqa: BLE001 - per-record skip by design
+                identifier = raw_job.get("id") if isinstance(raw_job, dict) else f"<index {index}>"
+                logger.warning(
+                    "Skipping malformed ANPE Mali record {}: {}",
+                    identifier,
+                    exc,
+                )
+                continue
+            parsed_jobs.append(validated_job)
+
+        logger.info(
+            "ANPE Mali parsing complete: {} valid, {} skipped, {} total records.",
+            len(parsed_jobs),
+            len(raw_jobs) - len(parsed_jobs),
+            len(raw_jobs),
+        )
+        return parsed_jobs

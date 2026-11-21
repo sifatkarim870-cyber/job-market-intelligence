@@ -376,6 +376,16 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # country the seed lacks is silently a no-op. XOF is already seeded
     # (currencies.py).
     ("BF", "BFA", "Burkina Faso", "Africa", "XOF"),
+    # Mali backs anpe_mali, the national employment agency's site at
+    # anpe-mali.org (WordPress + WP Job Manager, post type "job_listing").
+    # The old anpe.ml domain no longer resolves. Mali had ZERO coverage
+    # before this source, and its listings name only a free-text place
+    # ("Bamako", "Mali", "Sur site") -- no seeded city matches and "Mali"
+    # is not a seeded country name yet -- so the SOURCE_HOME_COUNTRY
+    # fallback is load-bearing: without this row every posting lands with a
+    # NULL country. A fallback aimed at a country the seed lacks is
+    # silently a no-op. XOF is already seeded (currencies.py).
+    ("ML", "MLI", "Mali", "Africa", "XOF"),
 ]
 
 

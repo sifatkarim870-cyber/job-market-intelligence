@@ -21,6 +21,7 @@ example (Step 18).
 """
 
 from .anpe_bf_validator import AnpeBfBatchValidator, AnpeBfValidationSettings
+from .anpe_mali_validator import AnpeMaliBatchValidator, AnpeMaliValidationSettings
 from .common import BatchValidationReport, validate_batch
 from .emploitic_validator import EmploiticBatchValidator, EmploiticValidationSettings
 from .glints_validator import GlintsBatchValidator, GlintsValidationSettings
@@ -76,4 +77,6 @@ __all__ = [
     "ZangiaValidationSettings",
     "AnpeBfBatchValidator",
     "AnpeBfValidationSettings",
+    "AnpeMaliBatchValidator",
+    "AnpeMaliValidationSettings",
 ]

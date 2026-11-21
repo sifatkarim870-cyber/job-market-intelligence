@@ -1378,6 +1378,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   French prose, which matches no seeded city or country name, so this
     #:   fallback is what gives its rows a country.
     "anpe_bf": "BF",
+    #: anpe_mali: Mali. anpe-mali.org is the national employment agency's
+    #:   WordPress + WP Job Manager site and Mali had ZERO coverage before
+    #:   this source; its listings name only a free-text place ("Bamako",
+    #:   "Mali", "Sur site"), and while "Mali" now resolves to the country
+    #:   row, "Bamako" matches no seeded city, so this fallback is what
+    #:   gives those rows a country.
+    "anpe_mali": "ML",
 }
 
 
