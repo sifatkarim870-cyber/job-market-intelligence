@@ -1095,3 +1095,21 @@ before it was written off. The reason is measured, not assumed:
   Verified locally: `--no-db` and DB runs fetched/parsed/cleaned/inserted 3/3 rows, 0 failed, 0 NULL country, batch validation PASSED. CI run 44938286096 (`scrape_browser.yml -f only=cvonline_hu`) reproduced it: 60 fetched/parsed/cleaned/inserted, 0 failed, validation PASSED; exported to HF as `shards/source=cvonline_hu/dt=2026-11-21/part-20261121T191536Z.parquet` (81.0 KiB, 60 rows). All 60 rows resolve to Hungary (0 NULL country, 0 global-remote fallback): Budapest 12 and country-level Hungary 48; employment full_time 53, internship 7; salary disclosed on 0 and undisclosed on 60 (HUF, monthly); all 60 carry a non-empty description (44-300 words, average 141.0); 15 companies; posting dates all 2026-11-21; `experience_years_min` present on 1; data_quality_score 0.86 on every row.
 
   LIVE and enabled in scheduled CI matrix.
+
+- **`emploiburkina_com`** (Burkina Faso, emploiburkina.com) - 2026-11-22. The AfricaWork portal for Burkina Faso and the live successor of the recorded Emploi.bf host: both emploi.bf and www.emploi.bf are NXDOMAIN, but the AfricaWork footer on www.emploi.ci names www.emploiburkina.com, which answers HTTP 200 to plain requests. No key, no registration, no login, no cookie, no proxy, no browser; TLS verification stays ON (no verify=False).
+
+  `robots.txt` on https://www.emploiburkina.com/robots.txt (HTTP 200) is a generic `User-agent: *` group with `Allow: /` and `Crawl-delay: 10`, honoured through `inter_request_delay_seconds = 10.0`; the Disallow list covers only Drupal infrastructure paths (/includes/, /misc/, /modules/, /profiles/, /scripts/, /themes/, /admin/, /search/, /user/login/, ...), so the search directory and the ad paths are allowed.
+
+  Discovery is the server-rendered Drupal search directory `GET https://www.emploiburkina.com/recherche-jobs-burkina-faso`, paged `?page={page}` (page 1 takes no query string); it held 25 ad links per page and the run walks up to 4 pages. `job_link` is `a[href*='/offre-emploi-burkina-faso/']` and `detail_url_pattern` `offre-emploi-burkina-faso/[^/]+` keeps only the ad URLs; the ad id is the trailing run of digits (`id_url_regex` `-([0-9]+)$`).
+
+  Field map: each ad publishes a schema.org `JobPosting` block in `application/ld+json` (title, `datePosted`, `validThrough`, `hiringOrganization.name`, `employmentType`, `jobLocation.address.addressLocality`/`.addressRegion`/`.addressCountry`, and an HTML `description`), read through `detail_json_ld` plus `detail_json_map`. The block carries the same unescaped-quote defect as the other AfricaWork boards (inline HTML such as `<p dir="ltr">`), repaired by the shared JSON-LD reader.
+
+  TRAPS: (1) `jobLocation.address.addressRegion` is not a region but the list of cities the ad is open to, kept for context only; (2) a remote ad can carry an international locality ("France") with the home country left on `addressCountry`, which is why `SOURCE_HOME_COUNTRY["emploiburkina_com"] = "BF"` is the fallback; (3) `baseSalary` was absent on every sampled ad, so `salary_disclosed` is false and XOF/monthly states the home market, not an amount.
+
+  Burkina Faso (BF, country_id 7123) and XOF (currency_id 506) were already seeded, and the board has a single country-level location, so every ad resolves to BF via `source_default_country`.
+
+  Verified locally: 8 fetched, 8 parsed, 8 inserted, 0 failed, batch validation PASSED (all Burkina Faso, XOF/monthly, descriptions 97-359 words, data_quality_score 0.86, 6 companies).
+
+  GitHub Actions CI run 44944252512: 52 fetched, 52 parsed, 52 inserted, 0 failed, PASSED; 52 rows exported to Hugging Face (shards/source=emploiburkina_com/dt=2026-11-21/part-20261121T201625Z.parquet, 84.2 KiB).
+
+  LIVE and enabled in scheduled CI matrix.
