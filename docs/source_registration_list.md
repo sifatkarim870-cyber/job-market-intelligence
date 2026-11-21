@@ -1131,3 +1131,34 @@ before it was written off. The reason is measured, not assumed:
   GitHub Actions CI run 44950153873: 60 fetched, 0 fetch failures, 59 parsed, 59 cleaned, 59 inserted, 0 failed, batch validation PASSED (1.7% skip rate); 59 rows exported to Hugging Face (shards/source=ghanajob_com/dt=2026-11-21/part-20261121T212034Z.parquet, 83.7 KiB).
 
   LIVE and enabled in scheduled CI matrix.
+
+- **`jobat_be`** (Belgium, jobat.be) - 2026-11-22. Jobat is a general Belgian job board distinct from the already-built VDAB (Flanders) source. No key, no registration, no login, no cookie, no proxy; because the listing renders its vacancy cards client-side, it is a BROWSER source (Selenium via seleniumbase undetected Chrome, `scripts/run_browser_scraper.py`). TLS verification stays ON (no verify=False).
+
+  `robots.txt` on https://www.jobat.be/robots.txt (HTTP 200) is a generic `User-agent: *` group that disallows only account/article paths (`/secure/login`, `/myjobat/login`, `/nl/artikels-zoeken`, `/*/art/<year>/*`, `/nl/jobs/bedrijvenold*`) and tracking query parameters (`*joblanguage=*`, `*action=*`), so the listing and the ad pages are allowed. The scraper keeps a polite `inter_request_delay_seconds = 2.0`.
+
+  Discovery is the general feed `GET https://www.jobat.be/nl/jobs/results`, paged `?page={page}` (about 50 ad links per page); `job_link` is `a[href*='/job_']`, an ad is `/nl/jobs/<slug>/job_<numeric id>` and the id is the trailing digits (`id_url_regex` `/job_([0-9]+)$`).
+
+  Field map: unlike the other boards here, a Jobat ad publishes schema.org **microdata** (`itemscope itemtype="http://schema.org/JobPosting"`), not a JSON-LD block, so fields come from CSS selectors: `h1` title, `a[itemprop='name']` company, `meta[itemprop='addressLocality']@content` location, `meta[itemprop='datePosted']@content` posted date, `meta[itemprop='employmentType']@content` employment type, and `.JobDetails-content` as the ad body.
+
+  TRAPS: (1) the rendered listing keeps Cloudflare's passive `challenge-platform` marker on a fully rendered page, declared inert through `ignore_challenge_markers`; (2) `baseSalary` is absent on the sampled ads, so `salary_disclosed` is false and EUR/monthly states the home market, not an amount; (3) a disclosed ad prints its range in the `#jobdetail` header, matched by the salary selector without picking up the recommendation cards.
+
+  Belgium (BE, country_id 12) was already seeded and EUR is `ref.currencies` currency_id 2; the board resolves its country from the ad's location with `SOURCE_HOME_COUNTRY["jobat_be"] = "BE"` as the fallback for a country-less row.
+
+  Verified locally: 6 fetched, 6 parsed, 6 cleaned, 0 failed, batch validation PASSED.
+
+  Disabled in CI 2026-11-22 (kept BUILT): the GitHub Actions runner's datacenter IP is served a persistent Cloudflare "Just a moment" managed challenge on the listing (CI runs 44954059787, 44954574960 and 44955776144 all failed with "never showed a[href*='/job_']" and matched "just a moment"), and neither `ignore_challenge_markers=challenge-platform` nor `uc_open_with_reconnect` (4 s) cleared it. It runs correctly from a residential IP, so it is kept BUILT (Disabled in CI) and can be re-enabled when the runner's IP block lifts. Belgium is already covered by `vdab_be` (active in CI).
+- **`jobbsafari_se`** (Sweden, jobbsafari.se) - 2026-11-22. JobbSafari is a Swedish job board distinct from the already-built JobTech state source. No key, no registration, no login, no cookie, no proxy; because the whole host sits behind a Cloudflare managed challenge (plain requests get HTTP 403 "Just a moment..." on every path, robots.txt included) it is a BROWSER source (Selenium via seleniumbase undetected Chrome, `scripts/run_browser_scraper.py`). TLS verification stays ON (no verify=False).
+
+  `robots.txt` (fetched through the browser, since plain requests get the challenge) is a generic `User-agent: *` group with `Allow: /` that disallows only `/api`, `/monitoring` and the facet query parameters (`/lediga-jobb*yrke=*`, `*ort=*`, `*kategori=*`, `*foretag=*`), so the plain `/lediga-jobb` listing and the `/jobb/<slug>-<numeric id>` ad pages are allowed.
+
+  JobbSafari is a Next.js site; `/lediga-jobb` is server-rendered (about 31 ad links per page) and paged `?page={page}`, and the browser clears the challenge in a few seconds on the first navigation before discovery begins. `job_link` is `a[href^='/jobb/']` and the ad id is the trailing digits (`id_url_regex` `-([0-9]+)$`).
+
+  Field map: each ad publishes a schema.org `JobPosting` block in `application/ld+json`, read through `detail_json_ld` plus `detail_json_map` (title, `hiringOrganization.name`, `jobLocation.address.addressLocality`, `datePosted`, `employmentType` and the HTML `description`). The block carries no `addressCountry`, which is what the country fallback is for.
+
+  TRAPS: (1) `jobLocation.address.addressLocality` prints a Swedish county (for example "Stockholms lan") rather than a city, and the sampled ads were sometimes Norwegian, so the row's country comes from the ad text with the fallback only for a country-less row; (2) `employmentType` is `OTHER` on the sampled ads and maps to no `ref.employment_types` code; (3) `baseSalary` is null, so `salary_disclosed` is false and SEK/monthly states the home market, not an amount.
+
+  Sweden (SE, country_id 15) was already seeded and SEK is `ref.currencies` currency_id 16; `SOURCE_HOME_COUNTRY["jobbsafari_se"] = "SE"` is the fallback for a country-less row.
+
+  Verified locally: 6 fetched, 6 parsed, 6 cleaned, 0 failed, batch validation PASSED.
+
+  Disabled in CI 2026-11-22 (kept BUILT): the GitHub Actions runner's datacenter IP is served a persistent Cloudflare "Just a moment" managed challenge on the listing (CI runs 44954073006, 44954588593 and 44955791669 all failed with "never showed a[href^='/jobb/']" and matched "just a moment"), and `uc_open_with_reconnect` (4 s) did not clear it. It runs correctly from a residential IP, so it is kept BUILT (Disabled in CI) and can be re-enabled when the runner's IP block lifts. Sweden is already covered by `jobtech_se` (active in CI).
