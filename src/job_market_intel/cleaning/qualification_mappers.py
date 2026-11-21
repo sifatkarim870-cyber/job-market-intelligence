@@ -203,7 +203,7 @@ _REMOTE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _ONSITE_PATTERN = re.compile(
-    r"\b(on[-\s]?site|presencial|sur[-\s]?site|in[-\s]?office|in[-\s]?person)\b",
+    r"\b(on[-\s_]?site|presencial|sur[-\s]?site|in[-\s]?office|in[-\s]?person)\b",
     re.IGNORECASE,
 )
 

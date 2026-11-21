@@ -83,6 +83,9 @@ _EMPLOYMENT_MAP = {
     "TEMPORAL": "temporary",
     "PRACTICAS": "internship",
     "PRACTICANTE": "internship",
+    # German terms
+    "VOLLZEIT": "full_time",
+    "TEILZEIT": "part_time",
 }
 
 

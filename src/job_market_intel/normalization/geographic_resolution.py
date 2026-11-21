@@ -1385,6 +1385,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   row, "Bamako" matches no seeded city, so this fallback is what
     #:   gives those rows a country.
     "anpe_mali": "ML",
+    #: llv_li: Liechtenstein. The official vacancies of the Principality's
+    #:   state administration live on its SmartRecruiters board and name only
+    #:   a local place ("Vaduz", "Schaan"), never a country; Liechtenstein had
+    #:   no ref.countries row and no seeded city matches, so this fallback is
+    #:   what gives its rows a country instead of the global-remote location.
+    "llv_li": "LI",
 }
 
 

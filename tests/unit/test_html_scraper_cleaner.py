@@ -9,7 +9,10 @@ from __future__ import annotations
 
 from datetime import date
 
-from job_market_intel.cleaning.html_scraper_cleaner import HtmlScraperCleaner
+from job_market_intel.cleaning.html_scraper_cleaner import (
+    HtmlScraperCleaner,
+    map_employment_type,
+)
 from job_market_intel.scrapers.html_scraper.config import SiteConfig
 from job_market_intel.scrapers.html_scraper.models import RawHtmlScraperJob
 from job_market_intel.scrapers.html_scraper.pipeline import HtmlScraperPipeline
@@ -86,3 +89,15 @@ def test_cleaner_extracts_features_from_multilingual_and_translated_text() -> No
     assert "health_insurance" in (job.benefits_normalized or "")
     assert "python" in (job.skills_normalized or "")
     assert "postgresql" in (job.skills_normalized or "")
+
+
+def test_employment_type_maps_german_full_and_part_time() -> None:
+    """LLV (Liechtenstein) publishes ``Vollzeit`` / ``Teilzeit``.
+
+    ``html_scraper_cleaner`` upper-cases and underscore-joins the value, so the
+    German label must be in the map or the posting is stored with no type.
+    """
+    assert map_employment_type("Vollzeit") == "full_time"
+    assert map_employment_type("Teilzeit") == "part_time"
+    assert map_employment_type("Full-time") == "full_time"
+    assert map_employment_type("Contract") == "contract"

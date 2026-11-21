@@ -44,7 +44,9 @@ def test_map_remote_work_type() -> None:
     assert map_remote_work_type("Remote (Worldwide)") == "remote_global"
     assert map_remote_work_type("Remote / Work from home") == "remote_country"
     assert map_remote_work_type("Hybrid (2 days remote)") == "hybrid"
-    assert map_remote_work_type("On-site in Madrid") == "on_site"
+    assert map_remote_work_type("On-site in Madrid") == "on_site"
+    # schema.org workplaceType attribute values are underscore-joined.
+    assert map_remote_work_type("on_site") == "on_site"
 
 
 def test_map_job_category() -> None:

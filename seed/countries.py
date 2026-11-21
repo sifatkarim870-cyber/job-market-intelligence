@@ -386,6 +386,14 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     # NULL country. A fallback aimed at a country the seed lacks is
     # silently a no-op. XOF is already seeded (currencies.py).
     ("ML", "MLI", "Mali", "Africa", "XOF"),
+    # Liechtenstein backs llv_li, the official vacancies of the Principality's
+    # state administration (Liechtensteinische Landesverwaltung). The board
+    # names a local place ("Vaduz", "Schaan") and never a country, and
+    # Liechtenstein had no ref.countries row, so the SOURCE_HOME_COUNTRY
+    # fallback had nothing to aim at: without this row every posting would
+    # land with a NULL country on the shared global-remote location. CHF is
+    # already seeded (currencies.py, Switzerland).
+    ("LI", "LIE", "Liechtenstein", "Europe", "CHF"),
 ]
 
 
