@@ -976,6 +976,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: addressCountry is the French label "Maroc", which is not a ref.countries
     #: name, so this fallback is what keeps every ad on MA.
     "emploi_ma": "MA",
+    #: emploiburkina_com: Burkina Faso. Same AfricaWork platform as emploi_ci/
+    #: emploi_cd/emploibenin_com/emploi_cm/emploi_ma. The board moved from the
+    #: recorded (now NXDOMAIN) emploi.bf host to www.emploiburkina.com; its
+    #: JSON-LD addressCountry is the clean label "Burkina Faso", but a remote ad
+    #: can carry an international locality ("France") with the home country left
+    #: on addressCountry, so this fallback is what keeps a country-less row on BF.
+    "emploiburkina_com": "BF",
     #: rwandajob_com: Rwanda. Same AfricaWork platform as emploi_ci/emploi_cd/
     #: emploibenin_com/emploi_cm. The JSON-LD addressCountry is the clean label
     #: "Rwanda" here, but a remote ad can carry a province list in addressRegion
