@@ -1,0 +1,67 @@
+{
+  "source_code": "pracuj_pl",
+  "source_name": "Pracuj.pl (Poland)",
+  "country": "Poland",
+  "base_url": "https://www.pracuj.pl",
+  "listing_path": "/praca",
+  "listing_pagination": "?pn={page}",
+  "max_pages": 3,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "listing_ready_selector": "a[href*=',oferta,']",
+  "listing_wait_seconds": 25,
+  "detail_ready_selector": "h1",
+  "detail_wait_seconds": 15,
+  "detail_settle_seconds": 2.0,
+  "detail_url_strip_query": true,
+  "uc_mode": true,
+  "headless": true,
+  "uc_reconnect_seconds": 0,
+  "ignore_challenge_markers": "challenge-platform",
+  "max_detail_pages": 60,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*=',oferta,']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "detail_url_pattern": ",oferta,\\d+",
+  "id_from_url": true,
+  "id_url_regex": ",oferta,(\\d+)",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description",
+      "employerOverview",
+      "responsibilities",
+      "experienceRequirements",
+      "jobBenefits"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "detail_json_salary": {
+    "currency": "baseSalary.currency",
+    "min": "baseSalary.minValue",
+    "max": "baseSalary.maxValue",
+    "value": "baseSalary.value",
+    "unit": "baseSalary.unitText"
+  },
+  "inter_request_delay_seconds": 2.0,
+  "currency_iso_code": "PLN",
+  "pay_period": "monthly",
+  "country_fallback": "Poland"
+}

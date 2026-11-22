@@ -1512,6 +1512,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   global-remote location and lose its country. The fallback pins every
     #:   ad to Uzbekistan.
     "olx_uz": "UZ",
+    #: pracuj_pl: Poland. The JobPosting block labels the country with the
+    #:   Polish name "Polska", which does not resolve through ref.countries, and
+    #:   ref.cities holds only a single Polish city, so an ad whose
+    #:   "Warszawa, mazowieckie" strings match nothing would otherwise collapse
+    #:   onto the shared global-remote location. The fallback pins every ad to
+    #:   Poland.
+    "pracuj_pl": "PL",
 }
 
 

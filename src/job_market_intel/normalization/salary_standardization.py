@@ -142,6 +142,8 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "MXN": 0.0524458,  # 1 MXN = 0.0524458 USD (20 Nov 2026; 1 USD = 19.0673 MXN)
     # Added with olx_uz (OLX.uz, Uzbekistan). The board quotes UZS monthly.
     "UZS": 0.0000834173,  # 1 UZS = 0.0000834173 USD (22 Nov 2026; 1 USD = 11,987.91 UZS)
+    # Added with pracuj_pl (Pracuj.pl, Poland). The board quotes PLN monthly.
+    "PLN": 0.2463054,  # 1 PLN = 0.2463054 USD (22 Nov 2026; 1 USD = 4.06 PLN)
 }
 
 
