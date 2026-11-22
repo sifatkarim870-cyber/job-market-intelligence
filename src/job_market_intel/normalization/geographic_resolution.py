@@ -1498,6 +1498,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: collapse onto the shared global-remote location and lose its country;
     #: the fallback pins it to Cambodia.
     "nea_gov_kh": "KH",
+    #: occ_com_mx: Mexico. OCC labels an ad with a locality and a state
+    #: ("Colón, Querétaro"), but ref.cities seeds only a handful of Mexican
+    #: cities and its municipality names do not always match the state/colony
+    #: string OCC prints. Without this fallback an ad whose segments match
+    #: nothing would collapse onto the shared global-remote location and lose
+    #: its country; the fallback pins it to Mexico.
+    "occ_com_mx": "MX",
 }
 
 

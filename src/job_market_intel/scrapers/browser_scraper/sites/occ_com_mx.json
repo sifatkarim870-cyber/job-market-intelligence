@@ -1,0 +1,58 @@
+{
+  "source_code": "occ_com_mx",
+  "source_name": "OCC Mundial (Mexico)",
+  "country": "Mexico",
+  "base_url": "https://www.occ.com.mx",
+  "listing_path": "/empleos/",
+  "listing_pagination": "?page={page}",
+  "max_pages": 4,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "listing_ready_selector": "li.vacancy-card",
+  "listing_wait_seconds": 25,
+  "uc_mode": true,
+  "headless": true,
+  "uc_reconnect_seconds": 6,
+  "max_detail_pages": 60,
+  "detail_url_strip_query": true,
+  "impersonate": "chrome",
+  "detail_json_url": "https://oferta.occ.com.mx/offer/{id}/d/j?ipo=41&iapo=1",
+  "detail_json_url_path": "o.ur",
+  "selectors": {
+    "job_card": "",
+    "job_link": "",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "title_priority": "h1,og:title,title-tag,selector",
+  "detail_url_pattern": "/empleo/oferta/\\d+",
+  "id_from_url": true,
+  "id_url_regex": "/oferta/(\\d+)",
+  "detail_json_map": {
+    "title": "o.t",
+    "company": "o.cn",
+    "location": [
+      "o.c",
+      "o.l"
+    ],
+    "description": "o.ld",
+    "posted_date": "o.st",
+    "employment_type": "o.lset"
+  },
+  "detail_json_salary": {
+    "min": "o.smin",
+    "max": "o.smax"
+  },
+  "currency_iso_code": "MXN",
+  "pay_period": "monthly",
+  "country_fallback": "Mexico",
+  "min_description_chars": 80,
+  "inter_request_delay_seconds": 1.5,
+  "request_timeout_seconds": 40
+}
