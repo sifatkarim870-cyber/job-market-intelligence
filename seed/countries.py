@@ -73,6 +73,11 @@ _COUNTRIES_RAW: list[tuple[str, str, str, str, str | None]] = [
     ("PK", "PAK", "Pakistan", "Asia", "PKR"),
     ("BD", "BGD", "Bangladesh", "Asia", "BDT"),
     ("IL", "ISR", "Israel", "Asia", "ILS"),
+    # Palestine backs jobs.ps (source code "jobs_ps"). Without this row the
+    # resolver cannot place a single posting on the board: every row would fall
+    # through to the shared global-remote location. ILS is already seeded
+    # (currency_id 15).
+    ("PS", "PSE", "Palestine", "Asia", "ILS"),
     ("AE", "ARE", "United Arab Emirates", "Asia", "AED"),
     ("SA", "SAU", "Saudi Arabia", "Asia", "SAR"),
     # Added for Job.am (Armenia, onboarding 2026-10-05): the board's

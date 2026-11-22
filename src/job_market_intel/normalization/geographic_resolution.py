@@ -1003,6 +1003,14 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: as a BROWSER source because the host sits behind a Cloudflare "Just a
     #: moment" challenge that plain requests cannot clear.
     "jobbsafari_se": "SE",
+    #: jobs_ps: Palestine. Jobs.ps publishes a schema.org JobPosting JSON-LD
+    #: block whose jobLocation[].address.addressCountry is the Arabic word for
+    #: Palestine, a value the resolver does not know, and whose
+    #: addressLocality is an Arabic city; this fallback is what keeps a
+    #: country-less row on PS. Built as a BROWSER source because the host sits
+    #: behind a Cloudflare "Just a moment" challenge that plain requests cannot
+    #: clear.
+    "jobs_ps": "PS",
     #: rwandajob_com: Rwanda. Same AfricaWork platform as emploi_ci/emploi_cd/
     #: emploibenin_com/emploi_cm. The JSON-LD addressCountry is the clean label
     #: "Rwanda" here, but a remote ad can carry a province list in addressRegion
