@@ -1484,6 +1484,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   every posting would collapse onto the shared global-remote location and
     #:   lose its country.
     "kariyer_net": "TR",
+    #: nationalevacaturebank_nl: Netherlands. The ad's JobPosting names the
+    #: country as the ISO code "NL" and the locality as a Dutch town, but
+    #: ref.cities seeds only ONE Dutch city, so most towns ("Groningen",
+    #: "Amersfoort", "Emmen") resolve to no seeded city. Without this fallback
+    #: every such ad would collapse onto the shared global-remote location and
+    #: lose its country; the fallback pins it to the Netherlands.
+    "nationalevacaturebank_nl": "NL",
 }
 
 
