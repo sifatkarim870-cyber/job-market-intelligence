@@ -1491,6 +1491,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: every such ad would collapse onto the shared global-remote location and
     #: lose its country; the fallback pins it to the Netherlands.
     "nationalevacaturebank_nl": "NL",
+    #: nea_gov_kh: Cambodia. The National Employment Agency's board names the
+    #: employer address as a Khmer commune/district/province string, and
+    #: ref.cities seeds NO Cambodian city at all, so every province would
+    #: resolve to no seeded city. Without this fallback every posting would
+    #: collapse onto the shared global-remote location and lose its country;
+    #: the fallback pins it to Cambodia.
+    "nea_gov_kh": "KH",
 }
 
 
