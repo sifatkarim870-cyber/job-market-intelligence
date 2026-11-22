@@ -142,6 +142,21 @@ def _visible_text(html: str) -> str:
     return soup.get_text(" ", strip=True).lower()
 
 
+def _clean_detail_url(link: str, strip_query: bool) -> str:
+    """A discovered detail URL, optionally trimmed to its bare path.
+
+    A board can publish its ad links with tracking parameters that its own
+    robots.txt forbids for a generic crawler while the clean path is allowed:
+    jobstreet.com.ph/.sg disallow ``*/job/*?*type=`` and ``*?`` but allow
+    ``/job/<id>``. With ``strip_query`` the query string and fragment are
+    removed so the fetch targets the path robots.txt allows. Off on every source
+    that does not opt in, which keeps the exact href the page linked.
+    """
+    if not strip_query:
+        return link
+    return link.split("#", 1)[0].split("?", 1)[0]
+
+
 def _looks_rendered(html: str) -> bool:
     """Whether a page has the shape of a rendered posting page.
 
@@ -375,13 +390,17 @@ class BrowserScraperClient:
                 href = element.get("href")
                 if not href:
                     continue
-                link = urljoin(config.base_url, href.strip())
+                link = _clean_detail_url(
+                    urljoin(config.base_url, href.strip()),
+                    config.detail_url_strip_query,
+                )
                 if _is_offsite_social(link):
                     continue
                 jobs.append({"url": link, "title": element.get_text(" ", strip=True)})
 
         if not jobs:
             for url, text in _extract_links_from_html(html, config.base_url):
+                url = _clean_detail_url(url, config.detail_url_strip_query)
                 if not _is_offsite_social(url):
                     jobs.append({"url": url, "title": text})
 

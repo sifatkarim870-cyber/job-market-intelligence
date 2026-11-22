@@ -1011,6 +1011,18 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: behind a Cloudflare "Just a moment" challenge that plain requests cannot
     #: clear.
     "jobs_ps": "PS",
+    #: jobstreet_ph: Philippines. The Seek/Jobstreet JobPosting JSON-LD prints
+    #: jobLocation.address.addressCountry as the clean label "Philippines" and a
+    #: region name under addressLocality on some ads, but a remote ad can leave
+    #: neither, so this fallback keeps a country-less row on PH. Built as a
+    #: BROWSER source; its ad links carry a tracking query the board's robots.txt
+    #: forbids for a generic crawler, so detail URLs are trimmed to the bare
+    #: /job/<id> path (detail_url_strip_query), which robots.txt allows.
+    "jobstreet_ph": "PH",
+    #: jobstreet_sg: Singapore. Same Seek/Jobstreet platform as jobstreet_ph; the
+    #: JSON-LD prints only addressCountry "Singapore" on some ads and a locality
+    #: on others, so this fallback is what keeps a country-less row on SG.
+    "jobstreet_sg": "SG",
     #: rwandajob_com: Rwanda. Same AfricaWork platform as emploi_ci/emploi_cd/
     #: emploibenin_com/emploi_cm. The JSON-LD addressCountry is the clean label
     #: "Rwanda" here, but a remote ad can carry a province list in addressRegion

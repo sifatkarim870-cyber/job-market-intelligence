@@ -47,6 +47,14 @@ class BrowserSiteConfig(SiteConfig):
     #: present while the employer block and the requirements section were still
     #: rendering, so half an ad was captured. Zero keeps the old behaviour.
     detail_settle_seconds: float = Field(default=0.0, ge=0.0, le=60.0)
+    #: Strip the query string (and fragment) from a discovered detail URL
+    #: before it is fetched. A board can publish its ad links with tracking
+    #: parameters that its own robots.txt forbids for a generic crawler while
+    #: the clean path is allowed: jobstreet.com.ph/.sg disallow ``*/job/*?*type=``
+    #: and ``*?`` but allow ``/job/<id>``, so their ad hrefs must be trimmed to
+    #: the bare path to stay compliant. Off by default, so every existing source
+    #: fetches the exact href the page linked.
+    detail_url_strip_query: bool = Field(default=False)
     #: Scroll the listing to the bottom this many times before reading it.
     #: Many boards render the first screenful and load the rest on scroll.
     scroll_count: int = Field(default=0, ge=0, le=20)
