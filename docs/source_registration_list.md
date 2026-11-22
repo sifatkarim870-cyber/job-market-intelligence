@@ -1162,3 +1162,19 @@ before it was written off. The reason is measured, not assumed:
   Verified locally: 6 fetched, 6 parsed, 6 cleaned, 0 failed, batch validation PASSED.
 
   Disabled in CI 2026-11-22 (kept BUILT): the GitHub Actions runner's datacenter IP is served a persistent Cloudflare "Just a moment" managed challenge on the listing (CI runs 44954073006, 44954588593 and 44955791669 all failed with "never showed a[href^='/jobb/']" and matched "just a moment"), and `uc_open_with_reconnect` (4 s) did not clear it. It runs correctly from a residential IP, so it is kept BUILT (Disabled in CI) and can be re-enabled when the runner's IP block lifts. Sweden is already covered by `jobtech_se` (active in CI).
+
+- **`jobs_ps`** (Palestine, jobs.ps) - 2026-11-22. Jobs.ps is the leading Palestinian job board and a territory the corpus did not cover at all before this (Palestine had ZERO postings). No key, no registration, no login, no cookie, no proxy; because the host sits behind a Cloudflare managed challenge that plain requests cannot clear, it is a BROWSER source (Selenium via seleniumbase undetected Chrome, `scripts/run_browser_scraper.py`). TLS verification stays ON (no verify=False).
+
+  `robots.txt` on https://jobs.ps/robots.txt (HTTP 200) is a Cloudflare-managed policy (it ends with a `# END Cloudflare Managed Content` block); its generic `User-agent: *` group does not disallow `/search` or `/jobs/`, so the search listing and the ad pages are allowed, and the scraper keeps a polite `inter_request_delay_seconds = 2.0`.
+
+  Discovery is the general search feed `GET https://www.jobs.ps/search`, paged `?page={page}` (10-20 ad links per page; `/search?page=2` and `/search?page=3` return new ids rather than repeating page 1); `job_link` is `a[href*='/jobs/']`, an ad is `/jobs/<slug>-<numeric id>` and the id is the trailing digits (`id_url_regex` `-([0-9]+)$`).
+
+  Field map: each ad publishes a schema.org `JobPosting` block in `application/ld+json`, read through `detail_json_ld` plus `detail_json_map` (title, `hiringOrganization.name`, `jobLocation[].address.addressLocality`, `datePosted`, `employmentType` and the HTML `description`).
+
+  TRAPS: (1) the rendered page keeps Cloudflare's passive `challenge-platform` marker on a fully rendered page, declared inert through `ignore_challenge_markers`; (2) `jobLocation` is a LIST of `Place` objects, so the map path uses `jobLocation[]`; (3) `baseSalary.value.value` is a non-numeric string ('N/A' or an Arabic sentence), so `salary_disclosed` is false and ILS/monthly states the home market, not an amount; (4) `employmentType` is Arabic and maps to no `ref.employment_types` code; (5) `jobLocation[].address.addressCountry` is the Arabic word for Palestine, which the resolver does not know, so `SOURCE_HOME_COUNTRY["jobs_ps"] = "PS"` is what places a row.
+
+  Palestine (PS) was NOT seeded before this run: `seed/countries.py` gained `("PS", "PSE", "Palestine", "Asia", "ILS")` and `python -m seed.run_all` inserted it as country_id 7621 with ILS as `default_currency_id` (`ref.currencies` currency_id 15). The board resolves its country from the ad's location with the source home country as the fallback for a country-less row.
+
+  Verified locally: 6 fetched, 6 parsed, 6 cleaned, 0 failed, batch validation PASSED; a DB run inserted 3 rows, all resolved to Palestine (country_id 7621, `is_global_remote` false).
+
+  Disabled in CI 2026-11-22 (kept BUILT): the GitHub Actions runner's datacenter IP is served a persistent Cloudflare "Just a moment" managed challenge on `/search` (CI run 44981947839 failed with "never showed a[href*='/jobs/']" and matched "just a moment"), the same datacenter-IP wall that blocks the sibling sources `jobat_be` and `jobbsafari_se` (where `uc_open_with_reconnect` (4 s) did not clear it). It runs correctly from a residential IP, so it is kept BUILT (Disabled in CI) and can be re-enabled when the runner's IP block lifts.
