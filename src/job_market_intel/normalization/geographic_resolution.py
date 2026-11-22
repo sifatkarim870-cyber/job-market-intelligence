@@ -1476,6 +1476,14 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: name a destination that resolves on its own, so the country is normally
     #: explicit; this fallback covers a locality the curated seed does not hold.
     "cvonline_hu": "HU",
+    #: kariyer_net: Turkiye. Kariyer.net is Turkiye's largest private-sector
+    #:   board. Its detail gateway names the country as "Turkiye" (the Turkish
+    #:   spelling), which does not match the seeded ref.countries row 'Turkey',
+    #:   and the locality is written "Istanbul(Asya)" (city plus the Asian-side
+    #:   marker), which resolves against no seeded city. Without this fallback
+    #:   every posting would collapse onto the shared global-remote location and
+    #:   lose its country.
+    "kariyer_net": "TR",
 }
 
 
