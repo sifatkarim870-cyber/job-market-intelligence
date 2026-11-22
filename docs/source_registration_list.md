@@ -1210,3 +1210,19 @@ before it was written off. The reason is measured, not assumed:
   Verified locally: 6 fetched, 6 parsed, 6 cleaned, 0 failed, batch validation PASSED; a DB run inserted 3 rows, all resolved to Singapore (country_id 31, `is_global_remote` false).
 
   Disabled in CI 2026-11-22 (kept BUILT): the GitHub Actions runner's datacenter IP is served a bot/captcha wall on `/jobs` (CI run 44983376850 failed with \"never showed a[href*='/job/']\" and matched \"captcha-container\"), the same datacenter-IP wall that blocks the sibling sources `jobat_be`, `jobbsafari_se` and `jobs_ps`. It runs correctly from a residential IP, so it is kept BUILT (Disabled in CI) and can be re-enabled when the runner's IP block lifts.
+
+- **`jobz_pk`** (Pakistan, jobz.pk) - 2026-11-22. Jobz.pk is the Pakistan board jobz.pk, a distinct inventory from the Rozee and Mustakbil sources this repo already runs. The 2026-10-04 sweep recorded a 403 bot wall to plain requests, but a real browser session reaches it; it is a BROWSER source (Selenium via seleniumbase undetected Chrome, `scripts/run_browser_scraper.py`). No key, no registration, no login, no cookie, no proxy; TLS verification stays ON (no verify=False).
+
+  `robots.txt` on https://www.jobz.pk/robots.txt (HTTP 200) is a generic `User-agent: *` group with `Allow: /` (it sets `Crawl-delay 2` only for named crawlers such as ahrefsbot/semrushbot), so the listing and the ad pages are allowed.
+
+  Discovery is the server-rendered `GET https://www.jobz.pk/jobs/` (identical to the homepage), which renders 130 ad links of the form `/<slug>_jobs-<numeric id>.html`. The board's own `/page/N/` pagination answers an ERROR page to a generic crawler, so this source scrapes PAGE 1 ONLY (`max_pages = 1`, `listing_pagination` empty). `job_link` is `a[href*='_jobs-']`; an ad is `/<slug>_jobs-<id>.html` and the id is the trailing digits (`id_url_regex` `_jobs-(\d+)`).
+
+  Field map: the detail page publishes NO schema.org block. Instead a summary table of `<div class='row_job_detail'>` rows pairs a `<div class='job_detail_cell1'>` label with a `<div class='job_detail_cell2'>` value, read with soupsieve selectors - company from the 'Organization' cell, location from the 'Vacancy Location' cell, date from the 'Date Posted / Updated' cell and employment type from the 'Job Type' cell (all via `div.job_detail_cell1:-soup-contains(<label>) + div.job_detail_cell2`), and the body from `#ad-desc-cont`.
+
+  TRAPS: (1) there is no Salary row, so `salary_disclosed` is false (PKR/monthly states the home market, not an amount); (2) the 'Vacancy Location' value is a full "<city>, <province>, Pakistan" string (e.g. `Gujrat , Punjab, Pakistan`), which resolves to PK on its own, and `SOURCE_HOME_COUNTRY[\"jobz_pk\"] = \"PK\"` is what places a row whose city is a bare town; (3) the board's own detail pages can briefly serve a stale template for a freshly-created ad, so a location is only as fresh as the ad.
+
+  Pakistan (PK) was already seeded (country_id 38) with PKR as `default_currency_id` (`ref.currencies` currency_id 39).
+
+  Verified locally: 6 fetched, 5 parsed, 0 failed, batch validation PASSED; a DB run inserted 3 rows, all resolved to Pakistan (country_id 38, `is_global_remote` false).
+
+  Verified in CI 2026-11-22 (run 44984922725): 60 fetched, 58 parsed, 2 skipped (3.3% - posted titles ending in ' Jobs' that the shared quality gate treats as category titles), 58 inserted, 0 failed, batch validation PASSED. This source runs ACTIVE in CI.
