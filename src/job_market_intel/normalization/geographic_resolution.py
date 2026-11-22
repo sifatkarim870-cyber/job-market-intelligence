@@ -1049,6 +1049,15 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   of rows), and this fallback keeps an unresolvable row on IN rather
     #:   than collapsing it onto the global-remote location.
     "timesjobs_in": "IN",
+    #: jobz_pk: Pakistan. Jobz.pk is the Pakistan board at jobz.pk (PK). Unlike
+    #: its Rozee/Mustakbil siblings it publishes no schema.org block at all: the
+    #: location is the "Vacancy Location" cell of the detail page, printed as
+    #: "<city>, <province>, Pakistan" (e.g. "Gujrat , Punjab, Pakistan"), which
+    #: resolves to PK on its own. A row whose city is a bare town with no country
+    #: suffix would otherwise collapse onto the global-remote location, so this
+    #: fallback keeps it on PK. Built as a BROWSER source; its listing is a plain
+    #: server-rendered page but the framework is shared with the JS boards.
+    "jobz_pk": "PK",
     #: mustakbil: Pakistan. Every posting measured carried addressCountry
     #:   'PK' and currency PKR, so this is a measured fact about the board.
     "mustakbil": "PK",
