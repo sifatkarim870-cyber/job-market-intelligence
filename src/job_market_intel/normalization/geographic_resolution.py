@@ -1505,6 +1505,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: nothing would collapse onto the shared global-remote location and lose
     #: its country; the fallback pins it to Mexico.
     "occ_com_mx": "MX",
+    #: olx_uz: Uzbekistan. Its JobPosting block carries a bare ISO code in
+    #:   addressCountry ("UZ") and Cyrillic locality/region names ("Ташкент",
+    #:   "Ташкентская область"); ref.cities seeds NO Uzbek city at all, so
+    #:   without this fallback every ad would collapse onto the shared
+    #:   global-remote location and lose its country. The fallback pins every
+    #:   ad to Uzbekistan.
+    "olx_uz": "UZ",
 }
 
 

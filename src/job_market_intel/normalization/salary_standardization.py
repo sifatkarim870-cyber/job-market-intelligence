@@ -140,6 +140,8 @@ _USD_CONVERSION_RATES: dict[str, float] = {
     "MNT": 0.00029412,  # 1 MNT = 0.00029412 USD (1 USD ~ 3,400 MNT, Mongolian tugrik)
     # Added with occ_com_mx (OCC Mundial, Mexico). The board quotes MXN monthly.
     "MXN": 0.0524458,  # 1 MXN = 0.0524458 USD (20 Nov 2026; 1 USD = 19.0673 MXN)
+    # Added with olx_uz (OLX.uz, Uzbekistan). The board quotes UZS monthly.
+    "UZS": 0.0000834173,  # 1 UZS = 0.0000834173 USD (22 Nov 2026; 1 USD = 11,987.91 UZS)
 }
 
 
