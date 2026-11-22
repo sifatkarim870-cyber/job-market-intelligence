@@ -1178,3 +1178,35 @@ before it was written off. The reason is measured, not assumed:
   Verified locally: 6 fetched, 6 parsed, 6 cleaned, 0 failed, batch validation PASSED; a DB run inserted 3 rows, all resolved to Palestine (country_id 7621, `is_global_remote` false).
 
   Disabled in CI 2026-11-22 (kept BUILT): the GitHub Actions runner's datacenter IP is served a persistent Cloudflare "Just a moment" managed challenge on `/search` (CI run 44981947839 failed with "never showed a[href*='/jobs/']" and matched "just a moment"), the same datacenter-IP wall that blocks the sibling sources `jobat_be` and `jobbsafari_se` (where `uc_open_with_reconnect` (4 s) did not clear it). It runs correctly from a residential IP, so it is kept BUILT (Disabled in CI) and can be re-enabled when the runner's IP block lifts.
+
+- **`jobstreet_ph`** (Philippines, jobstreet.com.ph) - 2026-11-22. JobStreet Philippines is the SEEK/JobStreet board for the Philippine market (a distinct inventory from the state PhilJobNet and the local Kalibrr source this repo already runs). No key, no registration, no login, no cookie, no proxy; it is a BROWSER source (Selenium via seleniumbase undetected Chrome, `scripts/run_browser_scraper.py`) because the listing and detail pages are client-rendered. TLS verification stays ON (no verify=False).
+
+  `robots.txt` on https://ph.jobstreet.com/robots.txt (HTTP 200) is a generic `User-agent: *` group that disallows `*/job/*?*type=` and a bare `*?` (plus `/api` and the facet-query paths) but ALLOWS the clean `/jobs` listing and the clean `/job/<id>` ad page. The ad hrefs the page ships carry a tracking query (`?type=standard&ref=search-standalone#sol=...`); the new OPT-IN framework knob `detail_url_strip_query` (default off, added in this change) trims each discovered detail URL to its bare path - query string and fragment removed - before the fetch, so every request targets a robots-allowed URL.
+
+  Discovery is the server-rendered `GET https://ph.jobstreet.com/jobs`, which renders 90 ad anchors (30 unique ad ids, about 3 anchors per card: title, card, logo). A robots-allowed paginated listing was not available to a generic crawler, so this source scrapes PAGE 1 ONLY (`max_pages = 1`, `listing_pagination` empty). `job_link` is `a[href*="/job/"]`; an ad is `/job/<numeric id>` and the id is the trailing digits (`id_url_regex` `/job/(\d+)$`).
+
+  Field map: each ad publishes a schema.org `JobPosting` block in `application/ld+json`, read through `detail_json_ld` plus `detail_json_map` (title, `hiringOrganization.name`, `jobLocation.address.addressLocality` / `addressRegion` / `addressCountry`, `datePosted`, `employmentType` and the HTML `description`).
+
+  TRAPS: (1) `employmentType` is a LIST (`FULL_TIME` / `PART_TIME`) and maps to one `ref.employment_types` code; (2) `addressCountry` is the clean label `Philippines` and a remote ad may leave the location empty, which is what `country_fallback` and `SOURCE_HOME_COUNTRY[\"jobstreet_ph\"] = \"PH\"` are for; (3) `baseSalary` is null on the sampled ads, so `salary_disclosed` is false (PHP/monthly states the home market, not an amount).
+
+  Philippines (PH) was already seeded (country_id 33) with PHP as `default_currency_id` (`ref.currencies` currency_id 33).
+
+  Verified locally: 6 fetched, 6 parsed, 6 cleaned, 0 failed, batch validation PASSED; a DB run inserted 3 rows, all resolved to the Philippines (country_id 33, `is_global_remote` false).
+
+  Disabled in CI 2026-11-22 (kept BUILT): the GitHub Actions runner's datacenter IP is served a bot/captcha wall on `/jobs` (CI run 44983367212 failed with \"never showed a[href*='/job/']\" and matched \"captcha-container\"), the same datacenter-IP wall that blocks the sibling sources `jobat_be`, `jobbsafari_se` and `jobs_ps`. It runs correctly from a residential IP, so it is kept BUILT (Disabled in CI) and can be re-enabled when the runner's IP block lifts.
+
+- **`jobstreet_sg`** (Singapore, jobstreet.com.sg) - 2026-11-22. JobStreet Singapore is the SEEK/JobStreet board for Singapore, the sibling of jobstreet.com.ph and built on the same browser framework (a distinct inventory from the state MyCareersFuture source this repo already runs). No key, no registration, no login, no cookie, no proxy; BROWSER source (seleniumbase undetected Chrome). TLS verification stays ON (no verify=False).
+
+  `robots.txt` on https://sg.jobstreet.com/robots.txt (HTTP 200) is a generic `User-agent: *` group that disallows `*/job/*?*type=` and a bare `*?` but ALLOWS the clean `/jobs` listing and the clean `/job/<id>` ad page, so the tracking query on every ad href is trimmed to the bare path via `detail_url_strip_query` (the opt-in knob added in this change) before the fetch.
+
+  Discovery is the server-rendered `GET https://sg.jobstreet.com/jobs`, which renders 90 ad anchors (30 unique ad ids); a robots-allowed paginated listing was not available to a generic crawler, so this source scrapes PAGE 1 ONLY (`max_pages = 1`). `job_link` is `a[href*="/job/"]`; an ad is `/job/<numeric id>` and the id is the trailing digits (`id_url_regex` `/job/(\d+)$`).
+
+  Field map: each ad publishes a schema.org `JobPosting` block in `application/ld+json`, read through `detail_json_ld` plus `detail_json_map` (title, `hiringOrganization.name`, `jobLocation.address.*`, `datePosted`, `employmentType` and the HTML `description`).
+
+  TRAPS: (1) `employmentType` is a LIST and maps to one `ref.employment_types` code; (2) an ad may carry only `addressCountry` `Singapore` or only a locality, and a remote ad may leave the location empty, which is what `country_fallback` and `SOURCE_HOME_COUNTRY[\"jobstreet_sg\"] = \"SG\"` are for; (3) `baseSalary` is null on the sampled ads, so `salary_disclosed` is false (SGD/monthly).
+
+  Singapore (SG) was already seeded (country_id 31) with SGD as `default_currency_id` (`ref.currencies` currency_id 11).
+
+  Verified locally: 6 fetched, 6 parsed, 6 cleaned, 0 failed, batch validation PASSED; a DB run inserted 3 rows, all resolved to Singapore (country_id 31, `is_global_remote` false).
+
+  Disabled in CI 2026-11-22 (kept BUILT): the GitHub Actions runner's datacenter IP is served a bot/captcha wall on `/jobs` (CI run 44983376850 failed with \"never showed a[href*='/job/']\" and matched \"captcha-container\"), the same datacenter-IP wall that blocks the sibling sources `jobat_be`, `jobbsafari_se` and `jobs_ps`. It runs correctly from a residential IP, so it is kept BUILT (Disabled in CI) and can be re-enabled when the runner's IP block lifts.
