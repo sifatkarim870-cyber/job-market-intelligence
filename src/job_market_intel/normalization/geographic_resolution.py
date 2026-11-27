@@ -1519,6 +1519,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   onto the shared global-remote location. The fallback pins every ad to
     #:   Poland.
     "pracuj_pl": "PL",
+    #: robota_ua: Ukraine. The board is Ukraine-only: city.name is an English
+    #:   label ("Kyiv"), city.region an oblast ("Kyiv oblast"), and
+    #:   salary.currency is UAH. A remote ad leaves the city populated, so
+    #:   without this fallback a row whose text matches no seeded place would
+    #:   collapse onto the shared global-remote location and lose its country.
+    #:   The fallback pins every ad to Ukraine.
+    "robota_ua": "UA",
 }
 
 
