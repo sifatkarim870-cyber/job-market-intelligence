@@ -1526,6 +1526,14 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   collapse onto the shared global-remote location and lose its country.
     #:   The fallback pins every ad to Ukraine.
     "robota_ua": "UA",
+    #: skywalker_gr: Greece. The board is Greece-only and prints its location as
+    #:   a Greek administrative name (a municipality such as the Athens or the
+    #:   Heraklion one, or a region such as the Heraklion prefecture) that a
+    #:   ref.cities lookup may not resolve; the country label on the page is
+    #:   Greek too. Without this fallback a row whose text matches no seeded
+    #:   place would collapse onto the shared global-remote location and lose its
+    #:   country. The fallback pins every ad to Greece.
+    "skywalker_gr": "GR",
 }
 
 
