@@ -61,6 +61,16 @@ def test_listing_url_without_pagination_stays_put() -> None:
     assert client.listing_url(4) == "https://example.com/jobs"
 
 
+def test_listing_url_zero_based_pagination_starts_at_one_for_page_two() -> None:
+    """A ``{zero_page}`` pager is shifted down: page 2 is the board's page 1."""
+    client = _StubClient(
+        _config(listing_path="/search/jobs", listing_pagination="?q=&start={zero_page}")
+    )
+    assert client.listing_url(1) == "https://example.com/search/jobs"
+    assert client.listing_url(2) == "https://example.com/search/jobs?q=&start=1"
+    assert client.listing_url(4) == "https://example.com/search/jobs?q=&start=3"
+
+
 def test_a_page_that_links_a_recaptcha_script_is_not_a_challenge() -> None:
     """The word "captcha" in a script tag is not a bot challenge.
 

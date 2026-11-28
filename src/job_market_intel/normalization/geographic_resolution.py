@@ -1583,6 +1583,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: whose text matches no seeded place collapses onto the shared global-remote
     #: location and loses its country. The fallback pins every ad to Ukraine.
     "work_ua": "UA",
+    #: wuzzuf: Egypt. Egypt's largest board; its ads normally carry a city
+    #: ("Cairo", "Giza", "Alexandria") that is unseeded in ``ref.cities``, so
+    #: the fallback pins such a row to the country-level Egypt location rather
+    #: than the shared global-remote one. A minority of listings are roles
+    #: abroad (the payload's ``addressCountry`` names the real country); those
+    #: still resolve on their own text when the place is seeded.
+    "wuzzuf": "EG",
 }
 
 

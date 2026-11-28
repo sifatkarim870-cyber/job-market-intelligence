@@ -255,11 +255,20 @@ class BrowserScraperClient:
         return self._listing_url_for(self._site_config.listing_path, page)
 
     def _listing_url_for(self, listing_path: str, page: int = 1) -> str:
-        """The URL of ``listing_path`` at ``page`` (page 1 is the bare path)."""
+        """The URL of ``listing_path`` at ``page`` (page 1 is the bare path).
+
+        A board whose pager counts its first page as zero (Wuzzuf's ``?start=``)
+        names ``{zero_page}`` in ``listing_pagination``; the framework's 1-based
+        ``page`` is shifted down by one. Page 1 still resolves to the bare path,
+        which is that board's page 0, mirroring the HTML client's JSON-listing
+        support for the same numbering.
+        """
         base = f"{self._site_config.base_url.rstrip('/')}{listing_path}"
         if page <= 1:
             return base
         pagination = self._site_config.listing_pagination or ""
+        if "{zero_page}" in pagination:
+            return base + pagination.format(zero_page=page - 1)
         if "{page}" not in pagination:
             return base
         return base + pagination.format(page=page)
