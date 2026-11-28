@@ -1565,6 +1565,11 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   United States location. If other country editions are added later this
     #:   entry must be removed (the board then becomes multi-country).
     "talent_com": "US",
+    #: UWV Werk.nl is the Dutch public employment service's own board: every
+    #: vacancy is a Netherlands posting, so an unresolvable city (only
+    #: Amsterdam is seeded in ``ref.cities``) is pinned to the NL
+    #: country-level location instead of collapsing onto the global-remote one.
+    "werk_nl": "NL",
 }
 
 
