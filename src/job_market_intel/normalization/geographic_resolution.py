@@ -1577,6 +1577,12 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: rows on the country-level Iceland location instead of collapsing onto
     #: the shared global-remote one.
     "vinnumalastofnun_is": "IS",
+    #: work_ua: Ukraine. The board is Ukraine-only and prints its location as a
+    #: Ukrainian address ("Київ, вулиця Хрещатик, 1."), whose city is usually
+    #: unseeded in ``ref.cities`` (only Kyiv is), so without this fallback a row
+    #: whose text matches no seeded place collapses onto the shared global-remote
+    #: location and loses its country. The fallback pins every ad to Ukraine.
+    "work_ua": "UA",
 }
 
 
