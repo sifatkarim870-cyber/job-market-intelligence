@@ -1594,6 +1594,14 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: abroad (the payload's ``addressCountry`` names the real country); those
     #: still resolve on their own text when the place is seeded.
     "wuzzuf": "EG",
+    #: yenibiris: Turkiye. Yenibiris ads carry a Turkish province/city
+    #: ("Istanbul", "Antalya", "Kocaeli") in the JobPosting jobLocation, but
+    #: ref.cities seeds only one Turkish city (Istanbul) and the label is
+    #: written with the Turkish dotted/dotless letters, so most ads resolve no
+    #: seeded place. Without this fallback they collapse onto the shared
+    #: global-remote location and lose their country; the fallback pins them to
+    #: the country-level Turkey location.
+    "yenibiris": "TR",
 }
 
 

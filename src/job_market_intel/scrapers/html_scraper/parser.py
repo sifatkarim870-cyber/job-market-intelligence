@@ -471,6 +471,13 @@ def _fill_from_json_ld(html: str, values: dict[str, str | None]) -> dict[str, st
         if current and not (field == "company" and current == "Unknown employer"):
             continue
         found = _json_ld_value(posting, path)
+        if not found and field == "company":
+            # schema.org allows ``hiringOrganization`` to be a bare string
+            # ("ROYAL WINGS HOTEL") as well as an Organization object
+            # (``{"name": "..."}``). The configured two-segment path only
+            # resolves the object form, so the string form is read directly
+            # rather than leaving the employer as "Unknown employer".
+            found = _json_ld_value(posting, ("hiringOrganization",))
         if found:
             values[field] = found
     return values

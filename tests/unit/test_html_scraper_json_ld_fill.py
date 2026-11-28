@@ -142,3 +142,32 @@ def test_fill_is_off_by_default() -> None:
     assert job.company_name == "Unknown employer"
     assert job.location is None
     assert job.posted_date is None
+
+
+def test_json_ld_fill_reads_a_bare_string_hiring_organization() -> None:
+    """schema.org allows ``hiringOrganization`` to be a plain string.
+
+    Yenibiris publishes the employer as ``"ROYAL WINGS HOTEL"`` rather than an
+    Organization object, so the two-segment ``hiringOrganization.name`` path
+    resolved nothing and every ad was stored as "Unknown employer". The string
+    form is now read directly.
+    """
+    detail_html = """
+    <html><body>
+      <h1>Zeytinyagli Ustasi</h1>
+      <script type="application/ld+json">
+      {
+        "@context": "http://schema.org/",
+        "@type": "JobPosting",
+        "title": "Zeytinyagli Ustasi",
+        "description": "Deneyimli bir zeytinyagli ustasi ariyoruz; Akdeniz mutfagina hakim olun.",
+        "hiringOrganization": "ROYAL WINGS HOTEL"
+      }
+      </script>
+    </body></html>
+    """
+    config = _config(detail_json_ld_fill=True)
+    job = HtmlScraperParser(config, "unit_test").parse(
+        "1224221", detail_html, url="https://example.invalid/job/1224221"
+    )
+    assert job.company_name == "ROYAL WINGS HOTEL"

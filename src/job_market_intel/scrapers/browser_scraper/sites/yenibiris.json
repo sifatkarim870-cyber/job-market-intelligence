@@ -1,0 +1,58 @@
+{
+  "source_code": "yenibiris",
+  "source_name": "Yenibiris (Türkiye)",
+  "country": "Türkiye",
+  "base_url": "https://www.yenibiris.com",
+  "listing_path": "/is-ilanlari",
+  "listing_pagination": "?sayfa={page}",
+  "max_pages": 3,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "listing_ready_selector": "a[href*='/is-ilani/']",
+  "listing_wait_seconds": 20,
+  "detail_ready_selector": "h1",
+  "detail_wait_seconds": 20,
+  "detail_settle_seconds": 2.0,
+  "scroll_count": 0,
+  "scroll_pause_seconds": 1.5,
+  "uc_mode": true,
+  "headless": true,
+  "uc_reconnect_seconds": 8,
+  "max_detail_pages": 60,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='/is-ilani/']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "employment_type": "#employment_type",
+    "skills": ""
+  },
+  "title_priority": "h1,og:title,title-tag,selector",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": [
+      "hiringOrganization.name",
+      "hiringOrganization"
+    ],
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": "description",
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "detail_url_pattern": "/is-ilani/[^/]+/\\d+/?$",
+  "id_from_url": true,
+  "id_url_regex": "/is-ilani/[^/]+/(\\d+)",
+  "inter_request_delay_seconds": 2.0,
+  "currency_iso_code": "TRY",
+  "pay_period": "monthly",
+  "country_fallback": "Türkiye"
+}
