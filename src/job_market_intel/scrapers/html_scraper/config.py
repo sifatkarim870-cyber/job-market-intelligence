@@ -42,6 +42,15 @@ class SiteConfig(BaseModel):
     country: str = Field(..., description="Country name")
     base_url: str = Field(..., description="Site base URL")
     listing_path: str = Field(default="/jobs", description="Listing page path")
+    #: Extra listing fronts walked after :attr:`listing_path`, each with the
+    #: same pagination. A classifieds board whose pager is disallowed by its
+    #: robots.txt (Subito's ``?o=`` offset is one) still publishes fresh ads on
+    #: many category fronts, one per region; walking page 1 of each reaches a
+    #: real volume without touching the disallowed parameter. De-duplicated
+    #: against :attr:`listing_path`.
+    listing_paths: list[str] = Field(
+        default_factory=list, description="Extra listing fronts walked after listing_path"
+    )
     listing_pagination: str = Field(default="?page={page}", description="Pagination URL pattern")
     max_pages: int = Field(default=10, ge=1, description="Max listing pages")
     max_jobs_per_run: int = Field(default=60, ge=1, description="Max jobs per run")

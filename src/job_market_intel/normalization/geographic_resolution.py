@@ -1541,6 +1541,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   otherwise collapse onto the shared global-remote location and lose its
     #:   country. The fallback pins every ad to the United States.
     "snagajob_com": "US",
+    #: subito_it: Italy. The board is Italy-only and prints its location as a
+    #:   town plus province plus region in Italian, one or more of which a
+    #:   ref.cities lookup may not resolve; without this fallback a row whose
+    #:   text matches no seeded place would collapse onto the shared
+    #:   global-remote location and lose its country. The fallback pins every ad
+    #:   to Italy.
+    "subito_it": "IT",
 }
 
 

@@ -502,8 +502,9 @@ class HtmlScraperClient:
             }
         )
 
-    def listing_url(self, page: int = 1) -> str:
-        base = f"{self._site_config.base_url}{self._site_config.listing_path}"
+    def listing_url(self, page: int = 1, listing_path: str | None = None) -> str:
+        path = self._site_config.listing_path if listing_path is None else listing_path
+        base = f"{self._site_config.base_url}{path}"
         if page <= 1:
             return base
         pagination = self._site_config.listing_pagination
@@ -1048,8 +1049,14 @@ class HtmlScraperClient:
         soup = BeautifulSoup(html, "html.parser")
         return html, self._html_listing_jobs(html, soup)
 
-    def fetch_listing_page(self, page: int = 1) -> tuple[str, list[dict]]:
-        """Fetch one listing page. Returns (html, [job_links_with_titles])."""
+    def fetch_listing_page(
+        self, page: int = 1, listing_path: str | None = None
+    ) -> tuple[str, list[dict]]:
+        """Fetch one listing page. Returns (html, [job_links_with_titles]).
+
+        ``listing_path`` selects which front to read when a site walks several
+        (:attr:`SiteConfig.listing_paths`); ``None`` means the primary one.
+        """
         if self._site_config.listing_json_url.strip():
             url = self.listing_data_url(page)
             if self._site_config.listing_json_method.strip().upper() == "POST":
@@ -1068,12 +1075,12 @@ class HtmlScraperClient:
             self._site_config.listing_json_selector.strip()
             and self._site_config.listing_json_attr.strip()
         ):
-            html = self._get(self.listing_url(page))
+            html = self._get(self.listing_url(page, listing_path))
             jobs = self._embedded_json_jobs(html)
         elif self._site_config.listing_form_pagination:
             html, jobs = self._form_paged_listing(page)
         else:
-            html = self._get(self.listing_url(page))
+            html = self._get(self.listing_url(page, listing_path))
             soup = BeautifulSoup(html, "html.parser")
             jobs = self._html_listing_jobs(html, soup)
 
@@ -1116,21 +1123,60 @@ class HtmlScraperClient:
             *([marker] if marker else []),
         )
 
+    def _listing_seeds(self) -> list[str]:
+        """``listing_path`` first, then each extra front, de-duplicated."""
+        seeds = [self._site_config.listing_path]
+        for extra in self._site_config.listing_paths:
+            extra = (extra or "").strip()
+            if extra and extra not in seeds:
+                seeds.append(extra)
+        return seeds
+
     def discover_detail_paths(
         self, max_jobs: int | None = None
     ) -> tuple[list[dict], dict[str, str]]:
-        """Walk listing pages, collecting detail URLs."""
+        """Walk listing pages, collecting detail URLs.
+
+        Every front in :meth:`_listing_seeds` is walked in turn, so a board
+        whose pager is disallowed can still be covered through its category
+        fronts. Each front is paged 1..``max_pages``; the first page that adds
+        nothing new (an exhausted pager, or a pagination string with no
+        ``{page}``) ends that front and the next one begins.
+        """
         found: list[dict] = []
         failures: dict[str, str] = {}
         seen_keys: set[str] = set()
         budget = max_jobs or self._site_config.max_jobs_per_run
 
+        seeds = self._listing_seeds()
+        multi = len(seeds) > 1
+        for seed in seeds:
+            self._discover_from_seed(seed, multi, seen_keys, found, failures, budget)
+            if len(found) >= budget:
+                break
+
+        if not found and not failures:
+            raise HtmlScraperResponseError(
+                "no postings found. The listing markup may have changed."
+            )
+        return found, failures
+
+    def _discover_from_seed(
+        self,
+        seed: str,
+        multi: bool,
+        seen_keys: set[str],
+        found: list[dict],
+        failures: dict[str, str],
+        budget: int,
+    ) -> None:
+        """Walk one front's pages, appending its new jobs to ``found``."""
         for page in range(1, self._site_config.max_pages + 1):
             try:
-                _, jobs = self.fetch_listing_page(page)
+                _, jobs = self.fetch_listing_page(page, seed)
             except HtmlScraperFetchError as exc:
-                failures[f"page={page}"] = str(exc)
-                logger.warning("html_scraper listing page {} failed: {}", page, exc)
+                failures[f"{seed} page={page}" if multi else f"page={page}"] = str(exc)
+                logger.warning("html_scraper listing {} page {} failed: {}", seed, page, exc)
                 break
             if not jobs:
                 break
@@ -1141,21 +1187,17 @@ class HtmlScraperClient:
                     seen_keys.add(key)
                     found.append(job)
                     new += 1
-            logger.info("html_scraper page {}: {} new ({} total)", page, new, len(found))
+            logger.info(
+                "html_scraper {} page {}: {} new ({} total)", seed, page, new, len(found)
+            )
             if len(found) >= budget:
                 break
             if new == 0:
                 # A page that adds nothing means the listing is repeating
                 # itself -- an exhausted cursor, or a pager that ignores its
-                # own parameter -- and later pages would only re-read it.
+                # own parameter -- so this front is done.
                 break
             time.sleep(self._site_config.inter_request_delay_seconds)
-
-        if not found and not failures:
-            raise HtmlScraperResponseError(
-                "no postings found. The listing markup may have changed."
-            )
-        return found, failures
 
     def fetch_detail(self, url: str) -> str:
         """Fetch one detail page HTML."""
