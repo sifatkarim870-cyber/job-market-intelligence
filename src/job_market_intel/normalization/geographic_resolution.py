@@ -1534,6 +1534,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   place would collapse onto the shared global-remote location and lose its
     #:   country. The fallback pins every ad to Greece.
     "skywalker_gr": "GR",
+    #: snagajob_com: United States. The board is US-only hourly work and prints
+    #:   its location as a street address plus "City, ST" (or "City, State"
+    #:   spelled out) with the country never named, so a row whose locality text
+    #:   carries a street number and a town the curated seed does not hold would
+    #:   otherwise collapse onto the shared global-remote location and lose its
+    #:   country. The fallback pins every ad to the United States.
+    "snagajob_com": "US",
 }
 
 

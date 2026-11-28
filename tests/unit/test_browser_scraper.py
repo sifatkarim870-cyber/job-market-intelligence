@@ -392,3 +392,68 @@ def test_detail_settle_of_zero_reads_immediately(monkeypatch) -> None:
 
     assert client._settle_then_read() == "<html>finished</html>"
     assert sleeps == []
+
+
+def test_extra_listing_paths_are_walked_in_order_and_deduped(monkeypatch) -> None:
+    """A board with several allowed section fronts is walked across all of them."""
+    config = _config(
+        listing_pagination="",
+        max_pages=3,
+        max_jobs_per_run=10,
+        listing_paths=["/find-jobs/a", "/find-jobs/b"],
+        selectors={"job_link": "a"},
+    )
+    client = _StubClient(config)
+    pages = {
+        "https://example.com/jobs": '<a href="/jobs/1">one</a><a href="/jobs/2">two</a>',
+        "https://example.com/find-jobs/a": '<a href="/jobs/2">two</a><a href="/jobs/3">three</a>',
+        "https://example.com/find-jobs/b": '<a href="/jobs/4">four</a>',
+    }
+    calls: list[str] = []
+
+    def fake_render(url: str, ready: str, wait: int) -> str:
+        calls.append(url)
+        return pages.get(url, "")
+
+    monkeypatch.setattr(client, "_render", fake_render)
+    monkeypatch.setattr(
+        "job_market_intel.scrapers.browser_scraper.client.time.sleep", lambda *_: None
+    )
+
+    result = client.discover_detail_paths()
+    assert [job["url"] for job in result] == [
+        "https://example.com/jobs/1",
+        "https://example.com/jobs/2",
+        "https://example.com/jobs/3",
+        "https://example.com/jobs/4",
+    ]
+    # no pagination means one page per seed, not max_pages renders of the same URL
+    assert calls == [
+        "https://example.com/jobs",
+        "https://example.com/find-jobs/a",
+        "https://example.com/find-jobs/b",
+    ]
+
+
+def test_listing_paths_respect_the_run_budget(monkeypatch) -> None:
+    config = _config(
+        listing_pagination="",
+        max_jobs_per_run=2,
+        listing_paths=["/find-jobs/a"],
+        selectors={"job_link": "a"},
+    )
+    client = _StubClient(config)
+    pages = {
+        "https://example.com/jobs": '<a href="/jobs/1">one</a><a href="/jobs/2">two</a>',
+        "https://example.com/find-jobs/a": '<a href="/jobs/3">three</a>',
+    }
+
+    monkeypatch.setattr(
+        client, "_render", lambda url, ready, wait: pages.get(url, "")
+    )
+    monkeypatch.setattr(
+        "job_market_intel.scrapers.browser_scraper.client.time.sleep", lambda *_: None
+    )
+
+    result = client.discover_detail_paths()
+    assert len(result) == 2

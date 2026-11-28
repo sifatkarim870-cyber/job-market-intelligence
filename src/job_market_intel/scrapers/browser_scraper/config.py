@@ -37,6 +37,13 @@ class BrowserSiteConfig(SiteConfig):
     #: Seconds to wait for the listing's own content. A JS board that has not
     #: finished rendering its cards yet yields an empty listing, not an error.
     listing_wait_seconds: int = Field(default=15, ge=1, le=180)
+    #: Extra listing paths to walk after :attr:`listing_path`, in order. A board
+    #: whose robots.txt forbids every paginated and query-string URL but allows
+    #: its section fronts (Snagajob: ``/find-jobs/<filter>`` pages) exposes only
+    #: the first page of each front, so a fixed set of fronts is the discovery
+    #: surface. Links are de-duplicated across every seed, and ``max_pages`` is
+    #: applied to each seed. Empty keeps the single-listing behaviour.
+    listing_paths: list[str] = Field(default_factory=list)
     #: Selector that marks a rendered detail page's body. Used to wait before
     #: reading a detail page.
     detail_ready_selector: str = Field(default="")

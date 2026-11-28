@@ -252,7 +252,11 @@ class BrowserScraperClient:
         the listing path, so a config with ``/jobs`` and ``?page={page}`` asks
         for ``/jobs?page=2`` and not ``/?page=2``.
         """
-        base = f"{self._site_config.base_url.rstrip('/')}{self._site_config.listing_path}"
+        return self._listing_url_for(self._site_config.listing_path, page)
+
+    def _listing_url_for(self, listing_path: str, page: int = 1) -> str:
+        """The URL of ``listing_path`` at ``page`` (page 1 is the bare path)."""
+        base = f"{self._site_config.base_url.rstrip('/')}{listing_path}"
         if page <= 1:
             return base
         pagination = self._site_config.listing_pagination or ""
@@ -414,14 +418,58 @@ class BrowserScraperClient:
         return unique
 
     def discover_detail_paths(self, max_jobs: int | None = None) -> list[dict[str, str]]:
-        """Walk the rendered listing pages and collect detail URLs."""
+        """Walk the rendered listing pages and collect detail URLs.
+
+        Every seed in :attr:`BrowserSiteConfig.listing_paths` is walked after
+        ``listing_path``; when the pagination string carries no ``{page}`` there
+        is only one page per seed, so the repeated-URL guard stops after page 1
+        instead of re-rendering the same seed ``max_pages`` times.
+        """
         found: list[dict[str, str]] = []
         seen: set[str] = set()
         budget = max_jobs or self._site_config.max_jobs_per_run
         challenge: str | None = None
 
+        for seed in self._listing_seeds():
+            served = self._discover_from_seed(seed, seen, found, budget)
+            challenge = served or challenge
+            if len(found) >= budget:
+                break
+
+        if challenge and not found:
+            raise BrowserChallengeError(challenge)
+        return found
+
+    def _listing_seeds(self) -> list[str]:
+        """:attr:`listing_path` first, then each extra path, de-duplicated."""
+        seeds = [self._site_config.listing_path]
+        for extra in self._site_config.listing_paths:
+            extra = (extra or "").strip()
+            if extra and extra not in seeds:
+                seeds.append(extra)
+        return seeds
+
+    def _discover_from_seed(
+        self,
+        seed: str,
+        seen: set[str],
+        found: list[dict[str, str]],
+        budget: int,
+    ) -> str | None:
+        """Walk one seed's rendered pages, appending new jobs.
+
+        Returns the challenge message when the seed served one (so the caller
+        can raise only if *no* seed produced anything), otherwise ``None``. A
+        seed whose pagination string carries no ``{page}`` renders its bare URL
+        once: the repeated-URL guard stops before re-rendering it ``max_pages``
+        times.
+        """
+        previous: str | None = None
         for page in range(1, self._site_config.max_pages + 1):
-            url = self.listing_url(page)
+            url = self._listing_url_for(seed, page)
+            if url == previous:
+                break
+            previous = url
             try:
                 html = self._render(
                     url,
@@ -431,36 +479,47 @@ class BrowserScraperClient:
                 self._check_error_page(html, url)
                 self._check_challenge(html, url)
             except BrowserChallengeError as exc:
-                challenge = str(exc)
                 logger.warning("browser_scraper {}: {}", self._site_config.source_code, exc)
-                break
+                return str(exc)
             except BrowserFetchError as exc:
-                logger.warning("browser_scraper listing page {} failed: {}", page, exc)
+                logger.warning("browser_scraper listing page {} failed: {}", url, exc)
                 break
 
-            jobs = self._links_on_page(html)
-            logger.info(
-                "browser_scraper page {}: {} job link(s) ({} total)",
-                page,
-                len(jobs),
-                len(found),
-            )
-            if not jobs:
+            if not self._collect_links(html, seed, page, seen, found, budget):
                 break
-            for job in jobs:
-                if job["url"] in seen:
-                    continue
-                seen.add(job["url"])
-                found.append(job)
-                if len(found) >= budget:
-                    break
             if len(found) >= budget:
                 break
             time.sleep(self._site_config.inter_request_delay_seconds)
+        return None
 
-        if challenge and not found:
-            raise BrowserChallengeError(challenge)
-        return found
+    def _collect_links(
+        self,
+        html: str,
+        seed: str,
+        page: int,
+        seen: set[str],
+        found: list[dict[str, str]],
+        budget: int,
+    ) -> bool:
+        """Append unseen jobs from one rendered page; False when it listed none."""
+        jobs = self._links_on_page(html)
+        logger.info(
+            "browser_scraper listing {} page {}: {} job link(s) ({} total)",
+            seed,
+            page,
+            len(jobs),
+            len(found),
+        )
+        if not jobs:
+            return False
+        for job in jobs:
+            if job["url"] in seen:
+                continue
+            seen.add(job["url"])
+            found.append(job)
+            if len(found) >= budget:
+                break
+        return True
 
     def _render_detail(self, url: str) -> str:
         """Render a detail page and return its HTML.
