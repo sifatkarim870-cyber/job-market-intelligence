@@ -1570,6 +1570,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: Amsterdam is seeded in ``ref.cities``) is pinned to the NL
     #: country-level location instead of collapsing onto the global-remote one.
     "werk_nl": "NL",
+    #: Vinnumalastofnun is Iceland's public employment service board. Its ads
+    #: carry one of the eight Icelandic regions (Höfuðborgarsvæðið, Vesturland,
+    #: ...), but none of those regions is seeded in ``ref.regions``, so the
+    #: resolver cannot match the label. Pinning the source to IS keeps those
+    #: rows on the country-level Iceland location instead of collapsing onto
+    #: the shared global-remote one.
+    "vinnumalastofnun_is": "IS",
 }
 
 
