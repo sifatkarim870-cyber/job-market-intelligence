@@ -1321,6 +1321,13 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   without this the feed would leave some rows unresolved. The fallback
     #:   pins every ad to Vietnam.
     "vietnamworks_vn": "VN",
+    #: topcv_vn: Vietnam. TopCV prints each ad's place as a schema.org
+    #:   ``PostalAddress`` whose ``addressLocality`` is a ward ("Phường Từ
+    #:   Liêm") and whose ``addressRegion`` is a province ("Hà Nội"), and
+    #:   ref.cities seeds almost none of them (Ho Chi Minh City is the only
+    #:   Vietnamese city), so the fallback keeps the country on every ad
+    #:   instead of collapsing the row onto the shared global-remote location.
+    "topcv_vn": "VN",
     #: doda_jp: Japan. Its ad payload names the work area as a slash-joined
     #:   free-text string ("東京/神奈川/千葉"), which is not a place the resolver
     #:   can match, so without this the feed would leave every ad unresolved;

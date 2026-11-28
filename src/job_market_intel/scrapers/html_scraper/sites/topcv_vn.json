@@ -1,0 +1,69 @@
+{
+  "source_code": "topcv_vn",
+  "source_name": "TopCV (topcv.vn, Vietnam)",
+  "country": "Vietnam",
+  "base_url": "https://www.topcv.vn",
+  "listing_path": "/tim-viec-lam-cong-nghe-thong-tin",
+  "listing_paths": [
+    "/tim-viec-lam-kinh-doanh",
+    "/tim-viec-lam-marketing",
+    "/tim-viec-lam-ke-toan",
+    "/tim-viec-lam-hanh-chinh-nhan-su",
+    "/tim-viec-lam-xay-dung",
+    "/tim-viec-lam-san-xuat",
+    "/tim-viec-lam-giao-duc-dao-tao",
+    "/tim-viec-lam-kho-van"
+  ],
+  "listing_pagination": "?page={page}",
+  "max_pages": 1,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*='/viec-lam/'][href*='.html']",
+    "job_title": "h1",
+    "company": "#company",
+    "location": "#location",
+    "description": "#description",
+    "posted_date": "#posted_date",
+    "salary": "#salary",
+    "skills": "",
+    "employment_type": "#employment_type",
+    "education_level": "",
+    "experience_level": "",
+    "remote_work_type": "",
+    "job_category": ""
+  },
+  "detail_url_pattern": "/viec-lam/[a-z0-9-]+/\\d+\\.html$",
+  "id_from_url": true,
+  "id_url_regex": "/(\\d+)\\.html",
+  "detail_json_ld": true,
+  "detail_json_map": {
+    "title": "title",
+    "company": "hiringOrganization.name",
+    "location": [
+      "jobLocation.address.addressLocality",
+      "jobLocation.address.addressRegion",
+      "jobLocation.address.addressCountry"
+    ],
+    "description": [
+      "description"
+    ],
+    "posted_date": "datePosted",
+    "employment_type": "employmentType"
+  },
+  "detail_json_salary": {
+    "currency": "baseSalary.currency",
+    "min": "baseSalary.value.minValue",
+    "max": "baseSalary.value.maxValue",
+    "unit": "baseSalary.value.unitText"
+  },
+  "impersonate": "safari17_0",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "request_timeout_seconds": 40,
+  "inter_request_delay_seconds": 4.0,
+  "currency_iso_code": "VND",
+  "pay_period": "monthly",
+  "country_fallback": "Vietnam",
+  "min_description_chars": 40
+}
