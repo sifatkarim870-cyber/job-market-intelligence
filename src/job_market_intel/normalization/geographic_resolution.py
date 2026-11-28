@@ -1548,6 +1548,16 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #:   global-remote location and lose its country. The fallback pins every ad
     #:   to Italy.
     "subito_it": "IT",
+    #: talent_com: the United States. Talent.com is a multi-country aggregator,
+    #:   but this source crawls only its US English edition (/jobs/k-* lands on
+    #:   the US front), and every ad prints a US address as "City, ST, US" /
+    #:   "City, State, United States". The resolver does not recognise the
+    #:   trailing country token on its own, so without this fallback rows whose
+    #:   city is not seeded collapse onto the shared global-remote location and
+    #:   lose their country. The fallback pins those rows to the country-level
+    #:   United States location. If other country editions are added later this
+    #:   entry must be removed (the board then becomes multi-country).
+    "talent_com": "US",
 }
 
 

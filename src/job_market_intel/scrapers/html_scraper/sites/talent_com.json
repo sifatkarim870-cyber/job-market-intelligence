@@ -1,0 +1,52 @@
+{
+  "source_code": "talent_com",
+  "source_name": "Talent.com (talent.com)",
+  "country": "United States",
+  "base_url": "https://www.talent.com",
+  "listing_path": "/jobs/k-engineer",
+  "listing_paths": [
+    "/jobs/k-nurse",
+    "/jobs/k-driver",
+    "/jobs/k-accountant",
+    "/jobs/k-teacher",
+    "/jobs/k-warehouse",
+    "/jobs/k-sales",
+    "/jobs/k-developer",
+    "/jobs/k-administrative-assistant"
+  ],
+  "listing_pagination": "",
+  "max_pages": 1,
+  "max_jobs_per_run": 60,
+  "min_expected_jobs": 1,
+  "selectors": {
+    "job_card": "",
+    "job_link": "a[href*=\"/view?id=\"]",
+    "job_title": "h1",
+    "company": "[class*=\"companyLocationRow\"] span:first-of-type",
+    "location": "[class*=\"companyLocationRow\"] span:last-of-type",
+    "description": "[class*=\"jobDescriptionContainer\"]",
+    "posted_date": "",
+    "salary": "",
+    "skills": "",
+    "employment_type": "",
+    "education_level": "",
+    "experience_level": "",
+    "remote_work_type": "",
+    "job_category": ""
+  },
+  "detail_label_map": {
+    "salary": "Salary",
+    "employment_type": "Job type"
+  },
+  "detail_url_pattern": "/view\\?id=\\d+",
+  "salary_text_regex": "\\$\\s*(?P<min>[\\d,.]+)(?:\\s*[-\\u2013]\\s*\\$?\\s*(?P<max>[\\d,.]+))?\\s*(?P<unit>hourly|yearly|monthly|weekly|daily)?",
+  "id_from_url": true,
+  "id_url_regex": "[?&]id=(\\d+)",
+  "user_agent": "job-market-intel-research (research@example.org)",
+  "request_timeout_seconds": 40,
+  "inter_request_delay_seconds": 0.6,
+  "currency_iso_code": "USD",
+  "pay_period": "hourly",
+  "country_fallback": "United States",
+  "min_description_chars": 40
+}

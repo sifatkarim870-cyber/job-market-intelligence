@@ -495,13 +495,17 @@ def _salary_number(value: Any) -> float | None:
     Many boards print amounts as ``$610.001`` / ``1.210.001 €``: dot is the
     thousands separator there, not a decimal point. ``float("610.001")`` would
     quietly turn a 610,001 CLP monthly wage into 610.001, so a token that is
-    exactly ``\\d{1,3}(.\\d{3})+`` is collapsed to its digits first. Anything
-    else (``850.50``, ``1,5``) is left to the normal numeric path.
+    exactly ``\\d{1,3}(.\\d{3})+`` is collapsed to its digits first. US boards
+    use a comma the same way (``$78,000.00``), which ``float`` also rejects, so
+    a comma-grouped token keeps a genuine decimal tail. Anything else
+    (``850.50``, ``1,5``) is left to the normal numeric path.
     """
     if isinstance(value, str):
         token = value.strip()
         if re.fullmatch(r"\d{1,3}(?:\.\d{3})+", token):
             value = token.replace(".", "")
+        elif re.fullmatch(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?", token):
+            value = token.replace(",", "")
     return _as_number(value)
 
 
