@@ -1380,6 +1380,10 @@ SOURCE_HOME_COUNTRY: dict[str, str] = {
     #: ("Battaramulla, Borella, Gampaha (Gampaha)") rather than one place, so
     #: this pins the country even when the first town is not in ref.cities.
     "topjobs_lk": "LK",
+    #: xpress_jobs: Sri Lanka. The board publishes a "City, Province" location
+    #: string with no country, and only a handful of its cities are seeded, so
+    #: this pins the country even when the city is not in ref.cities.
+    "xpress_jobs": "LK",
     #: ikman_lk: Sri Lanka. Its location field was mostly unusable (the
     #: scraped value was the label "Location" rather than a place), so all 750
     #: rows predate the LK country row and carry a NULL country. The fallback

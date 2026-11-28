@@ -41,6 +41,7 @@ from .remoteok_validator import RemoteOKBatchValidator, RemoteOKValidationSettin
 from .remotive_validator import RemotiveBatchValidator, RemotiveValidationSettings
 from .timesjobs_in_validator import TimesjobsBatchValidator, TimesjobsValidationSettings
 from .weworkremotely_validator import WWRBatchValidator, WWRValidationSettings
+from .xpress_jobs_validator import XpressJobsBatchValidator, XpressJobsValidationSettings
 from .zangia_mn_validator import ZangiaBatchValidator, ZangiaValidationSettings
 
 __all__ = [
@@ -76,6 +77,8 @@ __all__ = [
     "TimesjobsValidationSettings",
     "WWRBatchValidator",
     "WWRValidationSettings",
+    "XpressJobsBatchValidator",
+    "XpressJobsValidationSettings",
     "ZangiaBatchValidator",
     "ZangiaValidationSettings",
     "AnpeBfBatchValidator",
