@@ -20,7 +20,7 @@ configs:
   - config_name: default
     data_files:
       - split: train
-        path: "shards/*/*/*.parquet"
+        path: "data/*.parquet"
   - config_name: taxonomy
     data_files:
       - split: train
